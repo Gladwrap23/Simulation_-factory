@@ -166,3 +166,13 @@ m_col1.metric("Active Scheme Claims", "142,850", "+1.2%")
 m_col2.metric("System Dwell Time", "11.4 Days", "-2.1 Days")
 m_col3.metric("Liability Reserve Index", "94.8%", "Nominal")
 m_col4.metric("Predictive Drift Horizon", "Low Risk", "Stable")
+st.markdown("""
+    <style>
+    /* Hide Streamlit header, GitHub icon, and footer to protect source code */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .main { background-color: #0E1117; }
+    .stMetric { background-color: #1E222D; padding: 12px; border-radius: 8px; }
+    </style>
+""", unsafe_allow_html=True)
