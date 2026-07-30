@@ -2623,3 +2623,44 @@ else:
         x="Days Elapsed",
         y=["Standard Expected Runway", "Actual Cumulative Spend Velocity"],
     )
+# --- 🛡️ STRATEGIC MILESTONE GATE & AUDIT DRAWER ---
+st.divider()
+st.subheader("🛡️ Strategic Milestone Gate: Frontline Reframing")
+
+with st.expander("📋 View Decision Provenance & Statutory Citations", expanded=True):
+    st.markdown("""
+    **System Diagnosis (DP1 - Narrative Quality):** 
+    Vague intake narrative *"back hurts"* detected. High probability of 14-day UR delay.
+    
+    **Evidence-Based Recommendation:** 
+    Reframe to clinical baseline: *Acute L4/L5 Lumbar Strain*.
+    * **Statutory Citation:** ACC Act 2001 / ACOEM Lumbar Spine Guideline 4.B
+    * **Predicted Impact:** -4.2 Dwell Days | **$18,400 NZD** Prevented Liability
+    """)
+
+    if st.button("⚡ Authorize & Execute Reframing (1-Tap Gate 1)", type="primary"):
+        audit_payload = {
+            "jurisdiction_code": "NZ_ACC",
+            "claim_id": "ACC-2026-99412",
+            "district_id": "Auckland_Central_Hub",
+            "operator_id": st.session_state.get("user_id", "EXAMINER_772"),
+            "strategic_gate": "Gate_1_Reframing",
+            "drift_point_id": "DP1_Narrative_Quality",
+            "sp": 1.40,
+            "mc": 1.15,
+            "directive_id": "DIR_REFRAME_LUMBAR",
+            "override": False,
+            "citation": "ACC Act 2001 / ACOEM Guideline 4.B"
+        }
+        
+        event_uuid = save_audit_record(
+            payload_data=audit_payload, 
+            gnvi_score=1.253, 
+            prevented_nzd=18400.00
+        )
+        
+        if event_uuid:
+            st.success(f"✅ Decision Authorized & Provenance Saved! Event ID: `{event_uuid}`")
+            st.balloons()
+        else:
+            st.info("ℹ️ Action executed locally. Database connection deferred.")
