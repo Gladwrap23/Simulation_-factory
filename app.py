@@ -2706,3 +2706,73 @@ def calculate_cashflow_shield_metrics(
             "STANDARD: Operational Window"
         )
     }
+# --- 🏛️ CHAIRMAN'S PREDICTIVE CASH FLOW & BANK FEE SHIELD ---
+def render_chairman_cashflow_dashboard():
+    st.divider()
+    st.subheader("🏛️ Predictive 12-Month Cash Flow Runway & Bank Fee Shield")
+    st.caption("Live liquidity monitoring mapping operational drift directly against corporate bank settlement terms.")
+
+    # Simulated Live Calculations
+    unmitigated_liability = 18400.00
+    repeat_offences = 1  # Simulated manager history
+    days_to_settlement = 5
+    
+    cash_shield = calculate_cashflow_shield_metrics(
+        drift_liability_nzd=unmitigated_liability,
+        repeat_offender_count=repeat_offences,
+        days_to_bank_settlement=days_to_settlement
+    )
+
+    # Executive Warning Banner if Bank Fee is Imminent
+    if cash_shield["is_imminent_risk"]:
+        st.error(f"""
+        ⚠️ **IMMINENT BANK FEE EXPOSURE DETECTED**  
+        **Projected Bank Penalty:** ${cash_shield['bfe_nzd']:,.2f} NZD  
+        **Dynamic Grace Period:** Compressed to **{cash_shield['effective_grace_days']} Days** ({cash_shield['compression_reason']}).  
+        *Requires immediate 1-tap policy directive actuation before the settlement boundary.*
+        """)
+
+    # Top-Level Capital Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(
+            label="12-Mo Rolling Cash Runway", 
+            value="$1.42M NZD", 
+            delta="+$184K NZD (Protected)"
+        )
+    with col2:
+        st.metric(
+            label="Bank Fee Exposure (BFE)", 
+            value=f"${cash_shield['bfe_nzd']:,.2f} NZD", 
+            delta="High Penalty Risk" if cash_shield['bfe_nzd'] > 0 else "Safe",
+            delta_color="inverse"
+        )
+    with col3:
+        st.metric(
+            label="Active Grace Window", 
+            value=f"{cash_shield['effective_grace_days']} Days", 
+            delta=cash_shield['compression_reason'],
+            delta_color="off"
+        )
+    with col4:
+        st.metric(
+            label="Prevented Facility Penalties", 
+            value="$42,500 NZD", 
+            delta="YTD Avoidance"
+        )
+
+    # Rolling 12-Month Projections Chart
+    st.markdown("**12-Month Liquidity Trajectory: Unmitigated Deficit vs. Protected Cash Flow**")
+    
+    months = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+    unmitigated_runway = [120, 105, 88, 72, 55, 40, 22, 5, -15, -38, -60, -85]  # In $10k NZD
+    protected_runway = [120, 118, 115, 114, 112, 110, 108, 107, 106, 105, 104, 103]  # In $10k NZD
+    
+    df_cashflow = {
+        "Month": months,
+        "Status Quo (Unmitigated Burn)": unmitigated_runway,
+        "Protected (Engine Enforced)": protected_runway
+    }
+    
+    st.line_chart(df_cashflow, x="Month", y=["Status Quo (Unmitigated Burn)", "Protected (Engine Enforced)"])
+    st.caption("ℹ️ *Status Quo trajectory includes compounding bank overdraft charges and unhedged drift liability.*")
