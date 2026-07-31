@@ -1538,7 +1538,7 @@ def render_cohort_analysis_panel(
                 + (
                     # ❌ INCORRECT (Line 1539):
 f" · {sanitize_html_text(snippet, max_chars=180)}..."
-f" · "{sanitize_html_text(snippet, max_chars=180)}..."
+f · {sanitize_html_text(snippet, max_chars=180)}..."
 
 # ✅ CORRECT:
 f" · {sanitize_html_text(snippet, max_chars=180)}..."
