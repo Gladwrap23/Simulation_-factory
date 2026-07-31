@@ -2664,3 +2664,45 @@ with st.expander("📋 View Decision Provenance & Statutory Citations", expanded
             st.balloons()
         else:
             st.info("ℹ️ Action executed locally. Database connection deferred.")
+import datetime
+
+def calculate_cashflow_shield_metrics(
+    drift_liability_nzd: float, 
+    repeat_offender_count: int, 
+    days_to_bank_settlement: int = 6,
+    available_buffer_nzd: float = 10000.00
+) -> dict:
+    """
+    Core Cash Flow Protection Engine:
+    Calculates Bank Fee Exposure (BFE) and applies Dynamic Grace Compression.
+    """
+    # 1. Calculate potential bank facility penalty (e.g., 2.5% penalty rate + flat fee)
+    flat_facility_fee = 2500.00 if drift_liability_nzd > available_buffer_nzd else 0.00
+    variable_penalty = (drift_liability_nzd - available_buffer_nzd) * 0.025 if drift_liability_nzd > available_buffer_nzd else 0.00
+    bank_fee_exposure = max(0.0, flat_facility_fee + variable_penalty)
+    
+    # 2. Compute Dynamic Grace Compression
+    # Rule A: Time-bound compression based on upcoming bank settlement
+    settlement_grace_limit = max(1, days_to_bank_settlement - 1)  # 24-hr emergency buffer
+    
+    # Rule B: Repeat offender compression
+    if repeat_offender_count == 0:
+        base_grace = 24
+    elif repeat_offender_count == 1:
+        base_grace = 7
+    else:
+        base_grace = 0  # Immediate Chairman/CFO Override
+        
+    # Final compressed grace is the strictest of all bounds
+    effective_grace_days = min(base_grace, settlement_grace_limit) if bank_fee_exposure > 0 else base_grace
+    
+    return {
+        "bfe_nzd": round(bank_fee_exposure, 2),
+        "effective_grace_days": effective_grace_days,
+        "is_imminent_risk": bank_fee_exposure > 0 and effective_grace_days <= 5,
+        "compression_reason": (
+            "CRITICAL: Repeat Offender Override" if repeat_offender_count >= 2 else
+            "IMMINENT: Bank Settlement Boundary" if bank_fee_exposure > 0 and settlement_grace_limit < base_grace else
+            "STANDARD: Operational Window"
+        )
+    }
