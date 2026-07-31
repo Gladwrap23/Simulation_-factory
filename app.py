@@ -1531,15 +1531,14 @@ def render_cohort_analysis_panel(
     causes = synthesize_drift_causes(list(focus["NLP_Ingest"].astype(str)))
     st.markdown("### SYNTHESIZED DRIFT CAUSE BREAKDOWN")
     if causes:
-        bullets = "".join(
-            (
-                f"<li><strong>{sanitize_html_text(cause, max_chars=120)}</strong> -- "
-                f"signal weight {sanitize_html_text(weight, max_chars=16)}"
-                + (
-f" · {sanitize_html_text(snippet, max_chars=180)}..." if snippet else ""
+          bullets = "".join(
+        f"<li><strong>{sanitize_html_text(cause, max_chars=120)}</strong> --- "
+        f"signal weight {sanitize_html_text(weight, max_chars=16)}"
+        + (f" · {sanitize_html_text(snippet, max_chars=180)}..." if snippet else "")
+        + "</li>"
+        for cause, weight, snippet in causes
+    )
 
-            for cause, weight, snippet in causes
-        )
         st.markdown(
             f"""
             <div class="metric-box" style="border-left: 4px solid #a855f7;">
