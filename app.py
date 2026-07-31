@@ -1537,6 +1537,7 @@ def render_cohort_analysis_panel(
                 f"signal weight {sanitize_html_text(weight, max_chars=16)}"
                 + (
                     # ❌ INCORRECT (Line 1539):
+f" · {sanitize_html_text(snippet, max_chars=180)}..."
 f" · "{sanitize_html_text(snippet, max_chars=180)}..."
 
 # ✅ CORRECT:
