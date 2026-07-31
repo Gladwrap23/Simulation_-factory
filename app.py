@@ -1536,6 +1536,7 @@ def render_cohort_analysis_panel(
                 f"<li><strong>{sanitize_html_text(cause, max_chars=120)}</strong> -- "
                 f"signal weight {sanitize_html_text(weight, max_chars=16)}"
                 + (
+f" · {sanitize_html_text(snippet, max_chars=180)}..." if snippet else ""
 
             for cause, weight, snippet in causes
         )
