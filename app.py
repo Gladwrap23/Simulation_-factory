@@ -2776,3 +2776,129 @@ def render_chairman_cashflow_dashboard():
     
     st.line_chart(df_cashflow, x="Month", y=["Status Quo (Unmitigated Burn)", "Protected (Engine Enforced)"])
     st.caption("ℹ️ *Status Quo trajectory includes compounding bank overdraft charges and unhedged drift liability.*")
+import streamlit as st
+
+# --- 🔬 MEDICAL RESEARCH & CLINICAL TRIAL COMMAND CENTER ---
+def render_medical_research_command_center():
+    st.title("🔬 Boardroom Command Surface: Medical Research & Clinical Pipelines")
+    st.caption("Zero-Data Risk: Simulate clinical trial latency, patent runway decay, and policy override efficacy.")
+
+    st.divider()
+
+    # 1. ANCHOR METRIC & OPEN PROMPT INTERFACE
+    col_a, col_b = st.columns([1, 2])
+    
+    with col_a:
+        st.markdown("### 1. Balance Sheet Anchor")
+        clinical_budget = st.number_input(
+            label="Total Active Clinical Pipeline Budget ($ USD):",
+            min_value=5000000,
+            max_value=5000000000,
+            value=150000000,  # Default $150M Phase III Budget
+            step=10000000,
+            format="%d"
+        )
+        active_sites = st.number_input(
+            label="Active Global Trial Sites:",
+            min_value=1,
+            max_value=500,
+            value=20,
+            step=1
+        )
+
+    with col_b:
+        st.markdown("### 2. Isolate An Intractable Problem")
+        chairman_prompt = st.text_area(
+            label="Enter Executive Inquiry / Strategic Bottleneck Prompt:",
+            value="Our Phase III oncology trial is 8 months behind schedule due to site protocol activation delays across 12 trial centers. Calculate our true daily patent burn and isolate whether this delay is caused by external regulatory friction or internal administrative drag.",
+            height=130
+        )
+
+    st.divider()
+
+    # 2. BACKEND CALCULATIONS (UNIVERSAL FRICTION ENGINE)
+    # Patent value decay rule: ~0.8% of pipeline budget per month of delayed commercialization
+    daily_patent_decay_rate = (clinical_budget * 0.008) / 30
+    delay_months = 8.0
+    total_unmitigated_decay = daily_patent_decay_rate * (delay_months * 30)
+    
+    # Root Cause Attribution ($gNVI = Sp / Mc)
+    systemic_regulatory_drag_pct = 22  # Sp (External IRB / Ethics)
+    internal_admin_drag_pct = 78       # Mc (Custom site-level legal customization)
+
+    # 3. LIVE ANALYSIS DISPLAY
+    st.markdown("### 🔍 Real-Time Pipeline Friction Analysis")
+    
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric(
+            label="Daily Patent Decay Rate", 
+            value=f"${daily_patent_decay_rate:,.0f} USD / day",
+            delta="Commercial Runway Loss",
+            delta_color="inverse"
+        )
+    with m2:
+        st.metric(
+            label="Projected 8-Mo Decay Risk", 
+            value=f"${total_unmitigated_decay:,.0f} USD",
+            delta="Unhedged Exposure",
+            delta_color="inverse"
+        )
+    with m3:
+        st.metric(
+            label="Internal Process Drag (Mc)", 
+            value=f"{internal_admin_drag_pct}%",
+            delta="Gate DP1 Bottleneck",
+            delta_color="inverse"
+        )
+    with m4:
+        st.metric(
+            label="External Regulatory Drag (Sp)", 
+            value=f"{systemic_regulatory_drag_pct}%",
+            delta="Exogenous Factor",
+            delta_color="off"
+        )
+
+    # 4. THE 1-TAP POLICY DIRECTIVE & LIVE RE-CALCULATION
+    st.divider()
+    st.markdown("### ⚡ Boardroom Executive Action Gate")
+    
+    st.info("""
+    **System Diagnosis:** 78% of current trial latency is driven by custom site-level amendment negotiation at **Gate DP1** rather than core regulatory review.  
+    **Recommended Remedy:** Execute `POL_RND_MASTER_PROTOCOL_LOCK` to standardize site agreements under a pre-cleared central framework and compress site review grace from 60 days to 7 days.
+    """)
+
+    # Interactive Lever Toggle
+    actuate_policy = st.toggle("🚨 Actuate 1-Tap Policy Directive: [POL_RND_MASTER_PROTOCOL_LOCK]", value=False)
+
+    if actuate_policy:
+        # Recalculated metrics under policy enforcement
+        recovered_months = 7.2  # Cuts 8-month delay down to ~3 weeks
+        retained_patent_value = daily_patent_decay_rate * (recovered_months * 30)
+        revised_delay_days = 24
+
+        st.success(f"""
+        ✅ **POLICY DIRECTIVE ACTIVE:** Master Protocol Lock Enforced.  
+        • **Trial Acceleration:** Delay compressed from 8 Months to **{revised_delay_days} Days**.  
+        • **Commercial Value Recovered:** **+${retained_patent_value:,.0f} USD** in protected patent lifespan.  
+        • **Site Alignment:** 12 stalled trial centers automatically redirected to standard approval corridor.
+        """)
+
+        # Comparative trajectory chart
+        st.markdown("**Patent Commercialization Trajectory: Status Quo vs. Policy Enforced**")
+        trajectory_data = {
+            "Timeline (Months)": ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"],
+            "Status Quo (Unmitigated Decay)": [
+                clinical_budget - (daily_patent_decay_rate * 30 * i) for i in range(1, 9)
+            ],
+            "Protected Pipeline (Policy Active)": [
+                clinical_budget - (daily_patent_decay_rate * 3) for _ in range(8) # Stabilized after 24 days
+            ]
+        }
+        st.line_chart(
+            trajectory_data, 
+            x="Timeline (Months)", 
+            y=["Status Quo (Unmitigated Decay)", "Protected Pipeline (Policy Active)"]
+        )
+    else:
+        st.warning("⚠️ **Policy Inactive:** Current operations are incurring unmitigated patent runway decay. Toggle the directive above to test balance sheet recovery.")
