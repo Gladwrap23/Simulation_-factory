@@ -2902,3 +2902,53 @@ def render_medical_research_command_center():
         )
     else:
         st.warning("⚠️ **Policy Inactive:** Current operations are incurring unmitigated patent runway decay. Toggle the directive above to test balance sheet recovery.")
+# --- MAIN APPLICATION ROUTER ---
+def main():
+    st.sidebar.title("🏛️ Boardroom Command Center")
+    
+    selected_surface = st.sidebar.selectbox(
+        label="Select Executive Surface:",
+        options=[
+            "1. Medical Research & Clinical Pipelines",
+            "2. Statutory Injury Schemes (ACC / Workers' Comp)",
+            "3. Megaproject & Infrastructure Governance",
+            "4. General Executive Cash Flow Shield"
+        ]
+    )
+
+    if "Medical Research" in selected_surface:
+        render_medical_research_command_center()
+    elif "Statutory Injury" in selected_surface:
+        render_injury_and_sports_governance_interface()
+    elif "Megaproject" in selected_surface:
+        render_chairman_cashflow_dashboard()
+    else:
+        render_chairman_single_input_view()
+
+if __name__ == "__main__":
+    main()
+# --- MAIN APPLICATION ROUTER ---
+def main():
+    st.sidebar.title("🏛️ Boardroom Command Center")
+    
+    selected_surface = st.sidebar.selectbox(
+        label="Select Executive Surface:",
+        options=[
+            "1. Medical Research & Clinical Pipelines",
+            "2. Statutory Injury Schemes (ACC / Workers' Comp)",
+            "3. Megaproject & Infrastructure Governance",
+            "4. General Executive Cash Flow Shield"
+        ]
+    )
+
+    if "Medical Research" in selected_surface:
+        render_medical_research_command_center()
+    elif "Statutory Injury" in selected_surface:
+        render_injury_and_sports_governance_interface()
+    elif "Megaproject" in selected_surface:
+        render_chairman_cashflow_dashboard()
+    else:
+        render_chairman_single_input_view()
+
+if __name__ == "__main__":
+    main()
