@@ -84,7 +84,7 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
 
 
 
-role_matrix_data = {
+{role_matrix_data = {
 {
     "🏛️ Minister for ACC & Board Chair": {
         "title": "NATIONAL SCHEME LIABILITY DRIFT",
