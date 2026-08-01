@@ -36,11 +36,11 @@ def check_password():
             st.error("⛔ Invalid Access Key. Access Denied.")
     return False
 
+# 2. EXECUTIVE SECURITY GATE CHECK
 if not check_password():
     st.stop()
 
-# -----------------------------------------------------------------------------
-[# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
+# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 roles = [
@@ -48,10 +48,6 @@ roles = [
     "⚡ Chief Executive (Wellington HQ)",
     "📍 Regional General Manager",
     "💼 Case Manager / Frontline Operator",
-]
-
-selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
-
 ]
 
 selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
@@ -73,6 +69,16 @@ st.markdown(
         box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
     ">
         <div style="color: #a7f3d0; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;">
+            ACTIVE COMMAND SCOPE
+        </div>
+        <div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; margin-top: 6px; line-height: 1.2;">
+            {selected_role}
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
             ACTIVE COMMAND SCOPE
         </div>
         <div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; margin-top: 6px; line-height: 1.2;">
