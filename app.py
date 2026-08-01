@@ -40,12 +40,7 @@ if not check_password():
     st.stop()
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
-# -----------------------------------------------------------------------------
-st.sidebar.title("AAT SCHEME GOVERNANCE")
-
-roles = [
-# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
+[# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 roles = [
@@ -53,6 +48,10 @@ roles = [
     "⚡ Chief Executive (Wellington HQ)",
     "📍 Regional General Manager",
     "💼 Case Manager / Frontline Operator",
+]
+
+selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
+
 ]
 
 selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
