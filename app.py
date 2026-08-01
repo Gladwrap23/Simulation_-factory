@@ -55,24 +55,11 @@ selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
 # Main Dashboard Title
 st.title("ACC Board & Ministerial Command Surface")
 
-# High-Visibility Dominant Scope Banner
-st.markdown(
-    f"""
-    <div style="
-        background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
-        border: 2px solid #10b981;
-        border-left: 10px solid #34d399;
-        padding: 18px 24px;
-        border-radius: 12px;
-        margin-top: 14px;
-        margin-bottom: 28px;
-        box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
-    ">
-        <div style="color: #a7f3d0; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;">
-            ACTIVE COMMAND SCOPE
-        </div>
-        <div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; margin-top: 6px; line-height: 1.2;">
-            {selected_role}
+# High-Visibility Dominant Scope Banner (Fail-Safe HTML string)
+banner_html = f"""<div style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); border: 2px solid #10b981; border-left: 10px solid #34d399; padding: 18px 24px; border-radius: 12px; margin-top: 14px; margin-bottom: 28px; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);"><div style="color: #a7f3d0; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;">ACTIVE COMMAND SCOPE</div><div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; margin-top: 6px; line-height: 1.2;">{selected_role}</div></div>"""
+
+st.markdown(banner_html, unsafe_allow_html=True)
+
         </div>
     </div>
     """,
