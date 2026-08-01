@@ -1,13 +1,12 @@
 from __future__ import annotations
+import streamlit as st
 
-
-# -----------------------------------------------------------------------------
-# 1. PAGE CONFIGURATION & THEME
-# -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="NZ AAT Sovereign Orchestration Engine",
-    page_icon="🏛️",
-    layout="wide",
+    page_title="Boardroom Command Center",
+    page_icon="🔬",
+    layout="wide"
+)
+
     initial_sidebar_state="expanded"
 )
 
