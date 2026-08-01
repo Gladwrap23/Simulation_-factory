@@ -45,16 +45,22 @@ if not check_password():
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 roles = [
+# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
+st.sidebar.title("AAT SCHEME GOVERNANCE")
+
+roles = [
     "🏛️ Minister for ACC & Board Chair",
     "⚡ Chief Executive (Wellington HQ)",
     "📍 Regional General Manager",
-    "💼 Case Manager / Frontline Operator"
+    "💼 Case Manager / Frontline Operator",
 ]
 
-# Main Dashboard Boardroom Title
+selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
+
+# Main Dashboard Title
 st.title("ACC Board & Ministerial Command Surface")
 
-# High-Visibility Dominant Scope Banner (Eye-Catching Anchor)
+# High-Visibility Dominant Scope Banner
 st.markdown(
     f"""
     <div style="
@@ -77,6 +83,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
 
 
 st.sidebar.markdown("---")
