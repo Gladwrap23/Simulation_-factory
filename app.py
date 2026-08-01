@@ -1531,30 +1531,29 @@ def render_cohort_analysis_panel(
     causes = synthesize_drift_causes(list(focus["NLP_Ingest"].astype(str)))
     st.markdown("### SYNTHESIZED DRIFT CAUSE BREAKDOWN")
     if causes:
-          bullets = "".join(
-        f"<li><strong>{sanitize_html_text(cause, max_chars=120)}</strong> --- "
-        f"signal weight {sanitize_html_text(weight, max_chars=16)}"
-        + (f" · {sanitize_html_text(snippet, max_chars=180)}..." if snippet else "")
-        + "</li>"
-        for cause, weight, snippet in causes
-    )
-
+        bullets = "".join(
+            f"<li><strong>{sanitize_html_text(cause, max_chars=120)}</strong> --- "
+            f"signal weight {sanitize_html_text(weight, max_chars=16)}"
+            + (f" · {sanitize_html_text(snippet, max_chars=180)}..." if snippet else "")
+            + "</li>"
+            for cause, weight, snippet in causes
+        )
         st.markdown(
             f"""
             <div class="metric-box" style="border-left: 4px solid #a855f7;">
-              <div class="metric-label" style="color:#c084fc;">NLP ROOT-CAUSE SUMMARIZER</div>
-              <div style="color:#8b949e; font-size:0.88rem; margin-bottom:0.45rem;">
+                <div class="metric-label" style="color:#c084fc;">NLP ROOT-CAUSE SUMMARIZER</div>
+                <div style="color:#8b949e; font-size:0.88rem; margin-bottom:0.45rem;">
                 Scanned {len(focus)} cohort NLP Ingest field(s) · Role: {safe_role_cohort}
-              </div>
-              <ul style="color:#f8fafc; font-size:0.95rem; line-height:1.45; margin:0; padding-left:1.2rem;">
-                {bullets}
-              </ul>
+                </div>
+                <ul style="color:#f8fafc; font-size:0.95rem; line-height:1.45; margin:0; padding-left:1.2rem;">
+                    {bullets}
+                </ul>
             </div>
             """,
             unsafe_allow_html=True,
         )
     else:
-        st.info("No dominant NLP root-cause signals detected in this cohort.")
+        st.info("No dominant NLP root cause detected in this cohort.")
 
     exp_c1, exp_c2 = st.columns(2)
     export_df = focus[
