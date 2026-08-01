@@ -2945,11 +2945,6 @@ def main():
         render_chairman_single_input_view()
 
 
-    main()
+    
 if __name__ == "__main__":
     main()
-
-git commit -am "fix string literal syntax on line 1540"
-if __name__ == "__main__":
-    main()
-
