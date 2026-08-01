@@ -55,18 +55,20 @@ selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
 # Main Dashboard Title
 st.title("ACC Board & Ministerial Command Surface")
 
-# High-Visibility Banner (Single line to prevent iPad indentation bugs)
-st.markdown(f'<div style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); border: 2px solid #10b981; border-left: 10px solid #34d399; padding: 18px 24px; border-radius: 12px; margin-top: 14px; margin-bottom: 28px; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);"><div style="color: #a7f3d0; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;">ACTIVE COMMAND SCOPE</div><div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; margin-top: 6px; line-height: 1.2;">{selected_role}</div></div>', unsafe_allow_html=True)
-
-        <div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; margin-top: 6px; line-height: 1.2;">
-            {selected_role}
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+# High-Visibility Dominant Scope Banner (Indentation-Safe String)
+banner_html = (
+    '<div style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); '
+    'border: 2px solid #10b981; border-left: 10px solid #34d399; '
+    'padding: 18px 24px; border-radius: 12px; margin-top: 14px; margin-bottom: 28px; '
+    'box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);">'
+    '<div style="color: #a7f3d0; font-size: 0.85rem; font-weight: 800; '
+    'letter-spacing: 0.15em; text-transform: uppercase;">ACTIVE COMMAND SCOPE</div>'
+    f'<div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; '
+    f'margin-top: 6px; line-height: 1.2;">{selected_role}</div>'
+    '</div>'
 )
 
-
+st.markdown(banner_html, unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### SCHEME MANDATE INJECTION")
@@ -75,13 +77,7 @@ st.sidebar.caption("Proprietary stewardship band control · explicit arithmetic 
 striving_floor = st.sidebar.slider("Enforce Liability Mitigation Floor", 0, 100, 65)
 st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band**")
 
-# -----------------------------------------------------------------------------
-# 4. MAIN DASHBOARD HEADER
-# -----------------------------------------------------------------------------
-st.title("ACC Board & Ministerial Command Surface")
-st.caption("Active Command Scope: 📍 Chairman & Board Executive Governance")
 
-st.caption(f"Active Command Scope: **{selected_role}**")
 
 # -----------------------------------------------------------------------------
 # 5. FRACTAL CLOSED-LOOP BOTTLENECK SENSOR
