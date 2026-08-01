@@ -22,7 +22,8 @@ def check_password():
     if st.session_state.get("password_correct", False):
         return True
 
-    st.title("🏛️ NZ ACC Sovereign Orchestration Engine")
+    st.title("ACC Board & Ministerial Command Surface")
+
     st.subheader("🔒 Executive Security Gate")
     
     password_input = st.text_input("Enter Access Key to unlock command surface:", type="password")
@@ -62,7 +63,9 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
 # -----------------------------------------------------------------------------
 # 4. MAIN DASHBOARD HEADER
 # -----------------------------------------------------------------------------
-st.title("NZ AAT Sovereign Orchestration")
+st.title("ACC Board & Ministerial Command Surface")
+st.caption("Active Command Scope: 📍 Chairman & Board Executive Governance")
+
 st.caption(f"Active Command Scope: **{selected_role}**")
 
 # -----------------------------------------------------------------------------
