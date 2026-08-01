@@ -84,6 +84,7 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
 
 
 
+role_matrix_data = {
 {
     "🏛️ Minister for ACC & Board Chair": {
         "title": "NATIONAL SCHEME LIABILITY DRIFT",
@@ -126,6 +127,29 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
         ]
     }
 }
+# Extract active role metrics safely
+current_data = role_matrix_data.get(selected_role, {})
+
+if current_data:
+    st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(
+            label="📍 Target Location / Network", 
+            value=current_data.get("location", "N/A")
+        )
+    with col2:
+        st.metric(
+            label="⚠️ Impact Drift Rate", 
+            value=current_data.get("metric", "N/A")
+        )
+    
+    st.error(f"**Root Cause:** {current_data.get('root_cause', 'N/A')}")
+    
+    st.markdown("### ⚡ Strategic Interventions")
+    for idx, option in enumerate(current_data.get("options", [])):
+        st.button(f"Execute: {option}", key=f"opt_{idx}")
 
 data = bottlenecks.get(selected_role, bottlenecks["⚡ Chief Executive (Wellington HQ)"])
 
