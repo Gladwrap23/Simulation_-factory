@@ -79,13 +79,12 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
 
 
 
-# -----------------------------------------------------------------------------
-# 5. FRACTAL CLOSED-LOOP BOTTLENECK SENSOR
-# -----------------------------------------------------------------------------
-st.markdown("---")
-st.subheader("🎯 Primary System Constraint (Closed-Loop Sensor)")
 
-bottlenecks = {
+
+
+
+
+{
     "🏛️ Minister for ACC & Board Chair": {
         "title": "NATIONAL SCHEME LIABILITY DRIFT",
         "location": "Upper North Island Specialist Network",
