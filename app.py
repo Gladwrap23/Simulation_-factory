@@ -1,4 +1,5 @@
-import streamlit as st
+from __future__ import annotations
+
 
 # -----------------------------------------------------------------------------
 # 1. PAGE CONFIGURATION & THEME
@@ -184,7 +185,7 @@ Health NZ Clinical Grid. NZD ledger, MSD certified CV pivot matrices,
 Cabinet Minister statutory overrides, and PR #24 HTML sanitation.
 """
 
-from __future__ import annotations
+
 
 import html
 import re
