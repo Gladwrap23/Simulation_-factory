@@ -84,8 +84,7 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
 
 
 
-{role_matrix_data = {
-{
+role_matrix_data = {
     "🏛️ Minister for ACC & Board Chair": {
         "title": "NATIONAL SCHEME LIABILITY DRIFT",
         "location": "Upper North Island Specialist Network",
@@ -93,8 +92,8 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
         "root_cause": "Orthopedic Assessment Capacity (28-day wait vs 7-day target)",
         "options": [
             "Authorize Allied Health Assessment Delegation",
-            "Reallocate $2.5M Emergency Capacity Burst Fund"
-        ]
+            "Reallocate $2.5M Emergency Capacity Burst Fund",
+        ],
     },
     "⚡ Chief Executive (Wellington HQ)": {
         "title": "PRIMARY CAPACITY BOTTLENECK: IME QUEUE",
@@ -103,31 +102,55 @@ st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band*
         "root_cause": "Specialist Panel Backlog in Complex Musculoskeletal Claims",
         "options": [
             "Re-route 300 Cases to Waikato/Bay of Plenty Panel",
-            "Trigger Fast-Track Telehealth Assessment Protocol"
-        ]
+            "Trigger Fast-Track Telehealth Assessment Protocol",
+        ],
     },
     "📍 Regional General Manager": {
         "title": "DISTRICT SERVICE DELIVERY BOTTLENECK",
         "location": "Hamilton Central Branch",
-        "metric": "42 Cases Blocked in Vocational Rehab Intake",
-        "root_cause": "Local Provider Intake Contract Exceeded",
+        "metric": "42 Cases Blocked at Triage",
+        "root_cause": "Local Provider Staffing Deficit",
         "options": [
-            "Issue Overflow Capacity Contract to Secondary Provider",
-            "Approve Regional Case Manager Overtime Allowance"
-        ]
+            "Issue Overflow Capacity Contract to Private Provider",
+            "Approve Regional Case Manager Overtime Allowance",
+        ],
     },
     "💼 Case Manager / Frontline Operator": {
-        "title": "FILE FLOW BLOCKAGE: ACTION REQUIRED",
-        "location": "Active Worklist (Claim #88219-B)",
-        "metric": "5 Days Overdue for Medical Clearance (ACC18)",
-        "root_cause": "Waiting on GP Medical Certificate Submission",
+        "title": "INDIVIDUAL CLAIM DWELL TIME SPIKE",
+        "location": "Claim #ACC-2026-89421",
+        "metric": "38 Days Without Treatment Authorization",
+        "root_cause": "Pending Surgical Panel Approval Signature",
         "options": [
-            "Send Automated Digital Portal Ping to GP Clinic",
-            "Switch Case File to Fast-Track Telehealth Partner"
-        ]
-    }
+            "Override Triage Delay via Delegated Authority Band",
+            "Escalate Directly to Regional Clinical Lead",
+        ],
+    },
 }
-# Extract active role metrics safely
+
+# Dynamic Executive Metric Renderer
+current_data = role_matrix_data.get(selected_role, {})
+
+if current_data:
+    st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(
+            label="📍 Target Location / Network",
+            value=current_data.get("location", "N/A"),
+        )
+    with col2:
+        st.metric(
+            label="⚠️ Impact Drift Rate",
+            value=current_data.get("metric", "N/A"),
+        )
+
+    st.error(f"**Root Cause:** {current_data.get('root_cause', 'N/A')}")
+
+    st.markdown("### ⚡ Strategic Interventions")
+    for idx, option in enumerate(current_data.get("options", [])):
+        st.button(f"Execute: {option}", key=f"opt_{idx}")
+
 current_data = role_matrix_data.get(selected_role, {})
 
 if current_data:
