@@ -10,7 +10,43 @@ st.set_page_config(
 
 # Custom CSS for executive dark theme and emerald scope box
 st.markdown(
+st.markdown(
     """
+<style>
+    /* 🔒 HIDE STREAMLIT TOP BAR & GITHUB LINKS */
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    .scope-box {
+        background-color: #062313;
+        border: 1.5px solid #00e676;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 25px;
+    }
+    .scope-title {
+        color: #00e676;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+    .scope-role {
+        color: #ffffff;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 <style>
     .stApp {
         background-color: #0e1117;
