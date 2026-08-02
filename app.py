@@ -177,32 +177,36 @@ if current_data:
     st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
     
     col1, col2 = st.columns(2)
+# -----------------------------------------------------------------------------
+# DYNAMIC EXECUTIVE RENDERER
+# -----------------------------------------------------------------------------
+current_data = role_matrix_data.get(selected_role, {})
+
+if current_data:
+    st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
+
+    col1, col2 = st.columns(2)
     with col1:
         st.metric(
-            label="📍 Target Location / Network", 
-            value=current_data.get("location", "N/A")
+            label="📍 Target Location / Network",
+            value=current_data.get("location", "N/A"),
         )
     with col2:
         st.metric(
-            label="⚠️ Impact Drift Rate", 
-            value=current_data.get("metric", "N/A")
+            label="⚠️ Impact Drift Rate",
+            value=current_data.get("metric", "N/A"),
         )
-# Strategic Interventions Block
-st.markdown("### ⚡ Strategic Interventions")
 
-for idx, option in enumerate(current_data.get("options", [])):
-    safe_role = selected_role.encode("utf-8").hex()[:10]
+    st.error(f"**Root Cause:** {current_data.get('root_cause', 'N/A')}")
 
-    st.session_state[role_key] = "ACTIVE"
+    st.markdown("### ⚡ Strategic Interventions")
 
-if st.session_state[role_key] == "ACTIVE":
-    st.error(f"🚨 **{data['title']}**")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(label="📍 Target Location", value=data["location"])
-    with col2:
-        st.metric(label="⚠️ Impact Delta", value=data["metric"])
+    # Safe unique key generation for execution buttons
+    role_id = selected_role.encode("utf-8").hex()[:8]
+    for idx, option in enumerate(current_data.get("options", [])):
+        if st.button(f"Execute: {option}", key=f"btn_{role_id}_{idx}"):
+            st.success(f"Command Executed: {option}")
+
     with col3:
         st.metric(label="🔄 Sensor Status", value="MONITORING")
 
