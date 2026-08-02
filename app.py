@@ -82,38 +82,3 @@ selected_role = st.sidebar.selectbox(
 )
 
 st.title("ACC Board & Ministerial Command Surface")
-
-# High-Visibility Dominant Scope Banner (Indentation-Safe String)
-# -----------------------------------------------------------------------------
-# DYNAMIC EXECUTIVE RENDERER
-# -----------------------------------------------------------------------------
-current_data = role_matrix_data.get(selected_role, {})
-
-if current_data:
-    st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(
-            label="📍 Target Location / Network",
-            value=current_data.get("location", "N/A"),
-        )
-    with col2:
-        st.metric(
-            label="⚠️ Impact Drift Rate",
-            value=current_data.get("metric", "N/A"),
-        )
-    with col3:
-        st.metric(
-            label="🛡️ Operational Status",
-            value="ACTIVE DRIFT",
-        )
-
-    st.error(f"**Root Cause:** {current_data.get('root_cause', 'N/A')}")
-
-    st.markdown("### ⚡ Strategic Interventions")
-
-    role_id = selected_role.encode("utf-8").hex()[:8]
-    for idx, option in enumerate(current_data.get("options", [])):
-        if st.button(f"Execute: {option}", key=f"btn_{role_id}_{idx}"):
-            st.success(f"Command Executed: {option}")
