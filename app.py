@@ -1,84 +1,213 @@
-from __future__ import annotations
 import streamlit as st
 
+# 1. PAGE SETUP
 st.set_page_config(
-    page_title="Boardroom Command Center",
-    page_icon="🔬",
+    page_title="ACC Command Surface",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-st.markdown("""
-    <style>
-    .main { background-color: #0E1117; }
-    .stMetric { background-color: #1E222D; padding: 12px; border-radius: 8px; }
-    </style>
-""", unsafe_allow_html=True)
+# Custom CSS for executive dark theme and emerald scope box
+st.markdown(
+    """
+<style>
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    .scope-box {
+        background-color: #062313;
+        border: 1.5px solid #00e676;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 25px;
+    }
+    .scope-title {
+        color: #00e676;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+    .scope-role {
+        color: #ffffff;
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
-# -----------------------------------------------------------------------------
-# 2. EXECUTIVE SECURITY GATE
-# -----------------------------------------------------------------------------
-def check_password():
-    if st.session_state.get("password_correct", False):
-        return True
-
-    st.title("ACC Board & Ministerial Command Surface")
-
-    st.subheader("🔒 Executive Security Gate")
-    
-    password_input = st.text_input("Enter Access Key to unlock command surface:", type="password")
-    
-    if st.button("Authenticate"):
-        if password_input.strip() == "NZ-ACC-2026":
-            st.session_state["password_correct"] = True
-            st.rerun()
-        else:
-            st.error("⛔ Invalid Access Key. Access Denied.")
-    return False
-
-# 2. EXECUTIVE SECURITY GATE CHECK
-if not check_password():
-    st.stop()
-
-# 3. SIDEBAR: GOVERNANCE & ROLE MATRIX
-st.sidebar.title("AAT SCHEME GOVERNANCE")
-
-roles = [
-    "🏛️ Minister for ACC & Board Chair",
-    "⚡ Chief Executive (Wellington HQ)",
-    "📍 RGM - Northern Region (Auckland / Northland)",
-    "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
-    "📍 RGM - Central Region (Wellington / Lower NI)",
-    "📍 RGM - South Island (Canterbury / Otago / Southland)",
-    "💼 Case Manager / Frontline Operator",
-    "📋 Support Staff & Intake Entry Point",
-]
-
-# URL parameter mapping table
-ROLE_URL_MAP = {
-    "minister": "🏛️ Minister for ACC & Board Chair",
-    "ce": "⚡ Chief Executive (Wellington HQ)",
-    "rgm_north": "📍 RGM - Northern Region (Auckland / Northland)",
-    "rgm_midland": "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
-    "rgm_central": "📍 RGM - Central Region (Wellington / Lower NI)",
-    "rgm_south": "📍 RGM - South Island (Canterbury / Otago / Southland)",
-    "gm": "📍 RGM - Northern Region (Auckland / Northland)",
-    "cm": "💼 Case Manager / Frontline Operator",
-    "support": "📋 Support Staff & Intake Entry Point",
+# 2. ROLE & BOTTLENECK DATA MAP
+ROLE_MAP = {
+    "minister": {
+        "label": "🏛️ Minister for ACC & Board Chair",
+        "title": "NATIONAL SCHEME LIABILITY DRIFT",
+        "location": "Upper North Island Specialist Network",
+        "metric": "+$420,000 / week in extended weekly comp",
+        "root_cause": "Orthopedic Assessment Capacity (28-day wait vs 7-day target)",
+        "options": [
+            "Authorize Allied Health Assessment Delegation",
+            "Reallocate $2.5M Emergency Capacity Burst Fund",
+        ],
+    },
+    "ce": {
+        "label": "⚡ Chief Executive (Wellington HQ)",
+        "title": "PRIMARY CAPACITY BOTTLENECK: IME QUEUE",
+        "location": "Auckland Central & Waitematā Hubs",
+        "metric": "1,240 Claims Stagnant (>14 days dwell)",
+        "root_cause": "Specialist Panel Backlog in Complex Musculoskeletal Claims",
+        "options": [
+            "Re-route 300 Cases to Waikato/Bay of Plenty Panel",
+            "Trigger Fast-Track Telehealth Assessment Protocol",
+        ],
+    },
+    "rgm_north": {
+        "label": "📍 RGM - Northern Region (Auckland / Northland)",
+        "title": "AUCKLAND & NORTHLAND SPECIALIST BOTTLENECK",
+        "location": "Waitematā & Whangārei Clinical Hubs",
+        "metric": "512 Claims Blocked (>21 days dwell)",
+        "root_cause": "Orthopedic Specialist Deficit in Northland & Metro Auckland",
+        "options": [
+            "Deploy Mobile Specialist Assessment Unit to Whangārei",
+            "Authorize Private Hospital Panel Overflow Contract",
+        ],
+    },
+    "rgm_midland": {
+        "label": "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
+        "title": "MIDLAND TRIAGE & INTAKE CAPACITY DRIFT",
+        "location": "Hamilton Central & Tauranga Branches",
+        "metric": "184 Cases Awaiting Clinical Triage",
+        "root_cause": "Local Provider Staffing Deficit & Assessment Delay",
+        "options": [
+            "Issue Overflow Capacity Contract to Local Private Network",
+            "Approve Regional Case Manager Overtime Allowance",
+        ],
+    },
+    "rgm_central": {
+        "label": "📍 RGM - Central Region (Wellington / Lower NI)",
+        "title": "CENTRAL REGION COMPLEX CLAIM DELAYS",
+        "location": "Wellington HQ & Palmerston North Hub",
+        "metric": "120 Claims Facing Delayed Surgical Approvals",
+        "root_cause": "Surgical Panel Review Delays Exceeding 30 Days",
+        "options": [
+            "Delegate Fast-Track Sign-off Authority to Regional Lead",
+            "Re-route Claims to Hawke's Bay Assessment Panel",
+        ],
+    },
+    "rgm_south": {
+        "label": "📍 RGM - South Island (Canterbury / Otago / Southland)",
+        "title": "SOUTH ISLAND REHABILITATION SERVICE BOTTLENECK",
+        "location": "Christchurch & Dunedin Service Centres",
+        "metric": "290 Clients Awaiting Allied Health Placement",
+        "root_cause": "Physiotherapy & Vocational Provider Capacity Deficit",
+        "options": [
+            "Activate Emergency Allied Health Preferred Provider Network",
+            "Authorize Direct Vocational Grant Streamlining",
+        ],
+    },
+    "cm": {
+        "label": "💼 Case Manager / Frontline Operator",
+        "title": "INDIVIDUAL CLAIM DWELL TIME SPIKE",
+        "location": "Claim #ACC-2026-89421",
+        "metric": "38 Days Without Treatment Authorization",
+        "root_cause": "Pending Surgical Panel Approval Signature",
+        "options": [
+            "Override Triage Delay via Delegated Authority Band",
+            "Escalate Directly to Regional Clinical Lead",
+        ],
+    },
+    "support": {
+        "label": "📋 Support Staff & Intake Entry Point",
+        "title": "INITIAL DOCUMENTATION & INTAKE LAG",
+        "location": "National Intake Gateway",
+        "metric": "430 Uncoded Submissions Pending Verification",
+        "root_cause": "Incomplete Initial Provider ICD-10 Coding & Medical Notes",
+        "options": [
+            "Trigger Automated Provider Document Request",
+            "Apply Fast-Track Automated Coding Validation",
+        ],
+    },
 }
 
+# 3. SIDEBAR GOVERNANCE & CONTROLS
+st.sidebar.title("AAT SCHEME GOVERNANCE")
 
-# Read URL parameter safely (e.g., ?role=gm)
-query_role = st.query_params.get("role", "minister")
-target_role_name = ROLE_URL_MAP.get(str(query_role).lower(), roles[0])
+# Query parameter handling with fallbacks
+role_keys = list(ROLE_MAP.keys())
+query_role = str(st.query_params.get("role", "minister")).lower()
 
-# Fallback index lookup
-default_idx = (
-    roles.index(target_role_name) if target_role_name in roles else 0
+if query_role == "gm":
+    query_role = "rgm_north"
+
+default_key = query_role if query_role in ROLE_MAP else "minister"
+default_idx = role_keys.index(default_key)
+
+selected_key = st.sidebar.selectbox(
+    "Active User Role Matrix",
+    role_keys,
+    index=default_idx,
+    format_func=lambda k: ROLE_MAP[k]["label"],
 )
 
-selected_role = st.sidebar.selectbox(
-    "Active User Role Matrix", roles, index=default_idx
+st.sidebar.markdown("---")
+st.sidebar.subheader("SCHEME MANDATE INJECTION")
+st.sidebar.caption(
+    "Proprietary stewardship band control · explicit arithmetic withheld from glass"
 )
 
+floor_val = st.sidebar.slider(
+    "Enforce Liability Mitigation Floor",
+    min_value=0,
+    max_value=100,
+    value=65,
+)
+st.sidebar.info(f"Active Stewardship Floor: {floor_val}% Protection Band")
+
+# 4. MAIN COMMAND SURFACE RENDERER
 st.title("ACC Board & Ministerial Command Surface")
+
+current_data = ROLE_MAP[selected_key]
+
+# Active Scope Emerald Box
+st.markdown(
+    f"""
+    <div class="scope-box">
+        <div class="scope-title">ACTIVE COMMAND SCOPE</div>
+        <div class="scope-role">{current_data['label']}</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Primary Constraint Header & Metrics
+st.subheader(f"🎯 {current_data['title']}")
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric(
+        label="📍 Target Location / Network",
+        value=current_data["location"],
+    )
+with col2:
+    st.metric(
+        label="⚠️ Impact Drift Rate",
+        value=current_data["metric"],
+    )
+with col3:
+    st.metric(
+        label="🛡️ Operational Status",
+        value="ACTIVE DRIFT",
+    )
+
+st.error(f"**Root Cause:** {current_data['root_cause']}")
+
+# Strategic Interventions Actions
+st.markdown("### ⚡ Strategic Interventions")
+
+for idx, option in enumerate(current_data["options"]):
+    if st.button(f"Execute: {option}", key=f"btn_{selected_key}_{idx}"):
+        st.success(f"Command Executed: {option}")
