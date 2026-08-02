@@ -177,7 +177,7 @@ if current_data:
     st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
     
     col1, col2 = st.columns(2)
-# -----------------------------------------------------------------------------
+            # -----------------------------------------------------------------------------
 # DYNAMIC EXECUTIVE RENDERER
 # -----------------------------------------------------------------------------
 current_data = role_matrix_data.get(selected_role, {})
@@ -185,7 +185,8 @@ current_data = role_matrix_data.get(selected_role, {})
 if current_data:
     st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
 
-    col1, col2 = st.columns(2)
+    # Define 3 columns to safely match 'with col3:'
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(
             label="📍 Target Location / Network",
@@ -196,29 +197,22 @@ if current_data:
             label="⚠️ Impact Drift Rate",
             value=current_data.get("metric", "N/A"),
         )
+    with col3:
+        st.metric(
+            label="🛡️ Operational Status",
+            value="ACTIVE DRIFT",
+        )
 
     st.error(f"**Root Cause:** {current_data.get('root_cause', 'N/A')}")
 
     st.markdown("### ⚡ Strategic Interventions")
 
-    # Safe unique key generation for execution buttons
+    # Safe button key generation
     role_id = selected_role.encode("utf-8").hex()[:8]
     for idx, option in enumerate(current_data.get("options", [])):
         if st.button(f"Execute: {option}", key=f"btn_{role_id}_{idx}"):
             st.success(f"Command Executed: {option}")
-
-    with col3:
-        st.metric(label="🔄 Sensor Status", value="MONITORING")
-
-    st.warning(f"**Root Cause Analysis:** {data['root_cause']}")
-
-    st.markdown("#### ⚡ Actuation Directive:")
-    btn_col1, btn_col2 = st.columns(2)
-
-    with btn_col1:
-        if st.button(f"Execute: {data['options'][0]}", use_container_width=True):
-            st.session_state[role_key] = "RESOLVED"
-            st.rerun()
+st.rerun()
 
     with btn_col2:
         if st.button(f"Execute: {data['options'][1]}", use_container_width=True):
