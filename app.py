@@ -177,4 +177,3 @@ if current_data:
     st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
     
     col1, col2 = st.columns(2)
-             
