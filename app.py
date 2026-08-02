@@ -7,13 +7,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# Custom CSS for executive dark theme and emerald scope box
-st.markdown(
+# Custom CSS for executive dark theme, hidden toolbars, and emerald scope box
 st.markdown(
     """
 <style>
-    /* 🔒 HIDE STREAMLIT TOP BAR & GITHUB LINKS */
+    /* 🔒 HIDE STREAMLIT TOP BAR & FOOTER */
     header {visibility: hidden;}
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -46,6 +44,7 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
 
 <style>
     .stApp {
