@@ -84,84 +84,15 @@ selected_role = st.sidebar.selectbox(
 st.title("ACC Board & Ministerial Command Surface")
 
 # High-Visibility Dominant Scope Banner (Indentation-Safe String)
-banner_html = (
-    '<div style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); '
-    'border: 2px solid #10b981; border-left: 10px solid #34d399; '
-    'padding: 18px 24px; border-radius: 12px; margin-top: 14px; margin-bottom: 28px; '
-    'box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);">'
-    '<div style="color: #a7f3d0; font-size: 0.85rem; font-weight: 800; '
-    'letter-spacing: 0.15em; text-transform: uppercase;">ACTIVE COMMAND SCOPE</div>'
-    f'<div style="color: #ffffff; font-size: 1.85rem; font-weight: 900; '
-    f'margin-top: 6px; line-height: 1.2;">{selected_role}</div>'
-    '</div>'
-)
-
-st.markdown(banner_html, unsafe_allow_html=True)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("### SCHEME MANDATE INJECTION")
-st.sidebar.caption("Proprietary stewardship band control · explicit arithmetic withheld from glass")
-
-striving_floor = st.sidebar.slider("Enforce Liability Mitigation Floor", 0, 100, 65)
-st.sidebar.info(f"Active Stewardship Floor: **{striving_floor}% Protection Band**")
-
-
-
-
-
-
-
-
-role_matrix_data = {
-    "🏛️ Minister for ACC & Board Chair": {
-        "title": "NATIONAL SCHEME LIABILITY DRIFT",
-        "location": "Upper North Island Specialist Network",
-        "metric": "+$420,000 / week in extended weekly comp",
-        "root_cause": "Orthopedic Assessment Capacity (28-day wait vs 7-day target)",
-        "options": [
-            "Authorize Allied Health Assessment Delegation",
-            "Reallocate $2.5M Emergency Capacity Burst Fund",
-        ],
-    },
-    "⚡ Chief Executive (Wellington HQ)": {
-        "title": "PRIMARY CAPACITY BOTTLENECK: IME QUEUE",
-        "location": "Auckland Central & Waitematā Hubs",
-        "metric": "1,240 Claims Stagnant (>14 days dwell)",
-        "root_cause": "Specialist Panel Backlog in Complex Musculoskeletal Claims",
-        "options": [
-            "Re-route 300 Cases to Waikato/Bay of Plenty Panel",
-            "Trigger Fast-Track Telehealth Assessment Protocol",
-        ],
-    },
-    "📍 Regional General Manager": {
-        "title": "DISTRICT SERVICE DELIVERY BOTTLENECK",
-        "location": "Hamilton Central Branch",
-        "metric": "42 Cases Blocked at Triage",
-        "root_cause": "Local Provider Staffing Deficit",
-        "options": [
-            "Issue Overflow Capacity Contract to Private Provider",
-            "Approve Regional Case Manager Overtime Allowance",
-        ],
-    },
-    "💼 Case Manager / Frontline Operator": {
-        "title": "INDIVIDUAL CLAIM DWELL TIME SPIKE",
-        "location": "Claim #ACC-2026-89421",
-        "metric": "38 Days Without Treatment Authorization",
-        "root_cause": "Pending Surgical Panel Approval Signature",
-        "options": [
-            "Override Triage Delay via Delegated Authority Band",
-            "Escalate Directly to Regional Clinical Lead",
-        ],
-    },
-}
-
-# Dynamic Executive Metric Renderer
+# -----------------------------------------------------------------------------
+# DYNAMIC EXECUTIVE RENDERER
+# -----------------------------------------------------------------------------
 current_data = role_matrix_data.get(selected_role, {})
 
 if current_data:
     st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(
             label="📍 Target Location / Network",
@@ -172,16 +103,17 @@ if current_data:
             label="⚠️ Impact Drift Rate",
             value=current_data.get("metric", "N/A"),
         )
+    with col3:
+        st.metric(
+            label="🛡️ Operational Status",
+            value="ACTIVE DRIFT",
+        )
 
     st.error(f"**Root Cause:** {current_data.get('root_cause', 'N/A')}")
 
     st.markdown("### ⚡ Strategic Interventions")
+
+    role_id = selected_role.encode("utf-8").hex()[:8]
     for idx, option in enumerate(current_data.get("options", [])):
-        st.button(f"Execute: {option}", key=f"opt_{idx}")
-
-current_data = role_matrix_data.get(selected_role, {})
-
-if current_data:
-    st.subheader(f"🎯 {current_data.get('title', 'Primary System Constraint')}")
-    
-    col1, col2 = st.columns(2)
+        if st.button(f"Execute: {option}", key=f"btn_{role_id}_{idx}"):
+            st.success(f"Command Executed: {option}")
