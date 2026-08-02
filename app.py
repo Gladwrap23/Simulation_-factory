@@ -192,7 +192,12 @@ if current_data:
     
     st.markdown("### ⚡ Strategic Interventions")
     for idx, option in enumerate(current_data.get("options", [])):
-        st.button(f"Execute: {option}", key=f"opt_{idx}")
+st.markdown("### ⚡ Strategic Interventions")
+for idx, option in enumerate(current_data.get("options", [])):
+    # Clean the role string to make a safe, globally unique key
+    safe_role = selected_role.encode("utf-8").hex()[:10]
+    st.button(f"Execute: {option}", key=f"btn_{safe_role}_{idx}")
+
 
 data = bottlenecks.get(selected_role, bottlenecks["⚡ Chief Executive (Wellington HQ)"])
 
