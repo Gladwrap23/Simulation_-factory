@@ -192,13 +192,7 @@ st.markdown("### ⚡ Strategic Interventions")
 
 for idx, option in enumerate(current_data.get("options", [])):
     safe_role = selected_role.encode("utf-8").hex()[:10]
-    st.button(f"Execute: {option}", key=f"btn_{safe_role}_{idx}")
 
-
-data = bottlenecks.get(selected_role, bottlenecks["⚡ Chief Executive (Wellington HQ)"])
-
-role_key = f"status_{selected_role}"
-if role_key not in st.session_state:
     st.session_state[role_key] = "ACTIVE"
 
 if st.session_state[role_key] == "ACTIVE":
