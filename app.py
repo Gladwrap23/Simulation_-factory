@@ -46,7 +46,10 @@ st.sidebar.title("AAT SCHEME GOVERNANCE")
 roles = [
     "🏛️ Minister for ACC & Board Chair",
     "⚡ Chief Executive (Wellington HQ)",
-    "📍 Regional General Manager",
+    "📍 RGM - Northern Region (Auckland / Northland)",
+    "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
+    "📍 RGM - Central Region (Wellington / Lower NI)",
+    "📍 RGM - South Island (Canterbury / Otago / Southland)",
     "💼 Case Manager / Frontline Operator",
     "📋 Support Staff & Intake Entry Point",
 ]
@@ -55,10 +58,15 @@ roles = [
 ROLE_URL_MAP = {
     "minister": "🏛️ Minister for ACC & Board Chair",
     "ce": "⚡ Chief Executive (Wellington HQ)",
-    "gm": "📍 Regional General Manager",
+    "rgm_north": "📍 RGM - Northern Region (Auckland / Northland)",
+    "rgm_midland": "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
+    "rgm_central": "📍 RGM - Central Region (Wellington / Lower NI)",
+    "rgm_south": "📍 RGM - South Island (Canterbury / Otago / Southland)",
+    "gm": "📍 RGM - Northern Region (Auckland / Northland)",
     "cm": "💼 Case Manager / Frontline Operator",
     "support": "📋 Support Staff & Intake Entry Point",
 }
+
 
 # Read URL parameter safely (e.g., ?role=gm)
 query_role = st.query_params.get("role", "minister")
