@@ -48,11 +48,31 @@ roles = [
     "⚡ Chief Executive (Wellington HQ)",
     "📍 Regional General Manager",
     "💼 Case Manager / Frontline Operator",
+    "📋 Support Staff & Intake Entry Point",
 ]
 
-selected_role = st.sidebar.selectbox("Active User Role Matrix", roles, index=0)
+# URL parameter mapping table
+ROLE_URL_MAP = {
+    "minister": "🏛️ Minister for ACC & Board Chair",
+    "ce": "⚡ Chief Executive (Wellington HQ)",
+    "gm": "📍 Regional General Manager",
+    "cm": "💼 Case Manager / Frontline Operator",
+    "support": "📋 Support Staff & Intake Entry Point",
+}
 
-# Main Dashboard Title
+# Read URL parameter safely (e.g., ?role=gm)
+query_role = st.query_params.get("role", "minister")
+target_role_name = ROLE_URL_MAP.get(str(query_role).lower(), roles[0])
+
+# Fallback index lookup
+default_idx = (
+    roles.index(target_role_name) if target_role_name in roles else 0
+)
+
+selected_role = st.sidebar.selectbox(
+    "Active User Role Matrix", roles, index=default_idx
+)
+
 st.title("ACC Board & Ministerial Command Surface")
 
 # High-Visibility Dominant Scope Banner (Indentation-Safe String)
