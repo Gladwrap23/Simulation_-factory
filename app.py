@@ -13,20 +13,13 @@ st.set_page_config(
 st.markdown(
     """
 <style>
-    /* 🔒 HIDE TOP TOOLBAR, GITHUB ICON & STREAMLIT HEADER ENTIRELY */
-    [data-testid="stHeader"] {
-        display: none !important;
-    .block-container    /* 🔒 HIDE TOP TOOLBAR & PREVENT HEADING CLIPPING ON IPAD */
+    /* 🔒 HIDE TOP TOOLBAR & PREVENT HEADING CLIPPING */
     [data-testid="stHeader"] {
         display: none !important;
     }
     .block-container {
         padding-top: 2.5rem !important;
     }
-    header {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-}
     header {visibility: hidden;}
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -94,7 +87,7 @@ st.markdown(
         padding-bottom: 8px;
     }
     
-    /* ⚡ HIGH-PROMINENCE ATTRIBUTION CALLOUT BOX */
+    /* HIGH-PROMINENCE ATTRIBUTION CALLOUT BOX */
     .attribution-box-prominent {
         background: linear-gradient(135deg, #1e1b4b 0%, #31101d 100%);
         border: 2px solid #ff4d4d;
@@ -144,7 +137,6 @@ ROLE_MAP = {
         "live_dwell_sub": "(Cumulative Dwell Exposure)",
         "action_badge": "STEWARDSHIP INTERVENTION REQUIRED",
         "drift_origin": "📍 Northern Region (Auckland / Whangārei Hubs) accounts for $320,000/wk (76%) of National Drift due to Orthopedic Assessment Backlog.",
-        "target_role_drill": "rgm_north",
         "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows Across Northern Network",
         "options": [
             "Authorize Allied Health Assessment Delegation",
@@ -359,14 +351,13 @@ def render_executive_card(label, main_val, subtext="", delta="", basis_tag="", i
     )
 
 # -----------------------------------------------------------------------------
------------------------------------------------------------------------------# -----------------------------------------------------------------------------
-# 4. SIDEBAR CONTROLS & GOVERNANCE
+# 4. SIDEBAR CONTROLS & QUERY PARAMETER STATE SYNC
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 role_keys = list(ROLE_MAP.keys())
 
-# ⚡ SYNC QUERY PARAMETERS DIRECTLY TO SESSION STATE (ELIMINATES 2-STEP BOUNCE)
+# Direct Query Parameter Synchronization to Session State
 query_role = str(st.query_params.get("role", "")).lower()
 if query_role == "gm":
     query_role = "rgm_north"
@@ -374,13 +365,9 @@ if query_role == "gm":
 if query_role in ROLE_MAP:
     st.session_state["sb_role_matrix_select"] = query_role
 
-default_key = st.session_state.get("sb_role_matrix_select", "minister")
-default_idx = role_keys.index(default_key) if default_key in role_keys else 0
-
 selected_key = st.sidebar.selectbox(
     "Active User Role Matrix",
     role_keys,
-    index=default_idx,
     format_func=lambda k: ROLE_MAP[k]["label"],
     key="sb_role_matrix_select",
 )
@@ -392,11 +379,9 @@ if selected_key == "minister":
 else:
     st.sidebar.info("⚡ **Operational Execution Glass Active**\n\nDirect capacity re-routing & intervention surface enabled.")
 
-floor_val = int(st.query_params.get("floor", 65))
-
-# 5. MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
-# 🏛️ DYNAMIC SURFACE HEADER BASED ON ACTIVE ROLE TIER
+# 5. DYNAMIC TITLE & MAIN COMMAND SURFACE RENDERER
+# -----------------------------------------------------------------------------
 if selected_key == "minister":
     st.title("🏛️ ACC Board & Ministerial Command Surface")
 elif selected_key == "ce":
@@ -421,7 +406,6 @@ st.markdown(
 if selected_key == "minister":
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
 
-    # ⚡ PROMINENT DRIFT ATTRIBUTION WITH 1-TAP DRILL-DOWN
     if "drift_origin" in current_data:
         st.markdown(
             f"""
