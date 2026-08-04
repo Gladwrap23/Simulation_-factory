@@ -13,6 +13,10 @@ st.set_page_config(
 st.markdown(
     """
 <style>
+    /* 🔒 HIDE TOP TOOLBAR, GITHUB ICON & STREAMLIT HEADER ENTIRELY */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
     header {visibility: hidden;}
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -22,6 +26,7 @@ st.markdown(
         color: #ffffff;
     }
     
+    /* SCOPE HEADER BOX */
     .scope-box {
         background-color: #062313;
         border: 1.5px solid #00e676;
@@ -43,6 +48,7 @@ st.markdown(
         margin-top: 4px;
     }
 
+    /* DUAL CHANNEL BOARDROOM PROJECTION PANELS */
     .projection-target-panel {
         background-color: #0f172a;
         border: 1.5px solid #3b82f6;
@@ -78,25 +84,28 @@ st.markdown(
         padding-bottom: 8px;
     }
     
-    .attribution-box {
-        background-color: #1e1b4b;
-        border: 1.5px solid #6366f1;
-        border-radius: 8px;
-        padding: 15px 20px;
-        margin-bottom: 20px;
+    /* ⚡ HIGH-PROMINENCE ATTRIBUTION CALLOUT BOX */
+    .attribution-box-prominent {
+        background: linear-gradient(135deg, #1e1b4b 0%, #31101d 100%);
+        border: 2px solid #ff4d4d;
+        box-shadow: 0 0 15px rgba(255, 77, 77, 0.25);
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 22px;
     }
-    .attribution-title {
-        color: #a5b4fc;
-        font-size: 0.75rem;
-        font-weight: 800;
-        letter-spacing: 1.2px;
+    .attribution-title-prominent {
+        color: #f87171;
+        font-size: 0.85rem;
+        font-weight: 900;
+        letter-spacing: 1.5px;
         text-transform: uppercase;
     }
-    .attribution-body {
+    .attribution-body-prominent {
         color: #ffffff;
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin-top: 5px;
+        font-size: 1.22rem;
+        font-weight: 700;
+        margin-top: 8px;
+        line-height: 1.4;
     }
 </style>
 """,
@@ -125,6 +134,7 @@ ROLE_MAP = {
         "live_dwell_sub": "(Cumulative Dwell Exposure)",
         "action_badge": "STEWARDSHIP INTERVENTION REQUIRED",
         "drift_origin": "📍 Northern Region (Auckland / Whangārei Hubs) accounts for $320,000/wk (76%) of National Drift due to Orthopedic Assessment Backlog.",
+        "target_role_drill": "rgm_north",
         "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows Across Northern Network",
         "options": [
             "Authorize Allied Health Assessment Delegation",
@@ -344,6 +354,8 @@ def render_executive_card(label, main_val, subtext="", delta="", basis_tag="", i
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 role_keys = list(ROLE_MAP.keys())
+
+# HANDLE QUERY PARAM OR DRILL-DOWN PARAMETER
 query_role = str(st.query_params.get("role", "minister")).lower()
 if query_role == "gm":
     query_role = "rgm_north"
@@ -388,17 +400,21 @@ st.markdown(
 if selected_key == "minister":
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
 
+    # ⚡ PROMINENT DRIFT ATTRIBUTION WITH 1-TAP DRILL-DOWN
     if "drift_origin" in current_data:
         st.markdown(
             f"""
-            <div class="attribution-box">
-                <div class="attribution-title">⚡ AUTOMATIC REGIONAL DRIFT ATTRIBUTION</div>
-                <div class="attribution-body">{current_data['drift_origin']}</div>
+            <div class="attribution-box-prominent">
+                <div class="attribution-title-prominent">⚡ AUTOMATIC REGIONAL DRIFT ATTRIBUTION</div>
+                <div class="attribution-body-prominent">{current_data['drift_origin']}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    
+        if st.button("📍 DRILL DOWN: Focus Command Glass on Northern Region (Auckland / Whangārei)", key="btn_drilldown_north"):
+            st.query_params["role"] = "rgm_north"
+            st.rerun()
+
     col_target, col_live = st.columns(2)
 
     with col_target:
