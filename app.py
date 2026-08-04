@@ -103,6 +103,7 @@ ROLE_MAP = {
         "target_dwell_sub": "(Mandated Policy Baseline)",
         "live_dwell_val": "+$1.68M",
         "live_dwell_sub": "(Cumulative Dwell Exposure)",
+        "action_badge": "STEWARDSHIP INTERVENTION REQUIRED",
         "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows",
         "options": [
             "Authorize Allied Health Assessment Delegation",
@@ -123,6 +124,7 @@ ROLE_MAP = {
         "target_dwell_sub": "(Stagnant Claim Target)",
         "live_dwell_val": "+$3.12M",
         "live_dwell_sub": "(Unbudgeted Dwell Exposure)",
+        "action_badge": "CAPACITY RE-ROUTING REQUIRED",
         "root_cause": "1,240 Stagnant IME Claims Driving Extended Income Replacement Outflows",
         "options": [
             "Re-route 300 Cases to Waikato/Bay of Plenty Panel",
@@ -143,6 +145,7 @@ ROLE_MAP = {
         "target_dwell_sub": "(14-Day Baseline)",
         "live_dwell_val": "+$1.15M",
         "live_dwell_sub": "(Local Bottleneck Cost)",
+        "action_badge": "REGIONAL MOBILIZATION REQUIRED",
         "root_cause": "512 Blocked Orthopedic Claims in Metro Auckland & Whangārei",
         "options": [
             "Deploy Mobile Specialist Assessment Unit to Whangārei",
@@ -163,6 +166,7 @@ ROLE_MAP = {
         "target_dwell_sub": "(48-Hour Standard)",
         "live_dwell_val": "+$410,000",
         "live_dwell_sub": "(Delayed Triage Exposure)",
+        "action_badge": "TRIAGE CONTRACT OVERFLOW REQUIRED",
         "root_cause": "184 Cases Awaiting Clinical Triage Due to Local Provider Deficit",
         "options": [
             "Issue Overflow Capacity Contract to Local Private Network",
@@ -183,12 +187,35 @@ ROLE_MAP = {
         "target_dwell_sub": "(10-Day Baseline)",
         "live_dwell_val": "+$620,000",
         "live_dwell_sub": "(Delayed Surgical Exposure)",
+        "action_badge": "FAST-TRACK SIGN-OFF REQUIRED",
         "root_cause": "120 Claims Stalled on Surgical Panel Approval Signatures Exceeding 30 Days",
         "options": [
             "Delegate Fast-Track Sign-off Authority to Regional Lead",
             "Re-route Claims to Hawke's Bay Assessment Panel",
         ],
-        "cm": {
+    },
+    "rgm_south": {
+        "label": "📍 RGM - South Island (Canterbury / Otago / Southland)",
+        "title": "SOUTH ISLAND REHABILITATION SERVICE COSTS",
+        "location_val": "Christchurch & Dunedin",
+        "location_sub": "(Service Centres)",
+        "target_metric_val": "$3.70M / week",
+        "target_metric_sub": "(South Island Budget)",
+        "live_metric_val": "$4.05M / week",
+        "live_metric_sub": "(Actual Spend)",
+        "delta": "+$350,000 / week Service Deficit",
+        "target_dwell_val": "$0 / claim",
+        "target_dwell_sub": "(5-Day Standard)",
+        "live_dwell_val": "+$890,000",
+        "live_dwell_sub": "(Unplaced Client Exposure)",
+        "action_badge": "ALLIED HEALTH NETWORK ACTIVATION",
+        "root_cause": "290 Clients Awaiting Allied Health & Vocational Provider Placement",
+        "options": [
+            "Activate Emergency Allied Health Preferred Provider Network",
+            "Authorize Direct Vocational Grant Streamlining",
+        ],
+    },
+    "cm": {
         "label": "💼 Case Manager / Frontline Operator",
         "title": "INDIVIDUAL CLAIM FINANCIAL DRIFT (#ACC-2026-89421)",
         "location_val": "Claim #ACC-2026-89421",
@@ -225,28 +252,6 @@ ROLE_MAP = {
         "live_dwell_sub": "(Downstream Delay Liability)",
         "action_badge": "AUTOMATED EXTRACTION REQUIRED",
         "root_cause": "Upstream Provider Data Defect: Unstructured GP Submissions Forcing Manual ICD-10 Extraction Across 430 Intake Claims",
-        "options": [
-            "Trigger Automated Provider Document Request",
-            "Apply Fast-Track Automated Coding Validation",
-        ],
-    },
-}
-
-    "support": {
-        "label": "📋 Support Staff & Intake Entry Point",
-        "title": "NATIONAL INTAKE GATEWAY LAG COSTS",
-        "location_val": "National Intake Gateway",
-        "location_sub": "(Digital Verification)",
-        "target_metric_val": "$120,000 / week",
-        "target_metric_sub": "(Processing Target)",
-        "live_metric_val": "$210,000 / week",
-        "live_metric_sub": "(Extended Cost)",
-        "delta": "+$90,000 / week Intake Lag",
-        "target_dwell_val": "$0",
-        "target_dwell_sub": "(Lag Penalty)",
-        "live_dwell_val": "+$340,000",
-        "live_dwell_sub": "(Downstream Delay Exposure)",
-        "root_cause": "430 Uncoded Submissions Pending Initial ICD-10 Medical Verification",
         "options": [
             "Trigger Automated Provider Document Request",
             "Apply Fast-Track Automated Coding Validation",
@@ -302,7 +307,6 @@ if query_role == "gm":
 default_key = query_role if query_role in ROLE_MAP else "minister"
 default_idx = role_keys.index(default_key)
 
-# 1. SELECT ROLE MATRIX FIRST
 selected_key = st.sidebar.selectbox(
     "Active User Role Matrix",
     role_keys,
@@ -312,7 +316,6 @@ selected_key = st.sidebar.selectbox(
 
 st.sidebar.markdown("---")
 
-# 2. CONDITIONALLY RENDER DISPLAY MODE FOR EXECUTIVE TIERS ONLY
 EXECUTIVE_TIERS = ["minister", "ce", "rgm_north", "rgm_midland", "rgm_central", "rgm_south"]
 
 if selected_key in EXECUTIVE_TIERS:
@@ -322,7 +325,6 @@ if selected_key in EXECUTIVE_TIERS:
         index=0,
     )
 else:
-    # Operational roles lock automatically to Standard Command Glass
     view_mode = "📺 Standard Command Glass"
     st.sidebar.info("🔒 **Operational Execution Mode**\n\nDual-channel projection is restricted to executive governance roles.")
 
@@ -345,7 +347,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# MODE A: STANDARD COMMAND GLASS
 if view_mode == "📺 Standard Command Glass":
     st.subheader(f"🎯 {current_data['title']}")
 
@@ -369,13 +370,12 @@ if view_mode == "📺 Standard Command Glass":
             "🛡️ Operational Status",
             "ACTIVE DRIFT",
             "(Unmitigated Baseline)",
-            delta="ACTION REQUIRED",
+            delta=current_data.get("action_badge", "ACTION REQUIRED"),
             is_live=True,
         )
 
     st.error(f"**Root Cause:** {current_data['root_cause']}")
 
-# MODE B: DUAL-CHANNEL BOARDROOM PROJECTION MODE
 else:
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
     
