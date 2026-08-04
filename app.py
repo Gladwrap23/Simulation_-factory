@@ -287,17 +287,10 @@ def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
     )
 
 # -----------------------------------------------------------------------------
-# 4. SIDEBAR CONTROLS & GOVERNANCE
+# -----------------------------------------------------------------------------
+# 4. SIDEBAR CONTROLS & GOVERNANCE (ROLE-GATED)
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
-
-view_mode = st.sidebar.radio(
-    "🖥️ Display Mode",
-    ["📺 Standard Command Glass", "📽️ Dual-Channel Boardroom Projection"],
-    index=0,
-)
-
-st.sidebar.markdown("---")
 
 role_keys = list(ROLE_MAP.keys())
 query_role = str(st.query_params.get("role", "minister")).lower()
@@ -307,6 +300,7 @@ if query_role == "gm":
 default_key = query_role if query_role in ROLE_MAP else "minister"
 default_idx = role_keys.index(default_key)
 
+# 1. SELECT ROLE MATRIX FIRST
 selected_key = st.sidebar.selectbox(
     "Active User Role Matrix",
     role_keys,
@@ -314,9 +308,24 @@ selected_key = st.sidebar.selectbox(
     format_func=lambda k: ROLE_MAP[k]["label"],
 )
 
-floor_val = int(st.query_params.get("floor", 65))
+st.sidebar.markdown("---")
 
-# -----------------------------------------------------------------------------
+# 2. CONDITIONALLY RENDER DISPLAY MODE FOR EXECUTIVE TIERS ONLY
+EXECUTIVE_TIERS = ["minister", "ce", "rgm_north", "rgm_midland", "rgm_central", "rgm_south"]
+
+if selected_key in EXECUTIVE_TIERS:
+    view_mode = st.sidebar.radio(
+        "🖥️ Display Mode",
+        ["📺 Standard Command Glass", "📽️ Dual-Channel Boardroom Projection"],
+        index=0,
+    )
+else:
+    # Frontline roles lock automatically to Standard Command Glass
+    view_mode = "📺 Standard Command Glass"
+    st.sidebar.info("🔒 **Operational Execution Mode**\n\nDual-channel projection is restricted to executive governance roles.")
+
+floor_val = int(st.query_params.get("floor", 65))
+-----------------------------------------------------------------------------
 # 5. MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
 st.title("ACC Board & Ministerial Command Surface")
