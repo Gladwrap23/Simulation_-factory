@@ -59,7 +59,7 @@ st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 2. OPERATIONAL NAVIGATION BRIDGE (DIRECT TARGET: NORTHERN REGION)
+# 2. OPERATIONAL NAVIGATION BRIDGE (SINGLE CLEAN ENTRY)
 # -----------------------------------------------------------------------------
 st.markdown(
     """
@@ -71,16 +71,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-col_b1, col_b2 = st.columns([2, 1])
-with col_b1:
-    if st.button("🚀 Launch Operational Command Glass: Northern Region (RGM)", key="btn_nav_bridge_rgm_north", use_container_width=True):
-        st.query_params["role"] = "rgm_north"
-        st.switch_page("app.py")
-
-with col_b2:
-    if st.button("🏛️ Return to Ministerial Boardroom", key="btn_nav_bridge_minister", use_container_width=True):
-        st.query_params["role"] = "minister"
-        st.switch_page("app.py")
+if st.button("🏛️ Return to Ministerial Boardroom", key="btn_nav_bridge_minister", use_container_width=True):
+    st.session_state["sb_role_matrix_select"] = "minister"
+    st.switch_page("app.py")
 
 st.markdown("---")
 
