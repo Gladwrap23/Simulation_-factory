@@ -16,7 +16,17 @@ st.markdown(
     /* 🔒 HIDE TOP TOOLBAR, GITHUB ICON & STREAMLIT HEADER ENTIRELY */
     [data-testid="stHeader"] {
         display: none !important;
+    .block-container    /* 🔒 HIDE TOP TOOLBAR & PREVENT HEADING CLIPPING ON IPAD */
+    [data-testid="stHeader"] {
+        display: none !important;
     }
+    .block-container {
+        padding-top: 2.5rem !important;
+    }
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+}
     header {visibility: hidden;}
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -383,7 +393,15 @@ floor_val = int(st.query_params.get("floor", 65))
 # -----------------------------------------------------------------------------
 # 5. MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
-st.title("ACC Board & Ministerial Command Surface")
+# 🏛️ DYNAMIC SURFACE HEADER BASED ON ACTIVE ROLE TIER
+if selected_key == "minister":
+    st.title("🏛️ ACC Board & Ministerial Command Surface")
+elif selected_key == "ce":
+    st.title("⚡ ACC Executive Operational Command Glass")
+elif "rgm" in selected_key:
+    st.title("📍 ACC Regional Operational Command Glass")
+else:
+    st.title("💼 ACC Frontline Operational Command Glass")
 
 current_data = ROLE_MAP[selected_key]
 
