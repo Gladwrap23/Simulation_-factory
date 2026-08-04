@@ -351,23 +351,23 @@ def render_executive_card(label, main_val, subtext="", delta="", basis_tag="", i
     )
 
 # -----------------------------------------------------------------------------
------------------------------------------------------------------------------# -----------------------------------------------------------------------------
 # 4. SIDEBAR CONTROLS & SESSION STATE INITIALIZATION
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 role_keys = list(ROLE_MAP.keys())
 
-# Ensure default role exists if launching fresh
-if "sb_role_matrix_select" not in st.session_state:
-    st.session_state["sb_role_matrix_select"] = "minister"
-
-# Query parameter override (for direct URL links)
+# Check for incoming query parameter overrides (e.g. ?role=rgm_north)
 query_role = str(st.query_params.get("role", "")).lower()
 if query_role == "gm":
     query_role = "rgm_north"
+
 if query_role in ROLE_MAP:
     st.session_state["sb_role_matrix_select"] = query_role
+
+# Default session state initialization
+if "sb_role_matrix_select" not in st.session_state:
+    st.session_state["sb_role_matrix_select"] = "minister"
 
 selected_key = st.sidebar.selectbox(
     "Active User Role Matrix",
@@ -383,6 +383,7 @@ if selected_key == "minister":
 else:
     st.sidebar.info("⚡ **Operational Execution Glass Active**\n\nDirect capacity re-routing & intervention surface enabled.")
 
+# -----------------------------------------------------------------------------
 # 5. DYNAMIC TITLE & MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
 if selected_key == "minister":
@@ -420,7 +421,7 @@ if selected_key == "minister":
             unsafe_allow_html=True,
         )
         if st.button("📍 DRILL DOWN: Focus Command Glass on Northern Region (Auckland / Whangārei)", key="btn_drilldown_north"):
-            st.query_params["role"] = "rgm_north"
+            st.session_state["sb_role_matrix_select"] = "rgm_north"
             st.rerun()
 
     col_target, col_live = st.columns(2)
