@@ -80,6 +80,28 @@ st.markdown(
         border-bottom: 1px solid #7f1d1d;
         padding-bottom: 8px;
     }
+    
+    /* REGIONAL ATTRIBUTION CALLOUT BOX */
+    .attribution-box {
+        background-color: #1e1b4b;
+        border: 1.5px solid #6366f1;
+        border-radius: 8px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+    }
+    .attribution-title {
+        color: #a5b4fc;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+    .attribution-body {
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-top: 5px;
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -104,7 +126,8 @@ ROLE_MAP = {
         "live_dwell_val": "+$1.68M",
         "live_dwell_sub": "(Cumulative Dwell Exposure)",
         "action_badge": "STEWARDSHIP INTERVENTION REQUIRED",
-        "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows",
+        "drift_origin": "📍 Northern Region (Auckland / Whangārei Hubs) accounts for $320,000/wk (76%) of National Drift due to Orthopedic Assessment Backlog.",
+        "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows Across Northern Network",
         "options": [
             "Authorize Allied Health Assessment Delegation",
             "Reallocate $2.5M Emergency Capacity Burst Fund",
@@ -295,7 +318,7 @@ def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
     )
 
 # -----------------------------------------------------------------------------
-# 4. SIDEBAR CONTROLS & GOVERNANCE (ROLE-GATED)
+# 4. SIDEBAR CONTROLS & GOVERNANCE (RESTRICT PROJECTION TO MINISTER ONLY)
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
@@ -316,9 +339,8 @@ selected_key = st.sidebar.selectbox(
 
 st.sidebar.markdown("---")
 
-EXECUTIVE_TIERS = ["minister", "ce", "rgm_north", "rgm_midland", "rgm_central", "rgm_south"]
-
-if selected_key in EXECUTIVE_TIERS:
+# 🔒 DUAL-CHANNEL BOARDROOM PROJECTION RESTRICTED STRICTLY TO MINISTER/BOARD CHAIR
+if selected_key == "minister":
     view_mode = st.sidebar.radio(
         "🖥️ Display Mode",
         ["📺 Standard Command Glass", "📽️ Dual-Channel Boardroom Projection"],
@@ -326,7 +348,7 @@ if selected_key in EXECUTIVE_TIERS:
     )
 else:
     view_mode = "📺 Standard Command Glass"
-    st.sidebar.info("🔒 **Operational Execution Mode**\n\nDual-channel projection is restricted to executive governance roles.")
+    st.sidebar.info("🔒 **Operational Execution Mode**\n\nDual-channel boardroom projection is restricted to Minister & Board Governance.")
 
 floor_val = int(st.query_params.get("floor", 65))
 
@@ -347,6 +369,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# MODE A: STANDARD COMMAND GLASS (OPERATIONAL EXECUTION FOR ALL ROLES)
 if view_mode == "📺 Standard Command Glass":
     st.subheader(f"🎯 {current_data['title']}")
 
@@ -376,8 +399,21 @@ if view_mode == "📺 Standard Command Glass":
 
     st.error(f"**Root Cause:** {current_data['root_cause']}")
 
+# MODE B: DUAL-CHANNEL BOARDROOM PROJECTION MODE (MINISTER / BOARD ONLY)
 else:
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
+
+    # AUTOMATIC REGIONAL DRIFT ORIGIN ATTRIBUTION BANNER
+    if "drift_origin" in current_data:
+        st.markdown(
+            f"""
+            <div class="attribution-box">
+                <div class="attribution-title">⚡ AUTOMATIC REGIONAL DRIFT ATTRIBUTION</div>
+                <div class="attribution-body">{current_data['drift_origin']}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     
     col_target, col_live = st.columns(2)
 
