@@ -318,7 +318,7 @@ def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
     )
 
 # -----------------------------------------------------------------------------
-# 4. SIDEBAR CONTROLS & GOVERNANCE (RESTRICT PROJECTION TO MINISTER ONLY)
+# 4. SIDEBAR CONTROLS & GOVERNANCE
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
@@ -339,16 +339,10 @@ selected_key = st.sidebar.selectbox(
 
 st.sidebar.markdown("---")
 
-# 🔒 DUAL-CHANNEL BOARDROOM PROJECTION RESTRICTED STRICTLY TO MINISTER/BOARD CHAIR
 if selected_key == "minister":
-    view_mode = st.sidebar.radio(
-        "🖥️ Display Mode",
-        ["📺 Standard Command Glass", "📽️ Dual-Channel Boardroom Projection"],
-        index=0,
-    )
+    st.sidebar.info("📽️ **Boardroom Governance Surface Active**\n\nDual-channel comparative matrix enabled for Minister & Board Chair.")
 else:
-    view_mode = "📺 Standard Command Glass"
-    st.sidebar.info("🔒 **Operational Execution Mode**\n\nDual-channel boardroom projection is restricted to Minister & Board Governance.")
+    st.sidebar.info("⚡ **Operational Execution Glass Active**\n\nDirect capacity re-routing & intervention surface enabled.")
 
 floor_val = int(st.query_params.get("floor", 65))
 
@@ -369,41 +363,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# MODE A: STANDARD COMMAND GLASS (OPERATIONAL EXECUTION FOR ALL ROLES)
-if view_mode == "📺 Standard Command Glass":
-    st.subheader(f"🎯 {current_data['title']}")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        render_executive_card(
-            "📍 Target Location / Network",
-            current_data["location_val"],
-            current_data["location_sub"],
-        )
-    with col2:
-        render_executive_card(
-            "⚠️ Impact Drift Rate",
-            current_data["live_metric_val"],
-            current_data["live_metric_sub"],
-            delta=current_data["delta"],
-            is_live=True,
-        )
-    with col3:
-        render_executive_card(
-            "🛡️ Operational Status",
-            "ACTIVE DRIFT",
-            "(Unmitigated Baseline)",
-            delta=current_data.get("action_badge", "ACTION REQUIRED"),
-            is_live=True,
-        )
-
-    st.error(f"**Root Cause:** {current_data['root_cause']}")
-
-# MODE B: DUAL-CHANNEL BOARDROOM PROJECTION MODE (MINISTER / BOARD ONLY)
-else:
+# 🏛️ MINISTER & BOARD CHAIR ONLY: DUAL-CHANNEL BOARDROOM PROJECTION SURFACE
+if selected_key == "minister":
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
 
-    # AUTOMATIC REGIONAL DRIFT ORIGIN ATTRIBUTION BANNER
     if "drift_origin" in current_data:
         st.markdown(
             f"""
@@ -480,6 +443,36 @@ else:
         )
         
         st.error(f"**Identified Root Cause:** {current_data['root_cause']}")
+
+# ⚡ ALL OTHER ROLES (CE DOWN TO SUPPORT): STANDARD COMMAND GLASS
+else:
+    st.subheader(f"🎯 {current_data['title']}")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        render_executive_card(
+            "📍 Target Location / Network",
+            current_data["location_val"],
+            current_data["location_sub"],
+        )
+    with col2:
+        render_executive_card(
+            "⚠️ Impact Drift Rate",
+            current_data["live_metric_val"],
+            current_data["live_metric_sub"],
+            delta=current_data["delta"],
+            is_live=True,
+        )
+    with col3:
+        render_executive_card(
+            "🛡️ Operational Status",
+            "ACTIVE DRIFT",
+            "(Unmitigated Baseline)",
+            delta=current_data.get("action_badge", "ACTION REQUIRED"),
+            is_live=True,
+        )
+
+    st.error(f"**Root Cause:** {current_data['root_cause']}")
 
 # -----------------------------------------------------------------------------
 # 6. STRATEGIC INTERVENTIONS EXECUTION LAYER
