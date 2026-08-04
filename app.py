@@ -81,7 +81,132 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# -----------------------------------------------------------------------------# -----------------------------------------------------------------------------
+# 2. EXTENDED MONETARY DATA MAP (TARGET BASELINE VS LIVE OPERATING DRIFT)
 # -----------------------------------------------------------------------------
+ROLE_MAP = {
+    "minister": {
+        "label": "🏛️ Minister for ACC & Board Chair",
+        "title": "NATIONAL SCHEME FINANCIAL DRIFT (AUG 2026)",
+        "location": "National Scheme (All 4 Operational Regions)",
+        "target_metric": "$14.20M / week (Allocated Comp Budget)",
+        "live_metric": "$14.62M / week (Actual Comp Outflow)",
+        "delta": "+$420,000 / week Financial Drift",
+        "target_dwell": "$0 / claim (Mandated Policy Baseline)",
+        "live_dwell": "+$1.68M Cumulative Dwell Exposure",
+        "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows",
+        "options": [
+            "Authorize Allied Health Assessment Delegation",
+            "Reallocate $2.5M Emergency Capacity Burst Fund",
+        ],
+    },
+    "ce": {
+        "label": "⚡ Chief Executive (Wellington HQ)",
+        "title": "PRIMARY CAPACITY & FINANCIAL DRIFT",
+        "location": "Auckland Central & Waitematā Assessment Hubs",
+        "target_metric": "$2.10M / week (IME & Clinical Budget)",
+        "live_metric": "$2.82M / week (Actual Clinical Spend)",
+        "delta": "+$720,000 / week Panel Overrun",
+        "target_dwell": "$0 Stagnant Claim Penalty",
+        "live_dwell": "+$3.12M Unbudgeted Dwell Exposure",
+        "root_cause": "1,240 Stagnant IME Claims Driving Extended Income Replacement Outflows",
+        "options": [
+            "Re-route 300 Cases to Waikato/Bay of Plenty Panel",
+            "Trigger Fast-Track Telehealth Assessment Protocol",
+        ],
+    },
+    "rgm_north": {
+        "label": "📍 RGM - Northern Region (Auckland / Northland)",
+        "title": "NORTHERN REGION FINANCIAL DRIFT",
+        "location": "Waitematā & Whangārei Clinical Hubs",
+        "target_metric": "$4.50M / week (Regional Operations Target)",
+        "live_metric": "$4.98M / week (Actual Regional Spend)",
+        "delta": "+$480,000 / week Regional Breach",
+        "target_dwell": "$0 / claim (14-Day Target Baseline)",
+        "live_dwell": "+$1.15M Local Bottleneck Cost",
+        "root_cause": "512 Blocked Orthopedic Claims in Metro Auckland & Whangārei",
+        "options": [
+            "Deploy Mobile Specialist Assessment Unit to Whangārei",
+            "Authorize Private Hospital Panel Overflow Contract",
+        ],
+    },
+    "rgm_midland": {
+        "label": "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
+        "title": "MIDLAND TRIAGE & CAPACITY FINANCIAL DRIFT",
+        "location": "Hamilton Central & Tauranga Branches",
+        "target_metric": "$2.80M / week (Midland Target)",
+        "live_metric": "$3.04M / week (Actual Spend)",
+        "delta": "+$240,000 / week Triage Drift",
+        "target_dwell": "$0 / claim (48-Hour Triage Standard)",
+        "live_dwell": "+$410,000 Delayed Triage Exposure",
+        "root_cause": "184 Cases Awaiting Clinical Triage Due to Local Provider Deficit",
+        "options": [
+            "Issue Overflow Capacity Contract to Local Private Network",
+            "Approve Regional Case Manager Overtime Allowance",
+        ],
+    },
+    "rgm_central": {
+        "label": "📍 RGM - Central Region (Wellington / Lower NI)",
+        "title": "CENTRAL REGION SURGICAL DELAY COSTS",
+        "location": "Wellington HQ & Palmerston North Hub",
+        "target_metric": "$3.20M / week (Central Regional Budget)",
+        "live_metric": "$3.48M / week (Actual Regional Outflow)",
+        "delta": "+$280,000 / week Panel Lag Drift",
+        "target_dwell": "$0 / claim (10-Day Sign-off Baseline)",
+        "live_dwell": "+$620,000 Delayed Surgical Exposure",
+        "root_cause": "120 Claims Stalled on Surgical Panel Approval Signatures Exceeding 30 Days",
+        "options": [
+            "Delegate Fast-Track Sign-off Authority to Regional Lead",
+            "Re-route Claims to Hawke's Bay Assessment Panel",
+        ],
+    },
+    "rgm_south": {
+        "label": "📍 RGM - South Island (Canterbury / Otago / Southland)",
+        "title": "SOUTH ISLAND REHABILITATION SERVICE COSTS",
+        "location": "Christchurch & Dunedin Service Centres",
+        "target_metric": "$3.70M / week (South Island Budget Target)",
+        "live_metric": "$4.05M / week (Actual Outflow Spend)",
+        "delta": "+$350,000 / week Service Deficit",
+        "target_dwell": "$0 / claim (5-Day Placement Standard)",
+        "live_dwell": "+$890,000 Unplaced Client Exposure",
+        "root_cause": "290 Clients Awaiting Allied Health & Vocational Provider Placement",
+        "options": [
+            "Activate Emergency Allied Health Preferred Provider Network",
+            "Authorize Direct Vocational Grant Streamlining",
+        ],
+    },
+    "cm": {
+        "label": "💼 Case Manager / Frontline Operator",
+        "title": "INDIVIDUAL CLAIM FINANCIAL DRIFT (#ACC-2026-89421)",
+        "location": "Claim #ACC-2026-89421 (Northern Hub)",
+        "target_metric": "$850 / week (Standard Comp Baseline)",
+        "live_metric": "$2,100 / week (Extended Comp + Stagnant Fees)",
+        "delta": "+$1,250 / week Claim Financial Drift",
+        "target_dwell": "$0 Idle Penalty (5-Day Target)",
+        "live_dwell": "+$6,800 Accumulated Idle Dwell Cost",
+        "root_cause": "Claim Stalled 38 Days Awaiting Surgical Panel Sign-off Signature",
+        "options": [
+            "Override Triage Delay via Delegated Authority Band",
+            "Escalate Directly to Regional Clinical Lead",
+        ],
+    },
+    "support": {
+        "label": "📋 Support Staff & Intake Entry Point",
+        "title": "NATIONAL INTAKE GATEWAY LAG COSTS",
+        "location": "National Intake Gateway",
+        "target_metric": "$120,000 / week (Intake Processing Target)",
+        "live_metric": "$210,000 / week (Extended Processing Cost)",
+        "delta": "+$90,000 / week Intake Lag Drift",
+        "target_dwell": "$0 Verification Lag Penalty",
+        "live_dwell": "+$340,000 Downstream Delay Exposure",
+        "root_cause": "430 Uncoded Submissions Pending Initial ICD-10 Medical Verification",
+        "options": [
+            "Trigger Automated Provider Document Request",
+            "Apply Fast-Track Automated Coding Validation",
+        ],
+    },
+}
+
 # 2. EXTENDED DATA MAP (TARGET BASELINE VS LIVE OPERATING DRIFT)
 # -----------------------------------------------------------------------------
 ROLE_MAP = {
