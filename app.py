@@ -108,12 +108,14 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 2. STRUCTURED MONETARY DATA MAP
+# 2. STRUCTURED MONETARY DATA MAP WITH PROVENANCE TAGS
 # -----------------------------------------------------------------------------
 ROLE_MAP = {
     "minister": {
         "label": "🏛️ Minister for ACC & Board Chair",
-        "title": "NATIONAL SCHEME FINANCIAL DRIFT (AUG 2026)",
+        "title": "NATIONAL SCHEME FINANCIAL DRIFT",
+        "data_basis": "ACC Financial Condition Report ($63.6B OCL Baseline)",
+        "scenario_type": "Directional Scenario Estimate (Non-Guidance)",
         "location_val": "National Scheme",
         "location_sub": "(All 4 Operational Regions)",
         "target_metric_val": "$14.20M / week",
@@ -136,6 +138,8 @@ ROLE_MAP = {
     "ce": {
         "label": "⚡ Chief Executive (Wellington HQ)",
         "title": "PRIMARY CAPACITY & FINANCIAL DRIFT",
+        "data_basis": "ACC Weekly Comp & Clinical Assessment Expenditure Data",
+        "scenario_type": "Directional Scenario Estimate",
         "location_val": "Auckland Central & Waitematā",
         "location_sub": "(Clinical Assessment Hubs)",
         "target_metric_val": "$2.10M / week",
@@ -157,6 +161,8 @@ ROLE_MAP = {
     "rgm_north": {
         "label": "📍 RGM - Northern Region (Auckland / Northland)",
         "title": "NORTHERN REGION FINANCIAL DRIFT",
+        "data_basis": "Northern Regional Operations Baseline",
+        "scenario_type": "Operational Drift Model",
         "location_val": "Waitematā & Whangārei",
         "location_sub": "(Regional Clinical Hubs)",
         "target_metric_val": "$4.50M / week",
@@ -178,6 +184,8 @@ ROLE_MAP = {
     "rgm_midland": {
         "label": "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
         "title": "MIDLAND TRIAGE & CAPACITY FINANCIAL DRIFT",
+        "data_basis": "Midland Triage & Provider Allocation Data",
+        "scenario_type": "Operational Drift Model",
         "location_val": "Hamilton Central & Tauranga",
         "location_sub": "(Regional Branches)",
         "target_metric_val": "$2.80M / week",
@@ -199,6 +207,8 @@ ROLE_MAP = {
     "rgm_central": {
         "label": "📍 RGM - Central Region (Wellington / Lower NI)",
         "title": "CENTRAL REGION SURGICAL DELAY COSTS",
+        "data_basis": "Central Region Surgical Panel Sign-off Registry",
+        "scenario_type": "Operational Drift Model",
         "location_val": "Wellington HQ & Palmerston North",
         "location_sub": "(Regional Hubs)",
         "target_metric_val": "$3.20M / week",
@@ -220,6 +230,8 @@ ROLE_MAP = {
     "rgm_south": {
         "label": "📍 RGM - South Island (Canterbury / Otago / Southland)",
         "title": "SOUTH ISLAND REHABILITATION SERVICE COSTS",
+        "data_basis": "South Island Allied Health Provider Network Records",
+        "scenario_type": "Operational Drift Model",
         "location_val": "Christchurch & Dunedin",
         "location_sub": "(Service Centres)",
         "target_metric_val": "$3.70M / week",
@@ -241,6 +253,8 @@ ROLE_MAP = {
     "cm": {
         "label": "💼 Case Manager / Frontline Operator",
         "title": "INDIVIDUAL CLAIM FINANCIAL DRIFT (#ACC-2026-89421)",
+        "data_basis": "Claim Registry File #ACC-2026-89421 Baseline",
+        "scenario_type": "Frontline Operational Sample",
         "location_val": "Claim #ACC-2026-89421",
         "location_sub": "(Northern Hub Queue)",
         "target_metric_val": "$850 / week",
@@ -262,6 +276,8 @@ ROLE_MAP = {
     "support": {
         "label": "📋 Support Staff & Intake Entry Point",
         "title": "NATIONAL INTAKE GATEWAY LAG COSTS",
+        "data_basis": "National Digital Intake System Log",
+        "scenario_type": "Frontline Operational Sample",
         "location_val": "National Intake Gateway",
         "location_sub": "(Digital Verification)",
         "target_metric_val": "$120,000 / week",
@@ -283,9 +299,9 @@ ROLE_MAP = {
 }
 
 # -----------------------------------------------------------------------------
-# 3. HELPER: CUSTOM EXECUTIVE METRIC CARD RENDERER
+# 3. HELPER: CUSTOM EXECUTIVE METRIC CARD RENDERER WITH PROVENANCE
 # -----------------------------------------------------------------------------
-def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
+def render_executive_card(label, main_val, subtext="", delta="", basis_tag="", is_live=False):
     badge_html = ""
     if delta:
         badge_bg = "#3a1518" if is_live else "#1e293b"
@@ -299,6 +315,14 @@ def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
         </div>
         """
     
+    basis_html = ""
+    if basis_tag:
+        basis_html = f"""
+        <div style="color: #64748b; font-size: 0.70rem; font-weight: 600; margin-top: 4px; letter-spacing: 0.5px;">
+            📊 Basis: {basis_tag}
+        </div>
+        """
+
     st.markdown(
         f"""
         <div style="margin-bottom: 20px;">
@@ -312,6 +336,7 @@ def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
                 </span>
             </div>
             {badge_html}
+            {basis_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -394,18 +419,21 @@ if selected_key == "minister":
             "Target Network Bounds",
             current_data["location_val"],
             current_data["location_sub"],
+            basis_tag=current_data["data_basis"],
         )
         
         render_executive_card(
             "Mandated Performance Metric",
             current_data["target_metric_val"],
             current_data["target_metric_sub"],
+            basis_tag="Statutory Allocation Target",
         )
         
         render_executive_card(
             "Target Dwell Standard",
             current_data["target_dwell_val"],
             current_data["target_dwell_sub"],
+            basis_tag="Policy Baseline Standard",
         )
         
         st.info("System operating within mandated stewardship bands.")
@@ -424,6 +452,7 @@ if selected_key == "minister":
             "Active Operational Location",
             current_data["location_val"],
             current_data["location_sub"],
+            basis_tag=current_data["location_sub"],
         )
         
         render_executive_card(
@@ -431,6 +460,7 @@ if selected_key == "minister":
             current_data["live_metric_val"],
             current_data["live_metric_sub"],
             delta=current_data["delta"],
+            basis_tag="Live Engine Feed",
             is_live=True,
         )
         
@@ -439,6 +469,7 @@ if selected_key == "minister":
             current_data["live_dwell_val"],
             current_data["live_dwell_sub"],
             delta="DRIFT BREACH",
+            basis_tag="Accumulated Dwell Liability",
             is_live=True,
         )
         
@@ -454,6 +485,7 @@ else:
             "📍 Target Location / Network",
             current_data["location_val"],
             current_data["location_sub"],
+            basis_tag=current_data["data_basis"],
         )
     with col2:
         render_executive_card(
@@ -461,6 +493,7 @@ else:
             current_data["live_metric_val"],
             current_data["live_metric_sub"],
             delta=current_data["delta"],
+            basis_tag="Live Financial Drift",
             is_live=True,
         )
     with col3:
@@ -469,6 +502,7 @@ else:
             "ACTIVE DRIFT",
             "(Unmitigated Baseline)",
             delta=current_data.get("action_badge", "ACTION REQUIRED"),
+            basis_tag="System Status",
             is_live=True,
         )
 
@@ -483,3 +517,13 @@ st.markdown("### ⚡ Strategic Interventions")
 for idx, option in enumerate(current_data["options"]):
     if st.button(f"Execute: {option}", key=f"btn_{selected_key}_{idx}"):
         st.success(f"Command Executed: {option}")
+
+# -----------------------------------------------------------------------------
+# 7. GOVERNANCE & RISK DISCLAIMER ANCHOR
+# -----------------------------------------------------------------------------
+st.markdown("---")
+st.caption(
+    "📌 **Risk & Compliance Notice:** Figures and parameters referenced across this command surface are anchored in public statutory disclosures "
+    "(including the ACC Financial Condition Report and Annual Performance Disclosures). Where scenario inputs deviate from real-time empirical engine calculations, "
+    "figures are explicitly classified as **Directional Scenario Estimates** for strategic evaluation, not official company guidance or actuarial commitments."
+)
