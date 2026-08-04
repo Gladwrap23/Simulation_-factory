@@ -359,19 +359,23 @@ def render_executive_card(label, main_val, subtext="", delta="", basis_tag="", i
     )
 
 # -----------------------------------------------------------------------------
+-----------------------------------------------------------------------------# -----------------------------------------------------------------------------
 # 4. SIDEBAR CONTROLS & GOVERNANCE
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
 role_keys = list(ROLE_MAP.keys())
 
-# HANDLE QUERY PARAM OR DRILL-DOWN PARAMETER
-query_role = str(st.query_params.get("role", "minister")).lower()
+# ⚡ SYNC QUERY PARAMETERS DIRECTLY TO SESSION STATE (ELIMINATES 2-STEP BOUNCE)
+query_role = str(st.query_params.get("role", "")).lower()
 if query_role == "gm":
     query_role = "rgm_north"
 
-default_key = query_role if query_role in ROLE_MAP else "minister"
-default_idx = role_keys.index(default_key)
+if query_role in ROLE_MAP:
+    st.session_state["sb_role_matrix_select"] = query_role
+
+default_key = st.session_state.get("sb_role_matrix_select", "minister")
+default_idx = role_keys.index(default_key) if default_key in role_keys else 0
 
 selected_key = st.sidebar.selectbox(
     "Active User Role Matrix",
@@ -390,7 +394,6 @@ else:
 
 floor_val = int(st.query_params.get("floor", 65))
 
-# -----------------------------------------------------------------------------
 # 5. MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
 # 🏛️ DYNAMIC SURFACE HEADER BASED ON ACTIVE ROLE TIER
