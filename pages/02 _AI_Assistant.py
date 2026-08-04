@@ -1,5 +1,8 @@
 import streamlit as st
 
+# -----------------------------------------------------------------------------
+# 1. PAGE SETUP & ILLUMINATING CSS STYLES
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="ACC Synthesis & AI Briefing",
     page_icon="🧠",
@@ -7,11 +10,74 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
-st.markdown("---")
+st.markdown(
+    """
+<style>
+    /* 🔒 HIDE TOP TOOLBAR, GITHUB ICON & STREAMLIT HEADER ENTIRELY */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    .block-container {
+        padding-top: 2.5rem !important;
+    }
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    
+    /* 💡 ILLUMINATING EXECUTIVE CTA BRIDGE BANNER */
+    .exec-bridge-box {
+        background: linear-gradient(135deg, #062313 0%, #023819 100%);
+        border: 2px solid #00e676;
+        box-shadow: 0 0 22px rgba(0, 230, 118, 0.4);
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 25px;
+    }
+    .exec-bridge-title {
+        color: #00e676;
+        font-size: 0.85rem;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+    .exec-bridge-body {
+        color: #ffffff;
+        font-size: 1.18rem;
+        font-weight: 700;
+        margin-top: 6px;
+        line-height: 1.4;
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 # -----------------------------------------------------------------------------
-# 1. PUBLIC STATUTORY BASELINE CONTEXT (NOTEBOOKLM MODULE)
+# 2. PROMINENT EXECUTIVE NAVIGATION BRIDGE
+# -----------------------------------------------------------------------------
+st.markdown(
+    """
+    <div class="exec-bridge-box">
+        <div class="exec-bridge-title">⚡ EXECUTIVE NAVIGATION BRIDGE</div>
+        <div class="exec-bridge-body">Ready to inspect live regional financial drift and trigger capacity re-routing?</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+if st.button("🚀 LAUNCH OPERATIONAL COMMAND SURFACE (app.py) FOR DEEP DRIFT ANALYSIS", key="btn_exec_bridge_launch"):
+    st.switch_page("app.py")
+
+st.markdown("---")
+st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
+
+# -----------------------------------------------------------------------------
+# 3. PUBLIC STATUTORY BASELINE CONTEXT (NOTEBOOKLM MODULE)
 # -----------------------------------------------------------------------------
 st.subheader("📚 Statutory Baseline Knowledge Base (Public Disclosures)")
 
@@ -44,7 +110,7 @@ with col_info3:
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 2. INTERACTIVE SYNTHESIS & AVATAR BRIEFING PIPELINE
+# 4. INTERACTIVE SYNTHESIS & AVATAR BRIEFING PIPELINE
 # -----------------------------------------------------------------------------
 st.subheader("📽️ Executive Audio Briefing & Synthesis Surface")
 
@@ -87,7 +153,7 @@ with tab2:
     )
 
 # -----------------------------------------------------------------------------
-# 3. GOVERNANCE & RISK DISCLAIMER ANCHOR
+# 5. GOVERNANCE & RISK DISCLAIMER ANCHOR
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.caption(
