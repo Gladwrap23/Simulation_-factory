@@ -1,7 +1,7 @@
 import streamlit as st
 
 # -----------------------------------------------------------------------------
-# 1. PAGE SETUP & HIGH-CONTRAST PROJECTION CSS
+# 1. PAGE SETUP & EXECUTIVE PROJECTION STYLES
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="ACC Command Surface",
@@ -50,14 +50,14 @@ st.markdown(
         background-color: #0f172a;
         border: 1.5px solid #3b82f6;
         border-radius: 10px;
-        padding: 20px;
+        padding: 22px;
         margin-bottom: 15px;
     }
     .projection-live-panel {
         background-color: #1f1315;
         border: 1.5px solid #ef4444;
         border-radius: 10px;
-        padding: 20px;
+        padding: 22px;
         margin-bottom: 15px;
     }
     .panel-header-target {
@@ -66,7 +66,9 @@ st.markdown(
         font-weight: 800;
         letter-spacing: 1.5px;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #1e3a8a;
+        padding-bottom: 8px;
     }
     .panel-header-live {
         color: #f87171;
@@ -74,7 +76,9 @@ st.markdown(
         font-weight: 800;
         letter-spacing: 1.5px;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #7f1d1d;
+        padding-bottom: 8px;
     }
 </style>
 """,
@@ -82,18 +86,23 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 2. EXTENDED MONETARY DATA MAP (TARGET BASELINE VS LIVE OPERATING DRIFT)
+# 2. STRUCTURED MONETARY DATA MAP
 # -----------------------------------------------------------------------------
 ROLE_MAP = {
     "minister": {
         "label": "🏛️ Minister for ACC & Board Chair",
         "title": "NATIONAL SCHEME FINANCIAL DRIFT (AUG 2026)",
-        "location": "National Scheme (All 4 Operational Regions)",
-        "target_metric": "$14.20M / week (Allocated Comp Budget)",
-        "live_metric": "$14.62M / week (Actual Comp Outflow)",
+        "location_val": "National Scheme",
+        "location_sub": "(All 4 Operational Regions)",
+        "target_metric_val": "$14.20M / week",
+        "target_metric_sub": "(Allocated Comp Budget)",
+        "live_metric_val": "$14.62M / week",
+        "live_metric_sub": "(Actual Comp Outflow)",
         "delta": "+$420,000 / week Financial Drift",
-        "target_dwell": "$0 / claim (Mandated Policy Baseline)",
-        "live_dwell": "+$1.68M Cumulative Dwell Exposure",
+        "target_dwell_val": "$0 / claim",
+        "target_dwell_sub": "(Mandated Policy Baseline)",
+        "live_dwell_val": "+$1.68M",
+        "live_dwell_sub": "(Cumulative Dwell Exposure)",
         "root_cause": "Orthopedic Assessment Capacity Backlog Driving Extended Weekly Compensation Outflows",
         "options": [
             "Authorize Allied Health Assessment Delegation",
@@ -103,12 +112,17 @@ ROLE_MAP = {
     "ce": {
         "label": "⚡ Chief Executive (Wellington HQ)",
         "title": "PRIMARY CAPACITY & FINANCIAL DRIFT",
-        "location": "Auckland Central & Waitematā Assessment Hubs",
-        "target_metric": "$2.10M / week (IME & Clinical Budget)",
-        "live_metric": "$2.82M / week (Actual Clinical Spend)",
+        "location_val": "Auckland Central & Waitematā",
+        "location_sub": "(Clinical Assessment Hubs)",
+        "target_metric_val": "$2.10M / week",
+        "target_metric_sub": "(IME & Clinical Budget)",
+        "live_metric_val": "$2.82M / week",
+        "live_metric_sub": "(Actual Clinical Spend)",
         "delta": "+$720,000 / week Panel Overrun",
-        "target_dwell": "$0 Stagnant Claim Penalty",
-        "live_dwell": "+$3.12M Unbudgeted Dwell Exposure",
+        "target_dwell_val": "$0",
+        "target_dwell_sub": "(Stagnant Claim Target)",
+        "live_dwell_val": "+$3.12M",
+        "live_dwell_sub": "(Unbudgeted Dwell Exposure)",
         "root_cause": "1,240 Stagnant IME Claims Driving Extended Income Replacement Outflows",
         "options": [
             "Re-route 300 Cases to Waikato/Bay of Plenty Panel",
@@ -118,12 +132,17 @@ ROLE_MAP = {
     "rgm_north": {
         "label": "📍 RGM - Northern Region (Auckland / Northland)",
         "title": "NORTHERN REGION FINANCIAL DRIFT",
-        "location": "Waitematā & Whangārei Clinical Hubs",
-        "target_metric": "$4.50M / week (Regional Operations Target)",
-        "live_metric": "$4.98M / week (Actual Regional Spend)",
+        "location_val": "Waitematā & Whangārei",
+        "location_sub": "(Regional Clinical Hubs)",
+        "target_metric_val": "$4.50M / week",
+        "target_metric_sub": "(Regional Target)",
+        "live_metric_val": "$4.98M / week",
+        "live_metric_sub": "(Actual Regional Spend)",
         "delta": "+$480,000 / week Regional Breach",
-        "target_dwell": "$0 / claim (14-Day Target Baseline)",
-        "live_dwell": "+$1.15M Local Bottleneck Cost",
+        "target_dwell_val": "$0 / claim",
+        "target_dwell_sub": "(14-Day Baseline)",
+        "live_dwell_val": "+$1.15M",
+        "live_dwell_sub": "(Local Bottleneck Cost)",
         "root_cause": "512 Blocked Orthopedic Claims in Metro Auckland & Whangārei",
         "options": [
             "Deploy Mobile Specialist Assessment Unit to Whangārei",
@@ -133,12 +152,17 @@ ROLE_MAP = {
     "rgm_midland": {
         "label": "📍 RGM - Midland Region (Waikato / Bay of Plenty)",
         "title": "MIDLAND TRIAGE & CAPACITY FINANCIAL DRIFT",
-        "location": "Hamilton Central & Tauranga Branches",
-        "target_metric": "$2.80M / week (Midland Target)",
-        "live_metric": "$3.04M / week (Actual Spend)",
+        "location_val": "Hamilton Central & Tauranga",
+        "location_sub": "(Regional Branches)",
+        "target_metric_val": "$2.80M / week",
+        "target_metric_sub": "(Midland Budget Target)",
+        "live_metric_val": "$3.04M / week",
+        "live_metric_sub": "(Actual Spend Outflow)",
         "delta": "+$240,000 / week Triage Drift",
-        "target_dwell": "$0 / claim (48-Hour Triage Standard)",
-        "live_dwell": "+$410,000 Delayed Triage Exposure",
+        "target_dwell_val": "$0 / claim",
+        "target_dwell_sub": "(48-Hour Standard)",
+        "live_dwell_val": "+$410,000",
+        "live_dwell_sub": "(Delayed Triage Exposure)",
         "root_cause": "184 Cases Awaiting Clinical Triage Due to Local Provider Deficit",
         "options": [
             "Issue Overflow Capacity Contract to Local Private Network",
@@ -148,12 +172,17 @@ ROLE_MAP = {
     "rgm_central": {
         "label": "📍 RGM - Central Region (Wellington / Lower NI)",
         "title": "CENTRAL REGION SURGICAL DELAY COSTS",
-        "location": "Wellington HQ & Palmerston North Hub",
-        "target_metric": "$3.20M / week (Central Regional Budget)",
-        "live_metric": "$3.48M / week (Actual Regional Outflow)",
+        "location_val": "Wellington HQ & Palmerston North",
+        "location_sub": "(Regional Hubs)",
+        "target_metric_val": "$3.20M / week",
+        "target_metric_sub": "(Central Regional Budget)",
+        "live_metric_val": "$3.48M / week",
+        "live_metric_sub": "(Actual Outflow)",
         "delta": "+$280,000 / week Panel Lag Drift",
-        "target_dwell": "$0 / claim (10-Day Sign-off Baseline)",
-        "live_dwell": "+$620,000 Delayed Surgical Exposure",
+        "target_dwell_val": "$0 / claim",
+        "target_dwell_sub": "(10-Day Baseline)",
+        "live_dwell_val": "+$620,000",
+        "live_dwell_sub": "(Delayed Surgical Exposure)",
         "root_cause": "120 Claims Stalled on Surgical Panel Approval Signatures Exceeding 30 Days",
         "options": [
             "Delegate Fast-Track Sign-off Authority to Regional Lead",
@@ -163,12 +192,17 @@ ROLE_MAP = {
     "rgm_south": {
         "label": "📍 RGM - South Island (Canterbury / Otago / Southland)",
         "title": "SOUTH ISLAND REHABILITATION SERVICE COSTS",
-        "location": "Christchurch & Dunedin Service Centres",
-        "target_metric": "$3.70M / week (South Island Budget Target)",
-        "live_metric": "$4.05M / week (Actual Outflow Spend)",
+        "location_val": "Christchurch & Dunedin",
+        "location_sub": "(Service Centres)",
+        "target_metric_val": "$3.70M / week",
+        "target_metric_sub": "(South Island Budget)",
+        "live_metric_val": "$4.05M / week",
+        "live_metric_sub": "(Actual Spend)",
         "delta": "+$350,000 / week Service Deficit",
-        "target_dwell": "$0 / claim (5-Day Placement Standard)",
-        "live_dwell": "+$890,000 Unplaced Client Exposure",
+        "target_dwell_val": "$0 / claim",
+        "target_dwell_sub": "(5-Day Standard)",
+        "live_dwell_val": "+$890,000",
+        "live_dwell_sub": "(Unplaced Client Exposure)",
         "root_cause": "290 Clients Awaiting Allied Health & Vocational Provider Placement",
         "options": [
             "Activate Emergency Allied Health Preferred Provider Network",
@@ -178,12 +212,17 @@ ROLE_MAP = {
     "cm": {
         "label": "💼 Case Manager / Frontline Operator",
         "title": "INDIVIDUAL CLAIM FINANCIAL DRIFT (#ACC-2026-89421)",
-        "location": "Claim #ACC-2026-89421 (Northern Hub)",
-        "target_metric": "$850 / week (Standard Comp Baseline)",
-        "live_metric": "$2,100 / week (Extended Comp + Stagnant Fees)",
-        "delta": "+$1,250 / week Claim Financial Drift",
-        "target_dwell": "$0 Idle Penalty (5-Day Target)",
-        "live_dwell": "+$6,800 Accumulated Idle Dwell Cost",
+        "location_val": "Claim #ACC-2026-89421",
+        "location_sub": "(Northern Hub Queue)",
+        "target_metric_val": "$850 / week",
+        "target_metric_sub": "(Standard Comp Baseline)",
+        "live_metric_val": "$2,100 / week",
+        "live_metric_sub": "(Extended Comp + Fees)",
+        "delta": "+$1,250 / week Claim Drift",
+        "target_dwell_val": "$0",
+        "target_dwell_sub": "(Idle Penalty Target)",
+        "live_dwell_val": "+$6,800",
+        "live_dwell_sub": "(Accumulated Idle Dwell)",
         "root_cause": "Claim Stalled 38 Days Awaiting Surgical Panel Sign-off Signature",
         "options": [
             "Override Triage Delay via Delegated Authority Band",
@@ -193,12 +232,17 @@ ROLE_MAP = {
     "support": {
         "label": "📋 Support Staff & Intake Entry Point",
         "title": "NATIONAL INTAKE GATEWAY LAG COSTS",
-        "location": "National Intake Gateway",
-        "target_metric": "$120,000 / week (Intake Processing Target)",
-        "live_metric": "$210,000 / week (Extended Processing Cost)",
-        "delta": "+$90,000 / week Intake Lag Drift",
-        "target_dwell": "$0 Verification Lag Penalty",
-        "live_dwell": "+$340,000 Downstream Delay Exposure",
+        "location_val": "National Intake Gateway",
+        "location_sub": "(Digital Verification)",
+        "target_metric_val": "$120,000 / week",
+        "target_metric_sub": "(Processing Target)",
+        "live_metric_val": "$210,000 / week",
+        "live_metric_sub": "(Extended Cost)",
+        "delta": "+$90,000 / week Intake Lag",
+        "target_dwell_val": "$0",
+        "target_dwell_sub": "(Lag Penalty)",
+        "live_dwell_val": "+$340,000",
+        "live_dwell_sub": "(Downstream Delay Exposure)",
         "root_cause": "430 Uncoded Submissions Pending Initial ICD-10 Medical Verification",
         "options": [
             "Trigger Automated Provider Document Request",
@@ -208,7 +252,42 @@ ROLE_MAP = {
 }
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR CONTROLS & GOVERNANCE
+# 3. HELPER: CUSTOM EXECUTIVE METRIC CARD RENDERER
+# -----------------------------------------------------------------------------
+def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
+    badge_html = ""
+    if delta:
+        badge_bg = "#3a1518" if is_live else "#1e293b"
+        badge_color = "#ff4d4d" if is_live else "#60a5fa"
+        badge_border = "#7f1d1d" if is_live else "#2563eb"
+        badge_html = f"""
+        <div style="margin-top: 6px;">
+            <span style="background-color: {badge_bg}; color: {badge_color}; border: 1px solid {badge_border}; font-size: 0.78rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-block;">
+                ▲ {delta}
+            </span>
+        </div>
+        """
+    
+    st.markdown(
+        f"""
+        <div style="margin-bottom: 20px;">
+            <div style="color: #94a3b8; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;">
+                {label}
+            </div>
+            <div style="font-size: 1.55rem; font-weight: 800; color: #ffffff; line-height: 1.25;">
+                {main_val} 
+                <span style="font-size: 0.88rem; font-weight: 400; color: #94a3b8; margin-left: 3px;">
+                    {subtext}
+                </span>
+            </div>
+            {badge_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+# -----------------------------------------------------------------------------
+# 4. SIDEBAR CONTROLS & GOVERNANCE
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
 
@@ -238,7 +317,7 @@ selected_key = st.sidebar.selectbox(
 floor_val = int(st.query_params.get("floor", 65))
 
 # -----------------------------------------------------------------------------
-# 4. MAIN COMMAND SURFACE RENDERER
+# 5. MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
 st.title("ACC Board & Ministerial Command Surface")
 
@@ -254,33 +333,47 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# -----------------------------------------------------------------------------
+# MODE A: STANDARD COMMAND GLASS
+# -----------------------------------------------------------------------------
 if view_mode == "📺 Standard Command Glass":
     st.subheader(f"🎯 {current_data['title']}")
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric(
-            label="📍 Target Location / Network",
-            value=current_data["location"],
+        render_executive_card(
+            "📍 Target Location / Network",
+            current_data["location_val"],
+            current_data["location_sub"],
         )
     with col2:
-        st.metric(
-            label="⚠️ Impact Drift Rate",
-            value=current_data["live_metric"],
+        render_executive_card(
+            "⚠️ Impact Drift Rate",
+            current_data["live_metric_val"],
+            current_data["live_metric_sub"],
+            delta=current_data["delta"],
+            is_live=True,
         )
     with col3:
-        st.metric(
-            label="🛡️ Operational Status",
-            value="ACTIVE DRIFT",
+        render_executive_card(
+            "🛡️ Operational Status",
+            "ACTIVE DRIFT",
+            "(Unmitigated Baseline)",
+            delta="ACTION REQUIRED",
+            is_live=True,
         )
 
     st.error(f"**Root Cause:** {current_data['root_cause']}")
 
+# -----------------------------------------------------------------------------
+# MODE B: DUAL-CHANNEL BOARDROOM PROJECTION MODE
+# -----------------------------------------------------------------------------
 else:
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
     
     col_target, col_live = st.columns(2)
 
+    # LEFT PANEL: TARGET BASELINE
     with col_target:
         st.markdown(
             """
@@ -290,20 +383,28 @@ else:
             """,
             unsafe_allow_html=True,
         )
-        st.metric(
-            label="Target Network Bounds",
-            value=current_data["location"],
+        
+        render_executive_card(
+            "Target Network Bounds",
+            current_data["location_val"],
+            current_data["location_sub"],
         )
-        st.metric(
-            label="Mandated Performance Metric",
-            value=current_data["target_metric"],
+        
+        render_executive_card(
+            "Mandated Performance Metric",
+            current_data["target_metric_val"],
+            current_data["target_metric_sub"],
         )
-        st.metric(
-            label="Target Dwell Standard",
-            value=current_data["target_dwell"],
+        
+        render_executive_card(
+            "Target Dwell Standard",
+            current_data["target_dwell_val"],
+            current_data["target_dwell_sub"],
         )
+        
         st.info("System operating within mandated stewardship bands.")
 
+    # RIGHT PANEL: LIVE OPERATING STATE
     with col_live:
         st.markdown(
             """
@@ -313,24 +414,34 @@ else:
             """,
             unsafe_allow_html=True,
         )
-        st.metric(
-            label="Active Operational Location",
-            value=current_data["location"],
+        
+        render_executive_card(
+            "Active Operational Location",
+            current_data["location_val"],
+            current_data["location_sub"],
         )
-        st.metric(
-            label="Live Drift Rate",
-            value=current_data["live_metric"],
+        
+        render_executive_card(
+            "Live Drift Rate",
+            current_data["live_metric_val"],
+            current_data["live_metric_sub"],
             delta=current_data["delta"],
-            delta_color="inverse",
+            is_live=True,
         )
-        st.metric(
-            label="Live Dwell Bottleneck",
-            value=current_data["live_dwell"],
+        
+        render_executive_card(
+            "Live Dwell Bottleneck",
+            current_data["live_dwell_val"],
+            current_data["live_dwell_sub"],
             delta="DRIFT BREACH",
-            delta_color="inverse",
+            is_live=True,
         )
+        
         st.error(f"**Identified Root Cause:** {current_data['root_cause']}")
 
+# -----------------------------------------------------------------------------
+# 6. STRATEGIC INTERVENTIONS EXECUTION LAYER
+# -----------------------------------------------------------------------------
 st.markdown("---")
 st.markdown("### ⚡ Strategic Interventions")
 
