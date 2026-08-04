@@ -287,7 +287,6 @@ def render_executive_card(label, main_val, subtext="", delta="", is_live=False):
     )
 
 # -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 # 4. SIDEBAR CONTROLS & GOVERNANCE (ROLE-GATED)
 # -----------------------------------------------------------------------------
 st.sidebar.title("AAT SCHEME GOVERNANCE")
@@ -320,12 +319,13 @@ if selected_key in EXECUTIVE_TIERS:
         index=0,
     )
 else:
-    # Frontline roles lock automatically to Standard Command Glass
+    # Operational roles lock automatically to Standard Command Glass
     view_mode = "📺 Standard Command Glass"
     st.sidebar.info("🔒 **Operational Execution Mode**\n\nDual-channel projection is restricted to executive governance roles.")
 
 floor_val = int(st.query_params.get("floor", 65))
------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 # 5. MAIN COMMAND SURFACE RENDERER
 # -----------------------------------------------------------------------------
 st.title("ACC Board & Ministerial Command Surface")
@@ -342,9 +342,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# -----------------------------------------------------------------------------
 # MODE A: STANDARD COMMAND GLASS
-# -----------------------------------------------------------------------------
 if view_mode == "📺 Standard Command Glass":
     st.subheader(f"🎯 {current_data['title']}")
 
@@ -374,15 +372,12 @@ if view_mode == "📺 Standard Command Glass":
 
     st.error(f"**Root Cause:** {current_data['root_cause']}")
 
-# -----------------------------------------------------------------------------
 # MODE B: DUAL-CHANNEL BOARDROOM PROJECTION MODE
-# -----------------------------------------------------------------------------
 else:
     st.markdown(f"### 🎯 SYNCHRONIZED BOARDROOM MATRIX: {current_data['title']}")
     
     col_target, col_live = st.columns(2)
 
-    # LEFT PANEL: TARGET BASELINE
     with col_target:
         st.markdown(
             """
@@ -413,7 +408,6 @@ else:
         
         st.info("System operating within mandated stewardship bands.")
 
-    # RIGHT PANEL: LIVE OPERATING STATE
     with col_live:
         st.markdown(
             """
