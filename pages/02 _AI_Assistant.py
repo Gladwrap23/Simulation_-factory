@@ -13,7 +13,7 @@ st.set_page_config(
 st.markdown(
     """
 <style>
-    /* 🔒 HIDE TOP TOOLBAR & STREAMLIT HEADER */
+    /* 🔒 HIDE TOP TOOLBAR & PREVENT HEADING CLIPPING */
     [data-testid="stHeader"] {
         display: none !important;
     }
@@ -46,9 +46,10 @@ st.markdown(
     }
     .bridge-subtitle {
         color: #ffffff;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 600;
         margin-top: 6px;
+        line-height: 1.4;
     }
 </style>
 """,
@@ -65,7 +66,9 @@ st.markdown(
     """
     <div class="bridge-box">
         <div class="bridge-title">⚡ DIRECT OPERATIONAL BRIDGE</div>
-        <div class="bridge-subtitle">Synthesis pinpoints 76% ($320k/wk) of national drift concentrated in Northern Region (Auckland / Whangārei).</div>
+        <div class="bridge-subtitle">
+            Synthesis reconciles 100% of National Drift ($420k/wk): Northern $320k/wk (76.2%), Midland $40k/wk (9.5%), Central $30k/wk (7.1%), South Island incl. Nelson $30k/wk (7.1%).
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -118,17 +121,18 @@ st.subheader("📽️ Executive Audio Briefing & Synthesis Surface")
 tab1, tab2 = st.tabs(["🎙️ NotebookLM Knowledge Synthesis", "🎥 Executive Avatar Briefing"])
 
 with tab1:
-    st.info("💡 **Ground-Truth Source:** Ingested 2025 ACC Financial Condition Report & Treasury Fiscal Review Disclosures.")
+    st.info("💡 **Ground-Truth Source:** Ingested 2025 ACC Financial Condition Report & Live Telemetry Feed.")
     st.text_area(
         "NotebookLM Query Engine",
-        value="Summarize the primary drivers of the $1.209B influenceable OCL strain and how weekly compensation dwell times affect overall scheme solvency.",
+        value="Summarize how the $420k weekly operational drift across Northern, Midland, Central, and South Island (Nelson) feeds directly into the $1.209B influenceable OCL strain.",
         height=100,
         key="notebook_query_text_area",
     )
     if st.button("Generate Actuarial Briefing Note", key="btn_generate_actuarial_briefing"):
         st.success(
             "**Key Finding:** Weekly compensation claim dwell times account for over 60% of influenceable OCL strain. "
-            "Re-routing orthopedic assessment capacity in metro Auckland directly mitigates extended weekly payout liabilities."
+            "76.2% of current financial drift is concentrated in Northern Region orthopedic backlogs ($320k/wk), "
+            "with remaining drift distributed across Midland ($40k/wk), Central ($30k/wk), and South Island/Nelson ($30k/wk)."
         )
 
 with tab2:
@@ -137,7 +141,7 @@ with tab2:
         <div style="background-color: #111827; border: 1.5px solid #3b82f6; border-radius: 10px; padding: 30px; text-align: center;">
             <h4 style="color: #60a5fa; margin-bottom: 10px;">🎥 Executive AI Avatar Stream</h4>
             <p style="color: #9ca3af; font-size: 0.9rem;">
-                Interactive video synthesis feed connected to live scheme metrics.
+                Interactive video synthesis feed connected to live scheme metrics and regional telemetry.
             </p>
             <div style="background-color: #1f2937; border-radius: 8px; padding: 40px; margin-top: 15px; color: #6b7280;">
                 [ Live Interactive Avatar Iframe Workspace ]
