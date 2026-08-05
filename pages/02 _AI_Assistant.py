@@ -27,27 +27,8 @@ st.markdown(
     .stApp {
         background-color: #0e1117;
         color: #ffffff;
-    }
+    st.page_link("app.py", ...)
 
-    .bridge-box {
-        background: linear-gradient(135deg, #062313 0%, #0f172a 100%);
-        border: 2px solid #00e676;
-        border-radius: 10px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
-    }
-    .bridge-title {
-        color: #00e676;
-        font-size: 0.85rem;
-        font-weight: 800;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-    }
-    .bridge-subtitle {
-        color: #ffffff;
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin-top: 6px;
         line-height: 1.4;
     }
 </style>
