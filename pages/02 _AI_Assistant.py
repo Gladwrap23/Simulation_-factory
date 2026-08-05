@@ -29,7 +29,6 @@ st.markdown(
         color: #ffffff;
     }
 
-    /* DIRECT NAVIGATION BRIDGE BANNER */
     .bridge-box {
         background: linear-gradient(135deg, #062313 0%, #0f172a 100%);
         border: 2px solid #00e676;
@@ -60,7 +59,7 @@ st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 2. OPERATIONAL NAVIGATION BRIDGE (SINGLE CLEAN ENTRY)
+# 2. OPERATIONAL NAVIGATION BRIDGE
 # -----------------------------------------------------------------------------
 st.markdown(
     """
@@ -74,11 +73,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-if st.button("🏛️ Return to Ministerial Boardroom", key="btn_nav_bridge_minister", use_container_width=True):
+def reset_to_minister():
     st.session_state["sb_role_matrix_select"] = "minister"
-    st.switch_page("app.py")
+
+st.button("🏛️ Return to Ministerial Boardroom", key="btn_nav_bridge_minister", use_container_width=True, on_click=reset_to_minister)
 
 st.markdown("---")
+
+# Check if query originated from Case Manager or Support Staff paste action
+default_query = st.session_state.get(
+    "pending_ai_query",
+    "Summarize how the $420k weekly operational drift across Northern, Midland, Central, and South Island (Nelson) feeds directly into the $1.209B influenceable OCL strain."
+)
 
 # -----------------------------------------------------------------------------
 # 3. PUBLIC STATUTORY BASELINE CONTEXT (NOTEBOOKLM MODULE)
@@ -122,18 +128,35 @@ tab1, tab2 = st.tabs(["🎙️ NotebookLM Knowledge Synthesis", "🎥 Executive 
 
 with tab1:
     st.info("💡 **Ground-Truth Source:** Ingested 2025 ACC Financial Condition Report & Live Telemetry Feed.")
-    st.text_area(
-        "NotebookLM Query Engine",
-        value="Summarize how the $420k weekly operational drift across Northern, Midland, Central, and South Island (Nelson) feeds directly into the $1.209B influenceable OCL strain.",
-        height=100,
+    
+    user_query = st.text_area(
+        "NotebookLM Query Engine (Paste Stoppage Logs or Clinical Files Here)",
+        value=default_query,
+        height=110,
         key="notebook_query_text_area",
     )
-    if st.button("Generate Actuarial Briefing Note", key="btn_generate_actuarial_briefing"):
-        st.success(
-            "**Key Finding:** Weekly compensation claim dwell times account for over 60% of influenceable OCL strain. "
-            "76.2% of current financial drift is concentrated in Northern Region orthopedic backlogs ($320k/wk), "
-            "with remaining drift distributed across Midland ($40k/wk), Central ($30k/wk), and South Island/Nelson ($30k/wk)."
-        )
+    
+    if st.button("Generate Resolution Action Plan", key="btn_generate_actuarial_briefing"):
+        if "430 Unstructured GP" in user_query:
+            st.success(
+                "**📋 Support Staff Action Plan:**\n"
+                "1. **Auto-Parse Unstructured Docs:** Trigger automated OCR parser to extract ICD-10 medical codes.\n"
+                "2. **Batch Document Reconciliation:** Auto-match 180 mismatched provider invoices against regional tariff tables.\n"
+                "3. **Clear Intake Lag:** Reduces average gateway lag from 4.2 days down to under 2 hours, saving $90,000/week."
+            )
+        elif "Exceeds $5,000 Authority" in user_query or "Claim #" in user_query:
+            st.success(
+                "**💼 Case Manager Action Plan:**\n"
+                "1. **Delegation Override:** Apply temporary $5,000 authority override band under emergency operational policy.\n"
+                "2. **Direct Clinical Sign-Off:** Re-route treatment plan to Northern Clinical Lead for immediate 24-hr sign-off.\n"
+                "3. **Dwell Mitigation:** Unblocks 38-day idle stoppage, halting weekly compensation drift ($1,250/week saved)."
+            )
+        else:
+            st.success(
+                "** Key Finding:** Weekly compensation claim dwell times account for over 60% of influenceable OCL strain. "
+                "76.2% of current financial drift is concentrated in Northern Region orthopedic backlogs ($320k/wk), "
+                "with remaining drift distributed across Midland ($40k/wk), Central ($30k/wk), and South Island/Nelson ($30k/wk)."
+            )
 
 with tab2:
     st.markdown(
