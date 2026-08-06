@@ -55,7 +55,7 @@ st.info(
 )
 
 # Active Routing Callback
-def reset_to_minister():
+
     st.session_state["sb_role_matrix_select"] = "minister"
     st.switch_page("app.py")
 
