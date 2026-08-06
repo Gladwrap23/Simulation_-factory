@@ -59,7 +59,7 @@ st.button(
 )
 
 st.markdown("---")
------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 # 3. PUBLIC STATUTORY BASELINE CONTEXT (NOTEBOOKLM MODULE)
 # -----------------------------------------------------------------------------
 st.subheader("📚 Statutory Baseline Knowledge Base (Public Disclosures)")
