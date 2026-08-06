@@ -103,7 +103,7 @@ st.markdown("---")
 # -----------------------------------------------------------------------------
 # 4. INTERACTIVE SYNTHESIS & AVATAR BRIEFING PIPELINE
 # -----------------------------------------------------------------------------
-st.subheader("📽️ Executive Audio Briefing & Synthesis Surface")
+st.subheader("📽️ Executive Audio Briefing & Synthesis Surface")value=st.session_state.get("pending_ai_query", ""),
 
 tab1, tab2 = st.tabs(["🎙️ NotebookLM Knowledge Synthesis", "🎥 Executive Avatar Briefing"])
 
