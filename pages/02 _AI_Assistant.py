@@ -24,10 +24,40 @@ st.markdown(
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    .stApp {
+    .    .stApp {
         background-color: #0e1117;
         color: #ffffff;
-    st.page_link("app.py", ...)
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
+st.markdown("---")
+
+
+# ==========================================
+# 2. OPERATIONAL NAVIGATION BRIDGE
+# ==========================================
+
+# Direct operational status banner
+st.info(
+    "⚡ **DIRECT OPERATIONAL BRIDGE**  \n"
+    "Synthesis reconciles 100% of National Drift ($420k/wk): "
+    "Northern $320k/wk (76.2%), Midland $40k/wk (9.5%), Central $30k/wk (7.1%), "
+    "South Island incl. Nelson $30k/wk (7.1%)."
+)
+
+# Executable Python navigation (OUTSIDE of any style string)
+st.page_link(
+    "app.py",  # Ensure this points to your root entry file name
+    label="Return to Ministerial Boardroom",
+    icon="🏛️",
+    use_container_width=True
+)
+stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    
 
         line-height: 1.4;
     }
@@ -42,12 +72,7 @@ st.markdown("---")
 # -----------------------------------------------------------------------------
 # 2. OPERATIONAL NAVIGATION BRIDGE
 # -----------------------------------------------------------------------------
-st.markdown(
-    """
-    <div class="bridge-box">
-        <div class="bridge-title">⚡ DIRECT OPERATIONAL BRIDGE</div>
-        <div class="bridge-subtitle">
-            Synthesis reconciles 100% of National Drift ($420k/wk): Northern $320k/wk (76.2%), Midland $40k/wk (9.5%), Central $30k/wk (7.1%), South Island incl. Nelson $30k/wk (7.1%).
+
         </div>
     </div>
     """,
