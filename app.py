@@ -104,7 +104,8 @@ with tab1:
     
     user_query = st.text_area(
         "NotebookLM Query Engine (Paste Stoppage Logs or Clinical Files Here)",
-        value=default_query,
+value=st.session_state.get("pending_ai_query", ""),
+
         height=110,
         key="notebook_query_text_area",
     )
