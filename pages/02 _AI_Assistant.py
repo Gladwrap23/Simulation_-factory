@@ -28,7 +28,6 @@ st.markdown(
         background-color: #0e1117;
         color: #ffffff;
     }
-    </style>
 """, unsafe_allow_html=True)
 
 st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
@@ -43,12 +42,7 @@ st.markdown("---")
 st.info(
     "⚡ **DIRECT OPERATIONAL BRIDGE**  \n"
     "Synthesis reconciles 100% of National Drift ($420k/wk): "
-    "Northern $320k/wk (76.2%), Midland $40k/wk (9.5%), Central $30k/wk (7.1%), "
-    "South Island incl. Nelson $30k/wk (7.1%)."
-)
-
-# Executable Python navigation (OUTSIDE of any style string)
-st.page_link(
+ 
     "app.py",  # Ensure this points to your root entry file name
     label="Return to Ministerial Boardroom",
     icon="🏛️",
