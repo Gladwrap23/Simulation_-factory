@@ -64,19 +64,22 @@ st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
+# ==========================================
 # 2. OPERATIONAL NAVIGATION BRIDGE
-# -----------------------------------------------------------------------------
-
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# ==========================================
 
 def reset_to_minister():
     st.session_state["sb_role_matrix_select"] = "minister"
+    st.switch_page("app.py")  # <-- THIS triggers actual page navigation back to root!
 
-st.button("🏛️ Return to Ministerial Boardroom", key="btn_nav_bridge_minister", use_container_width=True, on_click=reset_to_minister)
+st.button(
+    "🏛️ Return to Ministerial Boardroom",
+    key="btn_nav_bridge_minister",
+    use_container_width=True,
+    on_click=reset_to_minister
+)
+
+st.markdown("---")
 
 st.markdown("---")
 
