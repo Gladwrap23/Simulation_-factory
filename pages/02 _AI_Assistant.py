@@ -40,46 +40,6 @@ st.markdown("---")
 
 # Direct operational status banner
 st.info(
-    "⚡ **DIRECT OPERATIONAL BRIDGE**  \n"
-    "Synthesis reconciles 100% of National Drift ($420k/wk): "
- 
-    "app.py",  # Ensure this points to your root entry file name
-    label="Return to Ministerial Boardroom",
-    icon="🏛️",
-    use_container_width=True
-)
-stApp {
-        background-color: #0e1117;
-        color: #ffffff;
-    
-
-        line-height: 1.4;
-    }
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
-st.markdown("---")
-
-# -----------------------------------------------------------------------------
-# ==========================================
-# 2. OPERATIONAL NAVIGATION BRIDGE
-# ==========================================
-
-def reset_to_minister():
-    st.session_state["sb_role_matrix_select"] = "minister"
-    st.switch_page("app.py")  # <-- THIS triggers actual page navigation back to root!
-
-st.button(
-    "🏛️ Return to Ministerial Boardroom",
-    key="btn_nav_bridge_minister",
-    use_container_width=True,
-    on_click=reset_to_minister
-)
-
-st.markdown("---")
 
 st.markdown("---")
 
