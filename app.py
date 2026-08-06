@@ -54,17 +54,11 @@ st.info(
     "South Island incl. Nelson $30k/wk (7.1%)."
 )
 
-# Active Routing Callback
-def reset_to_minister():
+# Active Routing
+if st.button("🏛️ Return to Ministerial Boardroom", key="btn_nav_bridge_minister", use_container_width=True):
     st.session_state["sb_role_matrix_select"] = "minister"
     st.switch_page("app.py")
 
-st.button(
-    "🏛️ Return to Ministerial Boardroom",
-    key="btn_nav_bridge_minister",
-    use_container_width=True,
-    on_click=reset_to_minister
-)
 
 
 st.markdown("---")
