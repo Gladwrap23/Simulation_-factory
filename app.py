@@ -55,7 +55,7 @@ st.info(
 )
 
 # Active Routing Callback
-
+def reset_to_minister():
     st.session_state["sb_role_matrix_select"] = "minister"
     st.switch_page("app.py")
 
@@ -65,6 +65,7 @@ st.button(
     use_container_width=True,
     on_click=reset_to_minister
 )
+
 
 st.markdown("---")
 #-----------------------------------------------------------------------------
