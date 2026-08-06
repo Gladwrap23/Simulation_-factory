@@ -10,6 +10,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# Initialize AI Query variable
+if "pending_ai_query" not in st.session_state:
+    st.session_state["pending_ai_query"] = (
+        "Summarize how the $420k weekly operational drift across Northern, Midland, "
+        "Central, and South Island (Nelson) feeds directly into the $1.209B influenceable OCL strain."
+    )
+
+default_query = st.session_state["pending_ai_query"]
 
 # Custom CSS for header & theme
 st.markdown("""
