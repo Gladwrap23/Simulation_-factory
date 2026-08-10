@@ -27,8 +27,11 @@ from adaptive_drift_learner import (
 from config import (
     DEFAULT_SECTOR_KEY,
     EXECUTIVE_THEME,
+    PRIVATE_CHROME,
     get_sector_book,
+    layer2_operations,
     sector_book_options,
+    structural_mirror_cards,
 )
 
 # Live Gemini / Colab notebook surface (replace with project notebook URL when ready).
@@ -196,6 +199,124 @@ def render_operational_bridge_banner(sector: dict[str, Any]) -> None:
     )
 
 
+def render_structural_mirror_kpis(sector: dict[str, Any]) -> None:
+    """Render Structural Mirror Standard: 3 KPI cards + Card 3 Layer 2 drill-down."""
+    cards = structural_mirror_cards(sector)
+    layer2 = layer2_operations(sector)
+    sector_code = sanitize_plain_text(sector.get("code", "SECTOR"), max_chars=32)
+
+    st.markdown(
+        f"<p style='color:{EXECUTIVE_THEME['muted']}; font-size:0.9rem; "
+        f"margin-bottom:0.35rem;'>"
+        "Structural Mirror Standard · Macro Valuation · Velocity Friction · "
+        "Actionable Controllable Loss</p>",
+        unsafe_allow_html=True,
+    )
+
+    kpi_cols = st.columns(3)
+    for col, card in zip(kpi_cols, cards):
+        with col:
+            st.markdown(build_metric_card_html(card), unsafe_allow_html=True)
+
+    # Card 3 control: Inspect Layer 2 Operational Drift
+    with kpi_cols[min(2, max(len(cards) - 1, 0))]:
+        inspect_label = sanitize_for_markdown(
+            layer2.get("inspect_label", "Inspect Layer 2 Operational Drift"),
+            max_chars=80,
+        )
+        inspect_layer2 = st.toggle(
+            inspect_label,
+            value=bool(st.session_state.get(f"layer2_open_{sector_code}", False)),
+            key=f"layer2_toggle_{sector_code}",
+        )
+        st.session_state[f"layer2_open_{sector_code}"] = inspect_layer2
+
+    if not st.session_state.get(f"layer2_open_{sector_code}", False):
+        return
+
+    render_layer2_operations_view(sector, layer2)
+
+
+def render_layer2_operations_view(
+    sector: dict[str, Any], layer2: dict[str, Any]
+) -> None:
+    """Expandable Layer 2 site/queue breakdown + Layer 3 clearance trigger."""
+    sector_code = sanitize_plain_text(sector.get("code", "SECTOR"), max_chars=32)
+    title = sanitize_for_markdown(layer2.get("title", "Layer 2 Operations View"), max_chars=80)
+    caption = sanitize_for_markdown(layer2.get("caption", ""), max_chars=200)
+
+    with st.expander(title, expanded=True):
+        st.caption(caption)
+        rows = list(layer2.get("site_queue_metrics", []))
+        if rows:
+            table_rows = []
+            for row in rows:
+                table_rows.append(
+                    {
+                        "Site": sanitize_for_markdown(row.get("site", ""), max_chars=64),
+                        "Queue": sanitize_for_markdown(row.get("queue", ""), max_chars=64),
+                        "Backlog": sanitize_for_markdown(
+                            row.get("backlog", ""), max_chars=32
+                        ),
+                        "Delay": sanitize_for_markdown(
+                            row.get("delay_days", ""), max_chars=24
+                        ),
+                        "Burn": sanitize_for_markdown(row.get("burn", ""), max_chars=32),
+                        "Ground-Truth Basis": sanitize_for_markdown(
+                            row.get("ground_truth_basis", ""), max_chars=120
+                        ),
+                    }
+                )
+            st.dataframe(
+                pd.DataFrame(table_rows),
+                use_container_width=True,
+                hide_index=True,
+            )
+            metric_cols = st.columns(min(len(rows), 4))
+            for col, row in zip(metric_cols, rows):
+                with col:
+                    site_card = {
+                        "label": row.get("site", "Site"),
+                        "big_value": row.get("burn", "-"),
+                        "ground_truth_basis": (
+                            f"{row.get('queue', 'Queue')} · "
+                            f"{row.get('delay_days', '-')} · "
+                            f"{row.get('ground_truth_basis', '')}"
+                        ),
+                        "value_class": "metric-value-crimson",
+                    }
+                    st.markdown(
+                        build_metric_card_html(site_card), unsafe_allow_html=True
+                    )
+
+        action_label = sanitize_for_markdown(
+            layer2.get("layer3_action_label", "Trigger Layer 3 Actionable Clearance"),
+            max_chars=80,
+        )
+        if st.button(
+            action_label,
+            type="primary",
+            use_container_width=True,
+            key=f"layer3_clearance_{sector_code}",
+        ):
+            receipt = sanitize_for_markdown(
+                layer2.get(
+                    "layer3_clearance_receipt",
+                    "Layer 3 Actionable Clearance staged.",
+                ),
+                max_chars=240,
+            )
+            st.session_state[f"layer3_receipt_{sector_code}"] = receipt
+            st.success(receipt)
+        elif st.session_state.get(f"layer3_receipt_{sector_code}"):
+            st.info(
+                sanitize_for_markdown(
+                    st.session_state[f"layer3_receipt_{sector_code}"],
+                    max_chars=240,
+                )
+            )
+
+
 # 1. High-Contrast Sovereign Dark Theme Configuration
 st.set_page_config(
     layout="wide",
@@ -205,67 +326,68 @@ st.set_page_config(
 )
 
 # Private Chrome Removal — hide native Streamlit chrome for iPad Board presentations
-st.markdown(
-    """
-    <style>
-    /* ============================================================
-       PRIVATE CHROME REMOVAL (CSS Injection)
-       Hide default Streamlit UI so the surface reads 100% custom
-       on iPad (header, Share, hamburger, GitHub link, footer).
-       ============================================================ */
-    #MainMenu,
-    #MainMenu > button,
-    header[data-testid="stHeader"],
-    header.stAppHeader,
-    [data-testid="stHeader"],
-    [data-testid="stToolbar"],
-    [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"],
-    [data-testid="stAppDeployButton"],
-    [data-testid="stDeployButton"],
-    [data-testid="baseButton-header"],
-    [data-testid="baseButton-headerNoPadding"],
-    [data-testid="stBaseButton-header"],
-    [data-testid="stBaseButton-headerNoPadding"],
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"],
-    [data-testid="stSidebarCollapseButton"],
-    [data-testid="stExpandSidebarButton"],
-    [data-testid="stToolbarActions"],
-    [data-testid="manage-app-button"],
-    .stDeployButton,
-    .stAppToolbar,
-    .stDecoration,
-    footer,
-    footer[data-testid="stFooter"],
-    .stApp > footer,
-    a[href*="github.com/streamlit"],
-    a[href*="streamlit.io"],
-    a[href*="share.streamlit.io"],
-    div[data-testid="stToolbar"] button,
-    section[data-testid="stSidebar"] [data-testid="stLogoSpacer"] {
-      display: none !important;
-      visibility: hidden !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      max-height: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-      overflow: hidden !important;
-    }
+if PRIVATE_CHROME.get("enabled", True):
+    st.markdown(
+        """
+        <style>
+        /* ============================================================
+           PRIVATE CHROME REMOVAL (CSS Injection)
+           Hide default Streamlit UI so the surface reads 100% custom
+           on iPad (header, Share, hamburger, GitHub link, footer).
+           ============================================================ */
+        #MainMenu,
+        #MainMenu > button,
+        header[data-testid="stHeader"],
+        header.stAppHeader,
+        [data-testid="stHeader"],
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"],
+        [data-testid="stAppDeployButton"],
+        [data-testid="stDeployButton"],
+        [data-testid="baseButton-header"],
+        [data-testid="baseButton-headerNoPadding"],
+        [data-testid="stBaseButton-header"],
+        [data-testid="stBaseButton-headerNoPadding"],
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="collapsedControl"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stExpandSidebarButton"],
+        [data-testid="stToolbarActions"],
+        [data-testid="manage-app-button"],
+        .stDeployButton,
+        .stAppToolbar,
+        .stDecoration,
+        footer,
+        footer[data-testid="stFooter"],
+        .stApp > footer,
+        a[href*="github.com/streamlit"],
+        a[href*="streamlit.io"],
+        a[href*="share.streamlit.io"],
+        div[data-testid="stToolbar"] button,
+        section[data-testid="stSidebar"] [data-testid="stLogoSpacer"] {
+          display: none !important;
+          visibility: hidden !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          max-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          overflow: hidden !important;
+        }
 
-    /* Reclaim the top chrome strip for a full-bleed executive canvas */
-    .stApp,
-    [data-testid="stAppViewContainer"],
-    .main .block-container {
-      padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+        /* Reclaim the top chrome strip for a full-bleed executive canvas */
+        .stApp,
+        [data-testid="stAppViewContainer"],
+        .main .block-container {
+          padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ==========================================
 # 🔒 EXECUTIVE SECURITY GATE
@@ -2049,20 +2171,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ==============================================================================
 if view_selection == GLOBAL_VIEW:
 
-    portfolio_cols = st.columns(4)
-    for col, card in zip(portfolio_cols, active_sector["portfolio_metrics"]):
-        with col:
-            st.markdown(build_metric_card_html(card), unsafe_allow_html=True)
-    with portfolio_cols[1]:
-        if st.button(
-            "Jump: Critical Drift → Audit View",
-            key="metric_jump_critical_drift",
-            use_container_width=True,
-            type="primary",
-            on_click=jump_to_audit_sector,
-            kwargs={"status": "CRITICAL DRIFT", "cohort": True},
-        ):
-            pass
+    render_structural_mirror_kpis(active_sector)
 
     st.markdown("#### Anatomical Cohort Jump Pads")
     anatomy_vals = sorted(df_master_ledger["Anatomy Target"].astype(str).unique().tolist())

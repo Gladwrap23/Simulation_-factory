@@ -12,6 +12,25 @@ class MetricCard(TypedDict, total=False):
     sequence_tag: str
     value_class: str
     border_accent: str
+    card_id: str
+
+
+class Layer2SiteMetric(TypedDict):
+    site: str
+    queue: str
+    backlog: str
+    delay_days: str
+    burn: str
+    ground_truth_basis: str
+
+
+class Layer2Operations(TypedDict):
+    title: str
+    caption: str
+    inspect_label: str
+    site_queue_metrics: list[Layer2SiteMetric]
+    layer3_action_label: str
+    layer3_clearance_receipt: str
 
 
 class SectorHeader(TypedDict):
@@ -35,9 +54,22 @@ class SectorBook(TypedDict):
     header: SectorHeader
     operational_bridge: OperationalBridge
     bridge_metrics: list[MetricCard]
-    portfolio_metrics: list[MetricCard]
+    # Structural Mirror Standard: exactly 3 KPI cards
+    structural_mirror: list[MetricCard]
+    layer2_operations: Layer2Operations
     sidebar_caption: str
     critical_subjects: int
+
+
+# Structural Mirror card IDs (order is fixed across all sector books)
+MIRROR_CARD_MACRO = "macro_valuation"
+MIRROR_CARD_VELOCITY = "velocity_friction"
+MIRROR_CARD_ACTIONABLE = "actionable_controllable_loss"
+STRUCTURAL_MIRROR_CARD_IDS: tuple[str, str, str] = (
+    MIRROR_CARD_MACRO,
+    MIRROR_CARD_VELOCITY,
+    MIRROR_CARD_ACTIONABLE,
+)
 
 
 # Executive dark theme - CursorRules standard
@@ -144,32 +176,78 @@ ACC_BASELINE: SectorBook = {
             "value_class": "metric-value-silver",
         },
     ],
-    "portfolio_metrics": [
+    "structural_mirror": [
         {
-            "label": "Total Scheme Claims",
-            "big_value": "142 Active",
-            "ground_truth_basis": "Regional Portfolio Intake",
+            "card_id": "macro_valuation",
+            "label": "Macro Valuation",
+            "big_value": "NZD $4.82B",
+            "ground_truth_basis": "Total capital baseline at risk - scheme reserve book",
             "value_class": "metric-value-silver",
         },
         {
-            "label": "Critical Pathway Drift",
-            "big_value": "18 Subjects",
-            "ground_truth_basis": "Click to jump -> Audit View",
+            "card_id": "velocity_friction",
+            "label": "Velocity Friction",
+            "big_value": "NZD $186M / yr",
+            "ground_truth_basis": "Annual financial cost of timeline drift",
             "value_class": "metric-value-crimson",
         },
         {
-            "label": "Performance Index",
-            "big_value": "85.9%",
-            "ground_truth_basis": "Baseline Trajectory Alignment",
-            "value_class": "metric-value-green",
-        },
-        {
-            "label": "Ministerial Expectations Match",
-            "big_value": "88%",
-            "ground_truth_basis": "Trajectory Alignment",
-            "value_class": "metric-value-silver",
+            "card_id": "actionable_controllable_loss",
+            "label": "Actionable Controllable Loss",
+            "big_value": "NZD $41.6M",
+            "ground_truth_basis": (
+                "Cumulative burn from administrative / site delays"
+            ),
+            "value_class": "metric-value-crimson",
         },
     ],
+    "layer2_operations": {
+        "title": "Layer 2 Operations View",
+        "caption": (
+            "Site / queue breakdown of actionable controllable loss "
+            "(administrative and site delay burn)"
+        ),
+        "inspect_label": "Inspect Layer 2 Operational Drift",
+        "site_queue_metrics": [
+            {
+                "site": "Auckland Clinical Hub",
+                "queue": "MRI / Imaging Gate",
+                "backlog": "64 claims",
+                "delay_days": "18.4 d",
+                "burn": "NZD $12.1M",
+                "ground_truth_basis": "HNZ-MED-4402 harvest · imaging SLA breach",
+            },
+            {
+                "site": "Wellington Casework Pod",
+                "queue": "MSD Light-Duty Match",
+                "backlog": "29 claims",
+                "delay_days": "11.2 d",
+                "burn": "NZD $8.7M",
+                "ground_truth_basis": "MSD-AX-7710 · placement latency",
+            },
+            {
+                "site": "Christchurch Ortho Corridor",
+                "queue": "Surgical Scheduling",
+                "backlog": "41 claims",
+                "delay_days": "22.0 d",
+                "burn": "NZD $14.4M",
+                "ground_truth_basis": "Theatre slot friction · long-tail reserve",
+            },
+            {
+                "site": "National Income Desk",
+                "queue": "IRD Wage Ledger Sync",
+                "backlog": "17 claims",
+                "delay_days": "6.5 d",
+                "burn": "NZD $6.4M",
+                "ground_truth_basis": "IRD-2026-99X4 · compensation lag",
+            },
+        ],
+        "layer3_action_label": "Trigger Layer 3 Actionable Clearance",
+        "layer3_clearance_receipt": (
+            "Layer 3 Actionable Clearance staged - site delay packets sealed "
+            "for Cabinet / Scheme Director execution deck."
+        ),
+    },
     "sidebar_caption": (
         "Localized NZ ACC / IRD / MSD / Health NZ / Cabinet Minister AoG grids"
     ),
@@ -258,32 +336,78 @@ GRID_PJM: SectorBook = {
             "value_class": "metric-value-silver",
         },
     ],
-    "portfolio_metrics": [
+    "structural_mirror": [
         {
-            "label": "Total Interconnection Queue",
-            "big_value": "312 Active",
-            "ground_truth_basis": "Regional Queue Intake",
+            "card_id": "macro_valuation",
+            "label": "Macro Valuation",
+            "big_value": "USD $9.4B",
+            "ground_truth_basis": "Total capital baseline at risk - interconnection book",
             "value_class": "metric-value-silver",
         },
         {
-            "label": "Critical Congestion Drift",
-            "big_value": "24 Nodes",
-            "ground_truth_basis": "Click to jump -> Audit View",
+            "card_id": "velocity_friction",
+            "label": "Velocity Friction",
+            "big_value": "USD $312M / yr",
+            "ground_truth_basis": "Annual financial cost of congestion timeline drift",
             "value_class": "metric-value-crimson",
         },
         {
-            "label": "Grid Performance Index",
-            "big_value": "91.2%",
-            "ground_truth_basis": "Baseline Reliability Alignment",
-            "value_class": "metric-value-green",
-        },
-        {
-            "label": "Board Expectations Match",
-            "big_value": "86%",
-            "ground_truth_basis": "Capacity Trajectory Alignment",
-            "value_class": "metric-value-silver",
+            "card_id": "actionable_controllable_loss",
+            "label": "Actionable Controllable Loss",
+            "big_value": "USD $67.8M",
+            "ground_truth_basis": (
+                "Cumulative burn from queue / study administrative delays"
+            ),
+            "value_class": "metric-value-crimson",
         },
     ],
+    "layer2_operations": {
+        "title": "Layer 2 Operations View",
+        "caption": (
+            "Site / queue breakdown of actionable controllable loss "
+            "(study and interconnection administrative delays)"
+        ),
+        "inspect_label": "Inspect Layer 2 Operational Drift",
+        "site_queue_metrics": [
+            {
+                "site": "MAAC Study Cluster",
+                "queue": "System Impact Study",
+                "backlog": "88 projects",
+                "delay_days": "142 d",
+                "burn": "USD $24.6M",
+                "ground_truth_basis": "GEN-PJM-4402 · SIS cycle overrun",
+            },
+            {
+                "site": "DOM Zone Transmission",
+                "queue": "Network Upgrade Cost Allocation",
+                "backlog": "36 projects",
+                "delay_days": "97 d",
+                "burn": "USD $18.2M",
+                "ground_truth_basis": "TX-PJM-7710 · CIA friction",
+            },
+            {
+                "site": "Western Load Pocket",
+                "queue": "Facility Study Gate",
+                "backlog": "52 projects",
+                "delay_days": "118 d",
+                "burn": "USD $15.9M",
+                "ground_truth_basis": "LD-PJM-99X4 · facility study backlog",
+            },
+            {
+                "site": "Market Ops Desk",
+                "queue": "Capacity Auction Settlement",
+                "backlog": "21 filings",
+                "delay_days": "34 d",
+                "burn": "USD $9.1M",
+                "ground_truth_basis": "MKT-PJM-2026 · settlement lag",
+            },
+        ],
+        "layer3_action_label": "Trigger Layer 3 Actionable Clearance",
+        "layer3_clearance_receipt": (
+            "Layer 3 Actionable Clearance staged - queue delay packets sealed "
+            "for PJM Board / IMM escalation deck."
+        ),
+    },
     "sidebar_caption": (
         "Localized PJM / Generation / Transmission / Load / Market Ops RTO grids"
     ),
@@ -371,32 +495,78 @@ BIOPHARMA_CLARITY: SectorBook = {
             "value_class": "metric-value-silver",
         },
     ],
-    "portfolio_metrics": [
+    "structural_mirror": [
         {
-            "label": "Total Active Lots",
-            "big_value": "87 Active",
-            "ground_truth_basis": "Manufacturing Portfolio Intake",
+            "card_id": "macro_valuation",
+            "label": "Macro Valuation",
+            "big_value": "USD $2.15B",
+            "ground_truth_basis": "Total capital baseline at risk - GMP release book",
             "value_class": "metric-value-silver",
         },
         {
-            "label": "Critical Batch Drift",
-            "big_value": "11 Lots",
-            "ground_truth_basis": "Click to jump -> Audit View",
+            "card_id": "velocity_friction",
+            "label": "Velocity Friction",
+            "big_value": "USD $94M / yr",
+            "ground_truth_basis": "Annual financial cost of batch timeline drift",
             "value_class": "metric-value-crimson",
         },
         {
-            "label": "Release Performance Index",
-            "big_value": "94.1%",
-            "ground_truth_basis": "Baseline GMP Alignment",
-            "value_class": "metric-value-green",
-        },
-        {
-            "label": "Board Expectations Match",
-            "big_value": "92%",
-            "ground_truth_basis": "CMC Trajectory Alignment",
-            "value_class": "metric-value-silver",
+            "card_id": "actionable_controllable_loss",
+            "label": "Actionable Controllable Loss",
+            "big_value": "USD $28.3M",
+            "ground_truth_basis": (
+                "Cumulative burn from QC / site administrative delays"
+            ),
+            "value_class": "metric-value-crimson",
         },
     ],
+    "layer2_operations": {
+        "title": "Layer 2 Operations View",
+        "caption": (
+            "Site / queue breakdown of actionable controllable loss "
+            "(QC release and site administrative delays)"
+        ),
+        "inspect_label": "Inspect Layer 2 Operational Drift",
+        "site_queue_metrics": [
+            {
+                "site": "Suite B Fill / Finish",
+                "queue": "Batch Record Review",
+                "backlog": "14 lots",
+                "delay_days": "9.6 d",
+                "burn": "USD $8.4M",
+                "ground_truth_basis": "MFG-BIO-4402 · BRR cycle time",
+            },
+            {
+                "site": "QC Central Lab",
+                "queue": "Assay Release Gate",
+                "backlog": "22 lots",
+                "delay_days": "12.1 d",
+                "burn": "USD $9.7M",
+                "ground_truth_basis": "QC-BIO-7710 · assay queue friction",
+            },
+            {
+                "site": "Cold-Chain Node West",
+                "queue": "Excursion Disposition",
+                "backlog": "7 lots",
+                "delay_days": "5.4 d",
+                "burn": "USD $4.2M",
+                "ground_truth_basis": "SC-BIO-99X4 · temperature excursion hold",
+            },
+            {
+                "site": "Regulatory Ops",
+                "queue": "CAPA / Variation Packet",
+                "backlog": "11 filings",
+                "delay_days": "16.8 d",
+                "burn": "USD $6.0M",
+                "ground_truth_basis": "REG-BIO-2026 · submission latency",
+            },
+        ],
+        "layer3_action_label": "Trigger Layer 3 Actionable Clearance",
+        "layer3_clearance_receipt": (
+            "Layer 3 Actionable Clearance staged - site delay packets sealed "
+            "for QA Board / CAPA execution deck."
+        ),
+    },
     "sidebar_caption": (
         "Localized Biopharma / Manufacturing / QC / Supply Chain / Regulatory grids"
     ),
@@ -423,6 +593,25 @@ def get_sector_book(key: str) -> SectorBook:
 def sector_book_options() -> list[str]:
     """Ordered sector book keys for sidebar selectbox."""
     return list(SECTOR_BOOKS.keys())
+
+
+def structural_mirror_cards(sector: SectorBook | dict[str, Any]) -> list[MetricCard]:
+    """Return the three Structural Mirror KPI cards in canonical order."""
+    cards = list(sector.get("structural_mirror", []))
+    by_id = {str(card.get("card_id", "")): card for card in cards}
+    ordered: list[MetricCard] = []
+    for card_id in STRUCTURAL_MIRROR_CARD_IDS:
+        if card_id in by_id:
+            ordered.append(by_id[card_id])
+    # Fall back to first three if IDs are missing (defensive).
+    if len(ordered) < 3:
+        ordered = cards[:3]
+    return ordered
+
+
+def layer2_operations(sector: SectorBook | dict[str, Any]) -> Layer2Operations:
+    """Return Layer 2 Operations View config for the active sector."""
+    return sector["layer2_operations"]  # type: ignore[return-value]
 
 
 # --- Kinetic Lab tenant config (University Operations Vault) ---
