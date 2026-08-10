@@ -117,17 +117,17 @@ def build_metric_card_html(card: dict[str, Any]) -> str:
         border_style = f' style="border-left:3px solid {accent};"'
     sequence_html = ""
     if card.get("sequence_tag"):
-        sequence_html = (
-            f'<div class="metric-sequence-tag">'
-            f'{sanitize_html_text(card["sequence_tag"], max_chars=32)}</div>'
-        )
+        safe_tag = sanitize_html_text(card["sequence_tag"], max_chars=32)
+        sequence_html = f'<div class="metric-sequence-tag">{safe_tag}</div>'
+    safe_label = sanitize_html_text(card["label"], max_chars=80)
+    safe_value = sanitize_html_text(card["big_value"], max_chars=64)
+    safe_basis = sanitize_html_text(card["ground_truth_basis"], max_chars=120)
     return (
         f'<div class="metric-box"{border_style}>'
         f"{sequence_html}"
-        f'<div class="metric-label">{sanitize_html_text(card["label"], max_chars=80)}</div>'
-        f'<div class="{value_class}">{sanitize_html_text(card["big_value"], max_chars=64)}</div>'
-        f'<div class="metric-subtext">'
-        f'{sanitize_html_text(card["ground_truth_basis"], max_chars=120)}</div>'
+        f'<div class="metric-label">{safe_label}</div>'
+        f'<div class="{value_class}">{safe_value}</div>'
+        f'<div class="metric-subtext">{safe_basis}</div>'
         f"</div>"
     )
 
@@ -169,23 +169,26 @@ def render_operational_bridge_banner(sector: dict[str, Any]) -> None:
         return
     bridge = sector["operational_bridge"]
     headline = bridge["banner_headline"].format(critical_subjects=critical)
+    safe_badge = sanitize_html_text(bridge["banner_badge"], max_chars=64)
+    safe_title = sanitize_html_text(bridge["banner_title"], max_chars=120)
+    safe_headline = sanitize_html_text(headline, max_chars=120)
+    safe_footer = sanitize_html_text(bridge["banner_footer"], max_chars=200)
+    muted_color = EXECUTIVE_THEME["muted"]
     st.markdown(
         f"""
         <div class="ministerial-banner">
-          <div class="ministerial-badge">
-            {sanitize_html_text(bridge["banner_badge"], max_chars=64)}
-          </div>
+          <div class="ministerial-badge">{safe_badge}</div>
           <div style="color:#ffffff; font-size:1.15rem; font-weight:700;
                       margin-bottom:0.35rem;">
-            {sanitize_html_text(bridge["banner_title"], max_chars=120)}
+            {safe_title}
           </div>
           <div style="color:#e2e8f0; font-size:1rem; font-weight:600;
                       margin-bottom:0.55rem;">
-            {sanitize_html_text(headline, max_chars=120)}
+            {safe_headline}
           </div>
-          <div style="color:{EXECUTIVE_THEME["muted"]}; font-size:0.85rem;
+          <div style="color:{muted_color}; font-size:0.85rem;
                       font-family:monospace;">
-            {sanitize_html_text(bridge["banner_footer"], max_chars=200)}
+            {safe_footer}
           </div>
         </div>
         """,
