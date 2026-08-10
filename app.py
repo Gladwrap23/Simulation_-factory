@@ -24,6 +24,12 @@ from adaptive_drift_learner import (
     effective_drift_threshold,
     learner,
 )
+from config import (
+    DEFAULT_SECTOR_KEY,
+    EXECUTIVE_THEME,
+    get_sector_book,
+    sector_book_options,
+)
 
 # Live Gemini / Colab notebook surface (replace with project notebook URL when ready).
 GEMINI_NOTEBOOK_URL = "https://colab.research.google.com/"
@@ -82,6 +88,109 @@ def bound_intake_frame(frame: pd.DataFrame) -> pd.DataFrame:
     if len(frame) > MAX_INTAKE_ROWS:
         return frame.iloc[:MAX_INTAKE_ROWS].copy()
     return frame
+
+
+def render_sector_header(sector: dict[str, Any]) -> None:
+    """Render sector title and statutory subtitle from config.py."""
+    header = sector["header"]
+    st.title(header["title"])
+    st.markdown(
+        f"<p class='statutory-meta'>"
+        f"{sanitize_html_text(header['statutory_meta'], max_chars=280)}</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<p style='color:{EXECUTIVE_THEME['muted']}; margin-top:-6px;'>"
+        f"{sanitize_html_text(header['subtitle'], max_chars=320)}</p>",
+        unsafe_allow_html=True,
+    )
+
+
+def build_metric_card_html(card: dict[str, Any]) -> str:
+    """Build a standardized metric card: Label, Big Value, Ground-Truth Basis."""
+    value_class = sanitize_html_text(
+        card.get("value_class", "metric-value-silver"), max_chars=48
+    )
+    border_style = ""
+    if card.get("border_accent"):
+        accent = sanitize_html_text(card["border_accent"], max_chars=16)
+        border_style = f' style="border-left:3px solid {accent};"'
+    sequence_html = ""
+    if card.get("sequence_tag"):
+        sequence_html = (
+            f'<div class="metric-sequence-tag">'
+            f'{sanitize_html_text(card["sequence_tag"], max_chars=32)}</div>'
+        )
+    return (
+        f'<div class="metric-box"{border_style}>'
+        f"{sequence_html}"
+        f'<div class="metric-label">{sanitize_html_text(card["label"], max_chars=80)}</div>'
+        f'<div class="{value_class}">{sanitize_html_text(card["big_value"], max_chars=64)}</div>'
+        f'<div class="metric-subtext">'
+        f'{sanitize_html_text(card["ground_truth_basis"], max_chars=120)}</div>'
+        f"</div>"
+    )
+
+
+def render_metric_card_row(cards: list[dict[str, Any]], *, columns: int = 4) -> None:
+    """Render a row of metric cards from sector book configuration."""
+    metric_cols = st.columns(columns)
+    for col, card in zip(metric_cols, cards):
+        with col:
+            st.markdown(build_metric_card_html(card), unsafe_allow_html=True)
+
+
+def render_operational_bridge(sector: dict[str, Any]) -> None:
+    """Render operational bridge caption, metric row, and channel receipts."""
+    bridge = sector["operational_bridge"]
+    st.markdown(
+        f"<p style='color:{EXECUTIVE_THEME['muted']}; font-size:0.9rem; "
+        f"margin-bottom:0.35rem;'>"
+        f"{sanitize_html_text(bridge['section_caption'], max_chars=200)}</p>",
+        unsafe_allow_html=True,
+    )
+    render_metric_card_row(sector["bridge_metrics"])
+    with st.expander(
+        "All-of-Government channel hashes & harvest receipts", expanded=False
+    ):
+        receipt_cols = st.columns(max(len(bridge["channel_receipts"]), 1))
+        for col, receipt in zip(receipt_cols, bridge["channel_receipts"]):
+            col.markdown(
+                f"**{sanitize_for_markdown(receipt['agency'], max_chars=48)}** · "
+                f"{sanitize_for_markdown(receipt['status'], max_chars=48)} · "
+                f"{sanitize_for_markdown(receipt['receipt'], max_chars=120)}"
+            )
+
+
+def render_operational_bridge_banner(sector: dict[str, Any]) -> None:
+    """Render sector escalation banner when critical subjects exceed zero."""
+    critical = int(sector.get("critical_subjects", 0))
+    if critical <= 0:
+        return
+    bridge = sector["operational_bridge"]
+    headline = bridge["banner_headline"].format(critical_subjects=critical)
+    st.markdown(
+        f"""
+        <div class="ministerial-banner">
+          <div class="ministerial-badge">
+            {sanitize_html_text(bridge["banner_badge"], max_chars=64)}
+          </div>
+          <div style="color:#ffffff; font-size:1.15rem; font-weight:700;
+                      margin-bottom:0.35rem;">
+            {sanitize_html_text(bridge["banner_title"], max_chars=120)}
+          </div>
+          <div style="color:#e2e8f0; font-size:1rem; font-weight:600;
+                      margin-bottom:0.55rem;">
+            {sanitize_html_text(headline, max_chars=120)}
+          </div>
+          <div style="color:{EXECUTIVE_THEME["muted"]}; font-size:0.85rem;
+                      font-family:monospace;">
+            {sanitize_html_text(bridge["banner_footer"], max_chars=200)}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # 1. High-Contrast Sovereign Dark Theme Configuration
@@ -151,21 +260,21 @@ st.markdown(
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
     .reportview-container, .main {
-        background-color: #0c1017;
+        background-color: #0b0f17;
         color: #f8fafc;
         font-family: "IBM Plex Sans", sans-serif;
     }
     .stApp {
-        background-color: #0c1017;
+        background-color: #0b0f17;
     }
     h1, h2, h3, h4 {
         color: #ffffff !important;
         font-weight: 700 !important;
     }
-    /* Industry Metric Card Highlights — matched to US Risk viewport */
+    /* Industry Metric Card Highlights — executive dark viewport */
     .metric-box {
-        background-color: #161b22;
-        border: 1px solid #30363d;
+        background-color: #131d2a;
+        border: 1px solid #1e293b;
         border-radius: 6px;
         padding: 1.5rem;
         margin-bottom: 1rem;
@@ -185,7 +294,7 @@ st.markdown(
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.12em;
-        color: #38bdf8;
+        color: #2f81f7;
         margin-bottom: 0.35rem;
     }
     .metric-value-silver {
@@ -268,8 +377,8 @@ st.markdown(
       padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
       padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
       margin: 0 !important;
-      background: #0c1017 !important;
-      border-bottom: 1px solid #30363d !important;
+      background: #0b0f17 !important;
+      border-bottom: 1px solid #1e293b !important;
       z-index: 100 !important;
       display: flex !important;
       align-items: center !important;
@@ -323,8 +432,8 @@ st.markdown(
       padding-bottom: 0.65rem;
       padding-left: 0.35rem;
       padding-right: 0.35rem;
-      border-bottom: 1px solid #30363d;
-      background: #0c1017;
+      border-bottom: 1px solid #1e293b;
+      background: #0b0f17;
       z-index: 50;
     }
     .ipad-top-nav .nav-mark {
@@ -340,8 +449,8 @@ st.markdown(
       align-items: center;
       justify-content: center;
       padding: 0 0.65rem;
-      border: 1px solid #30363d;
-      background: #161b22;
+      border: 1px solid #1e293b;
+      background: #131d2a;
       margin-top: 0;
       margin-left: 0;
     }
@@ -353,7 +462,7 @@ st.markdown(
     }
 
     .statutory-meta {
-      color: #38bdf8;
+      color: #2f81f7;
       font-family: "IBM Plex Mono", monospace;
       font-size: 0.88rem;
       font-weight: 700;
@@ -396,8 +505,8 @@ st.markdown(
       flex-wrap: wrap;
       align-items: center;
       gap: 0.65rem;
-      background: #0c1017;
-      border: 1px solid #30363d;
+      background: #0b0f17;
+      border: 1px solid #1e293b;
       padding: 0.75rem 0.95rem;
       margin: 0.35rem 0 0.85rem 0;
       font-family: "IBM Plex Mono", monospace;
@@ -433,7 +542,7 @@ st.markdown(
       display: inline-block;
       border: 1px solid #8b949e;
       color: #e2e8f0;
-      background: #161b22;
+      background: #131d2a;
       font-size: 0.82rem;
       font-weight: 700;
       padding: 0.35rem 0.7rem;
@@ -1582,8 +1691,6 @@ df_master_ledger = load_internal_portfolio_ledger()
 critical_drift_count = int(
     (df_master_ledger["Status"] == "CRITICAL DRIFT").sum()
 )
-# Portfolio-level watchlist count for Ministerial banner (scheme-wide)
-SCHEME_CRITICAL_SUBJECTS = 18
 
 if "identity_audit_log" not in st.session_state:
     st.session_state.identity_audit_log = []
@@ -1616,6 +1723,18 @@ def _append_identity_audit(actor: str, action: str, token: str, native_id: str) 
 
 # --- SIDEBAR: GOVERNANCE LAYER FILTERS ---
 with st.sidebar:
+    st.markdown("### SECTOR BOOK")
+    if "active_sector_book" not in st.session_state:
+        st.session_state.active_sector_book = DEFAULT_SECTOR_KEY
+    sector_key = st.selectbox(
+        "Active Sector Book",
+        options=sector_book_options(),
+        format_func=lambda key: get_sector_book(key)["display_name"],
+        key="active_sector_book",
+    )
+    active_sector = get_sector_book(sector_key)
+    SCHEME_CRITICAL_SUBJECTS = int(active_sector["critical_subjects"])
+    st.markdown("---")
     st.markdown("### AAT SCHEME GOVERNANCE")
     role = st.selectbox(
         "Active User Role Matrix",
@@ -1664,9 +1783,7 @@ with st.sidebar:
                 "Aggregated cohort & root-cause analysis permitted. "
                 "Individual PII / Native ACC Claim ID unmasking restricted."
             )
-        st.caption(
-            "Localized NZ ACC · IRD · MSD · Health NZ · Cabinet Minister AoG grids"
-        )
+        st.caption(sanitize_for_markdown(active_sector["sidebar_caption"], max_chars=120))
     claim_token_for_note = sanitize_claim_token(
         st.session_state.get("audit_view_selection", GLOBAL_VIEW)
     )
@@ -1683,7 +1800,7 @@ with st.sidebar:
 
 # Department #4 — Finance / Actuarial / Legal isolated surface
 if finance_legal_mode:
-    st.title("NZ AAT SOVEREIGN ORCHESTRATION ENGINE")
+    render_sector_header(active_sector)
     st.markdown(
         "<p class='statutory-meta'>"
         "Department #4 Surface · Finance, Actuarial &amp; Legal Channel</p>",
@@ -1693,19 +1810,7 @@ if finance_legal_mode:
     st.stop()
 
 # --- MAIN PERFORMANCE DASHBOARD TITLE ---
-st.title("NZ AAT SOVEREIGN ORCHESTRATION ENGINE")
-st.markdown(
-    "<p class='statutory-meta'>"
-    "Statutory Governance: Answerable to Cabinet Minister (Executive Authority) | "
-    "Crown Entity Act Compliance Mode</p>",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<p style='color:#8b949e; margin-top:-6px;'>"
-    "AAT Scheme Performance · Predictive Operational Risk & Long-Tail Claims "
-    "Governance (NZD) · All-of-Government Integration</p>",
-    unsafe_allow_html=True,
-)
+render_sector_header(active_sector)
 if statutory_briefing_mode:
     st.markdown(
         '<div class="briefing-mode-chip">STATUTORY BRIEFING MODE · CABINET EXECUTIVE OVERLAY</div>',
@@ -1760,93 +1865,12 @@ if role == MINISTER_ROLE:
         )
     st.markdown("---")
 
-# --- WHAT / WHERE / WHEN SEQUENCE (US Risk viewport container layout · Crown metrics) ---
-# Exact visual port of the US Layer-1 metric-box row; labels remapped to AoG agencies.
-st.markdown(
-    "<p style='color:#8b949e; font-size:0.9rem; margin-bottom:0.35rem;'>"
-    "What · Where · When — Crown Agency Sync Surface · "
-    "Health NZ · MSD · IRD · Ministerial</p>",
-    unsafe_allow_html=True,
-)
+# --- WHAT / WHERE / WHEN OPERATIONAL BRIDGE (sector-driven) ---
+render_operational_bridge(active_sector)
 
-www_col1, www_col2, www_col3, www_col4 = st.columns(4)
-
-with www_col1:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">What</div>'
-        '<div class="metric-label">Health NZ Clinical Grid</div>'
-        '<div class="metric-value-green">Operational</div>'
-        '<div class="metric-subtext">Orthopaedic records linked · HNZ-MED-4402</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-with www_col2:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">Where</div>'
-        '<div class="metric-label">MSD Workforce Pipeline</div>'
-        '<div class="metric-value-silver">14 Matches</div>'
-        '<div class="metric-subtext">Modified light-duty · MSD-AX-7710</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-with www_col3:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">When</div>'
-        '<div class="metric-label">IRD Income Exchange</div>'
-        '<div class="metric-value-green">Live Sync</div>'
-        '<div class="metric-subtext">12-month wage ledger · IRD-2026-99X4 · 11:42</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-with www_col4:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">Crown</div>'
-        '<div class="metric-label">Ministerial Cabinet Pipeline</div>'
-        '<div class="metric-value-silver" style="color:#38bdf8;">Blue / Active</div>'
-        '<div class="metric-subtext">BIM escalation · CAB-BIM-2026-ACC</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-# Channel detail expanders (secondary) — harvest hashes remain available without cluttering viewport
-with st.expander("All-of-Government channel hashes & harvest receipts", expanded=False):
-    d1, d2, d3, d4 = st.columns(4)
-    d1.markdown(
-        "**Health NZ** · PROXIED / OPERATIONAL · Last harvest 10:15 AM · HNZ-MED-4402"
-    )
-    d2.markdown(
-        "**MSD** · LIVE INTEGRATION · Last harvest 11:40 AM · MSD-AX-7710"
-    )
-    d3.markdown(
-        "**IRD** · SECURE LIVE SYNC · Last harvest 11:42 AM · IRD-2026-99X4"
-    )
-    d4.markdown(
-        "**Ministerial** · BLUE / ACTIVE · Last harvest 11:45 AM · CAB-BIM-2026-ACC"
-    )
-
-# --- Ministerial Escalation Banner (between AoG grid and Audit Command) ---
+# --- Ministerial Escalation Banner (between operational bridge and Audit Command) ---
+render_operational_bridge_banner(active_sector)
 if SCHEME_CRITICAL_SUBJECTS > 0:
-    st.markdown(
-        f"""
-        <div class="ministerial-banner">
-          <div class="ministerial-badge">[MINISTERIAL WATCHLIST ACTIVE]</div>
-          <div style="color:#ffffff; font-size:1.15rem; font-weight:700; margin-bottom:0.35rem;">
-            Critical Pathway Drift — Statutory Escalation Surface
-          </div>
-          <div style="color:#e2e8f0; font-size:1rem; font-weight:600; margin-bottom:0.55rem;">
-            {SCHEME_CRITICAL_SUBJECTS} Subjects breaching long-tail liability thresholds
-          </div>
-          <div style="color:#8b949e; font-size:0.85rem; font-family:monospace;">
-            Crown Entity Act · Answerable to Minister for ACC · BIM / Statutory Escalation channel
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
     if st.button(
         "Generate Cabinet Briefing Note (BIM / Statutory Escalation)",
         type="primary",
@@ -1969,21 +1993,11 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ==============================================================================
 if view_selection == GLOBAL_VIEW:
 
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Total Scheme Claims</div>'
-            '<div class="metric-value-silver">142 Active</div>'
-            '<div class="metric-subtext">Regional Portfolio Intake</div></div>',
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Critical Pathway Drift</div>'
-            '<div class="metric-value-crimson">18 Subjects</div>'
-            '<div class="metric-subtext">Click to jump → Audit View</div></div>',
-            unsafe_allow_html=True,
-        )
+    portfolio_cols = st.columns(4)
+    for col, card in zip(portfolio_cols, active_sector["portfolio_metrics"]):
+        with col:
+            st.markdown(build_metric_card_html(card), unsafe_allow_html=True)
+    with portfolio_cols[1]:
         if st.button(
             "Jump: Critical Drift → Audit View",
             key="metric_jump_critical_drift",
@@ -1993,20 +2007,6 @@ if view_selection == GLOBAL_VIEW:
             kwargs={"status": "CRITICAL DRIFT", "cohort": True},
         ):
             pass
-    with col3:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Performance Index</div>'
-            '<div class="metric-value-green">85.9%</div>'
-            '<div class="metric-subtext">Baseline Trajectory Alignment</div></div>',
-            unsafe_allow_html=True,
-        )
-    with col4:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Ministerial Expectations Match</div>'
-            '<div class="metric-value-silver" style="color:#38bdf8;">88%</div>'
-            '<div class="metric-subtext">Trajectory Alignment</div></div>',
-            unsafe_allow_html=True,
-        )
 
     st.markdown("#### Anatomical Cohort Jump Pads")
     anatomy_vals = sorted(df_master_ledger["Anatomy Target"].astype(str).unique().tolist())
