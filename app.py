@@ -24,6 +24,15 @@ from adaptive_drift_learner import (
     effective_drift_threshold,
     learner,
 )
+from config import (
+    DEFAULT_SECTOR_KEY,
+    EXECUTIVE_THEME,
+    PRIVATE_CHROME,
+    get_sector_book,
+    layer2_operations,
+    sector_book_options,
+    structural_mirror_cards,
+)
 
 # Live Gemini / Colab notebook surface (replace with project notebook URL when ready).
 GEMINI_NOTEBOOK_URL = "https://colab.research.google.com/"
@@ -84,6 +93,230 @@ def bound_intake_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return frame
 
 
+def render_sector_header(sector: dict[str, Any]) -> None:
+    """Render sector title and statutory subtitle from config.py."""
+    header = sector["header"]
+    st.title(header["title"])
+    st.markdown(
+        f"<p class='statutory-meta'>"
+        f"{sanitize_html_text(header['statutory_meta'], max_chars=280)}</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<p style='color:{EXECUTIVE_THEME['muted']}; margin-top:-6px;'>"
+        f"{sanitize_html_text(header['subtitle'], max_chars=320)}</p>",
+        unsafe_allow_html=True,
+    )
+
+
+def build_metric_card_html(card: dict[str, Any]) -> str:
+    """Build a standardized metric card: Label, Big Value, Ground-Truth Basis."""
+    value_class = sanitize_html_text(
+        card.get("value_class", "metric-value-silver"), max_chars=48
+    )
+    border_style = ""
+    if card.get("border_accent"):
+        accent = sanitize_html_text(card["border_accent"], max_chars=16)
+        border_style = f' style="border-left:3px solid {accent};"'
+    sequence_html = ""
+    if card.get("sequence_tag"):
+        safe_tag = sanitize_html_text(card["sequence_tag"], max_chars=32)
+        sequence_html = f'<div class="metric-sequence-tag">{safe_tag}</div>'
+    safe_label = sanitize_html_text(card["label"], max_chars=80)
+    safe_value = sanitize_html_text(card["big_value"], max_chars=64)
+    safe_basis = sanitize_html_text(card["ground_truth_basis"], max_chars=120)
+    return (
+        f'<div class="metric-box"{border_style}>'
+        f"{sequence_html}"
+        f'<div class="metric-label">{safe_label}</div>'
+        f'<div class="{value_class}">{safe_value}</div>'
+        f'<div class="metric-subtext">{safe_basis}</div>'
+        f"</div>"
+    )
+
+
+def render_metric_card_row(cards: list[dict[str, Any]], *, columns: int = 4) -> None:
+    """Render a row of metric cards from sector book configuration."""
+    metric_cols = st.columns(columns)
+    for col, card in zip(metric_cols, cards):
+        with col:
+            st.markdown(build_metric_card_html(card), unsafe_allow_html=True)
+
+
+def render_operational_bridge(sector: dict[str, Any]) -> None:
+    """Render operational bridge caption, metric row, and channel receipts."""
+    bridge = sector["operational_bridge"]
+    st.markdown(
+        f"<p style='color:{EXECUTIVE_THEME['muted']}; font-size:0.9rem; "
+        f"margin-bottom:0.35rem;'>"
+        f"{sanitize_html_text(bridge['section_caption'], max_chars=200)}</p>",
+        unsafe_allow_html=True,
+    )
+    render_metric_card_row(sector["bridge_metrics"])
+    with st.expander(
+        "All-of-Government channel hashes & harvest receipts", expanded=False
+    ):
+        receipt_cols = st.columns(max(len(bridge["channel_receipts"]), 1))
+        for col, receipt in zip(receipt_cols, bridge["channel_receipts"]):
+            col.markdown(
+                f"**{sanitize_for_markdown(receipt['agency'], max_chars=48)}** · "
+                f"{sanitize_for_markdown(receipt['status'], max_chars=48)} · "
+                f"{sanitize_for_markdown(receipt['receipt'], max_chars=120)}"
+            )
+
+
+def render_operational_bridge_banner(sector: dict[str, Any]) -> None:
+    """Render sector escalation banner when critical subjects exceed zero."""
+    critical = int(sector.get("critical_subjects", 0))
+    if critical <= 0:
+        return
+    bridge = sector["operational_bridge"]
+    headline = bridge["banner_headline"].format(critical_subjects=critical)
+    safe_badge = sanitize_html_text(bridge["banner_badge"], max_chars=64)
+    safe_title = sanitize_html_text(bridge["banner_title"], max_chars=120)
+    safe_headline = sanitize_html_text(headline, max_chars=120)
+    safe_footer = sanitize_html_text(bridge["banner_footer"], max_chars=200)
+    muted_color = EXECUTIVE_THEME["muted"]
+    st.markdown(
+        f"""
+        <div class="ministerial-banner">
+          <div class="ministerial-badge">{safe_badge}</div>
+          <div style="color:#ffffff; font-size:1.15rem; font-weight:700;
+                      margin-bottom:0.35rem;">
+            {safe_title}
+          </div>
+          <div style="color:#e2e8f0; font-size:1rem; font-weight:600;
+                      margin-bottom:0.55rem;">
+            {safe_headline}
+          </div>
+          <div style="color:{muted_color}; font-size:0.85rem;
+                      font-family:monospace;">
+            {safe_footer}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_structural_mirror_kpis(sector: dict[str, Any]) -> None:
+    """Render Structural Mirror Standard: 3 KPI cards + Card 3 Layer 2 drill-down."""
+    cards = structural_mirror_cards(sector)
+    layer2 = layer2_operations(sector)
+    sector_code = sanitize_plain_text(sector.get("code", "SECTOR"), max_chars=32)
+
+    st.markdown(
+        f"<p style='color:{EXECUTIVE_THEME['muted']}; font-size:0.9rem; "
+        f"margin-bottom:0.35rem;'>"
+        "Structural Mirror Standard · Macro Valuation · Velocity Friction · "
+        "Actionable Controllable Loss</p>",
+        unsafe_allow_html=True,
+    )
+
+    kpi_cols = st.columns(3)
+    for col, card in zip(kpi_cols, cards):
+        with col:
+            st.markdown(build_metric_card_html(card), unsafe_allow_html=True)
+
+    # Card 3 control: Inspect Layer 2 Operational Drift
+    with kpi_cols[min(2, max(len(cards) - 1, 0))]:
+        inspect_label = sanitize_for_markdown(
+            layer2.get("inspect_label", "Inspect Layer 2 Operational Drift"),
+            max_chars=80,
+        )
+        inspect_layer2 = st.toggle(
+            inspect_label,
+            value=bool(st.session_state.get(f"layer2_open_{sector_code}", False)),
+            key=f"layer2_toggle_{sector_code}",
+        )
+        st.session_state[f"layer2_open_{sector_code}"] = inspect_layer2
+
+    if not st.session_state.get(f"layer2_open_{sector_code}", False):
+        return
+
+    render_layer2_operations_view(sector, layer2)
+
+
+def render_layer2_operations_view(
+    sector: dict[str, Any], layer2: dict[str, Any]
+) -> None:
+    """Expandable Layer 2 site/queue breakdown + Layer 3 clearance trigger."""
+    sector_code = sanitize_plain_text(sector.get("code", "SECTOR"), max_chars=32)
+    title = sanitize_for_markdown(layer2.get("title", "Layer 2 Operations View"), max_chars=80)
+    caption = sanitize_for_markdown(layer2.get("caption", ""), max_chars=200)
+
+    with st.expander(title, expanded=True):
+        st.caption(caption)
+        rows = list(layer2.get("site_queue_metrics", []))
+        if rows:
+            table_rows = []
+            for row in rows:
+                table_rows.append(
+                    {
+                        "Site": sanitize_for_markdown(row.get("site", ""), max_chars=64),
+                        "Queue": sanitize_for_markdown(row.get("queue", ""), max_chars=64),
+                        "Backlog": sanitize_for_markdown(
+                            row.get("backlog", ""), max_chars=32
+                        ),
+                        "Delay": sanitize_for_markdown(
+                            row.get("delay_days", ""), max_chars=24
+                        ),
+                        "Burn": sanitize_for_markdown(row.get("burn", ""), max_chars=32),
+                        "Ground-Truth Basis": sanitize_for_markdown(
+                            row.get("ground_truth_basis", ""), max_chars=120
+                        ),
+                    }
+                )
+            st.dataframe(
+                pd.DataFrame(table_rows),
+                use_container_width=True,
+                hide_index=True,
+            )
+            metric_cols = st.columns(min(len(rows), 4))
+            for col, row in zip(metric_cols, rows):
+                with col:
+                    site_card = {
+                        "label": row.get("site", "Site"),
+                        "big_value": row.get("burn", "-"),
+                        "ground_truth_basis": (
+                            f"{row.get('queue', 'Queue')} · "
+                            f"{row.get('delay_days', '-')} · "
+                            f"{row.get('ground_truth_basis', '')}"
+                        ),
+                        "value_class": "metric-value-crimson",
+                    }
+                    st.markdown(
+                        build_metric_card_html(site_card), unsafe_allow_html=True
+                    )
+
+        action_label = sanitize_for_markdown(
+            layer2.get("layer3_action_label", "Trigger Layer 3 Actionable Clearance"),
+            max_chars=80,
+        )
+        if st.button(
+            action_label,
+            type="primary",
+            use_container_width=True,
+            key=f"layer3_clearance_{sector_code}",
+        ):
+            receipt = sanitize_for_markdown(
+                layer2.get(
+                    "layer3_clearance_receipt",
+                    "Layer 3 Actionable Clearance staged.",
+                ),
+                max_chars=240,
+            )
+            st.session_state[f"layer3_receipt_{sector_code}"] = receipt
+            st.success(receipt)
+        elif st.session_state.get(f"layer3_receipt_{sector_code}"):
+            st.info(
+                sanitize_for_markdown(
+                    st.session_state[f"layer3_receipt_{sector_code}"],
+                    max_chars=240,
+                )
+            )
+
+
 # 1. High-Contrast Sovereign Dark Theme Configuration
 st.set_page_config(
     layout="wide",
@@ -91,6 +324,70 @@ st.set_page_config(
     page_icon="⬡",
     initial_sidebar_state="expanded",
 )
+
+# Private Chrome Removal — hide native Streamlit chrome for iPad Board presentations
+if PRIVATE_CHROME.get("enabled", True):
+    st.markdown(
+        """
+        <style>
+        /* ============================================================
+           PRIVATE CHROME REMOVAL (CSS Injection)
+           Hide default Streamlit UI so the surface reads 100% custom
+           on iPad (header, Share, hamburger, GitHub link, footer).
+           ============================================================ */
+        #MainMenu,
+        #MainMenu > button,
+        header[data-testid="stHeader"],
+        header.stAppHeader,
+        [data-testid="stHeader"],
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"],
+        [data-testid="stAppDeployButton"],
+        [data-testid="stDeployButton"],
+        [data-testid="baseButton-header"],
+        [data-testid="baseButton-headerNoPadding"],
+        [data-testid="stBaseButton-header"],
+        [data-testid="stBaseButton-headerNoPadding"],
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="collapsedControl"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stExpandSidebarButton"],
+        [data-testid="stToolbarActions"],
+        [data-testid="manage-app-button"],
+        .stDeployButton,
+        .stAppToolbar,
+        .stDecoration,
+        footer,
+        footer[data-testid="stFooter"],
+        .stApp > footer,
+        a[href*="github.com/streamlit"],
+        a[href*="streamlit.io"],
+        a[href*="share.streamlit.io"],
+        div[data-testid="stToolbar"] button,
+        section[data-testid="stSidebar"] [data-testid="stLogoSpacer"] {
+          display: none !important;
+          visibility: hidden !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          max-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          overflow: hidden !important;
+        }
+
+        /* Reclaim the top chrome strip for a full-bleed executive canvas */
+        .stApp,
+        [data-testid="stAppViewContainer"],
+        .main .block-container {
+          padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ==========================================
 # 🔒 EXECUTIVE SECURITY GATE
@@ -151,21 +448,21 @@ st.markdown(
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
     .reportview-container, .main {
-        background-color: #0c1017;
+        background-color: #0b0f17;
         color: #f8fafc;
         font-family: "IBM Plex Sans", sans-serif;
     }
     .stApp {
-        background-color: #0c1017;
+        background-color: #0b0f17;
     }
     h1, h2, h3, h4 {
         color: #ffffff !important;
         font-weight: 700 !important;
     }
-    /* Industry Metric Card Highlights — matched to US Risk viewport */
+    /* Industry Metric Card Highlights — executive dark viewport */
     .metric-box {
-        background-color: #161b22;
-        border: 1px solid #30363d;
+        background-color: #131d2a;
+        border: 1px solid #1e293b;
         border-radius: 6px;
         padding: 1.5rem;
         margin-bottom: 1rem;
@@ -185,7 +482,7 @@ st.markdown(
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.12em;
-        color: #38bdf8;
+        color: #2f81f7;
         margin-bottom: 0.35rem;
     }
     .metric-value-silver {
@@ -242,66 +539,61 @@ st.markdown(
     }
 
     /* ============================================================
-       iPadOS / mobile — top-left navigation overlay fix
+       PRIVATE CHROME REMOVAL (reinforced after auth unlock)
+       Header bar · Share · hamburger · GitHub link · footer
        ============================================================ */
-    html {
-      /* Enable env(safe-area-inset-*) with viewport-fit=cover */
+    #MainMenu,
+    #MainMenu > button,
+    header[data-testid="stHeader"],
+    header.stAppHeader,
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    [data-testid="stAppDeployButton"],
+    [data-testid="stDeployButton"],
+    [data-testid="baseButton-header"],
+    [data-testid="baseButton-headerNoPadding"],
+    [data-testid="stBaseButton-header"],
+    [data-testid="stBaseButton-headerNoPadding"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stExpandSidebarButton"],
+    [data-testid="stToolbarActions"],
+    [data-testid="manage-app-button"],
+    .stDeployButton,
+    .stAppToolbar,
+    .stDecoration,
+    footer,
+    footer[data-testid="stFooter"],
+    .stApp > footer,
+    a[href*="github.com/streamlit"],
+    a[href*="streamlit.io"],
+    a[href*="share.streamlit.io"] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
     }
+
+    /* ============================================================
+       iPadOS / mobile — safe-area padding (no Streamlit chrome)
+       ============================================================ */
     html, body, .stApp, [data-testid="stAppViewContainer"] {
       padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
       box-sizing: border-box !important;
     }
 
-    /* Dedicated top navigation bar (flow layout — not absolute) */
-    header[data-testid="stHeader"],
-    .stAppHeader,
-    [data-testid="stHeader"] {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      right: auto !important;
-      width: 100% !important;
-      height: auto !important;
-      min-height: 52px !important;
-      padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
-      padding-bottom: 8px !important;
-      padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
-      padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
-      margin: 0 !important;
-      background: #0c1017 !important;
-      border-bottom: 1px solid #30363d !important;
-      z-index: 100 !important;
-      display: flex !important;
-      align-items: center !important;
-      overflow: visible !important;
-    }
-
-    /* Pull Streamlit sidebar toggle / return into header flow */
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"],
-    [data-testid="stSidebarCollapseButton"],
-    [data-testid="stExpandSidebarButton"],
-    button[kind="header"],
-    [data-testid="stBaseButton-headerNoPadding"],
-    [data-testid="stBaseButton-header"],
-    header[data-testid="stHeader"] button,
-    .stAppHeader button {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      transform: none !important;
-      margin-top: max(24px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
-      margin-left: 4px !important;
-      min-width: 44px !important;
-      min-height: 44px !important;
-      z-index: 101 !important;
-    }
-
     [data-testid="stSidebarHeader"] {
       padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
-      margin-top: max(24px, env(safe-area-inset-top, 0px)) !important;
+      margin-top: max(8px, env(safe-area-inset-top, 0px)) !important;
     }
 
     section[data-testid="stSidebar"] > div:first-child,
@@ -323,8 +615,8 @@ st.markdown(
       padding-bottom: 0.65rem;
       padding-left: 0.35rem;
       padding-right: 0.35rem;
-      border-bottom: 1px solid #30363d;
-      background: #0c1017;
+      border-bottom: 1px solid #1e293b;
+      background: #0b0f17;
       z-index: 50;
     }
     .ipad-top-nav .nav-mark {
@@ -340,8 +632,8 @@ st.markdown(
       align-items: center;
       justify-content: center;
       padding: 0 0.65rem;
-      border: 1px solid #30363d;
-      background: #161b22;
+      border: 1px solid #1e293b;
+      background: #131d2a;
       margin-top: 0;
       margin-left: 0;
     }
@@ -353,7 +645,7 @@ st.markdown(
     }
 
     .statutory-meta {
-      color: #38bdf8;
+      color: #2f81f7;
       font-family: "IBM Plex Mono", monospace;
       font-size: 0.88rem;
       font-weight: 700;
@@ -396,8 +688,8 @@ st.markdown(
       flex-wrap: wrap;
       align-items: center;
       gap: 0.65rem;
-      background: #0c1017;
-      border: 1px solid #30363d;
+      background: #0b0f17;
+      border: 1px solid #1e293b;
       padding: 0.75rem 0.95rem;
       margin: 0.35rem 0 0.85rem 0;
       font-family: "IBM Plex Mono", monospace;
@@ -433,7 +725,7 @@ st.markdown(
       display: inline-block;
       border: 1px solid #8b949e;
       color: #e2e8f0;
-      background: #161b22;
+      background: #131d2a;
       font-size: 0.82rem;
       font-weight: 700;
       padding: 0.35rem 0.7rem;
@@ -475,32 +767,22 @@ st.markdown(
       margin-top: 0.35rem;
     }
 
-    /* Tablet / mobile: hard floor — top-left hit targets ≥40px from edges */
+    /* Tablet / mobile: hard floor — custom nav clear of iPadOS chrome */
     @media (max-width: 1024px) {
-      header[data-testid="stHeader"],
-      .stAppHeader,
-      [data-testid="stHeader"],
       .ipad-top-nav {
         margin-top: max(40px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
         margin-left: max(40px, calc(env(safe-area-inset-left, 0px) + 16px)) !important;
         padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
       }
 
-      [data-testid="stSidebarCollapsedControl"],
-      [data-testid="collapsedControl"],
-      [data-testid="stSidebarCollapseButton"],
-      [data-testid="stExpandSidebarButton"],
-      header[data-testid="stHeader"] button,
-      .stAppHeader button,
-      [data-testid="stToolbar"] button,
-      [data-testid="stSidebarHeader"] button,
       .ipad-top-nav .nav-mark {
-        /* Clear iPadOS Multitasking pill (...) , status bar, Stage Manager */
-        margin-top: max(40px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
-        margin-left: max(40px, calc(env(safe-area-inset-left, 0px) + 16px)) !important;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
         position: relative !important;
         top: auto !important;
         left: auto !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
       }
 
       div[data-testid="stMainBlockContainer"],
@@ -514,12 +796,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Dedicated top navigation bar — in-document flow (not absolute overlay)
+# Dedicated top navigation bar — custom chrome only (Streamlit chrome removed)
 st.markdown(
     """
     <div class="ipad-top-nav" role="navigation" aria-label="Primary scheme navigation">
-      <span class="nav-mark" aria-hidden="true">☰ NAV</span>
-      <span class="nav-hint">NZ ACC · Scheme navigation — clear of iPadOS status bar &amp; Multitasking controls</span>
+      <span class="nav-mark" aria-hidden="true">NAV</span>
+      <span class="nav-hint">Executive command surface · private chrome · iPad Board presentation mode</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -1582,8 +1864,6 @@ df_master_ledger = load_internal_portfolio_ledger()
 critical_drift_count = int(
     (df_master_ledger["Status"] == "CRITICAL DRIFT").sum()
 )
-# Portfolio-level watchlist count for Ministerial banner (scheme-wide)
-SCHEME_CRITICAL_SUBJECTS = 18
 
 if "identity_audit_log" not in st.session_state:
     st.session_state.identity_audit_log = []
@@ -1614,8 +1894,25 @@ def _append_identity_audit(actor: str, action: str, token: str, native_id: str) 
         st.session_state.identity_audit_log = st.session_state.identity_audit_log[-40:]
 
 
+def _sector_label(key: str) -> str:
+    """Sidebar display label for a sector book key."""
+    return str(get_sector_book(key).get("display_name", key))
+
+
 # --- SIDEBAR: GOVERNANCE LAYER FILTERS ---
 with st.sidebar:
+    st.markdown("### SECTOR BOOK")
+    if "active_sector_book" not in st.session_state:
+        st.session_state.active_sector_book = DEFAULT_SECTOR_KEY
+    sector_key = st.selectbox(
+        "Active Sector Book",
+        options=sector_book_options(),
+        format_func=_sector_label,
+        key="active_sector_book",
+    )
+    active_sector = get_sector_book(sector_key)
+    SCHEME_CRITICAL_SUBJECTS = int(active_sector["critical_subjects"])
+    st.markdown("---")
     st.markdown("### AAT SCHEME GOVERNANCE")
     role = st.selectbox(
         "Active User Role Matrix",
@@ -1664,9 +1961,7 @@ with st.sidebar:
                 "Aggregated cohort & root-cause analysis permitted. "
                 "Individual PII / Native ACC Claim ID unmasking restricted."
             )
-        st.caption(
-            "Localized NZ ACC · IRD · MSD · Health NZ · Cabinet Minister AoG grids"
-        )
+        st.caption(sanitize_for_markdown(active_sector["sidebar_caption"], max_chars=120))
     claim_token_for_note = sanitize_claim_token(
         st.session_state.get("audit_view_selection", GLOBAL_VIEW)
     )
@@ -1683,7 +1978,7 @@ with st.sidebar:
 
 # Department #4 — Finance / Actuarial / Legal isolated surface
 if finance_legal_mode:
-    st.title("NZ AAT SOVEREIGN ORCHESTRATION ENGINE")
+    render_sector_header(active_sector)
     st.markdown(
         "<p class='statutory-meta'>"
         "Department #4 Surface · Finance, Actuarial &amp; Legal Channel</p>",
@@ -1693,19 +1988,7 @@ if finance_legal_mode:
     st.stop()
 
 # --- MAIN PERFORMANCE DASHBOARD TITLE ---
-st.title("NZ AAT SOVEREIGN ORCHESTRATION ENGINE")
-st.markdown(
-    "<p class='statutory-meta'>"
-    "Statutory Governance: Answerable to Cabinet Minister (Executive Authority) | "
-    "Crown Entity Act Compliance Mode</p>",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<p style='color:#8b949e; margin-top:-6px;'>"
-    "AAT Scheme Performance · Predictive Operational Risk & Long-Tail Claims "
-    "Governance (NZD) · All-of-Government Integration</p>",
-    unsafe_allow_html=True,
-)
+render_sector_header(active_sector)
 if statutory_briefing_mode:
     st.markdown(
         '<div class="briefing-mode-chip">STATUTORY BRIEFING MODE · CABINET EXECUTIVE OVERLAY</div>',
@@ -1760,93 +2043,12 @@ if role == MINISTER_ROLE:
         )
     st.markdown("---")
 
-# --- WHAT / WHERE / WHEN SEQUENCE (US Risk viewport container layout · Crown metrics) ---
-# Exact visual port of the US Layer-1 metric-box row; labels remapped to AoG agencies.
-st.markdown(
-    "<p style='color:#8b949e; font-size:0.9rem; margin-bottom:0.35rem;'>"
-    "What · Where · When — Crown Agency Sync Surface · "
-    "Health NZ · MSD · IRD · Ministerial</p>",
-    unsafe_allow_html=True,
-)
+# --- WHAT / WHERE / WHEN OPERATIONAL BRIDGE (sector-driven) ---
+render_operational_bridge(active_sector)
 
-www_col1, www_col2, www_col3, www_col4 = st.columns(4)
-
-with www_col1:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">What</div>'
-        '<div class="metric-label">Health NZ Clinical Grid</div>'
-        '<div class="metric-value-green">Operational</div>'
-        '<div class="metric-subtext">Orthopaedic records linked · HNZ-MED-4402</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-with www_col2:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">Where</div>'
-        '<div class="metric-label">MSD Workforce Pipeline</div>'
-        '<div class="metric-value-silver">14 Matches</div>'
-        '<div class="metric-subtext">Modified light-duty · MSD-AX-7710</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-with www_col3:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">When</div>'
-        '<div class="metric-label">IRD Income Exchange</div>'
-        '<div class="metric-value-green">Live Sync</div>'
-        '<div class="metric-subtext">12-month wage ledger · IRD-2026-99X4 · 11:42</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-with www_col4:
-    st.markdown(
-        '<div class="metric-box">'
-        '<div class="metric-sequence-tag">Crown</div>'
-        '<div class="metric-label">Ministerial Cabinet Pipeline</div>'
-        '<div class="metric-value-silver" style="color:#38bdf8;">Blue / Active</div>'
-        '<div class="metric-subtext">BIM escalation · CAB-BIM-2026-ACC</div>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-# Channel detail expanders (secondary) — harvest hashes remain available without cluttering viewport
-with st.expander("All-of-Government channel hashes & harvest receipts", expanded=False):
-    d1, d2, d3, d4 = st.columns(4)
-    d1.markdown(
-        "**Health NZ** · PROXIED / OPERATIONAL · Last harvest 10:15 AM · HNZ-MED-4402"
-    )
-    d2.markdown(
-        "**MSD** · LIVE INTEGRATION · Last harvest 11:40 AM · MSD-AX-7710"
-    )
-    d3.markdown(
-        "**IRD** · SECURE LIVE SYNC · Last harvest 11:42 AM · IRD-2026-99X4"
-    )
-    d4.markdown(
-        "**Ministerial** · BLUE / ACTIVE · Last harvest 11:45 AM · CAB-BIM-2026-ACC"
-    )
-
-# --- Ministerial Escalation Banner (between AoG grid and Audit Command) ---
+# --- Ministerial Escalation Banner (between operational bridge and Audit Command) ---
+render_operational_bridge_banner(active_sector)
 if SCHEME_CRITICAL_SUBJECTS > 0:
-    st.markdown(
-        f"""
-        <div class="ministerial-banner">
-          <div class="ministerial-badge">[MINISTERIAL WATCHLIST ACTIVE]</div>
-          <div style="color:#ffffff; font-size:1.15rem; font-weight:700; margin-bottom:0.35rem;">
-            Critical Pathway Drift — Statutory Escalation Surface
-          </div>
-          <div style="color:#e2e8f0; font-size:1rem; font-weight:600; margin-bottom:0.55rem;">
-            {SCHEME_CRITICAL_SUBJECTS} Subjects breaching long-tail liability thresholds
-          </div>
-          <div style="color:#8b949e; font-size:0.85rem; font-family:monospace;">
-            Crown Entity Act · Answerable to Minister for ACC · BIM / Statutory Escalation channel
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
     if st.button(
         "Generate Cabinet Briefing Note (BIM / Statutory Escalation)",
         type="primary",
@@ -1969,44 +2171,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ==============================================================================
 if view_selection == GLOBAL_VIEW:
 
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Total Scheme Claims</div>'
-            '<div class="metric-value-silver">142 Active</div>'
-            '<div class="metric-subtext">Regional Portfolio Intake</div></div>',
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Critical Pathway Drift</div>'
-            '<div class="metric-value-crimson">18 Subjects</div>'
-            '<div class="metric-subtext">Click to jump → Audit View</div></div>',
-            unsafe_allow_html=True,
-        )
-        if st.button(
-            "Jump: Critical Drift → Audit View",
-            key="metric_jump_critical_drift",
-            use_container_width=True,
-            type="primary",
-            on_click=jump_to_audit_sector,
-            kwargs={"status": "CRITICAL DRIFT", "cohort": True},
-        ):
-            pass
-    with col3:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Performance Index</div>'
-            '<div class="metric-value-green">85.9%</div>'
-            '<div class="metric-subtext">Baseline Trajectory Alignment</div></div>',
-            unsafe_allow_html=True,
-        )
-    with col4:
-        st.markdown(
-            '<div class="metric-box"><div class="metric-label">Ministerial Expectations Match</div>'
-            '<div class="metric-value-silver" style="color:#38bdf8;">88%</div>'
-            '<div class="metric-subtext">Trajectory Alignment</div></div>',
-            unsafe_allow_html=True,
-        )
+    render_structural_mirror_kpis(active_sector)
 
     st.markdown("#### Anatomical Cohort Jump Pads")
     anatomy_vals = sorted(df_master_ledger["Anatomy Target"].astype(str).unique().tolist())

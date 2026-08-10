@@ -31,19 +31,23 @@ STATE_COLORS = {
 
 
 def _inject_theme() -> None:
+    theme_bg = THEME["bg"]
+    theme_text = THEME["text"]
+    theme_card = THEME["card"]
+    theme_border = THEME["border"]
     st.markdown(
         f"""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
         .stApp {{
             background: radial-gradient(1000px 500px at 0% 0%, #064e3b 0%, transparent 50%),
-                        {THEME["bg"]};
-            color: {THEME["text"]};
+                        {theme_bg};
+            color: {theme_text};
             font-family: "IBM Plex Sans", sans-serif;
         }}
         [data-testid="stSidebar"] {{
-            background: {THEME["card"]};
-            border-right: 1px solid {THEME["border"]};
+            background: {theme_card};
+            border-right: 1px solid {theme_border};
         }}
         </style>
         """,
@@ -67,21 +71,25 @@ def init_lab() -> None:
 
 def render_athlete_card(athlete) -> None:
     color = STATE_COLORS.get(athlete.state, "#64748b")
+    theme_border = THEME["border"]
+    theme_card = THEME["card"]
+    theme_text = THEME["text"]
+    theme_muted = THEME["muted"]
     st.markdown(
         f"""
         <div style="
-            border: 1px solid {THEME["border"]};
+            border: 1px solid {theme_border};
             border-left: 5px solid {color};
-            background: {THEME["card"]};
+            background: {theme_card};
             padding: 12px 14px;
             margin-bottom: 8px;
         ">
-            <div style="font-weight: 600; color: {THEME["text"]};">{athlete.name}</div>
+            <div style="font-weight: 600; color: {theme_text};">{athlete.name}</div>
             <div style="color: {color}; font-size: 0.78rem; text-transform: uppercase;
                         letter-spacing: 0.05em; font-family: IBM Plex Mono, monospace;">
                 {athlete.state.value}
             </div>
-            <div style="font-size: 0.8rem; color: {THEME["muted"]}; margin-top: 6px;">
+            <div style="font-size: 0.8rem; color: {theme_muted}; margin-top: 6px;">
                 Shear: {athlete.shear_peak_n:.1f} N &nbsp;|&nbsp;
                 Asym: {athlete.asymmetry_pct:.1f}% &nbsp;|&nbsp;
                 Tissue debt: {athlete.tissue_debt:.1f} &nbsp;|&nbsp;
