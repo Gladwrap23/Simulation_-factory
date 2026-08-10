@@ -1,55 +1,66 @@
 import streamlit as st
 
-# -----------------------------------------------------------------------------
-# 1. PAGE SETUP & SYNTHESIS STYLES
-# -----------------------------------------------------------------------------
+# ==========================================
+# 1. PAGE SETUP & STYLES
+# ==========================================
+
 st.set_page_config(
     page_title="ACC Synthesis & AI Briefing",
     page_icon="🧠",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
 
-st.markdown(
-    """
+# Custom CSS for header & theme
+st.markdown("""
 <style>
-    /* 🔒 HIDE TOP TOOLBAR & PREVENT HEADING CLIPPING */
-    [data-testid="stHeader"] {
-        display: none !important;
-    }
-    .block-container {
-        padding-top: 2.5rem !important;
-    }
-    header {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    .    .stApp {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
+[data-testid="stHeader"] {
+    display: none !important;
+}
+.block-container {
+    padding-top: 2.5rem !important;
+}
+header, #MainMenu, footer {
+    visibility: hidden;
+}
+.stApp {
+    background-color: #0e1117;
+    color: #ffffff;
+}
+</style>
 """, unsafe_allow_html=True)
 
+# Main Page Header
 st.title("🧠 ACC Executive Synthesis & Knowledge Engine")
 st.markdown("---")
-
 
 # ==========================================
 # 2. OPERATIONAL NAVIGATION BRIDGE
 # ==========================================
 
-# Direct operational status banner
+# Operational Status Banner
 st.info(
+    "⚡ **DIRECT OPERATIONAL BRIDGE**  \n"
+    "Synthesis reconciles 100% of National Drift ($420k/wk): "
+    "Northern $320k/wk (76.2%), Midland $40k/wk (9.5%), Central $30k/wk (7.1%), "
+    "South Island incl. Nelson $30k/wk (7.1%)."
+)
+
+# Active Routing Callback
+def reset_to_minister():
+    st.session_state["sb_role_matrix_select"] = "minister"
+    st.switch_page("app.py")  # <-- Verify if your root file is "app.py" or "Home.py"
+
+st.button(
+    "🏛️ Return to Ministerial Boardroom",
+    key="btn_nav_bridge_minister",
+    use_container_width=True,
+    on_click=reset_to_minister
+)
 
 st.markdown("---")
 
-# Check if query originated from Case Manager or Support Staff paste action
-default_query = st.session_state.get(
-    "pending_ai_query",
-    "Summarize how the $420k weekly operational drift across Northern, Midland, Central, and South Island (Nelson) feeds directly into the $1.209B influenceable OCL strain."
-)
 
-# -----------------------------------------------------------------------------
 # 3. PUBLIC STATUTORY BASELINE CONTEXT (NOTEBOOKLM MODULE)
 # -----------------------------------------------------------------------------
 st.subheader("📚 Statutory Baseline Knowledge Base (Public Disclosures)")
