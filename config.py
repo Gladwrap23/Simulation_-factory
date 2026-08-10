@@ -1,4 +1,4 @@
-"""AATPHOENIX sector books — executive dashboard configuration."""
+"""AATPHOENIX sector books - executive dashboard configuration."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ class SectorBook(TypedDict):
     critical_subjects: int
 
 
-# Executive dark theme — CursorRules standard
+# Executive dark theme - CursorRules standard
 EXECUTIVE_THEME: dict[str, str] = {
     "bg": "#0b0f17",
     "card": "#131d2a",
@@ -51,52 +51,55 @@ EXECUTIVE_THEME: dict[str, str] = {
     "muted": "#8b949e",
 }
 
+
 ACC_BASELINE: SectorBook = {
     "code": "ACC_BASELINE",
-    "display_name": "ACC Baseline · NZ Scheme Book",
+    "display_name": "ACC Baseline - NZ Scheme Book",
     "header": {
         "title": "NZ AAT SOVEREIGN ORCHESTRATION ENGINE",
         "statutory_meta": (
-            "Statutory Governance: Answerable to Cabinet Minister (Executive Authority) | "
-            "Crown Entity Act Compliance Mode"
+            "Statutory Governance: Answerable to Cabinet Minister "
+            "(Executive Authority) | Crown Entity Act Compliance Mode"
         ),
         "subtitle": (
-            "AAT Scheme Performance · Predictive Operational Risk & Long-Tail Claims "
-            "Governance (NZD) · All-of-Government Integration"
+            "AAT Scheme Performance - Predictive Operational Risk and "
+            "Long-Tail Claims Governance (NZD) - All-of-Government Integration"
         ),
     },
     "operational_bridge": {
         "section_caption": (
-            "What · Where · When — Crown Agency Sync Surface · "
-            "Health NZ · MSD · IRD · Ministerial"
+            "What / Where / When - Crown Agency Sync Surface - "
+            "Health NZ / MSD / IRD / Ministerial"
         ),
         "banner_badge": "[MINISTERIAL WATCHLIST ACTIVE]",
-        "banner_title": "Critical Pathway Drift — Statutory Escalation Surface",
-        "banner_headline": "{critical_subjects} Subjects breaching long-tail liability thresholds",
+        "banner_title": "Critical Pathway Drift - Statutory Escalation Surface",
+        "banner_headline": (
+            "{critical_subjects} Subjects breaching long-tail liability thresholds"
+        ),
         "banner_footer": (
-            "Crown Entity Act · Answerable to Minister for ACC · "
+            "Crown Entity Act - Answerable to Minister for ACC - "
             "BIM / Statutory Escalation channel"
         ),
         "channel_receipts": [
             {
                 "agency": "Health NZ",
                 "status": "PROXIED / OPERATIONAL",
-                "receipt": "Last harvest 10:15 AM · HNZ-MED-4402",
+                "receipt": "Last harvest 10:15 AM - HNZ-MED-4402",
             },
             {
                 "agency": "MSD",
                 "status": "LIVE INTEGRATION",
-                "receipt": "Last harvest 11:40 AM · MSD-AX-7710",
+                "receipt": "Last harvest 11:40 AM - MSD-AX-7710",
             },
             {
                 "agency": "IRD",
                 "status": "SECURE LIVE SYNC",
-                "receipt": "Last harvest 11:42 AM · IRD-2026-99X4",
+                "receipt": "Last harvest 11:42 AM - IRD-2026-99X4",
             },
             {
                 "agency": "Ministerial",
                 "status": "BLUE / ACTIVE",
-                "receipt": "Last harvest 11:45 AM · CAB-BIM-2026-ACC",
+                "receipt": "Last harvest 11:45 AM - CAB-BIM-2026-ACC",
             },
         ],
     },
@@ -105,28 +108,28 @@ ACC_BASELINE: SectorBook = {
             "sequence_tag": "What",
             "label": "Health NZ Clinical Grid",
             "big_value": "Operational",
-            "ground_truth_basis": "Orthopaedic records linked · HNZ-MED-4402",
+            "ground_truth_basis": "Orthopaedic records linked - HNZ-MED-4402",
             "value_class": "metric-value-green",
         },
         {
             "sequence_tag": "Where",
             "label": "MSD Workforce Pipeline",
             "big_value": "14 Matches",
-            "ground_truth_basis": "Modified light-duty · MSD-AX-7710",
+            "ground_truth_basis": "Modified light-duty - MSD-AX-7710",
             "value_class": "metric-value-silver",
         },
         {
             "sequence_tag": "When",
             "label": "IRD Income Exchange",
             "big_value": "Live Sync",
-            "ground_truth_basis": "12-month wage ledger · IRD-2026-99X4 · 11:42",
+            "ground_truth_basis": "12-month wage ledger - IRD-2026-99X4 - 11:42",
             "value_class": "metric-value-green",
         },
         {
             "sequence_tag": "Crown",
             "label": "Ministerial Cabinet Pipeline",
             "big_value": "Blue / Active",
-            "ground_truth_basis": "BIM escalation · CAB-BIM-2026-ACC",
+            "ground_truth_basis": "BIM escalation - CAB-BIM-2026-ACC",
             "value_class": "metric-value-silver",
         },
     ],
@@ -140,7 +143,7 @@ ACC_BASELINE: SectorBook = {
         {
             "label": "Critical Pathway Drift",
             "big_value": "18 Subjects",
-            "ground_truth_basis": "Click to jump → Audit View",
+            "ground_truth_basis": "Click to jump -> Audit View",
             "value_class": "metric-value-crimson",
         },
         {
@@ -156,56 +159,61 @@ ACC_BASELINE: SectorBook = {
             "value_class": "metric-value-silver",
         },
     ],
-    "sidebar_caption": "Localized NZ ACC · IRD · MSD · Health NZ · Cabinet Minister AoG grids",
+    "sidebar_caption": (
+        "Localized NZ ACC / IRD / MSD / Health NZ / Cabinet Minister AoG grids"
+    ),
     "critical_subjects": 18,
 }
 
+
 GRID_PJM: SectorBook = {
     "code": "GRID_PJM",
-    "display_name": "Grid PJM · Interconnection Book",
+    "display_name": "Grid PJM - Interconnection Book",
     "header": {
         "title": "PJM GRID ORCHESTRATION ENGINE",
         "statutory_meta": (
-            "Regional Transmission Organization · FERC Compliance Mode | "
+            "Regional Transmission Organization - FERC Compliance Mode | "
             "Independent Market Monitor Oversight"
         ),
         "subtitle": (
-            "PJM Interconnection Performance · Congestion Risk & Long-Tail "
-            "Capacity Governance (USD) · RTO Integration"
+            "PJM Interconnection Performance - Congestion Risk and Long-Tail "
+            "Capacity Governance (USD) - RTO Integration"
         ),
     },
     "operational_bridge": {
         "section_caption": (
-            "What · Where · When — RTO Sync Surface · "
-            "Generation · Transmission · Load · Market Ops"
+            "What / Where / When - RTO Sync Surface - "
+            "Generation / Transmission / Load / Market Ops"
         ),
         "banner_badge": "[CONGESTION WATCHLIST ACTIVE]",
-        "banner_title": "Critical Congestion Drift — Market Escalation Surface",
-        "banner_headline": "{critical_subjects} Nodes breaching long-tail congestion thresholds",
+        "banner_title": "Critical Congestion Drift - Market Escalation Surface",
+        "banner_headline": (
+            "{critical_subjects} Nodes breaching long-tail congestion thresholds"
+        ),
         "banner_footer": (
-            "FERC Order 2222 · Answerable to PJM Board · "
+            "FERC Order 2222 - Answerable to PJM Board - "
             "IMM / Market Escalation channel"
         ),
         "channel_receipts": [
             {
                 "agency": "Generation",
                 "status": "DISPATCHED / OPERATIONAL",
-                "receipt": "Last LMP harvest 10:15 AM · GEN-PJM-4402",
+                "receipt": "Last LMP harvest 10:15 AM - GEN-PJM-4402",
             },
             {
                 "agency": "Transmission",
                 "status": "LIVE INTEGRATION",
-                "receipt": "Last flow harvest 11:40 AM · TX-PJM-7710",
+                "receipt": "Last flow harvest 11:40 AM - TX-PJM-7710",
             },
             {
                 "agency": "Load",
                 "status": "SECURE LIVE SYNC",
-                "receipt": "Last demand harvest 11:42 AM · LD-PJM-99X4",
+                "receipt": "Last demand harvest 11:42 AM - LD-PJM-99X4",
             },
             {
                 "agency": "Market Ops",
                 "status": "BLUE / ACTIVE",
-                "receipt": "Last auction harvest 11:45 AM · MKT-PJM-2026",
+                "receipt": "Last auction harvest 11:45 AM - MKT-PJM-2026",
             },
         ],
     },
@@ -214,28 +222,28 @@ GRID_PJM: SectorBook = {
             "sequence_tag": "What",
             "label": "Generation Dispatch Grid",
             "big_value": "Operational",
-            "ground_truth_basis": "Unit commitments linked · GEN-PJM-4402",
+            "ground_truth_basis": "Unit commitments linked - GEN-PJM-4402",
             "value_class": "metric-value-green",
         },
         {
             "sequence_tag": "Where",
             "label": "Transmission Flow Pipeline",
             "big_value": "14 Constraints",
-            "ground_truth_basis": "Binding limits · TX-PJM-7710",
+            "ground_truth_basis": "Binding limits - TX-PJM-7710",
             "value_class": "metric-value-silver",
         },
         {
             "sequence_tag": "When",
             "label": "Load Forecast Exchange",
             "big_value": "Live Sync",
-            "ground_truth_basis": "Hourly demand curve · LD-PJM-99X4 · 11:42",
+            "ground_truth_basis": "Hourly demand curve - LD-PJM-99X4 - 11:42",
             "value_class": "metric-value-green",
         },
         {
             "sequence_tag": "Market",
             "label": "Market Operations Pipeline",
             "big_value": "Blue / Active",
-            "ground_truth_basis": "LMP escalation · MKT-PJM-2026",
+            "ground_truth_basis": "LMP escalation - MKT-PJM-2026",
             "value_class": "metric-value-silver",
         },
     ],
@@ -249,7 +257,7 @@ GRID_PJM: SectorBook = {
         {
             "label": "Critical Congestion Drift",
             "big_value": "24 Nodes",
-            "ground_truth_basis": "Click to jump → Audit View",
+            "ground_truth_basis": "Click to jump -> Audit View",
             "value_class": "metric-value-crimson",
         },
         {
@@ -265,56 +273,60 @@ GRID_PJM: SectorBook = {
             "value_class": "metric-value-silver",
         },
     ],
-    "sidebar_caption": "Localized PJM · Generation · Transmission · Load · Market Ops RTO grids",
+    "sidebar_caption": (
+        "Localized PJM / Generation / Transmission / Load / Market Ops RTO grids"
+    ),
     "critical_subjects": 24,
 }
 
+
 BIOPHARMA_CLARITY: SectorBook = {
     "code": "BIOPHARMA_CLARITY",
-    "display_name": "Biopharma Clarity · GMP Book",
+    "display_name": "Biopharma Clarity - GMP Book",
     "header": {
         "title": "BIOPHARMA CLARITY ORCHESTRATION ENGINE",
         "statutory_meta": (
-            "FDA / EMA GMP Compliance Mode | "
-            "Quality Assurance Board Oversight"
+            "FDA / EMA GMP Compliance Mode | Quality Assurance Board Oversight"
         ),
         "subtitle": (
-            "Biologics Manufacturing Performance · Batch Deviation Risk & "
-            "Long-Tail Release Governance (USD) · CMC Integration"
+            "Biologics Manufacturing Performance - Batch Deviation Risk and "
+            "Long-Tail Release Governance (USD) - CMC Integration"
         ),
     },
     "operational_bridge": {
         "section_caption": (
-            "What · Where · When — CMC Sync Surface · "
-            "Manufacturing · QC · Supply Chain · Regulatory"
+            "What / Where / When - CMC Sync Surface - "
+            "Manufacturing / QC / Supply Chain / Regulatory"
         ),
         "banner_badge": "[DEVIATION WATCHLIST ACTIVE]",
-        "banner_title": "Critical Batch Drift — Regulatory Escalation Surface",
-        "banner_headline": "{critical_subjects} Lots breaching long-tail release thresholds",
+        "banner_title": "Critical Batch Drift - Regulatory Escalation Surface",
+        "banner_headline": (
+            "{critical_subjects} Lots breaching long-tail release thresholds"
+        ),
         "banner_footer": (
-            "21 CFR Part 211 · Answerable to QA Board · "
+            "21 CFR Part 211 - Answerable to QA Board - "
             "CAPA / Regulatory Escalation channel"
         ),
         "channel_receipts": [
             {
                 "agency": "Manufacturing",
                 "status": "VALIDATED / OPERATIONAL",
-                "receipt": "Last batch harvest 10:15 AM · MFG-BIO-4402",
+                "receipt": "Last batch harvest 10:15 AM - MFG-BIO-4402",
             },
             {
                 "agency": "QC Lab",
                 "status": "LIVE INTEGRATION",
-                "receipt": "Last assay harvest 11:40 AM · QC-BIO-7710",
+                "receipt": "Last assay harvest 11:40 AM - QC-BIO-7710",
             },
             {
                 "agency": "Supply Chain",
                 "status": "SECURE LIVE SYNC",
-                "receipt": "Last cold-chain harvest 11:42 AM · SC-BIO-99X4",
+                "receipt": "Last cold-chain harvest 11:42 AM - SC-BIO-99X4",
             },
             {
                 "agency": "Regulatory",
                 "status": "BLUE / ACTIVE",
-                "receipt": "Last submission harvest 11:45 AM · REG-BIO-2026",
+                "receipt": "Last submission harvest 11:45 AM - REG-BIO-2026",
             },
         ],
     },
@@ -323,28 +335,28 @@ BIOPHARMA_CLARITY: SectorBook = {
             "sequence_tag": "What",
             "label": "Manufacturing Execution Grid",
             "big_value": "Operational",
-            "ground_truth_basis": "Batch records linked · MFG-BIO-4402",
+            "ground_truth_basis": "Batch records linked - MFG-BIO-4402",
             "value_class": "metric-value-green",
         },
         {
             "sequence_tag": "Where",
             "label": "QC Release Pipeline",
             "big_value": "9 Pending",
-            "ground_truth_basis": "Assay queue · QC-BIO-7710",
+            "ground_truth_basis": "Assay queue - QC-BIO-7710",
             "value_class": "metric-value-silver",
         },
         {
             "sequence_tag": "When",
             "label": "Cold-Chain Exchange",
             "big_value": "Live Sync",
-            "ground_truth_basis": "Temperature ledger · SC-BIO-99X4 · 11:42",
+            "ground_truth_basis": "Temperature ledger - SC-BIO-99X4 - 11:42",
             "value_class": "metric-value-green",
         },
         {
             "sequence_tag": "Regulatory",
             "label": "Regulatory Submission Pipeline",
             "big_value": "Blue / Active",
-            "ground_truth_basis": "CAPA escalation · REG-BIO-2026",
+            "ground_truth_basis": "CAPA escalation - REG-BIO-2026",
             "value_class": "metric-value-silver",
         },
     ],
@@ -358,7 +370,7 @@ BIOPHARMA_CLARITY: SectorBook = {
         {
             "label": "Critical Batch Drift",
             "big_value": "11 Lots",
-            "ground_truth_basis": "Click to jump → Audit View",
+            "ground_truth_basis": "Click to jump -> Audit View",
             "value_class": "metric-value-crimson",
         },
         {
@@ -374,9 +386,12 @@ BIOPHARMA_CLARITY: SectorBook = {
             "value_class": "metric-value-silver",
         },
     ],
-    "sidebar_caption": "Localized Biopharma · Manufacturing · QC · Supply Chain · Regulatory grids",
+    "sidebar_caption": (
+        "Localized Biopharma / Manufacturing / QC / Supply Chain / Regulatory grids"
+    ),
     "critical_subjects": 11,
 }
+
 
 SECTOR_BOOKS: dict[str, SectorBook] = {
     "ACC_BASELINE": ACC_BASELINE,
@@ -389,7 +404,9 @@ DEFAULT_SECTOR_KEY = "ACC_BASELINE"
 
 def get_sector_book(key: str) -> SectorBook:
     """Return sector book by key, falling back to ACC baseline."""
-    return SECTOR_BOOKS.get(key, SECTOR_BOOKS[DEFAULT_SECTOR_KEY])
+    if key in SECTOR_BOOKS:
+        return SECTOR_BOOKS[key]
+    return SECTOR_BOOKS[DEFAULT_SECTOR_KEY]
 
 
 def sector_book_options() -> list[str]:
@@ -398,6 +415,7 @@ def sector_book_options() -> list[str]:
 
 
 # --- Kinetic Lab tenant config (University Operations Vault) ---
+
 
 class ResearchNode(TypedDict):
     id: str
@@ -447,11 +465,11 @@ TENANT_CONFIG: dict[str, Any] = {
         },
         {
             "id": "node_1_2",
-            "label": "Node 1.2: Pelvic Tilt & Deceleration Chain Asymmetry",
+            "label": "Node 1.2: Pelvic Tilt and Deceleration Chain Asymmetry",
             "credit_cost": 8,
             "short_name": "Decel Chain Asymmetry",
             "summary": (
-                "Quantify anterior/posterior pelvic tilt and left–right deceleration "
+                "Quantify anterior/posterior pelvic tilt and left-right deceleration "
                 "timing so soft-tissue load is attributed to the correct kinetic chain."
             ),
             "unlock_yield": (
@@ -461,7 +479,7 @@ TENANT_CONFIG: dict[str, Any] = {
         },
         {
             "id": "node_1_3",
-            "label": "Node 1.3: Cellular Longevity & Micro-Tear Chronology",
+            "label": "Node 1.3: Cellular Longevity and Micro-Tear Chronology",
             "credit_cost": 12,
             "short_name": "Micro-Tear Chronology",
             "summary": (

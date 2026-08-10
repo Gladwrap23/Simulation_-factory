@@ -1724,6 +1724,11 @@ def _append_identity_audit(actor: str, action: str, token: str, native_id: str) 
         st.session_state.identity_audit_log = st.session_state.identity_audit_log[-40:]
 
 
+def _sector_label(key: str) -> str:
+    """Sidebar display label for a sector book key."""
+    return str(get_sector_book(key).get("display_name", key))
+
+
 # --- SIDEBAR: GOVERNANCE LAYER FILTERS ---
 with st.sidebar:
     st.markdown("### SECTOR BOOK")
@@ -1732,7 +1737,7 @@ with st.sidebar:
     sector_key = st.selectbox(
         "Active Sector Book",
         options=sector_book_options(),
-        format_func=lambda key: get_sector_book(key)["display_name"],
+        format_func=_sector_label,
         key="active_sector_book",
     )
     active_sector = get_sector_book(sector_key)
