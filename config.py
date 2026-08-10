@@ -51,6 +51,17 @@ EXECUTIVE_THEME: dict[str, str] = {
     "muted": "#8b949e",
 }
 
+# Private Chrome Removal — hide Streamlit host chrome on iPad Board presentations
+PRIVATE_CHROME: dict[str, Any] = {
+    "enabled": True,
+    "hide_header": True,
+    "hide_share": True,
+    "hide_hamburger": True,
+    "hide_github_link": True,
+    "hide_footer": True,
+    "presentation_mode": "ipad_board_chair",
+}
+
 
 ACC_BASELINE: SectorBook = {
     "code": "ACC_BASELINE",

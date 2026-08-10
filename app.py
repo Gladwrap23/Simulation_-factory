@@ -204,6 +204,69 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Private Chrome Removal — hide native Streamlit chrome for iPad Board presentations
+st.markdown(
+    """
+    <style>
+    /* ============================================================
+       PRIVATE CHROME REMOVAL (CSS Injection)
+       Hide default Streamlit UI so the surface reads 100% custom
+       on iPad (header, Share, hamburger, GitHub link, footer).
+       ============================================================ */
+    #MainMenu,
+    #MainMenu > button,
+    header[data-testid="stHeader"],
+    header.stAppHeader,
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    [data-testid="stAppDeployButton"],
+    [data-testid="stDeployButton"],
+    [data-testid="baseButton-header"],
+    [data-testid="baseButton-headerNoPadding"],
+    [data-testid="stBaseButton-header"],
+    [data-testid="stBaseButton-headerNoPadding"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stExpandSidebarButton"],
+    [data-testid="stToolbarActions"],
+    [data-testid="manage-app-button"],
+    .stDeployButton,
+    .stAppToolbar,
+    .stDecoration,
+    footer,
+    footer[data-testid="stFooter"],
+    .stApp > footer,
+    a[href*="github.com/streamlit"],
+    a[href*="streamlit.io"],
+    a[href*="share.streamlit.io"],
+    div[data-testid="stToolbar"] button,
+    section[data-testid="stSidebar"] [data-testid="stLogoSpacer"] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
+    }
+
+    /* Reclaim the top chrome strip for a full-bleed executive canvas */
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    .main .block-container {
+      padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ==========================================
 # 🔒 EXECUTIVE SECURITY GATE
 # ==========================================
@@ -354,66 +417,61 @@ st.markdown(
     }
 
     /* ============================================================
-       iPadOS / mobile — top-left navigation overlay fix
+       PRIVATE CHROME REMOVAL (reinforced after auth unlock)
+       Header bar · Share · hamburger · GitHub link · footer
        ============================================================ */
-    html {
-      /* Enable env(safe-area-inset-*) with viewport-fit=cover */
+    #MainMenu,
+    #MainMenu > button,
+    header[data-testid="stHeader"],
+    header.stAppHeader,
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    [data-testid="stAppDeployButton"],
+    [data-testid="stDeployButton"],
+    [data-testid="baseButton-header"],
+    [data-testid="baseButton-headerNoPadding"],
+    [data-testid="stBaseButton-header"],
+    [data-testid="stBaseButton-headerNoPadding"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stExpandSidebarButton"],
+    [data-testid="stToolbarActions"],
+    [data-testid="manage-app-button"],
+    .stDeployButton,
+    .stAppToolbar,
+    .stDecoration,
+    footer,
+    footer[data-testid="stFooter"],
+    .stApp > footer,
+    a[href*="github.com/streamlit"],
+    a[href*="streamlit.io"],
+    a[href*="share.streamlit.io"] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
     }
+
+    /* ============================================================
+       iPadOS / mobile — safe-area padding (no Streamlit chrome)
+       ============================================================ */
     html, body, .stApp, [data-testid="stAppViewContainer"] {
       padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
       box-sizing: border-box !important;
     }
 
-    /* Dedicated top navigation bar (flow layout — not absolute) */
-    header[data-testid="stHeader"],
-    .stAppHeader,
-    [data-testid="stHeader"] {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      right: auto !important;
-      width: 100% !important;
-      height: auto !important;
-      min-height: 52px !important;
-      padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
-      padding-bottom: 8px !important;
-      padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
-      padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
-      margin: 0 !important;
-      background: #0b0f17 !important;
-      border-bottom: 1px solid #1e293b !important;
-      z-index: 100 !important;
-      display: flex !important;
-      align-items: center !important;
-      overflow: visible !important;
-    }
-
-    /* Pull Streamlit sidebar toggle / return into header flow */
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"],
-    [data-testid="stSidebarCollapseButton"],
-    [data-testid="stExpandSidebarButton"],
-    button[kind="header"],
-    [data-testid="stBaseButton-headerNoPadding"],
-    [data-testid="stBaseButton-header"],
-    header[data-testid="stHeader"] button,
-    .stAppHeader button {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      transform: none !important;
-      margin-top: max(24px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
-      margin-left: 4px !important;
-      min-width: 44px !important;
-      min-height: 44px !important;
-      z-index: 101 !important;
-    }
-
     [data-testid="stSidebarHeader"] {
       padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
-      margin-top: max(24px, env(safe-area-inset-top, 0px)) !important;
+      margin-top: max(8px, env(safe-area-inset-top, 0px)) !important;
     }
 
     section[data-testid="stSidebar"] > div:first-child,
@@ -587,32 +645,22 @@ st.markdown(
       margin-top: 0.35rem;
     }
 
-    /* Tablet / mobile: hard floor — top-left hit targets ≥40px from edges */
+    /* Tablet / mobile: hard floor — custom nav clear of iPadOS chrome */
     @media (max-width: 1024px) {
-      header[data-testid="stHeader"],
-      .stAppHeader,
-      [data-testid="stHeader"],
       .ipad-top-nav {
         margin-top: max(40px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
         margin-left: max(40px, calc(env(safe-area-inset-left, 0px) + 16px)) !important;
         padding-top: max(16px, env(safe-area-inset-top, 0px)) !important;
       }
 
-      [data-testid="stSidebarCollapsedControl"],
-      [data-testid="collapsedControl"],
-      [data-testid="stSidebarCollapseButton"],
-      [data-testid="stExpandSidebarButton"],
-      header[data-testid="stHeader"] button,
-      .stAppHeader button,
-      [data-testid="stToolbar"] button,
-      [data-testid="stSidebarHeader"] button,
       .ipad-top-nav .nav-mark {
-        /* Clear iPadOS Multitasking pill (...) , status bar, Stage Manager */
-        margin-top: max(40px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
-        margin-left: max(40px, calc(env(safe-area-inset-left, 0px) + 16px)) !important;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
         position: relative !important;
         top: auto !important;
         left: auto !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
       }
 
       div[data-testid="stMainBlockContainer"],
@@ -626,12 +674,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Dedicated top navigation bar — in-document flow (not absolute overlay)
+# Dedicated top navigation bar — custom chrome only (Streamlit chrome removed)
 st.markdown(
     """
     <div class="ipad-top-nav" role="navigation" aria-label="Primary scheme navigation">
-      <span class="nav-mark" aria-hidden="true">☰ NAV</span>
-      <span class="nav-hint">NZ ACC · Scheme navigation — clear of iPadOS status bar &amp; Multitasking controls</span>
+      <span class="nav-mark" aria-hidden="true">NAV</span>
+      <span class="nav-hint">Executive command surface · private chrome · iPad Board presentation mode</span>
     </div>
     """,
     unsafe_allow_html=True,
