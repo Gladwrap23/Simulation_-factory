@@ -17,8 +17,7 @@ maxMessageSize = 50
 gatherUsageStats = false
 
 [client]
-# Host multipage sidebar nav stays off for private iPad chrome.
-# App surfaces (Executive Command / Kinetic Lab / AI Assistant) are linked
-# explicitly via surface_nav.py so pages remain reachable.
-toolbarMode = "viewer"
+# Suppress Streamlit host toolbar (Share / Star / Edit / menu) for private
+# iPad Board chrome. Sidebar multipage nav stays off; the app is single-file.
+toolbarMode = "minimal"
 showSidebarNavigation = false

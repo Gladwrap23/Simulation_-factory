@@ -32,6 +32,28 @@ st.markdown("""
         height: 0px !important;
     }
 
+    /* Bottom-right host badges (Streamlit Cloud viewer / GitHub watermark) */
+    #GithubIcon,
+    [class*="viewerBadge"],
+    [class*="ViewerBadge"],
+    [class*="styles_viewerBadge"],
+    a[data-testid="viewerBadge"],
+    .viewerBadge_container__1QSob,
+    .styles_viewerBadge__1yB5_,
+    .viewerBadge_link__1S137,
+    .viewerBadge_text__1JaDK,
+    a[href*="share.streamlit.io"],
+    a[href^="https://streamlit.io"],
+    a[href^="https://www.streamlit.io"] {
+        visibility: hidden !important;
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+    }
+
     /* Board Glass Theme Styling */
     .stApp { background-color: #0b0f17; color: #e6edf3; }
     .main-title { font-size: 2.1rem; font-weight: 800; color: #ffffff; margin-bottom: 1.2rem; }
