@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 1. TOTAL STEALTH CSS OVERRIDE (Eradicates Manage App Badge, Header & Footer)
+# 1. TOTAL STEALTH CSS OVERRIDE (Eradicates Manage App, Header, Footer & Badges)
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
@@ -21,7 +21,10 @@ st.markdown("""
     [data-testid="stStatusWidget"], 
     [data-testid="stAppDeployButton"],
     [data-testid="stSidebarNav"],
+    [data-testid="manage-app-button"],
+    .viewerBadge_container__1A53K,
     div[class*="viewerBadge"],
+    div[class*="styles_viewerBadge"],
     button[title*="Manage app"],
     div[data-testid="stAppViewBlockContainer"] > header {
         visibility: hidden !important;
@@ -63,9 +66,9 @@ st.markdown("""
         margin-top: 1.2rem;
         margin-bottom: 1.2rem;
     }
-    .directive-title { font-size: 0.9rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .directive-title { font-size: 0.85rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 0.4rem; }
     .directive-text { font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.8rem; }
-    .directive-stats { font-size: 0.85rem; color: #94a3b8; display: flex; gap: 1.5rem; margin-bottom: 0.6rem; }
+    .directive-stats { font-size: 0.88rem; color: #94a3b8; display: flex; gap: 1.5rem; margin-bottom: 0.6rem; }
     .directive-stat-highlight { color: #4ade80; font-weight: 700; }
 
     .footer-source { 
@@ -124,13 +127,13 @@ for col, m in zip(cols, data["metrics"]):
         """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 5. CLOSED-LOOP ACTIVE DIRECTIVE TELEMETRY HUD
+# 5. CLOSED-LOOP ACTIVE DIRECTIVE TELEMETRY HUD (BOARD COMMAND LEVEL)
 # -----------------------------------------------------------------------------
 ad = data.get("active_directive", {})
 if ad:
     st.markdown(f"""
     <div class="directive-box">
-        <div class="directive-title">⚡ ACTIVE EXECUTIVE DIRECTIVE TELEMETRY</div>
+        <div class="directive-title">⚡ TIER 1: ACTIVE EXECUTIVE DIRECTIVE TELEMETRY</div>
         <div class="directive-text">{ad['title']}</div>
         <div class="directive-stats">
             <span>Progress: <span class="directive-stat-highlight">{ad['completion_pct']}% Executed</span></span>
@@ -143,19 +146,19 @@ if ad:
     st.progress(ad['completion_pct'] / 100.0)
 
 # -----------------------------------------------------------------------------
-# 6. LAYER 2 OPERATIONAL DRIFT & LAYER 3 CLEARANCE (INSPECTIONS)
+# 6. TIER 2 & 3: MANAGER OPERATIONAL DRIFT & ACTIONABLE CLEARANCE
 # -----------------------------------------------------------------------------
-with st.expander("🔍 Inspect Layer 2 Operational Drift & Site-Level Bottlenecks", expanded=False):
-    st.subheader("Site & Queue-Level Friction Breakdown")
+with st.expander("🔍 TIER 2 & 3: Manager Operational View — Inspect Site Drift & Execute Clearance", expanded=True):
+    st.markdown("### 📊 Operational Unit Breakdown")
     l2_data = data.get("layer2_operations", [])
     if l2_data:
         st.table(l2_data)
     
     st.markdown("---")
-    st.subheader("⚡ Execute Layer 3 Actionable Clearance")
-    st.info("Trigger automated SLA override and issue direct compliance sign-off receipt.")
-    if st.button("Issue Immediate Operational Clearance Directive"):
-        st.success(f"Clearance Directive Logged to Ground-Truth Ledger for {selected_key}. Telemetry updated.")
+    st.markdown("### ⚡ Layer 3: Executive Action Trigger")
+    st.info("Override administrative queue friction and issue immediate compliance sign-off.")
+    if st.button("Execute Immediate Operational Clearance Directive"):
+        st.success(f"Clearance Directive Logged for {selected_key}. Ground-Truth Telemetry updated.")
 
 # -----------------------------------------------------------------------------
 # 7. FOOTER GROUND-TRUTH CITATION
