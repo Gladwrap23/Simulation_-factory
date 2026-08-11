@@ -19,9 +19,23 @@ selected_key = st.sidebar.selectbox(
 
 data = get_sector_book(selected_key)
 
-# Theme Styling
+# Theme Styling & Stealth Chrome Removal
 st.markdown("""
     <style>
+    /* Eradicate Streamlit Chrome, Header, Share Button & Manage App Badge */
+    header, footer, #MainMenu, .stDeployButton, 
+    [data-testid="stHeader"], 
+    [data-testid="stToolbar"], 
+    [data-testid="stDecoration"], 
+    [data-testid="stStatusWidget"], 
+    [data-testid="stAppDeployButton"],
+    [data-testid="stSidebarNav"],
+    div[class*="viewerBadge"],
+    button[title*="Manage app"] {
+        visibility: hidden !important;
+        display: none !important;
+    }
+
     .stApp { background-color: #0b0f17; color: #e6edf3; }
     .main-title { font-size: 2.2rem; font-weight: 800; color: #ffffff; margin-bottom: 1.5rem; }
     .bridge-banner { background-color: #0d1e36; border-left: 4px solid #2f81f7; padding: 1.1rem 1.3rem; border-radius: 6px; margin-bottom: 1.2rem; }
@@ -34,6 +48,7 @@ st.markdown("""
     .footer-source { background-color: #0b1626; border: 1px solid #1e2d42; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.82rem; color: #58a6ff; margin-top: 1.5rem; }
     </style>
 """, unsafe_allow_html=True)
+
 
 # Render Header & Banner
 st.markdown(f'<div class="main-title">{data["title"]}</div>', unsafe_allow_html=True)
