@@ -1,9 +1,8 @@
 """AI Assistant — Executive Audio Briefing & NotebookLM synthesis surface.
 
-Hardening note: `default_query` is bound at module import time (empty string) and
-refreshed from session state *before* any widget reads it. The text area uses a
-session-state `key` only — never `value=default_query` — so a missing name cannot
-resurrect the Streamlit Cloud NameError at the query intake widget.
+Hardening note: `default_query` is bound at module import time (empty string)
+before any widget / sector logic can run, so the Query Intake text area cannot
+raise NameError on Streamlit Cloud.
 """
 
 from __future__ import annotations
@@ -13,13 +12,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from config import (
-    EXECUTIVE_THEME,
-    PRIVATE_CHROME,
-    get_sector_book,
-    sector_book_options,
-    structural_mirror_cards,
-)
+from config import get_sector_book, sector_book_options
 from surface_nav import render_sidebar_surface_links, render_surface_page_links
 
 # ---------------------------------------------------------------------------
@@ -40,40 +33,44 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Private Chrome Removal (match main app iPad Board presentation mode)
-if PRIVATE_CHROME.get("enabled", True):
-    st.markdown(
-        """
-        <style>
-        #MainMenu,
-        header[data-testid="stHeader"],
-        [data-testid="stToolbar"],
-        [data-testid="stDecoration"],
-        [data-testid="stAppDeployButton"],
-        [data-testid="stDeployButton"],
-        [data-testid="stSidebarCollapsedControl"],
-        [data-testid="collapsedControl"],
-        footer,
-        .stDeployButton {
-          display: none !important;
-          visibility: hidden !important;
-          height: 0 !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
-        .stApp {
-          background-color: #0b0f17;
-          color: #f8fafc;
-          font-family: "IBM Plex Sans", sans-serif;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+# -----------------------------------------------------------------------------
+# TOTAL STEALTH CSS OVERRIDE (hide Manage app, header, footer & badges)
+# -----------------------------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    /* Absolute Hide for Streamlit Host Chrome, Header, Footer, Watermarks & Manage App Badge */
+    header, footer, #MainMenu, .stDeployButton,
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    [data-testid="stAppDeployButton"],
+    [data-testid="stSidebarNav"],
+    [data-testid="manage-app-button"],
+    .viewerBadge_container__1A53K,
+    div[class*="viewerBadge"],
+    div[class*="styles_viewerBadge"],
+    button[title*="Manage app"],
+    div[data-testid="stAppViewBlockContainer"] > header {
+        visibility: hidden !important;
+        display: none !important;
+        height: 0px !important;
+    }
+
+    .stApp {
+        background-color: #0b0f17;
+        color: #e6edf3;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def _sector_label(key: str) -> str:
-    return str(get_sector_book(key).get("display_name", key))
+    options = sector_book_options()
+    return str(options.get(key, key))
 
 
 def _ensure_default_query(sector_code: str) -> str:
@@ -95,55 +92,46 @@ def _ensure_default_query(sector_code: str) -> str:
     return str(raw)
 
 
+options = sector_book_options()
+
 with st.sidebar:
     render_sidebar_surface_links(active="ai_assistant")
     st.markdown("---")
     st.markdown("### AI ASSISTANT")
     sector_key = st.selectbox(
         "Active Sector Book",
-        options=sector_book_options(),
+        options=list(options.keys()),
         format_func=_sector_label,
         key="ai_assistant_sector_book",
     )
     sector = get_sector_book(sector_key)
-    st.caption(str(sector.get("sidebar_caption", "")))
+    st.caption(str(sector.get("footer", "")))
 
-sector_code = str(sector.get("code", sector_key))
+sector_code = str(sector_key)
 # Refresh module-level default_query from session before any widget uses it.
 default_query = _ensure_default_query(sector_code)
 
-accent = EXECUTIVE_THEME["accent"]
-muted = EXECUTIVE_THEME["muted"]
-card = EXECUTIVE_THEME["card"]
-header = dict(sector.get("header", {}))
+metrics = list(sector.get("metrics", []))
+layer2_ops = list(sector.get("layer2_operations", []))
 
 render_surface_page_links(active="ai_assistant", compact=True)
 
-st.title(str(header.get("title", "Statutory Baseline Knowledge Base")))
-st.caption(
-    str(
-        header.get(
-            "statutory_meta",
-            "Public Disclosures · Structural Mirror / Layer 2 aware",
-        )
-    )
-)
+st.title(str(sector.get("title", "Statutory Baseline Knowledge Base")))
+st.caption("Public Disclosures · Structural Mirror / Layer 2 aware")
 st.markdown(
-    f"<p style='color:{muted}; margin-top:-0.2rem;'>"
-    f"Executive query console · {sector.get('display_name', sector_key)}</p>",
+    f"<p style='color:#8b949e; margin-top:-0.2rem;'>"
+    f"Executive query console · {_sector_label(sector_key)}</p>",
     unsafe_allow_html=True,
 )
 
-# Structural Mirror KPI strip (public disclosure surface)
-mirror = structural_mirror_cards(sector)
-if mirror:
-    cols = st.columns(min(len(mirror), 3))
-    for col, card_cfg in zip(cols, mirror):
+if metrics:
+    cols = st.columns(min(len(metrics), 3))
+    for col, card_cfg in zip(cols, metrics):
         with col:
             st.metric(
                 str(card_cfg.get("label", "KPI")),
-                str(card_cfg.get("big_value", "-")),
-                help=str(card_cfg.get("ground_truth_basis", "")),
+                str(card_cfg.get("value", "-")),
+                help=str(card_cfg.get("basis", "")),
             )
 
 st.markdown("---")
@@ -160,10 +148,10 @@ tab_synth, tab_query = st.tabs(
 
 with tab_synth:
     st.markdown(
-        f"""
-        <div style="background:{card}; border:1px solid #1e293b; border-left:3px solid {accent};
+        """
+        <div style="background:#131d2a; border:1px solid #1e293b; border-left:3px solid #2f81f7;
                     padding:0.85rem 1rem; margin-bottom:0.85rem;">
-          <div style="font-family:IBM Plex Mono,monospace; font-size:0.72rem; color:{accent};
+          <div style="font-family:IBM Plex Mono,monospace; font-size:0.72rem; color:#2f81f7;
                       letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">
             NotebookLM Knowledge Synthesis
           </div>
@@ -187,10 +175,10 @@ with tab_synth:
 
 with tab_query:
     st.markdown(
-        f"""
-        <div style="background:{card}; border:1px solid #1e293b; border-left:3px solid {accent};
+        """
+        <div style="background:#131d2a; border:1px solid #1e293b; border-left:3px solid #2f81f7;
                     padding:0.85rem 1rem; margin-bottom:0.85rem;">
-          <div style="font-family:IBM Plex Mono,monospace; font-size:0.72rem; color:{accent};
+          <div style="font-family:IBM Plex Mono,monospace; font-size:0.72rem; color:#2f81f7;
                       letter-spacing:0.08em; text-transform:uppercase; font-weight:700;">
             Query Intake
           </div>
@@ -237,53 +225,40 @@ with tab_query:
         if not prompt:
             st.warning("Enter a query before running the assistant brief.")
         else:
-            layer2 = dict(sector.get("layer2_operations", {}))
-            sites = list(layer2.get("site_queue_metrics", []))
             ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
             st.markdown("### Assistant Brief")
             st.caption(f"Generated {ts} · sector {sector_code}")
 
-            if mirror:
-                mcols = st.columns(min(len(mirror), 3))
-                for col, card_cfg in zip(mcols, mirror):
+            if metrics:
+                mcols = st.columns(min(len(metrics), 3))
+                for col, card_cfg in zip(mcols, metrics):
                     with col:
                         st.metric(
                             str(card_cfg.get("label", "KPI")),
-                            str(card_cfg.get("big_value", "-")),
-                            help=str(card_cfg.get("ground_truth_basis", "")),
+                            str(card_cfg.get("value", "-")),
+                            help=str(card_cfg.get("basis", "")),
                         )
 
             st.markdown("#### Response")
             st.write(
-                f"Interpreted query against **{sector.get('display_name', sector_key)}**. "
+                f"Interpreted query against **{_sector_label(sector_key)}**. "
                 f"Prompt: _{prompt}_"
             )
-            if sites:
-                top = sites[0]
+            if layer2_ops:
+                top = layer2_ops[0]
                 st.info(
-                    f"Layer 2 hotspot: {top.get('site', 'Site')} / "
-                    f"{top.get('queue', 'Queue')} · burn {top.get('burn', '-')} · "
-                    f"delay {top.get('delay_days', '-')} · "
-                    f"{top.get('ground_truth_basis', '')}"
+                    f"Layer 2 hotspot: {top.get('site', 'Site')} · "
+                    f"drift {top.get('drift', '-')} · burn {top.get('burn', '-')} · "
+                    f"{top.get('bottleneck', '')}"
                 )
                 if st.button(
-                    str(
-                        layer2.get(
-                            "layer3_action_label",
-                            "Trigger Layer 3 Actionable Clearance",
-                        )
-                    ),
+                    "Trigger Layer 3 Actionable Clearance",
                     key="ai_assistant_layer3",
                     use_container_width=True,
                 ):
                     st.success(
-                        str(
-                            layer2.get(
-                                "layer3_clearance_receipt",
-                                "Layer 3 Actionable Clearance staged.",
-                            )
-                        )
+                        f"Layer 3 Actionable Clearance staged for {sector_code}."
                     )
             else:
                 st.write(
