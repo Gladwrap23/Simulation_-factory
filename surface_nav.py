@@ -1,9 +1,9 @@
-"""Shared Streamlit surface + command-level navigation.
+"""Shared Streamlit in-app command-level navigation.
 
-Streamlit Community Cloud only shows multipage entries when navigation is
-enabled *or* when the app renders explicit `st.page_link` controls. This app
-keeps `showSidebarNavigation = false` for private iPad chrome, so pages must be
-linked explicitly or they appear to be missing.
+The command surface is a single entrypoint (`app.py`). The multipage `pages/`
+directory was removed, so navigation stays within Executive Command via
+COMMAND LEVELS (Layer 1/2/3 and Interface A/B) rather than `st.page_link`
+targets to separate Streamlit pages.
 """
 
 from __future__ import annotations
@@ -12,27 +12,15 @@ from typing import Literal
 
 import streamlit as st
 
-SurfaceKey = Literal["home", "kinetic_lab", "ai_assistant"]
+SurfaceKey = Literal["home"]
 
-# Paths are relative to the app root (where `streamlit run app.py` starts).
+# Single-file surface — paths relative to the app root (`streamlit run app.py`).
 SURFACE_PAGES: tuple[dict[str, str], ...] = (
     {
         "key": "home",
         "path": "app.py",
         "label": "Executive Command",
         "hint": "Home · Structural Mirror · Interface A/B",
-    },
-    {
-        "key": "kinetic_lab",
-        "path": "pages/1_Kinetic_Lab.py",
-        "label": "Kinetic Lab",
-        "hint": "Live acquisition · Adaptive Drift θ",
-    },
-    {
-        "key": "ai_assistant",
-        "path": "pages/02_AI_Assistant.py",
-        "label": "AI Assistant",
-        "hint": "Audio briefing · Layer 2/3 synthesis",
     },
 )
 
@@ -66,34 +54,28 @@ COMMAND_LEVELS: tuple[dict[str, str], ...] = (
 
 
 def render_surface_page_links(*, active: SurfaceKey = "home", compact: bool = False) -> None:
-    """Render clickable links to every Streamlit multipage surface."""
+    """Render the single-surface marker (no multipage links)."""
     st.markdown(
         "<div class='ipad-top-nav' role='navigation' aria-label='App surfaces'>"
         "<span class='nav-mark'>SURFACES</span>"
-        "<span class='nav-hint'>Pages · levels · role-gated command decks</span>"
+        "<span class='nav-hint'>Executive Command · in-app levels only</span>"
         "</div>",
         unsafe_allow_html=True,
     )
-    cols = st.columns(len(SURFACE_PAGES))
-    for col, page in zip(cols, SURFACE_PAGES):
-        with col:
-            label = page["label"]
-            if page["key"] == active:
-                label = f"● {label}"
-            st.page_link(page["path"], label=label, use_container_width=True)
-            if not compact:
-                st.caption(page["hint"])
+    home = SURFACE_PAGES[0]
+    label = f"● {home['label']}" if active == home["key"] else home["label"]
+    st.markdown(f"**{label}**")
+    if not compact:
+        st.caption(home["hint"])
 
 
 def render_sidebar_surface_links(*, active: SurfaceKey = "home") -> None:
-    """Sidebar twin of the top surface nav (private chrome keeps host nav off)."""
+    """Sidebar twin — single Executive Command surface, no multipage links."""
     st.markdown("### APP SURFACES")
-    for page in SURFACE_PAGES:
-        label = page["label"]
-        if page["key"] == active:
-            label = f"● {label}"
-        st.page_link(page["path"], label=label, use_container_width=True)
-    st.caption("Kinetic Lab and AI Assistant are separate Streamlit pages.")
+    home = SURFACE_PAGES[0]
+    label = f"● {home['label']}" if active == home["key"] else home["label"]
+    st.markdown(label)
+    st.caption("All navigation stays on Executive Command (`app.py`).")
 
 
 def render_command_level_controls(*, sector_code: str, global_view_label: str) -> str:
