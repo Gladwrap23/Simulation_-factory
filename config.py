@@ -1,720 +1,270 @@
-"""AATPHOENIX sector books - executive dashboard configuration."""
+# config.py - Top 12 Sector Master Strategy Engine & Governance Surface
 
-from __future__ import annotations
-
-from typing import Any, TypedDict
-
-
-class MetricCard(TypedDict, total=False):
-    label: str
-    big_value: str
-    ground_truth_basis: str
-    sequence_tag: str
-    value_class: str
-    border_accent: str
-    card_id: str
-
-
-class Layer2SiteMetric(TypedDict):
-    site: str
-    queue: str
-    backlog: str
-    delay_days: str
-    burn: str
-    ground_truth_basis: str
-
-
-class Layer2Operations(TypedDict):
-    title: str
-    caption: str
-    inspect_label: str
-    site_queue_metrics: list[Layer2SiteMetric]
-    layer3_action_label: str
-    layer3_clearance_receipt: str
-
-
-class SectorHeader(TypedDict):
-    title: str
-    statutory_meta: str
-    subtitle: str
-
-
-class OperationalBridge(TypedDict):
-    section_caption: str
-    banner_badge: str
-    banner_title: str
-    banner_headline: str
-    banner_footer: str
-    channel_receipts: list[dict[str, str]]
-
-
-class SectorBook(TypedDict):
-    code: str
-    display_name: str
-    header: SectorHeader
-    operational_bridge: OperationalBridge
-    bridge_metrics: list[MetricCard]
-    # Structural Mirror Standard: exactly 3 KPI cards
-    structural_mirror: list[MetricCard]
-    layer2_operations: Layer2Operations
-    sidebar_caption: str
-    critical_subjects: int
-
-
-# Structural Mirror card IDs (order is fixed across all sector books)
-MIRROR_CARD_MACRO = "macro_valuation"
-MIRROR_CARD_VELOCITY = "velocity_friction"
-MIRROR_CARD_ACTIONABLE = "actionable_controllable_loss"
-STRUCTURAL_MIRROR_CARD_IDS: tuple[str, str, str] = (
-    MIRROR_CARD_MACRO,
-    MIRROR_CARD_VELOCITY,
-    MIRROR_CARD_ACTIONABLE,
-)
-
-
-# Executive dark theme - CursorRules standard
-EXECUTIVE_THEME: dict[str, str] = {
-    "bg": "#0b0f17",
-    "card": "#131d2a",
-    "border": "#1e293b",
-    "accent": "#2f81f7",
-    "accent_soft": "rgba(47, 129, 247, 0.15)",
-    "text": "#f8fafc",
-    "muted": "#8b949e",
-}
-
-# Private Chrome Removal — hide Streamlit host chrome on iPad Board presentations
-PRIVATE_CHROME: dict[str, Any] = {
-    "enabled": True,
-    "hide_header": True,
-    "hide_share": True,
-    "hide_hamburger": True,
-    "hide_github_link": True,
-    "hide_footer": True,
-    "presentation_mode": "ipad_board_chair",
-}
-
-
-ACC_BASELINE: SectorBook = {
-    "code": "ACC_BASELINE",
-    "display_name": "ACC Baseline - NZ Scheme Book",
-    "header": {
-        "title": "NZ AAT SOVEREIGN ORCHESTRATION ENGINE",
-        "statutory_meta": (
-            "Statutory Governance: Answerable to Cabinet Minister "
-            "(Executive Authority) | Crown Entity Act Compliance Mode"
-        ),
-        "subtitle": (
-            "AAT Scheme Performance - Predictive Operational Risk and "
-            "Long-Tail Claims Governance (NZD) - All-of-Government Integration"
-        ),
-    },
-    "operational_bridge": {
-        "section_caption": (
-            "What / Where / When - Crown Agency Sync Surface - "
-            "Health NZ / MSD / IRD / Ministerial"
-        ),
-        "banner_badge": "[MINISTERIAL WATCHLIST ACTIVE]",
-        "banner_title": "Critical Pathway Drift - Statutory Escalation Surface",
-        "banner_headline": (
-            "{critical_subjects} Subjects breaching long-tail liability thresholds"
-        ),
-        "banner_footer": (
-            "Crown Entity Act - Answerable to Minister for ACC - "
-            "BIM / Statutory Escalation channel"
-        ),
-        "channel_receipts": [
-            {
-                "agency": "Health NZ",
-                "status": "PROXIED / OPERATIONAL",
-                "receipt": "Last harvest 10:15 AM - HNZ-MED-4402",
-            },
-            {
-                "agency": "MSD",
-                "status": "LIVE INTEGRATION",
-                "receipt": "Last harvest 11:40 AM - MSD-AX-7710",
-            },
-            {
-                "agency": "IRD",
-                "status": "SECURE LIVE SYNC",
-                "receipt": "Last harvest 11:42 AM - IRD-2026-99X4",
-            },
-            {
-                "agency": "Ministerial",
-                "status": "BLUE / ACTIVE",
-                "receipt": "Last harvest 11:45 AM - CAB-BIM-2026-ACC",
-            },
+SECTORS = {
+    "ACC_BASELINE": {
+        "title": "🧠 ACC Executive Synthesis & Knowledge Engine",
+        "bridge_text": "Synthesis reconciles 100% of National Drift ($420k/wk): Northern $320k/wk (76.2%), Midland $40k/wk (9.5%), Central $30k/wk (7.1%), South Island $30k/wk (7.1%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$63.6 Billion", "basis": "Total OCL Disclosures"},
+            {"label": "Annual Velocity Drift Cost", "value": "$2.556 Billion", "basis": "Annual Scheme Underwriting Gap"},
+            {"label": "Actionable Controllable Loss", "value": "$1.209 Billion", "basis": "Preventable Administrative Drag (65%)"}
         ],
-    },
-    "bridge_metrics": [
-        {
-            "sequence_tag": "What",
-            "label": "Health NZ Clinical Grid",
-            "big_value": "Operational",
-            "ground_truth_basis": "Orthopaedic records linked - HNZ-MED-4402",
-            "value_class": "metric-value-green",
+        "active_directive": {
+            "title": "Mandate Standardized Case Triage & Direct Telemetry Ingestion",
+            "completion_pct": 74,
+            "compliant_units": "18 of 24 Regional Health Hubs",
+            "burn_reclaimed": "$236,800 / wk",
+            "days_active": 5
         },
-        {
-            "sequence_tag": "Where",
-            "label": "MSD Workforce Pipeline",
-            "big_value": "14 Matches",
-            "ground_truth_basis": "Modified light-duty - MSD-AX-7710",
-            "value_class": "metric-value-silver",
-        },
-        {
-            "sequence_tag": "When",
-            "label": "IRD Income Exchange",
-            "big_value": "Live Sync",
-            "ground_truth_basis": "12-month wage ledger - IRD-2026-99X4 - 11:42",
-            "value_class": "metric-value-green",
-        },
-        {
-            "sequence_tag": "Crown",
-            "label": "Ministerial Cabinet Pipeline",
-            "big_value": "Blue / Active",
-            "ground_truth_basis": "BIM escalation - CAB-BIM-2026-ACC",
-            "value_class": "metric-value-silver",
-        },
-    ],
-    "structural_mirror": [
-        {
-            "card_id": "macro_valuation",
-            "label": "Macro Valuation",
-            "big_value": "NZD $4.82B",
-            "ground_truth_basis": "Total capital baseline at risk - scheme reserve book",
-            "value_class": "metric-value-silver",
-        },
-        {
-            "card_id": "velocity_friction",
-            "label": "Velocity Friction",
-            "big_value": "NZD $186M / yr",
-            "ground_truth_basis": "Annual financial cost of timeline drift",
-            "value_class": "metric-value-crimson",
-        },
-        {
-            "card_id": "actionable_controllable_loss",
-            "label": "Actionable Controllable Loss",
-            "big_value": "NZD $41.6M",
-            "ground_truth_basis": (
-                "Cumulative burn from administrative / site delays"
-            ),
-            "value_class": "metric-value-crimson",
-        },
-    ],
-    "layer2_operations": {
-        "title": "Layer 2 Operations View",
-        "caption": (
-            "Site / queue breakdown of actionable controllable loss "
-            "(administrative and site delay burn)"
-        ),
-        "inspect_label": "Inspect Layer 2 Operational Drift",
-        "site_queue_metrics": [
-            {
-                "site": "Auckland Clinical Hub",
-                "queue": "MRI / Imaging Gate",
-                "backlog": "64 claims",
-                "delay_days": "18.4 d",
-                "burn": "NZD $12.1M",
-                "ground_truth_basis": "HNZ-MED-4402 harvest · imaging SLA breach",
-            },
-            {
-                "site": "Wellington Casework Pod",
-                "queue": "MSD Light-Duty Match",
-                "backlog": "29 claims",
-                "delay_days": "11.2 d",
-                "burn": "NZD $8.7M",
-                "ground_truth_basis": "MSD-AX-7710 · placement latency",
-            },
-            {
-                "site": "Christchurch Ortho Corridor",
-                "queue": "Surgical Scheduling",
-                "backlog": "41 claims",
-                "delay_days": "22.0 d",
-                "burn": "NZD $14.4M",
-                "ground_truth_basis": "Theatre slot friction · long-tail reserve",
-            },
-            {
-                "site": "National Income Desk",
-                "queue": "IRD Wage Ledger Sync",
-                "backlog": "17 claims",
-                "delay_days": "6.5 d",
-                "burn": "NZD $6.4M",
-                "ground_truth_basis": "IRD-2026-99X4 · compensation lag",
-            },
+        "layer2_operations": [
+            {"site": "Northern Hub 01", "drift": "+4.2 Wks", "burn": "$180k/wk", "bottleneck": "Manual Medical Paper Verification"},
+            {"site": "Midland Hub 02", "drift": "+1.8 Wks", "burn": "$40k/wk", "bottleneck": "Sequential Legal Approval Queue"},
+            {"site": "Central Hub 03", "drift": "+1.1 Wks", "burn": "$30k/wk", "bottleneck": "Batch Reconciliation Delay"}
         ],
-        "layer3_action_label": "Trigger Layer 3 Actionable Clearance",
-        "layer3_clearance_receipt": (
-            "Layer 3 Actionable Clearance staged - site delay packets sealed "
-            "for Cabinet / Scheme Director execution deck."
-        ),
+        "footer": "💡 Ground-Truth Source: Ingested 2025 ACC Financial Condition Report & Live Telemetry Feed."
     },
-    "sidebar_caption": (
-        "Localized NZ ACC / IRD / MSD / Health NZ / Cabinet Minister AoG grids"
-    ),
-    "critical_subjects": 18,
-}
-
-
-GRID_PJM: SectorBook = {
-    "code": "GRID_PJM",
-    "display_name": "Grid PJM - Interconnection Book",
-    "header": {
-        "title": "PJM GRID ORCHESTRATION ENGINE",
-        "statutory_meta": (
-            "Regional Transmission Organization - FERC Compliance Mode | "
-            "Independent Market Monitor Oversight"
-        ),
-        "subtitle": (
-            "PJM Interconnection Performance - Congestion Risk and Long-Tail "
-            "Capacity Governance (USD) - RTO Integration"
-        ),
-    },
-    "operational_bridge": {
-        "section_caption": (
-            "What / Where / When - RTO Sync Surface - "
-            "Generation / Transmission / Load / Market Ops"
-        ),
-        "banner_badge": "[CONGESTION WATCHLIST ACTIVE]",
-        "banner_title": "Critical Congestion Drift - Market Escalation Surface",
-        "banner_headline": (
-            "{critical_subjects} Nodes breaching long-tail congestion thresholds"
-        ),
-        "banner_footer": (
-            "FERC Order 2222 - Answerable to PJM Board - "
-            "IMM / Market Escalation channel"
-        ),
-        "channel_receipts": [
-            {
-                "agency": "Generation",
-                "status": "DISPATCHED / OPERATIONAL",
-                "receipt": "Last LMP harvest 10:15 AM - GEN-PJM-4402",
-            },
-            {
-                "agency": "Transmission",
-                "status": "LIVE INTEGRATION",
-                "receipt": "Last flow harvest 11:40 AM - TX-PJM-7710",
-            },
-            {
-                "agency": "Load",
-                "status": "SECURE LIVE SYNC",
-                "receipt": "Last demand harvest 11:42 AM - LD-PJM-99X4",
-            },
-            {
-                "agency": "Market Ops",
-                "status": "BLUE / ACTIVE",
-                "receipt": "Last auction harvest 11:45 AM - MKT-PJM-2026",
-            },
+    "GRID_PJM": {
+        "title": "⚡ PJM Infrastructure Capital & Interconnection Surface",
+        "bridge_text": "Synthesis reconciles 100% of Active Interconnection Drift ($340k/wk): Regional Re-Study Backlogs (72%), Substation Lags (18%), Environmental Clearance (10%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$35.3 Million", "basis": "24-Month Long-Tail Exposure"},
+            {"label": "Annual Velocity Drift Cost", "value": "$17.68 Million", "basis": "Interconnection Queue Dwell Drag"},
+            {"label": "Actionable Controllable Loss", "value": "$340,000 / wk", "basis": "Redundant Manual Study Re-Keying"}
         ],
-    },
-    "bridge_metrics": [
-        {
-            "sequence_tag": "What",
-            "label": "Generation Dispatch Grid",
-            "big_value": "Operational",
-            "ground_truth_basis": "Unit commitments linked - GEN-PJM-4402",
-            "value_class": "metric-value-green",
+        "active_directive": {
+            "title": "Bypass Manual Re-Studies via Pre-Validated Capacity Automation",
+            "completion_pct": 62,
+            "compliant_units": "31 of 50 Substation Clusters",
+            "burn_reclaimed": "$210,800 / wk",
+            "days_active": 6
         },
-        {
-            "sequence_tag": "Where",
-            "label": "Transmission Flow Pipeline",
-            "big_value": "14 Constraints",
-            "ground_truth_basis": "Binding limits - TX-PJM-7710",
-            "value_class": "metric-value-silver",
-        },
-        {
-            "sequence_tag": "When",
-            "label": "Load Forecast Exchange",
-            "big_value": "Live Sync",
-            "ground_truth_basis": "Hourly demand curve - LD-PJM-99X4 - 11:42",
-            "value_class": "metric-value-green",
-        },
-        {
-            "sequence_tag": "Market",
-            "label": "Market Operations Pipeline",
-            "big_value": "Blue / Active",
-            "ground_truth_basis": "LMP escalation - MKT-PJM-2026",
-            "value_class": "metric-value-silver",
-        },
-    ],
-    "structural_mirror": [
-        {
-            "card_id": "macro_valuation",
-            "label": "Macro Valuation",
-            "big_value": "USD $9.4B",
-            "ground_truth_basis": "Total capital baseline at risk - interconnection book",
-            "value_class": "metric-value-silver",
-        },
-        {
-            "card_id": "velocity_friction",
-            "label": "Velocity Friction",
-            "big_value": "USD $312M / yr",
-            "ground_truth_basis": "Annual financial cost of congestion timeline drift",
-            "value_class": "metric-value-crimson",
-        },
-        {
-            "card_id": "actionable_controllable_loss",
-            "label": "Actionable Controllable Loss",
-            "big_value": "USD $67.8M",
-            "ground_truth_basis": (
-                "Cumulative burn from queue / study administrative delays"
-            ),
-            "value_class": "metric-value-crimson",
-        },
-    ],
-    "layer2_operations": {
-        "title": "Layer 2 Operations View",
-        "caption": (
-            "Site / queue breakdown of actionable controllable loss "
-            "(study and interconnection administrative delays)"
-        ),
-        "inspect_label": "Inspect Layer 2 Operational Drift",
-        "site_queue_metrics": [
-            {
-                "site": "MAAC Study Cluster",
-                "queue": "System Impact Study",
-                "backlog": "88 projects",
-                "delay_days": "142 d",
-                "burn": "USD $24.6M",
-                "ground_truth_basis": "GEN-PJM-4402 · SIS cycle overrun",
-            },
-            {
-                "site": "DOM Zone Transmission",
-                "queue": "Network Upgrade Cost Allocation",
-                "backlog": "36 projects",
-                "delay_days": "97 d",
-                "burn": "USD $18.2M",
-                "ground_truth_basis": "TX-PJM-7710 · CIA friction",
-            },
-            {
-                "site": "Western Load Pocket",
-                "queue": "Facility Study Gate",
-                "backlog": "52 projects",
-                "delay_days": "118 d",
-                "burn": "USD $15.9M",
-                "ground_truth_basis": "LD-PJM-99X4 · facility study backlog",
-            },
-            {
-                "site": "Market Ops Desk",
-                "queue": "Capacity Auction Settlement",
-                "backlog": "21 filings",
-                "delay_days": "34 d",
-                "burn": "USD $9.1M",
-                "ground_truth_basis": "MKT-PJM-2026 · settlement lag",
-            },
+        "layer2_operations": [
+            {"site": "Substation Alpha (Zone 4)", "drift": "+6.1 Wks", "burn": "$150k/wk", "bottleneck": "Manual FERC Re-Study Queue"},
+            {"site": "Substation Beta (Zone 2)", "drift": "+3.4 Wks", "burn": "$110k/wk", "bottleneck": "Paper Land Retainer Audit"},
+            {"site": "Substation Gamma (Zone 1)", "drift": "+2.0 Wks", "burn": "$80k/wk", "bottleneck": "Sequential Environmental Sign-off"}
         ],
-        "layer3_action_label": "Trigger Layer 3 Actionable Clearance",
-        "layer3_clearance_receipt": (
-            "Layer 3 Actionable Clearance staged - queue delay packets sealed "
-            "for PJM Board / IMM escalation deck."
-        ),
+        "footer": "💡 Ground-Truth Source: Ingested PJM FERC Filings, GIS Queue Feeds & PUCT Dockets."
     },
-    "sidebar_caption": (
-        "Localized PJM / Generation / Transmission / Load / Market Ops RTO grids"
-    ),
-    "critical_subjects": 24,
-}
-
-
-BIOPHARMA_CLARITY: SectorBook = {
-    "code": "BIOPHARMA_CLARITY",
-    "display_name": "Biopharma Clarity - GMP Book",
-    "header": {
-        "title": "BIOPHARMA CLARITY ORCHESTRATION ENGINE",
-        "statutory_meta": (
-            "FDA / EMA GMP Compliance Mode | Quality Assurance Board Oversight"
-        ),
-        "subtitle": (
-            "Biologics Manufacturing Performance - Batch Deviation Risk and "
-            "Long-Tail Release Governance (USD) - CMC Integration"
-        ),
-    },
-    "operational_bridge": {
-        "section_caption": (
-            "What / Where / When - CMC Sync Surface - "
-            "Manufacturing / QC / Supply Chain / Regulatory"
-        ),
-        "banner_badge": "[DEVIATION WATCHLIST ACTIVE]",
-        "banner_title": "Critical Batch Drift - Regulatory Escalation Surface",
-        "banner_headline": (
-            "{critical_subjects} Lots breaching long-tail release thresholds"
-        ),
-        "banner_footer": (
-            "21 CFR Part 211 - Answerable to QA Board - "
-            "CAPA / Regulatory Escalation channel"
-        ),
-        "channel_receipts": [
-            {
-                "agency": "Manufacturing",
-                "status": "VALIDATED / OPERATIONAL",
-                "receipt": "Last batch harvest 10:15 AM - MFG-BIO-4402",
-            },
-            {
-                "agency": "QC Lab",
-                "status": "LIVE INTEGRATION",
-                "receipt": "Last assay harvest 11:40 AM - QC-BIO-7710",
-            },
-            {
-                "agency": "Supply Chain",
-                "status": "SECURE LIVE SYNC",
-                "receipt": "Last cold-chain harvest 11:42 AM - SC-BIO-99X4",
-            },
-            {
-                "agency": "Regulatory",
-                "status": "BLUE / ACTIVE",
-                "receipt": "Last submission harvest 11:45 AM - REG-BIO-2026",
-            },
+    "BIOPHARMA_CLARITY": {
+        "title": "☢️ Radiopharmaceutical Clinical Governance Surface",
+        "bridge_text": "Synthesis reconciles 100% of Trial Onboarding Drift ($280k/wk): Hospital Ethics (65%), Dosimetry Sign-offs (20%), Legal SLA (15%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$4.1 Billion", "basis": "Patented Monopoly Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$14.56 Million", "basis": "Trial Completion Delay Drag"},
+            {"label": "Actionable Controllable Loss", "value": "$25.7 Million", "basis": "Manual SDV Paper Cross-Checking (65%)"}
         ],
-    },
-    "bridge_metrics": [
-        {
-            "sequence_tag": "What",
-            "label": "Manufacturing Execution Grid",
-            "big_value": "Operational",
-            "ground_truth_basis": "Batch records linked - MFG-BIO-4402",
-            "value_class": "metric-value-green",
+        "active_directive": {
+            "title": "Freeze 100% Manual SDV; Deploy FDA Risk-Based Monitoring",
+            "completion_pct": 68,
+            "compliant_units": "17 of 25 Trial Sites",
+            "burn_reclaimed": "$190,400 / wk",
+            "days_active": 4
         },
-        {
-            "sequence_tag": "Where",
-            "label": "QC Release Pipeline",
-            "big_value": "9 Pending",
-            "ground_truth_basis": "Assay queue - QC-BIO-7710",
-            "value_class": "metric-value-silver",
-        },
-        {
-            "sequence_tag": "When",
-            "label": "Cold-Chain Exchange",
-            "big_value": "Live Sync",
-            "ground_truth_basis": "Temperature ledger - SC-BIO-99X4 - 11:42",
-            "value_class": "metric-value-green",
-        },
-        {
-            "sequence_tag": "Regulatory",
-            "label": "Regulatory Submission Pipeline",
-            "big_value": "Blue / Active",
-            "ground_truth_basis": "CAPA escalation - REG-BIO-2026",
-            "value_class": "metric-value-silver",
-        },
-    ],
-    "structural_mirror": [
-        {
-            "card_id": "macro_valuation",
-            "label": "Macro Valuation",
-            "big_value": "USD $2.15B",
-            "ground_truth_basis": "Total capital baseline at risk - GMP release book",
-            "value_class": "metric-value-silver",
-        },
-        {
-            "card_id": "velocity_friction",
-            "label": "Velocity Friction",
-            "big_value": "USD $94M / yr",
-            "ground_truth_basis": "Annual financial cost of batch timeline drift",
-            "value_class": "metric-value-crimson",
-        },
-        {
-            "card_id": "actionable_controllable_loss",
-            "label": "Actionable Controllable Loss",
-            "big_value": "USD $28.3M",
-            "ground_truth_basis": (
-                "Cumulative burn from QC / site administrative delays"
-            ),
-            "value_class": "metric-value-crimson",
-        },
-    ],
-    "layer2_operations": {
-        "title": "Layer 2 Operations View",
-        "caption": (
-            "Site / queue breakdown of actionable controllable loss "
-            "(QC release and site administrative delays)"
-        ),
-        "inspect_label": "Inspect Layer 2 Operational Drift",
-        "site_queue_metrics": [
-            {
-                "site": "Suite B Fill / Finish",
-                "queue": "Batch Record Review",
-                "backlog": "14 lots",
-                "delay_days": "9.6 d",
-                "burn": "USD $8.4M",
-                "ground_truth_basis": "MFG-BIO-4402 · BRR cycle time",
-            },
-            {
-                "site": "QC Central Lab",
-                "queue": "Assay Release Gate",
-                "backlog": "22 lots",
-                "delay_days": "12.1 d",
-                "burn": "USD $9.7M",
-                "ground_truth_basis": "QC-BIO-7710 · assay queue friction",
-            },
-            {
-                "site": "Cold-Chain Node West",
-                "queue": "Excursion Disposition",
-                "backlog": "7 lots",
-                "delay_days": "5.4 d",
-                "burn": "USD $4.2M",
-                "ground_truth_basis": "SC-BIO-99X4 · temperature excursion hold",
-            },
-            {
-                "site": "Regulatory Ops",
-                "queue": "CAPA / Variation Packet",
-                "backlog": "11 filings",
-                "delay_days": "16.8 d",
-                "burn": "USD $6.0M",
-                "ground_truth_basis": "REG-BIO-2026 · submission latency",
-            },
+        "layer2_operations": [
+            {"site": "Site 04 (Johns Hopkins)", "drift": "+4.5 Wks", "burn": "$120k/wk", "bottleneck": "Manual Paper SDV Cross-Check"},
+            {"site": "Site 12 (Mayo Clinic)", "drift": "+3.1 Wks", "burn": "$90k/wk", "bottleneck": "Sequential Ethics Committee Sign-off"},
+            {"site": "Site 09 (Peter Mac)", "drift": "+2.3 Wks", "burn": "$70k/wk", "bottleneck": "Dosimetry Calibration Audit"}
         ],
-        "layer3_action_label": "Trigger Layer 3 Actionable Clearance",
-        "layer3_clearance_receipt": (
-            "Layer 3 Actionable Clearance staged - site delay packets sealed "
-            "for QA Board / CAPA execution deck."
-        ),
+        "footer": "💡 Ground-Truth Source: Ingested ASX Audited Regulatory Filings & Clinical Site Registries."
     },
-    "sidebar_caption": (
-        "Localized Biopharma / Manufacturing / QC / Supply Chain / Regulatory grids"
-    ),
-    "critical_subjects": 11,
-}
-
-
-SECTOR_BOOKS: dict[str, SectorBook] = {
-    "ACC_BASELINE": ACC_BASELINE,
-    "GRID_PJM": GRID_PJM,
-    "BIOPHARMA_CLARITY": BIOPHARMA_CLARITY,
-}
-
-DEFAULT_SECTOR_KEY = "ACC_BASELINE"
-
-
-def get_sector_book(key: str) -> SectorBook:
-    """Return sector book by key, falling back to ACC baseline."""
-    if key in SECTOR_BOOKS:
-        return SECTOR_BOOKS[key]
-    return SECTOR_BOOKS[DEFAULT_SECTOR_KEY]
-
-
-def sector_book_options() -> list[str]:
-    """Ordered sector book keys for sidebar selectbox."""
-    return list(SECTOR_BOOKS.keys())
-
-
-def structural_mirror_cards(sector: SectorBook | dict[str, Any]) -> list[MetricCard]:
-    """Return the three Structural Mirror KPI cards in canonical order."""
-    cards = list(sector.get("structural_mirror", []))
-    by_id = {str(card.get("card_id", "")): card for card in cards}
-    ordered: list[MetricCard] = []
-    for card_id in STRUCTURAL_MIRROR_CARD_IDS:
-        if card_id in by_id:
-            ordered.append(by_id[card_id])
-    # Fall back to first three if IDs are missing (defensive).
-    if len(ordered) < 3:
-        ordered = cards[:3]
-    return ordered
-
-
-def layer2_operations(sector: SectorBook | dict[str, Any]) -> Layer2Operations:
-    """Return Layer 2 Operations View config for the active sector."""
-    return sector["layer2_operations"]  # type: ignore[return-value]
-
-
-# --- Kinetic Lab tenant config (University Operations Vault) ---
-
-
-class ResearchNode(TypedDict):
-    id: str
-    label: str
-    credit_cost: int
-    short_name: str
-    summary: str
-    unlock_yield: str
-
-
-class ThemeTokens(TypedDict):
-    bg: str
-    card: str
-    border: str
-    accent: str
-    accent_soft: str
-    text: str
-    muted: str
-
-
-TENANT_CONFIG: dict[str, Any] = {
-    "target_domain": "UNIVERSITY INTERCOLLEGIATE ATHLETICS",
-    "tenant_identity": "University Operations Vault",
-    "active_sector_code": "SEC_01_KINETIC",
-    "initial_credits": 450,
-    "theme": {
-        "bg_color": "bg-slate-950",
-        "card_color": "bg-slate-900",
-        "border_color": "border-slate-800",
-        "accent_color": "emerald-500",
+    "DEFENSE_AEROSPACE": {
+        "title": "🛡️ Sovereign Defense & Aerospace Acquisition Engine",
+        "bridge_text": "Synthesis reconciles 100% of Program Drift ($650k/wk): Tier-2 Supplier Lags (55%), Security Vetting (30%), Testing Clearance (15%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$12.8 Billion", "basis": "Sovereign Program Capital Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$33.80 Million", "basis": "Milestone Schedule Siphon"},
+            {"label": "Actionable Controllable Loss", "value": "$21.97 Million", "basis": "Manual Supply Chain Quality Audits"}
+        ],
+        "active_directive": {
+            "title": "Automate Tier-2 Supplier Security Verification via Digital Twin",
+            "completion_pct": 55,
+            "compliant_units": "11 of 20 Defense Contractors",
+            "burn_reclaimed": "$357,500 / wk",
+            "days_active": 7
+        },
+        "layer2_operations": [
+            {"site": "Avionics Sub-Assembly Plant A", "drift": "+8.0 Wks", "burn": "$300k/wk", "bottleneck": "Manual Paper Component Audit"},
+            {"site": "Propulsion Testing Rig B", "drift": "+5.2 Wks", "burn": "$200k/wk", "bottleneck": "Sequential Defense Security Clearance"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested Department of Defense Telemetry & Contracting Dockets."
     },
-    "research_nodes": [
-        {
-            "id": "node_1_1",
-            "label": "Node 1.1: Dynamic Interface Shear Stress Mapping",
-            "credit_cost": 5,
-            "short_name": "Shear Stress Mapping",
-            "summary": (
-                "Map plantar and contact-surface shear vectors during cut, plant, "
-                "and push-off so coaching staff can see where force leaks into the "
-                "medial/lateral chain."
-            ),
-            "unlock_yield": (
-                "Live shear heatmaps, peak medial shear (N), and cut-angle stress "
-                "flags for practice and game-day readiness."
-            ),
+    "ENERGY_ERCOT": {
+        "title": "🔋 Texas ERCOT Storage & Dispatch Surface",
+        "bridge_text": "Synthesis reconciles 100% of Battery Dispatch Drift ($210k/wk): Interconnection Testing (60%), Telemetry Linkage (40%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$1.8 Billion", "basis": "Storage Asset Capital Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$10.92 Million", "basis": "Missed Peak Arbitrage Revenue"},
+            {"label": "Actionable Controllable Loss", "value": "$7.10 Million", "basis": "Manual Grid Model Verification"}
+        ],
+        "active_directive": {
+            "title": "Deploy Direct Telemetry Automated Grid Model Ingestion",
+            "completion_pct": 80,
+            "compliant_units": "16 of 20 Battery Sites",
+            "burn_reclaimed": "$168,000 / wk",
+            "days_active": 3
         },
-        {
-            "id": "node_1_2",
-            "label": "Node 1.2: Pelvic Tilt and Deceleration Chain Asymmetry",
-            "credit_cost": 8,
-            "short_name": "Decel Chain Asymmetry",
-            "summary": (
-                "Quantify anterior/posterior pelvic tilt and left-right deceleration "
-                "timing so soft-tissue load is attributed to the correct kinetic chain."
-            ),
-            "unlock_yield": (
-                "Asymmetry index, pelvic tilt degrees, and braking-impulse imbalance "
-                "for return-to-play and weekly load boards."
-            ),
+        "layer2_operations": [
+            {"site": "West Texas Storage Facility 1", "drift": "+3.2 Wks", "burn": "$120k/wk", "bottleneck": "Manual SCADA Calibration Check"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested ERCOT Nodal Market Telemetry."
+    },
+    "BANKING_APRA": {
+        "title": "🏛️ APRA Prudential Capital & Liquidity Surface",
+        "bridge_text": "Synthesis reconciles 100% of RWA Calculation Drift ($520k/wk): Legacy Database Re-keying (80%), Manual Audit Sign-off (20%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$42.0 Billion", "basis": "Risk-Weighted Asset Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$27.04 Million", "basis": "Excess Tier-1 Capital Holdback"},
+            {"label": "Actionable Controllable Loss", "value": "$17.58 Million", "basis": "Manual Data Reconciliation Drag"}
+        ],
+        "active_directive": {
+            "title": "Automate RWA Reporting Pipeline directly from Source Ledger",
+            "completion_pct": 70,
+            "compliant_units": "7 of 10 Capital Divisions",
+            "burn_reclaimed": "$364,000 / wk",
+            "days_active": 8
         },
-        {
-            "id": "node_1_3",
-            "label": "Node 1.3: Cellular Longevity and Micro-Tear Chronology",
-            "credit_cost": 12,
-            "short_name": "Micro-Tear Chronology",
-            "summary": (
-                "Chronologize micro-tear accumulation against recovery windows so "
-                "staff can separate productive overload from lingering tissue debt."
-            ),
-            "unlock_yield": (
-                "Tissue debt score, projected clear-window (hrs), and cumulative "
-                "micro-tear chronology across the training microcycle."
-            ),
+        "layer2_operations": [
+            {"site": "Commercial Mortgage Division", "drift": "+5.0 Wks", "burn": "$300k/wk", "bottleneck": "Manual Spread-sheet Cross-Checking"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested APRA Regulatory Disclosures & Internal Ledgers."
+    },
+    "SUPPLY_CHAIN_PORT": {
+        "title": "⚓ Deepwater Port Logistics & Intermodal Engine",
+        "bridge_text": "Synthesis reconciles 100% of Berth Dwell Drift ($410k/wk): Customs Inspection Backlogs (65%), Paper Manifest Verification (35%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$2.9 Billion", "basis": "Annual Freight Throughput Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$21.32 Million", "basis": "Demurrage & Container Dwell Penalties"},
+            {"label": "Actionable Controllable Loss", "value": "$13.86 Million", "basis": "Manual Paper Customs Audit"}
+        ],
+        "active_directive": {
+            "title": "Mandate Automated Manifest Ingestion & OCR Clearance",
+            "completion_pct": 60,
+            "compliant_units": "12 of 20 Container Terminals",
+            "burn_reclaimed": "$246,000 / wk",
+            "days_active": 5
         },
-    ],
+        "layer2_operations": [
+            {"site": "Terminal 3 Gate Queue", "drift": "+4.1 Wks", "burn": "$250k/wk", "bottleneck": "Manual Paper Bill-of-Lading Audit"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested Port Authority AIS & Customs Feeds."
+    },
+    "HEALTH_NHS": {
+        "title": "🏥 NHS Elective Care Recovery & Surgical Surface",
+        "bridge_text": "Synthesis reconciles 100% of Surgical Queue Drift ($380k/wk): Pre-Op Admin Clearance (70%), Bed Allocation Delay (30%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "£1.4 Billion", "basis": "Elective Care Backlog Funding"},
+            {"label": "Annual Velocity Drift Cost", "value": "£19.76 Million", "basis": "Unused Theatre Time & Cancellations"},
+            {"label": "Actionable Controllable Loss", "value": "£12.84 Million", "basis": "Manual Paper Patient Onboarding"}
+        ],
+        "active_directive": {
+            "title": "Deploy Automated Pre-Op Screening & Digital Consent Protocols",
+            "completion_pct": 75,
+            "compliant_units": "15 of 20 NHS Trust Hospitals",
+            "burn_reclaimed": "£285,000 / wk",
+            "days_active": 6
+        },
+        "layer2_operations": [
+            {"site": "Royal Infirmary Theatre Suite B", "drift": "+3.8 Wks", "burn": "£200k/wk", "bottleneck": "Paper Pre-Op Nurse Sign-off"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested NHS Digital Waiting List Telemetry."
+    },
+    "MINING_COPPER": {
+        "title": "⛏️ Tier-1 Copper Smelting & Haulage Surface",
+        "bridge_text": "Synthesis reconciles 100% of Ore Dispatch Drift ($490k/wk): Haulage Fleet Maintenance Lags (60%), Assay Lab Delays (40%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$3.4 Billion", "basis": "Annual Concentrate Output Value"},
+            {"label": "Annual Velocity Drift Cost", "value": "$25.48 Million", "basis": "Smelter Bottleneck Idle Drag"},
+            {"label": "Actionable Controllable Loss", "value": "$16.56 Million", "basis": "Manual Assay Sample Logging"}
+        ],
+        "active_directive": {
+            "title": "Deploy Automated Automated Assay Testing & Fleet Telemetry",
+            "completion_pct": 65,
+            "compliant_units": "13 of 20 Mine Pits",
+            "burn_reclaimed": "$318,500 / wk",
+            "days_active": 4
+        },
+        "layer2_operations": [
+            {"site": "Pit North Haulage Loop", "drift": "+4.9 Wks", "burn": "$290k/wk", "bottleneck": "Manual Paper Driver Shift Re-keying"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested SCADA & Ore Transport Feeds."
+    },
+    "TELCO_5G": {
+        "title": "📡 5G C-Band Infrastructure Surface",
+        "bridge_text": "Synthesis reconciles 100% of Cell Site Activation Drift ($290k/wk): Council Permitting (70%), Fiber Backhaul SLA (30%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$1.2 Billion", "basis": "C-Band Spectrum License Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$15.08 Million", "basis": "Delayed Subscriber Revenue"},
+            {"label": "Actionable Controllable Loss", "value": "$9.80 Million", "basis": "Manual Municipal Permit Paperwork"}
+        ],
+        "active_directive": {
+            "title": "Bypass Manual Council Permitting via State Fast-Track API",
+            "completion_pct": 82,
+            "compliant_units": "164 of 200 Cell Towers",
+            "burn_reclaimed": "$237,800 / wk",
+            "days_active": 9
+        },
+        "layer2_operations": [
+            {"site": "Metro Sector Grid 09", "drift": "+2.9 Wks", "burn": "$140k/wk", "bottleneck": "Manual Local Board Approval"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested FCC Dockets & Carrier Build Telemetry."
+    },
+    "INSURANCE_PROPERTY": {
+        "title": "🏢 Global Commercial Property Reinsurance Engine",
+        "bridge_text": "Synthesis reconciles 100% of Claim Resolution Drift ($580k/wk): Paper Adjuster Audits (75%), Legal Disagreements (25%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$8.5 Billion", "basis": "Underwritten Treaty Exposure"},
+            {"label": "Annual Velocity Drift Cost", "value": "$30.16 Million", "basis": "Dwell Penalty Interest & Legal Friction"},
+            {"label": "Actionable Controllable Loss", "value": "$19.60 Million", "basis": "Manual Claim File Cross-Checking"}
+        ],
+        "active_directive": {
+            "title": "Automate Property Loss Assessment via Drone GIS & AI Claims Rule",
+            "completion_pct": 58,
+            "compliant_units": "29 of 50 Major Losses",
+            "burn_reclaimed": "$336,400 / wk",
+            "days_active": 5
+        },
+        "layer2_operations": [
+            {"site": "Commercial Complex Portfolio B", "drift": "+5.8 Wks", "burn": "$320k/wk", "bottleneck": "Manual Paper Adjuster Verification"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested Lloyd's Syndicate Claims Feed."
+    },
+    "RAIL_FREIGHT": {
+        "title": "🚂 National Class-1 Rail Logistics Engine",
+        "bridge_text": "Synthesis reconciles 100% of Yard Dwell Drift ($440k/wk): Locomotive Maintenance Backlog (65%), Crew Scheduling Lags (35%).",
+        "metrics": [
+            {"label": "Macro Valuation at Risk", "value": "$5.6 Billion", "basis": "Network Asset Capital Baseline"},
+            {"label": "Annual Velocity Drift Cost", "value": "$22.88 Million", "basis": "Railcar Dwell & Network Congestion"},
+            {"label": "Actionable Controllable Loss", "value": "$14.87 Million", "basis": "Manual Crew Callboard Paperwork"}
+        ],
+        "active_directive": {
+            "title": "Deploy Automated Locomotive Telemetry & Crew Dispatch Rules",
+            "completion_pct": 71,
+            "compliant_units": "14 of 20 Switching Yards",
+            "burn_reclaimed": "$312,400 / wk",
+            "days_active": 6
+        },
+        "layer2_operations": [
+            {"site": "Central Sorting Yard Gamma", "drift": "+4.0 Wks", "burn": "$260k/wk", "bottleneck": "Paper Crew Shift Log Cross-Checking"}
+        ],
+        "footer": "💡 Ground-Truth Source: Ingested FRA Telemetry & Class-1 Dispatch Systems."
+    }
 }
 
-THEME: ThemeTokens = {
-    "bg": "#020617",
-    "card": "#0f172a",
-    "border": "#1e293b",
-    "accent": "#10b981",
-    "accent_soft": "rgba(16, 185, 129, 0.15)",
-    "text": "#f8fafc",
-    "muted": "#94a3b8",
-}
+def get_sector_book(key):
+    return SECTORS.get(key, SECTORS["ACC_BASELINE"])
 
-
-def research_nodes() -> list[ResearchNode]:
-    return list(TENANT_CONFIG["research_nodes"])
-
-
-def node_by_id(node_id: str) -> ResearchNode | None:
-    for node in research_nodes():
-        if node["id"] == node_id:
-            return node
-    return None
-
-
-def total_unlock_cost() -> int:
-    return sum(int(n["credit_cost"]) for n in research_nodes())
+def sector_book_options():
+    return {
+        "ACC_BASELINE": "🧠 ACC Baseline · NZ Scheme Book",
+        "GRID_PJM": "⚡ Grid PJM · Interconnection Book",
+        "BIOPHARMA_CLARITY": "☢️ Biopharma Clarity · GMP Book",
+        "DEFENSE_AEROSPACE": "🛡️ Defense & Aerospace · Sovereign Book",
+        "ENERGY_ERCOT": "🔋 ERCOT Energy · Storage Book",
+        "BANKING_APRA": "🏛️ APRA Banking · Prudential Book",
+        "SUPPLY_CHAIN_PORT": "⚓ Port Logistics · Freight Book",
+        "HEALTH_NHS": "🏥 NHS Recovery · Surgical Book",
+        "MINING_COPPER": "⛏️ Tier-1 Mining · Ore Haulage Book",
+        "TELCO_5G": "📡 5G Infrastructure · Spectrum Book",
+        "INSURANCE_PROPERTY": "🏢 Commercial Reinsurance · Treaty Book",
+        "RAIL_FREIGHT": "🚂 Class-1 Rail · Logistics Book"
+    }
