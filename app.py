@@ -9,6 +9,44 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
+# 0. URL QUERY ROUTING (runs BEFORE sidebar / board glass draw)
+# Safari deep links: ?co=PJM or ?cl=PJM → force GRID_PJM into session state
+# so the dropdown and live glass open on the power-grid board, not ACC.
+# -----------------------------------------------------------------------------
+_SECTOR_OPTIONS = sector_book_options()
+_SECTOR_KEYS = list(_SECTOR_OPTIONS.keys())
+
+
+def _read_co_query_param():
+    """Read ?co= or ?cl= from the URL (case-insensitive value)."""
+    qp = st.query_params
+    for name in ("co", "cl"):
+        if name not in qp:
+            continue
+        raw = qp.get(name)
+        if isinstance(raw, (list, tuple)):
+            raw = raw[0] if raw else ""
+        raw = str(raw or "").strip()
+        if raw:
+            return raw, name
+    return "", "co"
+
+
+_co_raw, _co_param_name = _read_co_query_param()
+_matched_sector = resolve_sector_co(_co_raw, default=None)
+
+# Explicit overwrite: URL match wins over any prior ACC session state
+if _matched_sector and _matched_sector in _SECTOR_KEYS:
+    st.session_state["sector_book_key"] = _matched_sector
+    st.session_state["_co_url_applied"] = {
+        "raw": _co_raw,
+        "param": _co_param_name,
+        "key": _matched_sector,
+    }
+elif "sector_book_key" not in st.session_state or st.session_state.get("sector_book_key") not in _SECTOR_KEYS:
+    st.session_state["sector_book_key"] = "ACC_BASELINE"
+
+# -----------------------------------------------------------------------------
 # 1. TOTAL STEALTH CSS OVERRIDE (Eradicates Manage App, Header, Footer & Badges)
 # -----------------------------------------------------------------------------
 st.markdown("""
@@ -130,36 +168,33 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. SIDEBAR ROUTER + ?co= QUERY PARAM → SESSION STATE OVERRIDE
-# URL ?co= (PJM, NHS, ERCOT, GRID, …) case-insensitively matches config keys
-# and explicitly overwrites st.session_state to force the sector switch.
+# 2. SIDEBAR ROUTER — initializes from session state already set by ?co= / ?cl=
 # -----------------------------------------------------------------------------
 st.sidebar.title("Executive Navigation")
 st.sidebar.markdown("**Active Sector Surface**")
-options = sector_book_options()
-sector_keys = list(options.keys())
+options = _SECTOR_OPTIONS
+sector_keys = _SECTOR_KEYS
 
-# Read raw query param (st.query_params); accept list or scalar
-co_param = st.query_params.get("co", "")
-if isinstance(co_param, (list, tuple)):
-    co_param = co_param[0] if co_param else ""
-
-# Case-insensitive resolve against aliases, shortcodes, and all config keys
-matched_key = resolve_sector_co(co_param, default=None)
-
-# URL query parameters explicitly overwrite session state when a match is found
-if matched_key and matched_key in sector_keys:
-    st.session_state["sector_book_key"] = matched_key
-    st.session_state["_co_query_forced"] = str(co_param)
-elif "sector_book_key" not in st.session_state or st.session_state["sector_book_key"] not in sector_keys:
+# Guarantee widget key is set before selectbox draws (URL already applied above)
+if st.session_state.get("sector_book_key") not in sector_keys:
     st.session_state["sector_book_key"] = "ACC_BASELINE"
 
-def _sync_co_query_param():
-    """Mirror the active sector shortcode back into ?co= after sidebar changes."""
-    short = sector_co_short(st.session_state["sector_book_key"])
-    if st.query_params.get("co") != short:
-        st.query_params["co"] = short
 
+def _sync_co_query_param():
+    """Mirror the active sector shortcode into ?co= after a sidebar change."""
+    short = sector_co_short(st.session_state["sector_book_key"])
+    current = st.query_params.get("co")
+    if isinstance(current, (list, tuple)):
+        current = current[0] if current else ""
+    if str(current or "") != short:
+        st.query_params["co"] = short
+    # Drop legacy ?cl= once ?co= is canonical, so Safari deep links stay stable
+    if "cl" in st.query_params:
+        del st.query_params["cl"]
+
+
+# No index= here: session_state["sector_book_key"] (set from ?co=/?cl= above)
+# is the single source of truth so the dropdown opens on PJM, not ACC.
 selected_key = st.sidebar.selectbox(
     "Select Sector Book",
     options=sector_keys,
@@ -169,12 +204,15 @@ selected_key = st.sidebar.selectbox(
     label_visibility="collapsed",
 )
 
-# Keep the address bar aligned with the forced/active company sector
+# Keep address bar on the active shortcode (PJM, NHS, …) without snapping to ACC
 _sync_co_query_param()
 
 st.sidebar.caption(f"Deep link: `?co={sector_co_short(selected_key)}`")
-if matched_key and matched_key == selected_key:
-    st.sidebar.success(f"Query override: `?co={co_param}` → {selected_key}")
+if _matched_sector and _matched_sector == selected_key and _co_raw:
+    st.sidebar.success(
+        f"URL loaded `?{_co_param_name}={_co_raw}` → {selected_key} "
+        f"({sector_co_short(selected_key)})"
+    )
 
 data = get_sector_book(selected_key)
 
