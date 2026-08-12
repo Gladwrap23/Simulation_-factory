@@ -444,3 +444,81 @@ def sector_book_options():
         "INSURANCE_PROPERTY": "🏢 Commercial Reinsurance · Treaty Book",
         "RAIL_FREIGHT": "🚂 Class-1 Rail · Logistics Book"
     }
+
+# Short ?co= URL aliases → sector book keys (e.g. ?co=ACC → ACC_BASELINE)
+CO_QUERY_ALIASES = {
+    "ACC": "ACC_BASELINE",
+    "ACC_BASELINE": "ACC_BASELINE",
+    "PJM": "GRID_PJM",
+    "GRID": "GRID_PJM",
+    "GRID_PJM": "GRID_PJM",
+    "BIOPHARMA": "BIOPHARMA_CLARITY",
+    "CLARITY": "BIOPHARMA_CLARITY",
+    "BIOPHARMA_CLARITY": "BIOPHARMA_CLARITY",
+    "DEFENSE": "DEFENSE_AEROSPACE",
+    "AEROSPACE": "DEFENSE_AEROSPACE",
+    "DEFENSE_AEROSPACE": "DEFENSE_AEROSPACE",
+    "ERCOT": "ENERGY_ERCOT",
+    "ENERGY": "ENERGY_ERCOT",
+    "ENERGY_ERCOT": "ENERGY_ERCOT",
+    "APRA": "BANKING_APRA",
+    "BANKING": "BANKING_APRA",
+    "BANKING_APRA": "BANKING_APRA",
+    "PORT": "SUPPLY_CHAIN_PORT",
+    "SUPPLY": "SUPPLY_CHAIN_PORT",
+    "SUPPLY_CHAIN_PORT": "SUPPLY_CHAIN_PORT",
+    "NHS": "HEALTH_NHS",
+    "HEALTH": "HEALTH_NHS",
+    "HEALTH_NHS": "HEALTH_NHS",
+    "MINING": "MINING_COPPER",
+    "COPPER": "MINING_COPPER",
+    "MINING_COPPER": "MINING_COPPER",
+    "TELCO": "TELCO_5G",
+    "5G": "TELCO_5G",
+    "TELCO_5G": "TELCO_5G",
+    "INSURANCE": "INSURANCE_PROPERTY",
+    "PROPERTY": "INSURANCE_PROPERTY",
+    "INSURANCE_PROPERTY": "INSURANCE_PROPERTY",
+    "RAIL": "RAIL_FREIGHT",
+    "FREIGHT": "RAIL_FREIGHT",
+    "RAIL_FREIGHT": "RAIL_FREIGHT",
+}
+
+# Canonical short codes written back to ?co=
+CO_QUERY_SHORT = {
+    "ACC_BASELINE": "ACC",
+    "GRID_PJM": "PJM",
+    "BIOPHARMA_CLARITY": "BIOPHARMA",
+    "DEFENSE_AEROSPACE": "DEFENSE",
+    "ENERGY_ERCOT": "ERCOT",
+    "BANKING_APRA": "APRA",
+    "SUPPLY_CHAIN_PORT": "PORT",
+    "HEALTH_NHS": "NHS",
+    "MINING_COPPER": "MINING",
+    "TELCO_5G": "TELCO",
+    "INSURANCE_PROPERTY": "INSURANCE",
+    "RAIL_FREIGHT": "RAIL",
+}
+
+
+def resolve_sector_co(co_value, default="ACC_BASELINE"):
+    """Resolve a ?co= query value to a sector book key."""
+    if co_value is None:
+        return default
+    token = str(co_value).strip().upper().replace("-", "_").replace(" ", "_")
+    if not token:
+        return default
+    if token in CO_QUERY_ALIASES:
+        return CO_QUERY_ALIASES[token]
+    options = sector_book_options()
+    if token in options:
+        return token
+    for key in options:
+        if key.startswith(token) or token in key:
+            return key
+    return default
+
+
+def sector_co_short(key):
+    """Return the short ?co= code for a sector book key."""
+    return CO_QUERY_SHORT.get(key, key)

@@ -1,5 +1,5 @@
 import streamlit as st
-from config import get_sector_book, sector_book_options
+from config import get_sector_book, resolve_sector_co, sector_book_options, sector_co_short
 
 st.set_page_config(
     page_title="Executive Board Glass Command Surface",
@@ -130,17 +130,44 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. SIDEBAR ROUTER (TOP 12 SECTOR MASTER LIST)
+# 2. SIDEBAR ROUTER + ?co= QUERY PARAM ROUTING
+# Links like ?co=ACC load ACC_BASELINE directly via st.query_params.
 # -----------------------------------------------------------------------------
 st.sidebar.title("Executive Navigation")
 st.sidebar.markdown("**Active Sector Surface**")
 options = sector_book_options()
+sector_keys = list(options.keys())
+
+co_param = st.query_params.get("co", "")
+routed_key = resolve_sector_co(co_param, default="ACC_BASELINE")
+
+if "sector_book_key" not in st.session_state:
+    st.session_state.sector_book_key = routed_key
+elif co_param and routed_key != st.session_state.sector_book_key:
+    # Honor a fresh deep-link when the URL ?co= changes
+    st.session_state.sector_book_key = routed_key
+
+if st.session_state.sector_book_key not in sector_keys:
+    st.session_state.sector_book_key = "ACC_BASELINE"
+
+def _sync_co_query_param():
+    short = sector_co_short(st.session_state.sector_book_key)
+    if st.query_params.get("co") != short:
+        st.query_params["co"] = short
+
 selected_key = st.sidebar.selectbox(
     "Select Sector Book",
-    options=list(options.keys()),
+    options=sector_keys,
     format_func=lambda x: options[x],
-    label_visibility="collapsed"
+    key="sector_book_key",
+    on_change=_sync_co_query_param,
+    label_visibility="collapsed",
 )
+
+# Keep the address bar aligned with the active company/sector
+_sync_co_query_param()
+
+st.sidebar.caption(f"Deep link: `?co={sector_co_short(selected_key)}`")
 
 data = get_sector_book(selected_key)
 
