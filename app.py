@@ -219,6 +219,12 @@ data = get_sector_book(selected_key)
 # -----------------------------------------------------------------------------
 # 3. HEADER & OPERATIONAL BRIDGE
 # -----------------------------------------------------------------------------
+if _matched_sector and _co_raw and selected_key == _matched_sector:
+    st.caption(
+        f"Board glass routed from URL `?{_co_param_name}={_co_raw}` → "
+        f"**{sector_co_short(selected_key)}** / `{selected_key}`"
+    )
+
 st.markdown(f'<div class="main-title">{data["title"]}</div>', unsafe_allow_html=True)
 
 st.markdown(f"""
