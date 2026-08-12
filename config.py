@@ -501,21 +501,54 @@ CO_QUERY_SHORT = {
 }
 
 
-def resolve_sector_co(co_value, default="ACC_BASELINE"):
-    """Resolve a ?co= query value to a sector book key."""
+def resolve_sector_co(co_value, default=None):
+    """Resolve a ?co= query value to a sector book key.
+
+    Case-insensitive match against shortcodes (PJM, NHS, ERCOT, GRID, …),
+    alias keys, CO_QUERY_SHORT values, and every sector key in config.
+    Returns default when no match is found.
+    """
     if co_value is None:
         return default
+    if isinstance(co_value, (list, tuple)):
+        co_value = co_value[0] if co_value else ""
     token = str(co_value).strip().upper().replace("-", "_").replace(" ", "_")
     if not token:
         return default
+
+    # 1) Direct alias / shortcode map (keys stored uppercase)
     if token in CO_QUERY_ALIASES:
         return CO_QUERY_ALIASES[token]
-    options = sector_book_options()
-    if token in options:
-        return token
-    for key in options:
-        if key.startswith(token) or token in key:
+
+    # 2) Case-insensitive alias keys
+    for alias, key in CO_QUERY_ALIASES.items():
+        if str(alias).upper().replace("-", "_").replace(" ", "_") == token:
             return key
+
+    # 3) Case-insensitive shortcodes written to ?co=
+    for key, short in CO_QUERY_SHORT.items():
+        if str(short).upper().replace("-", "_").replace(" ", "_") == token:
+            return key
+
+    # 4) Case-insensitive exact match on all config sector keys
+    options = sector_book_options()
+    sector_keys = list(SECTORS.keys())
+    for key in list(dict.fromkeys([*sector_keys, *options.keys()])):
+        if str(key).upper() == token:
+            return key
+
+    # 5) Token is an underscore segment of a sector key (PJM ⊂ GRID_PJM)
+    for key in list(dict.fromkeys([*sector_keys, *options.keys()])):
+        parts = str(key).upper().split("_")
+        if token in parts:
+            return key
+
+    # 6) Prefix / substring fallback against all config keys
+    for key in list(dict.fromkeys([*sector_keys, *options.keys()])):
+        ku = str(key).upper()
+        if ku.startswith(token) or token in ku:
+            return key
+
     return default
 
 

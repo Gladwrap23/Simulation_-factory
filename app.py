@@ -130,28 +130,33 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. SIDEBAR ROUTER + ?co= QUERY PARAM ROUTING
-# Links like ?co=ACC load ACC_BASELINE directly via st.query_params.
+# 2. SIDEBAR ROUTER + ?co= QUERY PARAM → SESSION STATE OVERRIDE
+# URL ?co= (PJM, NHS, ERCOT, GRID, …) case-insensitively matches config keys
+# and explicitly overwrites st.session_state to force the sector switch.
 # -----------------------------------------------------------------------------
 st.sidebar.title("Executive Navigation")
 st.sidebar.markdown("**Active Sector Surface**")
 options = sector_book_options()
 sector_keys = list(options.keys())
 
+# Read raw query param (st.query_params); accept list or scalar
 co_param = st.query_params.get("co", "")
-routed_key = resolve_sector_co(co_param, default="ACC_BASELINE")
+if isinstance(co_param, (list, tuple)):
+    co_param = co_param[0] if co_param else ""
 
-if "sector_book_key" not in st.session_state:
-    st.session_state.sector_book_key = routed_key
-elif co_param and routed_key != st.session_state.sector_book_key:
-    # Honor a fresh deep-link when the URL ?co= changes
-    st.session_state.sector_book_key = routed_key
+# Case-insensitive resolve against aliases, shortcodes, and all config keys
+matched_key = resolve_sector_co(co_param, default=None)
 
-if st.session_state.sector_book_key not in sector_keys:
-    st.session_state.sector_book_key = "ACC_BASELINE"
+# URL query parameters explicitly overwrite session state when a match is found
+if matched_key and matched_key in sector_keys:
+    st.session_state["sector_book_key"] = matched_key
+    st.session_state["_co_query_forced"] = str(co_param)
+elif "sector_book_key" not in st.session_state or st.session_state["sector_book_key"] not in sector_keys:
+    st.session_state["sector_book_key"] = "ACC_BASELINE"
 
 def _sync_co_query_param():
-    short = sector_co_short(st.session_state.sector_book_key)
+    """Mirror the active sector shortcode back into ?co= after sidebar changes."""
+    short = sector_co_short(st.session_state["sector_book_key"])
     if st.query_params.get("co") != short:
         st.query_params["co"] = short
 
@@ -164,10 +169,12 @@ selected_key = st.sidebar.selectbox(
     label_visibility="collapsed",
 )
 
-# Keep the address bar aligned with the active company/sector
+# Keep the address bar aligned with the forced/active company sector
 _sync_co_query_param()
 
 st.sidebar.caption(f"Deep link: `?co={sector_co_short(selected_key)}`")
+if matched_key and matched_key == selected_key:
+    st.sidebar.success(f"Query override: `?co={co_param}` → {selected_key}")
 
 data = get_sector_book(selected_key)
 
