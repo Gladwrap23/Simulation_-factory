@@ -250,8 +250,184 @@ SECTORS = {
     }
 }
 
+# -----------------------------------------------------------------------------
+# Update 4 — Four-Stage Clearance Tracker & Cost of Inaction (COI) Schema
+# Stages: Intake → Evidence Validation → Authority Sign-off → Operational Clearance
+# -----------------------------------------------------------------------------
+CLEARANCE_STAGE_LABELS = (
+    "Stage 1 · Intake Queue",
+    "Stage 2 · Evidence Validation",
+    "Stage 3 · Authority Sign-off",
+    "Stage 4 · Operational Clearance",
+)
+
+# Per-sector clearance pipeline counts + COI metric cards (Label / Big Value / Ground-Truth Basis)
+SECTOR_CLEARANCE_COI = {
+    "ACC_BASELINE": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 42, "cleared_pct": 88, "status": "Flowing", "owner": "Regional Intake Desk"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 31, "cleared_pct": 74, "status": "Bottleneck", "owner": "Medical Evidence Hub"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 18, "cleared_pct": 61, "status": "Watch", "owner": "Case Authority Panel"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 14, "cleared_pct": 55, "status": "Active", "owner": "Operational Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$420k / wk", "basis": "Uncleared Stage 2–3 Dwell Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$21.8M", "basis": "12-Month Projected Drift if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "65%", "basis": "Share Reclaimable via Stage Automation"},
+        ],
+    },
+    "GRID_PJM": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 50, "cleared_pct": 82, "status": "Flowing", "owner": "Queue Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 37, "cleared_pct": 68, "status": "Bottleneck", "owner": "Re-Study Desk"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 22, "cleared_pct": 54, "status": "Watch", "owner": "FERC Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 16, "cleared_pct": 48, "status": "Active", "owner": "Interconnection Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$340k / wk", "basis": "Uncleared Re-Study & Environmental Dwell"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$17.7M", "basis": "Annual Interconnection Drift if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "62%", "basis": "Share Reclaimable via Pre-Validated Capacity"},
+        ],
+    },
+    "BIOPHARMA_CLARITY": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 28, "cleared_pct": 85, "status": "Flowing", "owner": "Site Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 21, "cleared_pct": 71, "status": "Bottleneck", "owner": "SDV / Dosimetry"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 15, "cleared_pct": 64, "status": "Watch", "owner": "Ethics / Legal SLA"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 11, "cleared_pct": 52, "status": "Active", "owner": "Trial Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$280k / wk", "basis": "Uncleared Ethics & SDV Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$14.6M", "basis": "Trial Completion Delay if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "68%", "basis": "Share Reclaimable via Risk-Based Monitoring"},
+        ],
+    },
+    "DEFENSE_AEROSPACE": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 24, "cleared_pct": 78, "status": "Flowing", "owner": "Supplier Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 19, "cleared_pct": 60, "status": "Bottleneck", "owner": "Security Vetting"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 12, "cleared_pct": 50, "status": "Watch", "owner": "Program Authority"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 9, "cleared_pct": 42, "status": "Active", "owner": "Testing Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$650k / wk", "basis": "Uncleared Vetting & Tier-2 Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$33.8M", "basis": "Milestone Siphon if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "55%", "basis": "Share Reclaimable via Digital Twin Verification"},
+        ],
+    },
+    "ENERGY_ERCOT": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 20, "cleared_pct": 90, "status": "Flowing", "owner": "Site Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 17, "cleared_pct": 80, "status": "Flowing", "owner": "Interconnection Testing"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 14, "cleared_pct": 72, "status": "Watch", "owner": "Grid Model Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 12, "cleared_pct": 68, "status": "Active", "owner": "Dispatch Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$210k / wk", "basis": "Uncleared Testing & Telemetry Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$10.9M", "basis": "Missed Peak Arbitrage if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "80%", "basis": "Share Reclaimable via Automated Grid Ingestion"},
+        ],
+    },
+    "BANKING_APRA": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 16, "cleared_pct": 84, "status": "Flowing", "owner": "Ledger Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 12, "cleared_pct": 70, "status": "Bottleneck", "owner": "RWA Validation"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 9, "cleared_pct": 62, "status": "Watch", "owner": "Prudential Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 7, "cleared_pct": 55, "status": "Active", "owner": "Capital Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$520k / wk", "basis": "Uncleared Re-key & Audit Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$27.0M", "basis": "Excess Tier-1 Holdback if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "70%", "basis": "Share Reclaimable via Source-Ledger Automation"},
+        ],
+    },
+    "SUPPLY_CHAIN_PORT": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 36, "cleared_pct": 86, "status": "Flowing", "owner": "Gate Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 27, "cleared_pct": 69, "status": "Bottleneck", "owner": "Manifest / OCR Desk"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 18, "cleared_pct": 58, "status": "Watch", "owner": "Customs Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 13, "cleared_pct": 50, "status": "Active", "owner": "Berth Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$410k / wk", "basis": "Uncleared Customs & Manifest Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$21.3M", "basis": "Demurrage Penalties if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "60%", "basis": "Share Reclaimable via Automated Manifest OCR"},
+        ],
+    },
+    "HEALTH_NHS": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 40, "cleared_pct": 87, "status": "Flowing", "owner": "Referral Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 29, "cleared_pct": 73, "status": "Bottleneck", "owner": "Pre-Op Validation"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 20, "cleared_pct": 66, "status": "Watch", "owner": "Clinical Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 15, "cleared_pct": 58, "status": "Active", "owner": "Theatre Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "£380k / wk", "basis": "Uncleared Pre-Op & Bed Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "£19.8M", "basis": "Unused Theatre Time if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "75%", "basis": "Share Reclaimable via Digital Consent Protocols"},
+        ],
+    },
+    "MINING_COPPER": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 22, "cleared_pct": 83, "status": "Flowing", "owner": "Pit Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 17, "cleared_pct": 67, "status": "Bottleneck", "owner": "Assay Validation"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 12, "cleared_pct": 59, "status": "Watch", "owner": "Dispatch Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 10, "cleared_pct": 51, "status": "Active", "owner": "Haulage Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$490k / wk", "basis": "Uncleared Assay & Fleet Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$25.5M", "basis": "Smelter Idle Drag if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "65%", "basis": "Share Reclaimable via Assay & Fleet Telemetry"},
+        ],
+    },
+    "TELCO_5G": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 200, "cleared_pct": 92, "status": "Flowing", "owner": "Build Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 176, "cleared_pct": 84, "status": "Flowing", "owner": "Permit Validation"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 150, "cleared_pct": 78, "status": "Watch", "owner": "Council Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 132, "cleared_pct": 72, "status": "Active", "owner": "Cell Activation Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$290k / wk", "basis": "Uncleared Permit & Backhaul Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$15.1M", "basis": "Delayed Subscriber Revenue if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "82%", "basis": "Share Reclaimable via State Fast-Track API"},
+        ],
+    },
+    "INSURANCE_PROPERTY": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 55, "cleared_pct": 80, "status": "Flowing", "owner": "FNOL Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 41, "cleared_pct": 63, "status": "Bottleneck", "owner": "Adjuster Validation"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 28, "cleared_pct": 52, "status": "Watch", "owner": "Treaty Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 20, "cleared_pct": 44, "status": "Active", "owner": "Settlement Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$580k / wk", "basis": "Uncleared Adjuster & Legal Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$30.2M", "basis": "Dwell Interest & Legal Friction if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "58%", "basis": "Share Reclaimable via GIS / AI Claims Rules"},
+        ],
+    },
+    "RAIL_FREIGHT": {
+        "clearance_stages": [
+            {"stage": 1, "label": CLEARANCE_STAGE_LABELS[0], "units": 30, "cleared_pct": 85, "status": "Flowing", "owner": "Yard Intake"},
+            {"stage": 2, "label": CLEARANCE_STAGE_LABELS[1], "units": 23, "cleared_pct": 71, "status": "Bottleneck", "owner": "Locomotive Validation"},
+            {"stage": 3, "label": CLEARANCE_STAGE_LABELS[2], "units": 17, "cleared_pct": 64, "status": "Watch", "owner": "Crew Sign-off"},
+            {"stage": 4, "label": CLEARANCE_STAGE_LABELS[3], "units": 13, "cleared_pct": 57, "status": "Active", "owner": "Dispatch Clearance"},
+        ],
+        "coi_metrics": [
+            {"label": "COI · Weekly Cost of Inaction", "value": "$440k / wk", "basis": "Uncleared Maintenance & Crew Stage Burn"},
+            {"label": "COI · Clearance Lag Exposure", "value": "$22.9M", "basis": "Railcar Dwell if Stages Stall"},
+            {"label": "COI · Controllable Recovery", "value": "71%", "basis": "Share Reclaimable via Telemetry & Crew Rules"},
+        ],
+    },
+}
+
+
 def get_sector_book(key):
-    return SECTORS.get(key, SECTORS["ACC_BASELINE"])
+    book = dict(SECTORS.get(key, SECTORS["ACC_BASELINE"]))
+    clearance_coi = SECTOR_CLEARANCE_COI.get(key, SECTOR_CLEARANCE_COI["ACC_BASELINE"])
+    book["clearance_stages"] = clearance_coi["clearance_stages"]
+    book["coi_metrics"] = clearance_coi["coi_metrics"]
+    return book
 
 def sector_book_options():
     return {

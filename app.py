@@ -102,6 +102,30 @@ st.markdown("""
         color: #58a6ff; 
         margin-top: 1.5rem; 
     }
+
+    /* Four-Stage Clearance Tracker */
+    .section-heading {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #58a6ff;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 1.4rem 0 0.8rem 0;
+    }
+    .stage-card {
+        background-color: #131d2a;
+        border: 1px solid #213043;
+        border-radius: 8px;
+        padding: 1rem;
+        height: 100%;
+    }
+    .stage-index { font-size: 0.72rem; font-weight: 700; color: #2f81f7; text-transform: uppercase; margin-bottom: 0.35rem; }
+    .stage-label { font-size: 0.92rem; font-weight: 700; color: #ffffff; margin-bottom: 0.55rem; }
+    .stage-meta { font-size: 0.78rem; color: #8b949e; margin-bottom: 0.25rem; }
+    .stage-status-flowing { color: #4ade80; font-weight: 700; }
+    .stage-status-bottleneck { color: #f87171; font-weight: 700; }
+    .stage-status-watch { color: #fbbf24; font-weight: 700; }
+    .stage-status-active { color: #38bdf8; font-weight: 700; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -168,7 +192,52 @@ if ad:
     st.progress(ad['completion_pct'] / 100.0)
 
 # -----------------------------------------------------------------------------
-# 6. TIER 2 & 3: MANAGER OPERATIONAL DRIFT & ACTIONABLE CLEARANCE
+# 6. FOUR-STAGE CLEARANCE TRACKER
+# -----------------------------------------------------------------------------
+st.markdown('<div class="section-heading">🛤️ Four-Stage Clearance Tracker</div>', unsafe_allow_html=True)
+stages = data.get("clearance_stages", [])
+if stages:
+    stage_cols = st.columns(4)
+    status_class = {
+        "Flowing": "stage-status-flowing",
+        "Bottleneck": "stage-status-bottleneck",
+        "Watch": "stage-status-watch",
+        "Active": "stage-status-active",
+    }
+    for col, stage in zip(stage_cols, stages):
+        with col:
+            cls = status_class.get(stage["status"], "stage-status-active")
+            st.markdown(f"""
+            <div class="stage-card">
+                <div class="stage-index">Stage {stage['stage']} of 4</div>
+                <div class="stage-label">{stage['label']}</div>
+                <div class="stage-meta">Units in stage: <strong style="color:#e6edf3;">{stage['units']}</strong></div>
+                <div class="stage-meta">Cleared: <strong style="color:#e6edf3;">{stage['cleared_pct']}%</strong></div>
+                <div class="stage-meta">Owner: {stage['owner']}</div>
+                <div class="stage-meta">Status: <span class="{cls}">{stage['status']}</span></div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.progress(stage["cleared_pct"] / 100.0)
+
+# -----------------------------------------------------------------------------
+# 7. COI (COST OF INACTION) METRICS
+# -----------------------------------------------------------------------------
+st.markdown('<div class="section-heading">📉 COI Metrics · Cost of Inaction</div>', unsafe_allow_html=True)
+coi_metrics = data.get("coi_metrics", [])
+if coi_metrics:
+    coi_cols = st.columns(3)
+    for col, m in zip(coi_cols, coi_metrics):
+        with col:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{m['label']} 🛈</div>
+                <div class="metric-value">{m['value']}</div>
+                <div class="metric-basis">📊 Basis: {m['basis']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+# -----------------------------------------------------------------------------
+# 8. TIER 2 & 3: MANAGER OPERATIONAL DRIFT & ACTIONABLE CLEARANCE
 # -----------------------------------------------------------------------------
 with st.expander("🔍 TIER 2 & 3: Manager Operational View — Inspect Site Drift & Execute Clearance", expanded=True):
     st.markdown("### 📊 Operational Unit Breakdown")
@@ -183,6 +252,6 @@ with st.expander("🔍 TIER 2 & 3: Manager Operational View — Inspect Site Dri
         st.success(f"Clearance Directive Logged for {selected_key}. Ground-Truth Telemetry updated.")
 
 # -----------------------------------------------------------------------------
-# 7. FOOTER GROUND-TRUTH CITATION
+# 9. FOOTER GROUND-TRUTH CITATION
 # -----------------------------------------------------------------------------
 st.markdown(f'<div class="footer-source">{data["footer"]}</div>', unsafe_allow_html=True)
