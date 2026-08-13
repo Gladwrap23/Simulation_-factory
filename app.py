@@ -8,14 +8,28 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- CLEAN ENTERPRISE STYLING (WHITE-LABEL: HIDE GITHUB ICON, HEADER, FOOTER, MENU & SIDEBAR NAV) ---
+# --- CLEAN ENTERPRISE STYLING (KEEP SIDEBAR TOGGLE, HIDE GITHUB & TOOLBAR) ---
 hide_streamlit_style = """
     <style>
-        header {visibility: hidden !important;}
+        /* Hide footer and default page list in sidebar */
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         [data-testid="stSidebarNav"] {display: none !important;}
-        .stAppHeader {display: none !important;}
+        [data-testid="stDecoration"] {display: none !important;}
+        
+        /* Make header background transparent so main content sits cleanly */
+        header {background: transparent !important;}
+        [data-testid="stHeader"] {background: transparent !important;}
+        
+        /* Hide top-right toolbar icons (GitHub / deploy buttons) */
+        [data-testid="stToolbar"] {visibility: hidden !important;}
+        
+        /* Ensure sidebar toggle button stays visible and clickable */
+        [data-testid="stSidebarCollapsedControl"] {
+            visibility: visible !important;
+            display: block !important;
+            color: #ffffff !important;
+        }
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -149,8 +163,17 @@ selected_key = st.sidebar.selectbox(
 active_data = SECTORS[selected_key]
 is_authorized = (selected_key == st.session_state["authorized_co"])
 
-# --- 4. HEADER: COMMAND POST BRANDING ---
-st.title(f"🎯 {active_data['title']}")
+# --- 4. HEADER: CENTERED COMMAND POST BRANDING ---
+st.markdown(
+    f"""
+    <div style='text-align: center; padding: 15px 0 25px 0;'>
+        <h1 style='color: #00E5FF; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin: 0;'>
+            🎯 {active_data['title']}
+        </h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- 5. PEER LOCK SECURITY GATE (IF OTHER COMPANY CLICKED) ---
 if not is_authorized:
