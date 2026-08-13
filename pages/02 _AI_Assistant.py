@@ -104,7 +104,8 @@ with tab1:
     st.info("💡 **Ground-Truth Source:** Ingested 2025 ACC Financial Condition Report & Live Telemetry Feed.")
     
     user_query = st.text_area(
-        "NotebookLM Query Engine (Paste Stoppage Logs or Clinical Files Here)",
+        "NotebookLM Query Engine (Paste Stoppage Logs or Clinical Files Here)",default_query = "Synthesize key operational drift risks and clearance options."
+
         value=default_query,
         height=110,
         key="notebook_query_text_area",
