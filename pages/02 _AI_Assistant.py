@@ -105,6 +105,7 @@ with tab1:
     
     user_query = st.text_area(
         "NotebookLM Query Engine (Paste Stoppage Logs or Clinical Files Here)",default_query = "Synthesize key operational drift risks and clearance options."
+default_query = "Synthesize key operational drift risks and clearance options."
 
         value=default_query,
         height=110,
