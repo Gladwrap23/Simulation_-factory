@@ -222,16 +222,32 @@ view_mode = st.sidebar.radio(
     index=2
 )
 
-# C. Interactive Stress-Testing Slider
+# C. Interactive Stress-Testing Slider (Role-Gated)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⚡ Live Drift Stress-Tester")
-stress_lag = st.sidebar.slider(
-    "Simulate Friction Lag Escalation:",
-    min_value=0,
-    max_value=8,
-    value=0,
-    format="+%d Wks"
-)
+
+has_governance_authority = (view_mode in ["Executive Board Glass", "Complete Command Post"])
+
+if has_governance_authority:
+    stress_lag = st.sidebar.slider(
+        "Simulate Friction Lag Escalation:",
+        min_value=0,
+        max_value=8,
+        value=0,
+        format="+%d Wks",
+        key="active_stress_slider"
+    )
+else:
+    st.sidebar.caption("🔒 Macro Stress Simulation Locked to Tier 1 Executive Authority.")
+    stress_lag = st.sidebar.slider(
+        "Simulate Friction Lag Escalation (Locked):",
+        min_value=0,
+        max_value=8,
+        value=0,
+        format="+%d Wks",
+        disabled=True,
+        key="locked_stress_slider"
+    )
 
 # Sidebar Action Directives
 st.sidebar.markdown("---")
@@ -319,3 +335,5 @@ with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=Tru
     if user_query:
         st.info(f"**Synthesizing response for query:** '{user_query}'...")
         st.write("✨ *Analysis:* Operational drift in primary units impacts CapEx velocity. Immediate clearance directive recommended.")
+
+￼
