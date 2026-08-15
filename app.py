@@ -18,7 +18,7 @@ enterprise_styling = """
         [data-testid="stDecoration"] {display: none !important;}
         [data-testid="stToolbar"] {display: none !important;}
         
-        /* Make header area pass-through */
+        /* Make header pass-through */
         header {background: transparent !important;}
         [data-testid="stHeader"] {background: transparent !important;}
 
@@ -37,16 +37,30 @@ enterprise_styling = """
             color: #c9d1d9 !important;
         }
 
-        /* Ensure top-left sidebar toggle arrow is visible, vibrant cyan, and touch-ready */
-        [data-testid="stSidebarCollapsedControl"] {
+        /* High-Visibility Floating Mobile Sidebar Toggle Button */
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="collapsedControl"],
+        button[data-testid="stSidebarCollapseButton"] {
+            display: flex !important;
             visibility: visible !important;
-            display: block !important;
-            color: #00E5FF !important;
-            z-index: 100000 !important;
-            background-color: rgba(13, 17, 23, 0.95) !important;
-            border: 1px solid #30363d !important;
+            position: fixed !important;
+            top: 14px !important;
+            left: 20px !important;
+            z-index: 999999 !important;
+            background-color: #00E5FF !important;
+            color: #0d1117 !important;
             border-radius: 8px !important;
-            padding: 6px !important;
+            border: 2px solid #00B4D8 !important;
+            padding: 4px 8px !important;
+            box-shadow: 0px 4px 14px rgba(0, 229, 255, 0.4) !important;
+        }
+        
+        [data-testid="stSidebarCollapsedControl"] svg,
+        [data-testid="collapsedControl"] svg {
+            fill: #0d1117 !important;
+            stroke: #0d1117 !important;
+            width: 24px !important;
+            height: 24px !important;
         }
     </style>
 """
