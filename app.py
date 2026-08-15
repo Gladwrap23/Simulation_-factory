@@ -319,5 +319,3 @@ with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=Tru
     if user_query:
         st.info(f"**Synthesizing response for query:** '{user_query}'...")
         st.write("✨ *Analysis:* Operational drift in primary units impacts CapEx velocity. Immediate clearance directive recommended.")
-
-￼
