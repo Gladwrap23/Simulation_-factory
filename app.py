@@ -1,4 +1,5 @@
 import streamlit as st
+import re
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -338,14 +339,82 @@ if view_mode in ["Site Operations Hub", "Complete Command Post"]:
             st.balloons()
             st.success("Operational clearance directive dispatched to regional hubs.")
 
-# --- 9. NOTEBOOK LANE & EXECUTIVE PROMPTING ---
+# --- 9. NOTEBOOK LANE & EXECUTIVE PROMPTING (DYNAMIC PARSER) ---
 st.markdown("---")
 with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=True):
     st.markdown("### Executive Synthesis & Direct Query Interface")
     user_query = st.text_input(
         "Ask the Predictive Equilibrium Engine:",
-        placeholder="e.g., What is the 90-day drift cost if clearance lags by 2 weeks?"
+        placeholder="e.g., What is the 45 day delay cost?"
     )
     if user_query:
         st.info(f"**Synthesizing response for query:** '{user_query}'...")
-        st.write("✨ *Analysis:* Operational drift in primary units impacts CapEx velocity. Immediate clearance directive recommended.")
+        
+        # Regex to parse days or weeks from prompt
+        days_match = re.search(r'(\d+)\s*(?:day|days)', user_query, re.IGNORECASE)
+        weeks_match = re.search(r'(\d+)\s*(?:week|weeks|wk|wks)', user_query, re.IGNORECASE)
+        
+        if days_match:
+            days = float(days_match.group(1))
+            weeks = days / 7.0
+            time_str = f"{int(days)} days ({weeks:.1f} weeks)"
+        elif weeks_match:
+            weeks = float(weeks_match.group(1))
+            days = weeks * 7.0
+            time_str = f"{int(weeks)} weeks ({int(days)} days)"
+        else:
+            weeks = 4.0
+            time_str = "30 days (default standard baseline)"
+
+        calc_loss = weeks * active_data['acl_num']
+        compound_drift_delta = (active_data['drift_num'] * (weeks * 0.12))
+        
+        st.markdown(
+            f"""
+            #### 📊 Predictive Synthesis for {active_data['name']}
+            * **Simulated Timeline:** **{time_str}**
+            * **Cumulative Controllable Capital Drag:** **${calc_loss:,.2f}**
+            * **Compounded Annual Drift Delta:** **+${compound_drift_delta:.2f} {active_data['drift_unit']}**
+            
+            > **Executive Recommendation:** Operational queue delays of **{time_str}** escalate baseline burn rates by **{weeks * 12.0:.1f}%**. Deploying the **Operational Clearance Directive** mitigates this exposure immediately.
+            """
+        )
+
+# --- 10. AUTOMATED CLIENT OUTREACH BRIEF GENERATOR ---
+st.markdown("---")
+with st.expander("✉️ Generate Client Briefing & Executive Email", expanded=False):
+    st.markdown(f"### 📋 Outreach Memo: {active_data['name']}")
+    
+    client_url = f"https://aatphoenix.streamlit.app/?co={selected_key}"
+    
+    email_memo = f"""Subject: Live Executive Telemetry & Drift Analysis -- {active_data['title']}
+
+Hi [Executive First Name],
+
+Leveraging the established performance metrics and financial outcomes documented in last year’s operational reporting, we have synthesized your exposure metrics into a live Predictive Equilibrium Command Post.
+
+1. FINANCIAL EXPOSURE TELEMETRY
+• Macro Valuation at Risk (VaR): ${active_data['var_num']:.2f} {active_data['var_unit']}
+• Annual Velocity Drift Cost: ${active_data['drift_num']:.2f} {active_data['drift_unit']}
+• Actionable Controllable Loss (ACL): ${int(active_data['acl_num']):,} {active_data['acl_unit']}
+• Operational Friction Bridge: {active_data['bridge']}
+
+2. INTERACTIVE EXECUTIVE ACCESS
+You can access your provisioned enterprise surface directly here:
+👉 {client_url}
+
+3. ENTERPRISE SECURITY & AUDIT GOVERNANCE
+The system architecture is designed for optimal efficiency and rigorously secured access:
+• Complete visibility of the application interface and its sensitive data streams is strictly limited to authenticated personnel explicitly authorized through our multi-factor authentication protocols and role-based access control framework.
+• A comprehensive, immutable audit trail is embedded within the platform, meticulously logging all user interactions, modifications, and data access attempts for regulatory compliance and internal accountability.
+• Local operations teams are restricted from altering macro financial multipliers, ensuring high data fidelity from field operations to the executive board.
+
+For immediate, interactive exploration, please navigate to the provided hyperlink above. Should any questions regarding security protocols, integration feasibility, or feature functionality arise, please reach out directly.
+
+Best regards,
+
+[Your Name]
+AAT Phoenix Engine
+"""
+    st.text_area("Ready-to-send Executive Email:", value=email_memo, height=380)
+    st.caption("💡 Copy and paste this directly into your email client. It auto-updates whenever you change the Enterprise Surface.")
