@@ -12,14 +12,18 @@ st.set_page_config(
 # --- CLEAN ENTERPRISE STYLING & CONTROL PLANE GEOMETRY ---
 enterprise_styling = """
     <style>
+        /* Suppress default headers, footers, hamburger menus, and page navigation */
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         [data-testid="stSidebarNav"] {display: none !important;}
         [data-testid="stDecoration"] {display: none !important;}
         [data-testid="stToolbar"] {display: none !important;}
+        
+        /* Make header pass-through */
         header {background: transparent !important;}
         [data-testid="stHeader"] {background: transparent !important;}
 
+        /* Widen Sidebar into a true Enterprise Control Plane (390px) */
         [data-testid="stSidebar"] {
             min-width: 390px !important;
             max-width: 390px !important;
@@ -27,12 +31,14 @@ enterprise_styling = """
             border-right: 1px solid #30363d !important;
         }
 
+        /* Enlarge touch targets on sidebar controls for tablet/touch devices */
         .stSelectbox label, .stRadio label, .stSlider label {
             font-size: 1.05rem !important;
             font-weight: 700 !important;
             color: #c9d1d9 !important;
         }
 
+        /* High-Visibility Floating Mobile Sidebar Toggle Button */
         [data-testid="stSidebarCollapsedControl"],
         [data-testid="collapsedControl"],
         button[data-testid="stSidebarCollapseButton"] {
@@ -155,7 +161,7 @@ SECTORS = {
         "bridge": "Synthesis tracks capital allocation drag across internal risk model validations, liquidity stress-testing re-keying, and regulatory audit cycles.",
         "sites": [
             {"Node": "Risk Modeling Hub Alpha", "Location": "Sydney", "Tier": "Tier 2: Regional", "Layer": "Prudential Risk Directorate", "Base_Drift": 6.2, "Base_Burn": 2500, "Bottleneck": "Internal Rating Model Validation Lag"},
-            {"Node": "Capital Treasury Unit", "Location": "Melbourne", "Tier": "Tier 1: Central", "Layer": "Treasury Governance Group", "Base_Drift": 3.0, "Base_Burn": 2000, "Bottleneck": "Liquidity stress-Testing Re-Keying"}
+            {"Node": "Capital Treasury Unit", "Location": "Melbourne", "Tier": "Tier 1: Central", "Layer": "Treasury Governance Group", "Base_Drift": 3.0, "Base_Burn": 2000, "Bottleneck": "Liquidity Stress-Testing Re-Keying"}
         ]
     },
     "PORT": {
@@ -190,15 +196,12 @@ SECTORS = {
     }
 }
 
-# --- 2. URL PARAMETER ROUTING & SESSION LOCK ---
+# --- 2. URL PARAMETER ROUTING ---
 params = st.query_params
 url_co = params.get("co", "PJM").upper()
 
 if url_co not in SECTORS:
     url_co = "PJM"
-
-if "authorized_co" not in st.session_state:
-    st.session_state["authorized_co"] = url_co
 
 # --- 3. SIDEBAR: THE ENTERPRISE CONTROL PLANE ---
 st.sidebar.markdown(
@@ -213,7 +216,7 @@ st.sidebar.markdown(
 
 st.sidebar.markdown("---")
 
-# A. Sector Surface Selector
+# A. Sector Surface Selector (All 8 fully accessible)
 selected_key = st.sidebar.selectbox(
     "🏢 Enterprise Surface",
     options=list(SECTORS.keys()),
@@ -222,8 +225,6 @@ selected_key = st.sidebar.selectbox(
 )
 
 active_data = SECTORS[selected_key]
-is_authorized = (selected_key == st.session_state["authorized_co"])
-
 
 # B. Governance View Mode Selector
 view_mode = st.sidebar.radio(
@@ -232,7 +233,7 @@ view_mode = st.sidebar.radio(
     index=2
 )
 
-# C. Interactive Stress-Testing Slider (Role-Gated)
+# C. Interactive Stress-Testing Slider
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⚡ Live Drift Stress-Tester")
 
@@ -302,20 +303,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- 6. PEER LOCK SECURITY GATE (IF OTHER COMPANY CLICKED) ---
-if not is_authorized:
-    st.markdown("---")
-    st.error("🔒 EXECUTIVE SECURITY GATE: MULTI-TENANT ISOLATION ACTIVE")
-    st.warning(
-        f"**Restricted Access:** You are attempting to inspect **{active_data['name']}**.\n\n"
-        "Multi-tenant governance is enforced. Access to this specific command surface requires "
-        "an authorized executive clearance key for this enterprise.\n\n"
-        "*Your primary authorized command post remains accessible via your designated link.*"
-    )
-    st.info("💡 **Enterprise Social Proof:** All Tier-1 sectors are actively monitored under the Predictive Equilibrium Engine.")
-    st.stop()
-
-# --- 7. TIER 1: EXECUTIVE BOARD GLASS ---
+# --- 6. TIER 1: EXECUTIVE BOARD GLASS ---
 if view_mode in ["Executive Board Glass", "Complete Command Post"]:
     st.markdown("---")
     st.subheader("⚡ Tier 1: Active Executive Directive Telemetry")
@@ -330,7 +318,7 @@ if view_mode in ["Executive Board Glass", "Complete Command Post"]:
 
     st.info(f"⚡ **DIRECT OPERATIONAL BRIDGE:** {active_data['bridge']}")
 
-# --- 8. TIERS 2 & 3: MANAGER OPERATIONAL VIEW WITH MANAGEMENT DEPTH ---
+# --- 7. TIERS 2 & 3: MANAGER OPERATIONAL VIEW WITH MANAGEMENT DEPTH ---
 if view_mode in ["Site Operations Hub", "Complete Command Post"]:
     st.markdown("---")
     with st.expander("🔓 TIER 2 & 3: Management Depth & Operational Unit Breakdown", expanded=True):
@@ -342,7 +330,7 @@ if view_mode in ["Site Operations Hub", "Complete Command Post"]:
             st.balloons()
             st.success("Operational clearance directive dispatched to regional hubs.")
 
-# --- 9. NOTEBOOK LANE & EXECUTIVE PROMPTING (TEMPORAL CALCULATIONS ONLY) ---
+# --- 8. NOTEBOOK LANE & EXECUTIVE PROMPTING (TEMPORAL CALCULATIONS ONLY) ---
 st.markdown("---")
 with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=True):
     st.markdown("### Executive Synthesis & Direct Query Interface")
@@ -382,7 +370,7 @@ with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=Tru
             """
         )
 
-# --- 10. AUTOMATED CLIENT OUTREACH BRIEF GENERATOR ---
+# --- 9. AUTOMATED CLIENT OUTREACH BRIEF GENERATOR ---
 st.markdown("---")
 with st.expander("✉️ Generate Client Briefing & Executive Email", expanded=False):
     st.markdown(f"### 📋 Outreach Memo: {active_data['name']}")
