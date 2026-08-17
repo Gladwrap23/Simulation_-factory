@@ -224,6 +224,7 @@ selected_key = st.sidebar.selectbox(
 active_data = SECTORS[selected_key]
 is_authorized = (selected_key == st.session_state["authorized_co"])
 
+
 # B. Governance View Mode Selector
 view_mode = st.sidebar.radio(
     "👁️ Governance Layer",
