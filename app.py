@@ -12,18 +12,14 @@ st.set_page_config(
 # --- CLEAN ENTERPRISE STYLING & CONTROL PLANE GEOMETRY ---
 enterprise_styling = """
     <style>
-        /* Suppress default headers, footers, hamburger menus, and page navigation */
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         [data-testid="stSidebarNav"] {display: none !important;}
         [data-testid="stDecoration"] {display: none !important;}
         [data-testid="stToolbar"] {display: none !important;}
-        
-        /* Make header pass-through */
         header {background: transparent !important;}
         [data-testid="stHeader"] {background: transparent !important;}
 
-        /* Widen Sidebar into a true Enterprise Control Plane (390px) */
         [data-testid="stSidebar"] {
             min-width: 390px !important;
             max-width: 390px !important;
@@ -31,14 +27,12 @@ enterprise_styling = """
             border-right: 1px solid #30363d !important;
         }
 
-        /* Enlarge touch targets on sidebar controls for tablet/touch devices */
         .stSelectbox label, .stRadio label, .stSlider label {
             font-size: 1.05rem !important;
             font-weight: 700 !important;
             color: #c9d1d9 !important;
         }
 
-        /* High-Visibility Floating Mobile Sidebar Toggle Button */
         [data-testid="stSidebarCollapsedControl"],
         [data-testid="collapsedControl"],
         button[data-testid="stSidebarCollapseButton"] {
@@ -67,7 +61,7 @@ enterprise_styling = """
 """
 st.markdown(enterprise_styling, unsafe_allow_html=True)
 
-# --- 1. SECTOR DEFINITIONS & STANDARDIZED MANAGEMENT DEPTH ---
+# --- 1. SECTOR DEFINITIONS WITH TAILORED PROMPT SUITES ---
 SECTORS = {
     "PJM": {
         "name": "Grid PJM · Interconnection Book",
@@ -79,6 +73,11 @@ SECTORS = {
         "acl_num": 340000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis traces active interconnection drag across regional FERC re-study backlogs, substation construction lags, and sequential environmental clearance queues.",
+        "presets": [
+            "Synthesize 45-day FERC re-study queue delay exposure",
+            "Audit Substation Alpha Tier-3 construction holding burn",
+            "Evaluate 8-week environmental clearance sequential lag"
+        ],
         "sites": [
             {"Node": "Substation Alpha", "Location": "Zone 4", "Tier": "Tier 3: Site Unit", "Layer": "Interconnection Engineering", "Base_Drift": 6.1, "Base_Burn": 150, "Bottleneck": "Manual FERC Re-Study Queue"},
             {"Node": "Substation Beta", "Location": "Zone 2", "Tier": "Tier 3: Site Unit", "Layer": "Land Acquisition Group", "Base_Drift": 3.4, "Base_Burn": 110, "Bottleneck": "Paper Land Retainer Audit"},
@@ -95,10 +94,36 @@ SECTORS = {
         "acl_num": 1209000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis isolates national scheme friction across regional claims verification queues, sequential dispute resolution lanes, and clinical pathway audits.",
+        "presets": [
+            "Evaluate 6-week claims backlog drift and medical review lag",
+            "Synthesize Northern Hub clinical pathway audit friction",
+            "Model 60-day dispute resolution escalation holding costs"
+        ],
         "sites": [
             {"Node": "Northern Hub 01", "Location": "Auckland", "Tier": "Tier 2: Regional", "Layer": "Medical Review Directorate", "Base_Drift": 4.2, "Base_Burn": 320, "Bottleneck": "Manual Clinical Verification Queue"},
             {"Node": "Midland Hub 02", "Location": "Hamilton", "Tier": "Tier 2: Regional", "Layer": "Dispute Resolution Directorate", "Base_Drift": 1.8, "Base_Burn": 40, "Bottleneck": "Sequential Legal Dispute Queue"},
             {"Node": "Central Operations Hub", "Location": "Wellington", "Tier": "Tier 1: Central", "Layer": "Scheme Assurance & Governance", "Base_Drift": 5.2, "Base_Burn": 350, "Bottleneck": "Multi-Tier Entitlement Audit"}
+        ]
+    },
+    "ERCOT": {
+        "name": "ERCOT Energy · Storage Book",
+        "title": "ERCOT Grid BESS & Storage Command Post",
+        "var_num": 88.50,
+        "var_unit": "Million",
+        "drift_num": 12.30,
+        "drift_unit": "Million",
+        "acl_num": 610000,
+        "acl_unit": "/ wk",
+        "bridge": "Synthesis isolates grid battery holding costs across market telemetry synchronization, inverter testing queues, and land lease retainer audits.",
+        "presets": [
+            "Synthesize 45-day battery storage telemetry synchronization lag",
+            "Audit South Region inverter capacity testing queue delay",
+            "Model 4-week interconnection retainer sign-off holding burn"
+        ],
+        "sites": [
+            {"Node": "BESS Storage Hub 01", "Location": "West Region", "Tier": "Tier 3: Site Unit", "Layer": "Telemetry Operations Group", "Base_Drift": 4.8, "Base_Burn": 320, "Bottleneck": "Telemetry Synchronization Validation"},
+            {"Node": "Solar Substation Beta", "Location": "South Region", "Tier": "Tier 3: Site Unit", "Layer": "Commissioning Engineering", "Base_Drift": 3.1, "Base_Burn": 190, "Bottleneck": "Inverter Capacity Testing Queue"},
+            {"Node": "Regional Control Centre", "Location": "Central Grid", "Tier": "Tier 2: Regional", "Layer": "Interconnection Directorate", "Base_Drift": 1.5, "Base_Burn": 100, "Bottleneck": "Land Lease Retainer Sign-off"}
         ]
     },
     "BIOPHARMA": {
@@ -111,6 +136,11 @@ SECTORS = {
         "acl_num": 850000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis traces batch release holding drag across cleanroom deviation audits, multi-facility QC validations, and final certificate sign-off backlogs.",
+        "presets": [
+            "Evaluate 30-day sterile suite deviation audit holding cost",
+            "Synthesize formulation line QC environmental monitoring lag",
+            "Audit 5-week batch release certificate queue friction"
+        ],
         "sites": [
             {"Node": "Facility Alpha", "Location": "Sterile Suite A", "Tier": "Tier 3: Site Unit", "Layer": "Sterility Assurance Unit", "Base_Drift": 5.1, "Base_Burn": 450, "Bottleneck": "Manual Batch Record Re-Verification"},
             {"Node": "Facility Beta", "Location": "Formulation Line", "Tier": "Tier 3: Site Unit", "Layer": "Environmental Monitoring Group", "Base_Drift": 2.8, "Base_Burn": 280, "Bottleneck": "Environmental Monitoring Audit Lag"},
@@ -127,26 +157,15 @@ SECTORS = {
         "acl_num": 2100000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis isolates fleet operational drift across drydock overhaul queues, avionics flight clearance sign-offs, and critical component supply chain audits.",
+        "presets": [
+            "Synthesize 60-day naval drydock hull recertification backlog",
+            "Audit depot west avionics subsystem retrofit delay exposure",
+            "Model 8-week sovereign component line procurement drift"
+        ],
         "sites": [
             {"Node": "Naval Yard Alpha", "Location": "Drydock 01", "Tier": "Tier 3: Site Unit", "Layer": "Structural Certification Group", "Base_Drift": 8.4, "Base_Burn": 1200, "Bottleneck": "Hull Structural Recertification Backlog"},
             {"Node": "Air Base Wing 04", "Location": "Depot West", "Tier": "Tier 3: Site Unit", "Layer": "Avionics Integration Unit", "Base_Drift": 4.1, "Base_Burn": 600, "Bottleneck": "Avionics Subsystem Retrofit Delay"},
             {"Node": "Materiel Command Hub", "Location": "Central Logistics", "Tier": "Tier 1: Central", "Layer": "Sovereign Assurance Directorate", "Base_Drift": 2.3, "Base_Burn": 300, "Bottleneck": "Sovereign Component Line Audit"}
-        ]
-    },
-    "ERCOT": {
-        "name": "ERCOT Energy · Storage Book",
-        "title": "ERCOT Grid BESS & Storage Command Post",
-        "var_num": 88.50,
-        "var_unit": "Million",
-        "drift_num": 12.30,
-        "drift_unit": "Million",
-        "acl_num": 610000,
-        "acl_unit": "/ wk",
-        "bridge": "Synthesis isolates grid battery holding costs across market telemetry synchronization, inverter testing queues, and land lease retainer audits.",
-        "sites": [
-            {"Node": "BESS Storage Hub 01", "Location": "West Region", "Tier": "Tier 3: Site Unit", "Layer": "Telemetry Operations Group", "Base_Drift": 4.8, "Base_Burn": 320, "Bottleneck": "Telemetry Synchronization Validation"},
-            {"Node": "Solar Substation Beta", "Location": "South Region", "Tier": "Tier 3: Site Unit", "Layer": "Commissioning Engineering", "Base_Drift": 3.1, "Base_Burn": 190, "Bottleneck": "Inverter Capacity Testing Queue"},
-            {"Node": "Regional Control Centre", "Location": "Central Grid", "Tier": "Tier 2: Regional", "Layer": "Interconnection Directorate", "Base_Drift": 1.5, "Base_Burn": 100, "Bottleneck": "Land Lease Retainer Sign-off"}
         ]
     },
     "APRA": {
@@ -159,6 +178,11 @@ SECTORS = {
         "acl_num": 4500000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis tracks capital allocation drag across internal risk model validations, liquidity stress-testing re-keying, and regulatory audit cycles.",
+        "presets": [
+            "Synthesize 90-day internal rating model validation drag",
+            "Model liquidity stress-testing re-keying holding costs",
+            "Evaluate 6-week regulatory capital allocation stall"
+        ],
         "sites": [
             {"Node": "Risk Modeling Hub Alpha", "Location": "Sydney", "Tier": "Tier 2: Regional", "Layer": "Prudential Risk Directorate", "Base_Drift": 6.2, "Base_Burn": 2500, "Bottleneck": "Internal Rating Model Validation Lag"},
             {"Node": "Capital Treasury Unit", "Location": "Melbourne", "Tier": "Tier 1: Central", "Layer": "Treasury Governance Group", "Base_Drift": 3.0, "Base_Burn": 2000, "Bottleneck": "Liquidity Stress-Testing Re-Keying"}
@@ -174,6 +198,11 @@ SECTORS = {
         "acl_num": 410000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis traces container dwell cost across automated terminal sync delays, customs manifest audits, and intermodal freight queue stalls.",
+        "presets": [
+            "Synthesize 21-day container terminal automated crane sync lag",
+            "Audit inland port customs paper manifest queue holding burn",
+            "Model 4-week intermodal rail transfer dwell escalation"
+        ],
         "sites": [
             {"Node": "Container Terminal 01", "Location": "Pier 4", "Tier": "Tier 3: Site Unit", "Layer": "Crane Operations Group", "Base_Drift": 3.9, "Base_Burn": 250, "Bottleneck": "Automated Crane Sync Delay"},
             {"Node": "Freight Rail Hub North", "Location": "Inland Port", "Tier": "Tier 2: Regional", "Layer": "Customs Clearance Directorate", "Base_Drift": 2.1, "Base_Burn": 160, "Bottleneck": "Customs Paper Manifest Audit"}
@@ -189,6 +218,11 @@ SECTORS = {
         "acl_num": 1150000,
         "acl_unit": "/ wk",
         "bridge": "Synthesis tracks elective backlog friction across pre-operative paperwork queues, operating theatre re-allocation delays, and post-op diagnostics sign-offs.",
+        "presets": [
+            "Synthesize 6-week pre-op assessment paperwork queue drift",
+            "Audit regional theatre capacity re-allocation delay costs",
+            "Model 45-day elective surgical elective recovery stall"
+        ],
         "sites": [
             {"Node": "Surgical Hub North", "Location": "Trust Main", "Tier": "Tier 3: Site Unit", "Layer": "Clinical Assessment Team", "Base_Drift": 5.5, "Base_Burn": 650, "Bottleneck": "Pre-Op Assessment Paperwork Queue"},
             {"Node": "Regional Infirmary West", "Location": "District Hub", "Tier": "Tier 2: Regional", "Layer": "Theatre Planning Directorate", "Base_Drift": 2.9, "Base_Burn": 500, "Bottleneck": "Theatre Capacity Re-Allocation Queue"}
@@ -198,10 +232,10 @@ SECTORS = {
 
 # --- 2. URL PARAMETER ROUTING ---
 params = st.query_params
-url_co = params.get("co", "PJM").upper()
+url_co = params.get("co", "ERCOT").upper()
 
 if url_co not in SECTORS:
-    url_co = "PJM"
+    url_co = "ERCOT"
 
 # --- 3. SIDEBAR: THE ENTERPRISE CONTROL PLANE ---
 st.sidebar.markdown(
@@ -216,7 +250,7 @@ st.sidebar.markdown(
 
 st.sidebar.markdown("---")
 
-# A. Sector Surface Selector (All 8 fully accessible)
+# A. Sector Surface Selector
 selected_key = st.sidebar.selectbox(
     "🏢 Enterprise Surface",
     options=list(SECTORS.keys()),
@@ -330,17 +364,29 @@ if view_mode in ["Site Operations Hub", "Complete Command Post"]:
             st.balloons()
             st.success("Operational clearance directive dispatched to regional hubs.")
 
-# --- 8. NOTEBOOK LANE & EXECUTIVE PROMPTING (TEMPORAL CALCULATIONS ONLY) ---
+# --- 8. DYNAMIC NOTEBOOK LANE & EXECUTIVE PROMPTING ENGINE ---
 st.markdown("---")
-with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=True):
-    st.markdown("### Executive Synthesis & Direct Query Interface")
+with st.expander("🧠 Notebook Lane & Automated Executive Prompting Engine", expanded=True):
+    st.markdown("### Automated Executive Scenario Prompts")
+    st.caption("Select a pre-configured operational prompt chip or enter a custom query below:")
+
+    if "current_query" not in st.session_state:
+        st.session_state.current_query = active_data["presets"][0]
+
+    # Render 3 Dynamic Prompt Chips
+    chip_cols = st.columns(3)
+    for idx, preset in enumerate(active_data["presets"]):
+        with chip_cols[idx]:
+            if st.button(f"⚡ Scenario {idx+1}:\n{preset}", key=f"chip_{selected_key}_{idx}", use_container_width=True):
+                st.session_state.current_query = preset
+
     user_query = st.text_input(
-        "Ask the Predictive Equilibrium Engine:",
-        placeholder="e.g., What is the 45 day delay cost?"
+        "Active Operational Query:",
+        value=st.session_state.current_query
     )
+
     if user_query:
-        st.info(f"**Synthesizing response for query:** '{user_query}'...")
-        
+        # Time-duration regex parsing
         days_match = re.search(r'(\d+)\s*(?:day|days)', user_query, re.IGNORECASE)
         weeks_match = re.search(r'(\d+)\s*(?:week|weeks|wk|wks)', user_query, re.IGNORECASE)
         
@@ -356,17 +402,22 @@ with st.expander("🧠 Notebook Lane & Executive Prompting Engine", expanded=Tru
             weeks = 4.0
             time_str = "30 Days (Standard 4-Week Baseline)"
 
-        calc_loss = weeks * active_data['acl_num']
-        compound_drift_delta = active_data['drift_num'] * (weeks * 0.12)
+        calc_loss = weeks * (active_data['acl_num'] * multiplier)
+        compound_drift_delta = (active_data['drift_num'] * multiplier) * (weeks * 0.12)
         
+        # Determine highest drag bottleneck from the site list
+        critical_site = max(active_data["sites"], key=lambda x: x["Base_Drift"])
+
         st.markdown(
             f"""
             #### 📊 Predictive Synthesis for {active_data['name']}
+            * **Active Scenario:** *"{user_query}"*
             * **Evaluated Delay Period:** **{time_str}**
             * **Cumulative Controllable Holding Loss:** **${calc_loss:,.2f}**
-            * **Compounded Annual Drift Escalation:** **+${compound_drift_delta:.2f} {active_data['drift_unit']}**
+            * **Compounded Velocity Drift Escalation:** **+${compound_drift_delta:.2f} {active_data['drift_unit']}**
+            * **Critical Constraint Layer:** **{critical_site['Tier']} · {critical_site['Layer']}** ({critical_site['Bottleneck']})
             
-            > **Executive Recommendation:** An operational queue duration of **{time_str}** expands baseline capital holding burn to **${calc_loss:,.2f}**. Deploying the **Operational Clearance Directive** halts compounding friction immediately.
+            > **Executive Action Directive:** Delay friction across the active queues burns **${calc_loss:,.2f}** over **{time_str}**. Discharging the **Immediate Operational Clearance Directive** at **{critical_site['Node']}** collapses sequential lag back to nominal thresholds.
             """
         )
 
