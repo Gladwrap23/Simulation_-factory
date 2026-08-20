@@ -365,7 +365,7 @@ for site in active_data["sites"]:
 st.markdown(
     f"""
     <div style='text-align: center; padding: 10px 0 20px 0;'>
-        <h1 style='color: #00E5FF; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.8px; margin: 0; line-height: 1.2;'>
+        <h1 style='color: #00E5FF; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.8px; margin: 0; line-line: 1.2;'>
             🎯 {active_data['title']}
         </h1>
     </div>
