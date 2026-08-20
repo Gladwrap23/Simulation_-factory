@@ -1,4 +1,4 @@
-import  as st
+import streamlit as st
 import re
 
 # --- PAGE CONFIGURATION ---
