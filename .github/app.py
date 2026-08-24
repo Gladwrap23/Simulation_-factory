@@ -1,5 +1,7 @@
 import streamlit as st
 import re
+import hashlib
+from datetime import datetime, timezone
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -304,11 +306,29 @@ view_mode = st.sidebar.radio(
     index=0
 )
 
-# C. Live Drift Stress-Tester (Locked Strictly to Tier 1 Master Command Post)
+# C. Directorate Domain Controls and Chairman Apex Authority
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🏛️ Directorate Domain Control")
+chairman_override = st.sidebar.toggle(
+    "Chairman Apex Director Authority Override",
+    value=False,
+    help="Chairman authority activates every directorate and unlocks macro stress controls."
+)
+
+directorate_domains = {
+    "COO": st.sidebar.toggle("COO · Operations Control", value=True, disabled=chairman_override),
+    "CFO": st.sidebar.toggle("CFO · Capital Control", value=True, disabled=chairman_override),
+    "Legal": st.sidebar.toggle("Legal · Statutory Control", value=True, disabled=chairman_override),
+    "CTO": st.sidebar.toggle("CTO · Systems Control", value=True, disabled=chairman_override),
+}
+if chairman_override:
+    directorate_domains = {domain: True for domain in directorate_domains}
+
+# D. Live Drift Stress-Tester (Locked Strictly to Tier 1 or Chairman Authority)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⚡ Live Drift Stress-Tester")
 
-is_tier_1_authority = view_mode.startswith("Tier 1")
+is_tier_1_authority = view_mode.startswith("Tier 1") or chairman_override
 
 if is_tier_1_authority:
     stress_lag = st.sidebar.slider(
@@ -340,6 +360,49 @@ multiplier = 1.0 + (stress_lag * 0.12)
 display_var = f"${active_data['var_num'] * multiplier:.2f} {active_data['var_unit']}"
 display_drift = f"${active_data['drift_num'] * multiplier:.2f} {active_data['drift_unit']}"
 display_acl = f"${int(active_data['acl_num'] * multiplier):,} {active_data['acl_unit']}"
+
+# --- 5. GOVERNANCE CALCULATIONS ---
+# The buckets reconcile to the existing weekly ACL and remain transparent inputs.
+weekly_acl = active_data["acl_num"] * multiplier
+loss_buckets = {
+    "Idle labour": weekly_acl * 0.42,
+    "WACC / demurrage carry": weekly_acl * 0.38,
+    "Statutory penalties": weekly_acl * 0.20,
+}
+total_holding_loss = sum(loss_buckets.values())
+realization_fee = total_holding_loss * 0.10
+client_realization = total_holding_loss * 0.90
+
+audit_payload = "|".join([
+    selected_key,
+    view_mode,
+    str(stress_lag),
+    str(chairman_override),
+    ",".join(f"{domain}:{enabled}" for domain, enabled in directorate_domains.items()),
+    f"{total_holding_loss:.2f}",
+])
+previous_hash = st.session_state.get("audit_chain_head", "GENESIS")
+proof_nonce = 0
+while True:
+    audit_hash = hashlib.sha256(
+        f"{previous_hash}|{audit_payload}|{proof_nonce}".encode("utf-8")
+    ).hexdigest()
+    if audit_hash.startswith("00"):
+        break
+    proof_nonce += 1
+st.session_state.audit_chain_head = audit_hash
+audit_row = {
+    "UTC Timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    "Authority": "Chairman Apex Override" if chairman_override else view_mode.split(":", 1)[0],
+    "Domain State": " / ".join(domain for domain, enabled in directorate_domains.items() if enabled),
+    "Holding Loss": f"${total_holding_loss:,.2f} / wk",
+    "Nonce": proof_nonce,
+    "Proof-of-Work": audit_hash[:16],
+    "Previous Proof": previous_hash[:16],
+}
+if audit_row["Proof-of-Work"] != st.session_state.get("last_audit_proof"):
+    st.session_state.setdefault("audit_ledger", []).append(audit_row)
+    st.session_state.last_audit_proof = audit_row["Proof-of-Work"]
 
 computed_sites = []
 for site in active_data["sites"]:
@@ -374,7 +437,7 @@ st.markdown(
 )
 
 # --- 6. STRATEGIC EXPOSURE METRICS (Visible for Tier 1 and Tier 2) ---
-if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2"):
+if (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2")) and directorate_domains["CFO"]:
     st.markdown("---")
     st.subheader("⚡ Strategic Balance-Sheet Telemetry")
     
@@ -388,8 +451,25 @@ if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2"):
 
     st.info(f"⚡ **DIRECT OPERATIONAL BRIDGE:** {active_data['bridge']}")
 
+    st.markdown("### 💰 Deconstructed Holding Loss & Realization Ledger")
+    loss_rows = [
+        {"Holding Loss Bucket": bucket, "Weekly Exposure": f"${amount:,.2f}", "Share": f"{amount / total_holding_loss:.0%}"}
+        for bucket, amount in loss_buckets.items()
+    ]
+    loss_rows.extend([
+        {"Holding Loss Bucket": "Total verified holding loss", "Weekly Exposure": f"${total_holding_loss:,.2f}", "Share": "100%"},
+        {"Holding Loss Bucket": "Client realization (90%)", "Weekly Exposure": f"${client_realization:,.2f}", "Share": "90%"},
+        {"Holding Loss Bucket": "Phoenix realization fee (10%)", "Weekly Exposure": f"${realization_fee:,.2f}", "Share": "10%"},
+    ])
+    st.table(loss_rows)
+
+if directorate_domains["Legal"] and (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2")):
+    st.markdown("### 🔐 Immutable Proof-of-Work Audit Ledger")
+    st.caption("Append-only session ledger. Each proof is chained to the preceding record.")
+    st.table(st.session_state.get("audit_ledger", []))
+
 # --- 7. OPERATIONAL MANAGEMENT & SITE UNITS (Visible for Tier 1 and Tier 3) ---
-if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 3"):
+if (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 3")) and directorate_domains["COO"]:
     st.markdown("---")
     with st.expander("🔓 Management Depth & Operational Site Queues", expanded=True):
         st.markdown("### 🔍 Granular Bottleneck & Node Telemetry")
@@ -400,7 +480,7 @@ if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 3"):
             st.success("Operational clearance directive dispatched to regional hubs.")
 
 # --- 8. DYNAMIC NOTEBOOK LANE & EXECUTIVE PROMPTING ENGINE (Tier 1 & Tier 2) ---
-if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2"):
+if (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2")) and directorate_domains["CTO"]:
     st.markdown("---")
     with st.expander("🧠 Notebook Lane & Automated Executive Prompting Engine", expanded=True):
         st.markdown("### Automated Executive Scenario Prompts")
