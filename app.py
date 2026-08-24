@@ -1,5 +1,7 @@
 import streamlit as st
 import re
+import hashlib
+from datetime import datetime, timezone
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -9,9 +11,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ENTERPRISE MOBILE & TABLET STYLING ---
-st.markdown("""
+# --- TOUCH-OPTIMIZED MOBILE & ENTERPRISE STYLING ---
+enterprise_styling = """
     <style>
+        /* Suppress default headers, footers, hamburger menus */
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         [data-testid="stSidebarNav"] {display: none !important;}
@@ -20,6 +23,7 @@ st.markdown("""
         header {background: transparent !important;}
         [data-testid="stHeader"] {background: transparent !important;}
 
+        /* High-Visibility Floating Sidebar Toggle (iPhone & iPad Fix) */
         [data-testid="stSidebarCollapsedControl"],
         [data-testid="collapsedControl"],
         button[data-testid="stSidebarCollapseButton"] {
@@ -38,7 +42,16 @@ st.markdown("""
             min-width: 48px !important;
             box-shadow: 0px 4px 18px rgba(0, 229, 255, 0.5) !important;
         }
+        
+        [data-testid="stSidebarCollapsedControl"] svg,
+        [data-testid="collapsedControl"] svg {
+            fill: #0d1117 !important;
+            stroke: #0d1117 !important;
+            width: 28px !important;
+            height: 28px !important;
+        }
 
+        /* Sidebar Geometry & High-Contrast Typography */
         [data-testid="stSidebar"] {
             min-width: 390px !important;
             max-width: 390px !important;
@@ -50,219 +63,45 @@ st.markdown("""
             font-size: 1.1rem !important;
             font-weight: 700 !important;
             color: #c9d1d9 !important;
+            padding-bottom: 6px !important;
         }
 
+        /* Large Touch Targets for Mobile / iPad Tap Ergonomics */
         .stButton button {
             min-height: 52px !important;
             font-size: 1.05rem !important;
             font-weight: 600 !important;
             border-radius: 8px !important;
+            padding: 10px 14px !important;
         }
 
+        div[data-testid="stRadio"] > div {
+            gap: 10px !important;
+        }
+
+        div[data-testid="stRadio"] label {
+            padding: 10px 12px !important;
+            background: #161b22 !important;
+            border-radius: 8px !important;
+            border: 1px solid #30363d !important;
+            width: 100% !important;
+        }
+
+        /* Executive Metrics Display */
         [data-testid="stMetricValue"] {
             font-size: 2.2rem !important;
             font-weight: 800 !important;
             color: #00E5FF !important;
         }
     </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(enterprise_styling, unsafe_allow_html=True)
 
-# --- 1. SECTOR MASTER REGISTRY WITH FORENSIC AUDIT EVIDENCE DOSSIERS ---
+# --- 1. SECTOR DEFINITIONS & PRESET SUITES ---
 SECTORS = {
-    "GRID_TX": {
-        "name": "Transmission & Grid Infrastructure · Poles & Wires Book",
-        "title": "Grid Infrastructure & Transmission Control Panel",
-        "var_num": 3.80,
-        "var_unit": "Billion",
-        "drift_num": 245.00,
-        "drift_unit": "Million",
-        "acl_num": 3250000,
-        "acl_unit": "/ wk",
-        "bridge": "Telemetry traces parallel balance-sheet friction across high-voltage transformer staging, utility monopoly interconnection studies, and linear corridor land easements.",
-        "presets": [
-            "Synthesize 90-day FERC Order 2023 cluster re-study breach holding burn",
-            "Model 500kV large power transformer staging and foundation lead-time drift",
-            "Audit linear corridor parcel easement title verification backlogs"
-        ],
-        "sites": [
-            {
-                "Node": "Crystal River 500kV Hub",
-                "Location": "Substation 08",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Substation Physical Engineering",
-                "Base_Drift": 7.5,
-                "Base_Burn": 1450,
-                "Bottleneck": "LPT Transformer Staging & Oil Immersion Audit",
-                "Root_Cause": "Material / Supply Disruption",
-                "Root_Detail": "Lead times expanded from 52 to 180 weeks; foundation pad curing completed without auxiliary power sync.",
-                "Legacy_Delta": "+18.0 Wks (Pre-Digital Baseline: 28.5 Wks)",
-                "Statutory_SLA": "IEEE 693 Seismic & NERC PRC-005 Compliance (30-Day Limit)",
-                "SLA_Breach": "Active Breach (+45 Days beyond statutory window)",
-                "Accrued_Loss": "$207,142 / day",
-                "Evidence_Artifacts": [
-                    "Factory Acceptance Testing (FAT) Certificate #FAT-500KV-9921",
-                    "Oil Dielectric Breakdown ASTM D877 Test Log (Dated 14-Jul)",
-                    "Civil Pad Concrete Curing & Grounding Grid Impedance Sign-off"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-verify oil dielectric assay against ASTM threshold (>30 kV).",
-                    "Trigger automated auxiliary power loop test via remote SCADA node.",
-                    "Execute energized clearance notice to Regional Transmission Operator."
-                ],
-                "SOP": [
-                    ("Step 1: Digital Log Ingestion", "Ingest OEM factory test logs, oil dielectric assays, and transport vibration telemetry."),
-                    ("Step 2: Automated Structural Validation", "Auto-match foundation curing curves and busbar clearances to IEEE standards."),
-                    ("Step 3: Exception Engineering Gate", "Commissioning engineer clears auxiliary oil pumping and Nitrogen seal pressure."),
-                    ("Step 4: Energization Dispatch", "Issue Final Substation Energization Clearance to RTO dispatcher.")
-                ]
-            },
-            {
-                "Node": "PJM Cluster 14 Gateway",
-                "Location": "Valley Interconnect",
-                "Tier": "Tier 2: Regional",
-                "Layer": "Transmission Interconnection Directorate",
-                "Base_Drift": 5.2,
-                "Base_Burn": 1100,
-                "Bottleneck": "FERC Order 2023 Network Cluster Re-Study Queue",
-                "Root_Cause": "Process / Automation Gap",
-                "Root_Detail": "Utility monopoly rerunning steady-state load flows manually due to upstream speculative dropouts.",
-                "Legacy_Delta": "+14.5 Wks (Pre-Digital Baseline: 22.0 Wks)",
-                "Statutory_SLA": "FERC Order 2023 60-Day Cluster Study Mandate",
-                "SLA_Breach": "Statutory Breach (+58 Days beyond mandatory deadline)",
-                "Accrued_Loss": "$157,142 / day",
-                "Evidence_Artifacts": [
-                    "Developer Phase 2 Study Request Payload (Hash: #0x9F4C2A)",
-                    "RTO Cluster Restudy Notification Letter #PJM-2023-C14",
-                    "Interconnection Study Restudy Queue Timestamp Log (Day 118 Active)"
-                ],
-                "Clearance_Checklist": [
-                    "Inject pre-compiled Python AC/DC contingency power flow dataset.",
-                    "Audit proportional network upgrade cost allocation against tariff table.",
-                    "File statutory Section 206 non-compliance notice to enforce 24-hr sign-off."
-                ],
-                "SOP": [
-                    ("Step 1: Single-Line Ingestion", "Ingest developer single-line diagrams, inverter specs, and reactive capability curves."),
-                    ("Step 2: Automated Power-Flow Run", "Execute automated steady-state thermal and short-circuit contingency analysis."),
-                    ("Step 3: Network Constraint Triage", "Lead transmission planner resolves thermal overload cost-share allocations."),
-                    ("Step 4: ISA Agreement Execution", "Issue Interconnection Service Agreement (ISA) with binding construction milestones.")
-                ]
-            },
-            {
-                "Node": "Permian Corridor 345kV Link",
-                "Location": "West Transmission Path",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Linear Land & Right-of-Way Group",
-                "Base_Drift": 3.4,
-                "Base_Burn": 700,
-                "Bottleneck": "Linear Parcel Easement & Title Clearance Backlog",
-                "Root_Cause": "Labor / Credentialed Skill",
-                "Root_Detail": "Shortage of certified land agents processing county deed searches and crossing permits.",
-                "Legacy_Delta": "+8.0 Wks (Pre-Digital Baseline: 12.5 Wks)",
-                "Statutory_SLA": "State Public Utility Commission Route Certificate SLA (90 Days)",
-                "SLA_Breach": "Elevated Risk (+22 Days over internal schedule)",
-                "Accrued_Loss": "$100,000 / day",
-                "Evidence_Artifacts": [
-                    "County Deed Registry Scans (Parcels 104 through 148)",
-                    "State Highway Dept Encroachment Permit Request #TX-DOT-3301",
-                    "Executed Landowner Option Deeds (42 of 45 cleared)"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-verify GIS polygon boundary continuity across corridor route.",
-                    "Execute automated escrow payouts for 3 outstanding parcel options.",
-                    "Dispatch binding Notice to Proceed (NTP) to transmission tower erection crew."
-                ],
-                "SOP": [
-                    ("Step 1: Deed Scan Ingestion", "Ingest digital title registries, GIS boundary surveys, and crossing agreements."),
-                    ("Step 2: GIS Spatial Auto-Check", "Auto-match right-of-way easement geometry against transmission centerlines."),
-                    ("Step 3: Legal Waiver Clearance", "Assigned corporate counsel clears mineral rights and surface damage waivers."),
-                    ("Step 4: Retainer Release & NTP", "Release escrow funds and issue Notice to Proceed (NTP) to line construction.")
-                ]
-            }
-        ]
-    },
-    "ACC": {
-        "name": "ACC Baseline · NZ Scheme Book",
-        "title": "ACC Chairman & Board Control Panel",
-        "var_num": 63.60,
-        "var_unit": "Billion",
-        "drift_num": 2556.00,
-        "drift_unit": "Million",
-        "acl_num": 1209000,
-        "acl_unit": "/ wk",
-        "bridge": "Synthesis isolates national scheme friction across regional claims verification queues, sequential dispute resolution lanes, and clinical pathway audits.",
-        "presets": [
-            "Evaluate 6-week claims backlog drift and medical review lag",
-            "Synthesize Northern Hub clinical pathway audit friction",
-            "Model 60-day dispute resolution escalation holding costs"
-        ],
-        "sites": [
-            {
-                "Node": "Northern Hub 01",
-                "Location": "Auckland",
-                "Tier": "Tier 2: Regional",
-                "Layer": "Medical Review Directorate",
-                "Base_Drift": 4.2,
-                "Base_Burn": 320,
-                "Bottleneck": "Manual Clinical Verification Queue",
-                "Root_Cause": "Labor / Credentialed Skill",
-                "Root_Detail": "Single-threaded medical officer dependency; GP diagnostic code re-keying.",
-                "Legacy_Delta": "+7.0 Wks (Pre-Digital Baseline: 12.2 Wks)",
-                "Statutory_SLA": "ACC Cover Decision Statutory SLA (21-Day Mandate)",
-                "SLA_Breach": "Active Breach (+29 Days over statutory standard)",
-                "Accrued_Loss": "$45,714 / day",
-                "Evidence_Artifacts": [
-                    "GP Electronic Lodgement Form ACC45 (#NZ-AKL-99238)",
-                    "Clinical Specialist MRI Assessment Report (Scanned PDF)",
-                    "ICD-10 Diagnostic Match Table (Pending Manual Sign-off)"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-validate ACC45 diagnostic code against pre-approved injury table.",
-                    "Pre-clear initial 12 weeks of weekly compensation without human touch.",
-                    "Route non-conforming diagnostic variance to Senior MRO within 2-hr SLA."
-                ],
-                "SOP": [
-                    ("Step 1: Digital Ingestion", "Ingest GP digital lodgement, clinical assessment forms, and ICD-10 injury codes."),
-                    ("Step 2: Automated Verification", "Auto-match diagnosis codes against standard rehabilitation clinical pathways."),
-                    ("Step 3: Exception Triage", "Route non-standard treatment variances >$500 to Senior Medical Review Officers."),
-                    ("Step 4: Ledger Dispatch", "Execute automated weekly compensation entitlement release to claimant account.")
-                ]
-            },
-            {
-                "Node": "Central Operations Hub",
-                "Location": "Wellington",
-                "Tier": "Tier 1: Central",
-                "Layer": "Scheme Assurance & Governance",
-                "Base_Drift": 5.2,
-                "Base_Burn": 350,
-                "Bottleneck": "Multi-Tier Entitlement Audit",
-                "Root_Cause": "Process / Manual Friction",
-                "Root_Detail": "Cumbersome dual-signature authorization thresholds on complex entitlement payouts.",
-                "Legacy_Delta": "+9.0 Wks (Pre-Digital Baseline: 14.5 Wks)",
-                "Statutory_SLA": "Public Finance Act Scheme Provisioning Mandate",
-                "SLA_Breach": "Elevated Drift (+35 Days over governance baseline)",
-                "Accrued_Loss": "$50,000 / day",
-                "Evidence_Artifacts": [
-                    "Longitudinal Weekly Compensation Ledger (#ACC-WGN-2024)",
-                    "Actuarial Reserve Provisioning Model Validation Run #V4",
-                    "Dual-Signature Approval Escalation Ticket #GOV-8812"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-reconcile claims payouts >52 weeks against actuarial tables.",
-                    "Execute rule-based release for claims with zero liability delta.",
-                    "Flag complex disputes to Assurance Committee with automated dossier."
-                ],
-                "SOP": [
-                    ("Step 1: Payout Queue Audit", "Aggregate all longitudinal weekly compensation payouts exceeding 52 weeks."),
-                    ("Step 2: Actuarial Cross-Check", "Auto-validate claim reserves against National Scheme actuarial tables."),
-                    ("Step 3: Executive Governance Gate", "Triage high-liability claims to Scheme Assurance Committee for clearance."),
-                    ("Step 4: Balance Sheet Update", "Discharge verified capital provisioning from unallocated reserve pool.")
-                ]
-            }
-        ]
-    },
     "PJM": {
         "name": "Grid PJM · Interconnection Book",
-        "title": "PJM Grid Executive Control Panel",
+        "title": "PJM Infrastructure Capital & Interconnection Command Post",
         "var_num": 35.30,
         "var_unit": "Million",
         "drift_num": 17.68,
@@ -276,42 +115,35 @@ SECTORS = {
             "Evaluate 8-week environmental clearance sequential lag"
         ],
         "sites": [
-            {
-                "Node": "Substation Alpha",
-                "Location": "Zone 4",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Interconnection Engineering",
-                "Base_Drift": 6.1,
-                "Base_Burn": 150,
-                "Bottleneck": "Manual FERC Re-Study Queue",
-                "Root_Cause": "Process / Automation Gap",
-                "Root_Detail": "Interconnection network models rerun manually on isolated transmission cluster changes.",
-                "Legacy_Delta": "+11.0 Wks (Pre-Digital Baseline: 18.0 Wks)",
-                "Statutory_SLA": "PJM Tariff Attachment O 60-Day Review Standard",
-                "SLA_Breach": "Active Breach (+42 Days beyond tariff timeline)",
-                "Accrued_Loss": "$21,428 / day",
-                "Evidence_Artifacts": [
-                    "RTO Model Ingestion Telemetry Packet #PJM-Z4-102",
-                    "Transmission Cluster Sensitivity Matrix #C14-T",
-                    "Interconnection Service Agreement Queue Log #ISA-991"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-run short-circuit contingency script across Zone 4 substations.",
-                    "Verify developer cost-allocation formula against baseline tariff.",
-                    "Dispatch binding clearance to PJM transmission engineering director."
-                ],
-                "SOP": [
-                    ("Step 1: Cluster Request Ingestion", "Ingest developer single-line diagrams, turbine specs, and injection points."),
-                    ("Step 2: Automated Load-Flow Run", "Execute automated AC/DC power flow and contingency thermal analysis."),
-                    ("Step 3: Constraint Engineering", "Staff engineers resolve transmission overload constraints and network upgrades."),
-                    ("Step 4: Interconnection Execution", "Issue finalized Interconnection Service Agreement (ISA) to utility.")
-                ]
-            }
+            {"Node": "Substation Alpha", "Location": "Zone 4", "Tier": "Tier 3: Site Unit", "Layer": "Interconnection Engineering", "Base_Drift": 6.1, "Base_Burn": 150, "Bottleneck": "Manual FERC Re-Study Queue"},
+            {"Node": "Substation Beta", "Location": "Zone 2", "Tier": "Tier 3: Site Unit", "Layer": "Land Acquisition Group", "Base_Drift": 3.4, "Base_Burn": 110, "Bottleneck": "Paper Land Retainer Audit"},
+            {"Node": "Regional Control North", "Location": "Valley Hub", "Tier": "Tier 2: Regional", "Layer": "Environmental Clearance Directorate", "Base_Drift": 2.0, "Base_Burn": 80, "Bottleneck": "Sequential Environmental Sign-off"}
+        ]
+    },
+    "ACC": {
+        "name": "ACC Baseline · NZ Scheme Book",
+        "title": "ACC Executive Synthesis & Knowledge Engine",
+        "var_num": 63.60,
+        "var_unit": "Billion",
+        "drift_num": 2556.00,
+        "drift_unit": "Million",
+        "acl_num": 1209000,
+        "acl_unit": "/ wk",
+        "bridge": "Synthesis isolates national scheme friction across regional claims verification queues, sequential dispute resolution lanes, and clinical pathway audits.",
+        "presets": [
+            "Evaluate 6-week claims backlog drift and medical review lag",
+            "Synthesize Northern Hub clinical pathway audit friction",
+            "Model 60-day dispute resolution escalation holding costs"
+        ],
+        "sites": [
+            {"Node": "Northern Hub 01", "Location": "Auckland", "Tier": "Tier 2: Regional", "Layer": "Medical Review Directorate", "Base_Drift": 4.2, "Base_Burn": 320, "Bottleneck": "Manual Clinical Verification Queue"},
+            {"Node": "Midland Hub 02", "Location": "Hamilton", "Tier": "Tier 2: Regional", "Layer": "Dispute Resolution Directorate", "Base_Drift": 1.8, "Base_Burn": 40, "Bottleneck": "Sequential Legal Dispute Queue"},
+            {"Node": "Central Operations Hub", "Location": "Wellington", "Tier": "Tier 1: Central", "Layer": "Scheme Assurance & Governance", "Base_Drift": 5.2, "Base_Burn": 350, "Bottleneck": "Multi-Tier Entitlement Audit"}
         ]
     },
     "ERCOT": {
         "name": "ERCOT Energy · Storage Book",
-        "title": "ERCOT Battery & Storage Control Panel",
+        "title": "ERCOT Grid BESS & Storage Command Post",
         "var_num": 88.50,
         "var_unit": "Million",
         "drift_num": 12.30,
@@ -325,42 +157,14 @@ SECTORS = {
             "Model 4-week interconnection retainer sign-off holding burn"
         ],
         "sites": [
-            {
-                "Node": "BESS Storage Hub 01",
-                "Location": "West Region",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Telemetry Operations Group",
-                "Base_Drift": 4.8,
-                "Base_Burn": 320,
-                "Bottleneck": "Telemetry Synchronization Validation",
-                "Root_Cause": "Process / Automation Gap",
-                "Root_Detail": "Manual calibration of SCADA telemetry latency buffers before market qualification.",
-                "Legacy_Delta": "+8.0 Wks (Pre-Digital Baseline: 13.0 Wks)",
-                "Statutory_SLA": "ERCOT Nodal Protocol 8.1.1 (Fast Frequency Response SLA)",
-                "SLA_Breach": "Active Breach (+32 Days over qualification baseline)",
-                "Accrued_Loss": "$45,714 / day",
-                "Evidence_Artifacts": [
-                    "4-Second ICCP Telemetry Ingestion Log #ERCOT-W-881",
-                    "Inverter Dynamic Step-Response Benchmark (#IEEE-1547)",
-                    "Substation RTU Gateway Synchronization Certificate"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-verify ICCP ping latency (<200ms threshold).",
-                    "Execute remote synthetic frequency injection test.",
-                    "Issue Commercial Operation Date (COD) activation packet to ERCOT desk."
-                ],
-                "SOP": [
-                    ("Step 1: Point-to-Point Telemetry Ping", "Ingest 4-second SCADA state of charge, voltage, and reactive power feeds."),
-                    ("Step 2: Automated Protocol Verification", "Auto-validate ICCP link stability and frequency response deadband accuracy."),
-                    ("Step 3: Fault Injection Testing", "Field engineers audit system response during synthetic grid frequency excursions."),
-                    ("Step 4: Market Commissioning", "Dispatch Commercial Operations Date (COD) market trading activation.")
-                ]
-            }
+            {"Node": "BESS Storage Hub 01", "Location": "West Region", "Tier": "Tier 3: Site Unit", "Layer": "Telemetry Operations Group", "Base_Drift": 4.8, "Base_Burn": 320, "Bottleneck": "Telemetry Synchronization Validation"},
+            {"Node": "Solar Substation Beta", "Location": "South Region", "Tier": "Tier 3: Site Unit", "Layer": "Commissioning Engineering", "Base_Drift": 3.1, "Base_Burn": 190, "Bottleneck": "Inverter Capacity Testing Queue"},
+            {"Node": "Regional Control Centre", "Location": "Central Grid", "Tier": "Tier 2: Regional", "Layer": "Interconnection Directorate", "Base_Drift": 1.5, "Base_Burn": 100, "Bottleneck": "Land Lease Retainer Sign-off"}
         ]
     },
     "BIOPHARMA": {
         "name": "Biopharma Clarity · GMP Book",
-        "title": "Biopharma GMP Release Control Panel",
+        "title": "Biopharma Sovereign GMP Release Command Post",
         "var_num": 142.00,
         "var_unit": "Million",
         "drift_num": 18.40,
@@ -374,42 +178,14 @@ SECTORS = {
             "Audit 5-week batch release certificate queue friction"
         ],
         "sites": [
-            {
-                "Node": "Facility Alpha",
-                "Location": "Sterile Suite A",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Sterility Assurance Unit",
-                "Base_Drift": 5.1,
-                "Base_Burn": 450,
-                "Bottleneck": "Manual Batch Record Re-Verification",
-                "Root_Cause": "Process / Manual Friction",
-                "Root_Detail": "Paper batch manufacturing records (BMR) re-audited manually for sterile signature gaps.",
-                "Legacy_Delta": "+8.5 Wks (Pre-Digital Baseline: 14.0 Wks)",
-                "Statutory_SLA": "FDA 21 CFR Part 11 & EU Annex 1 (14-Day Release SLA)",
-                "SLA_Breach": "Critical Breach (+24 Days over standard batch window)",
-                "Accrued_Loss": "$64,285 / day",
-                "Evidence_Artifacts": [
-                    "Electronic Batch Record BMR #BMR-BIO-4491",
-                    "Continuous Particle Counter Telemetry Log (ISO 5 Suite)",
-                    "Bioreactor Dissolved Oxygen Critical Parameter Trace"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-reconcile sensor telemetry against sterile tolerance bounds.",
-                    "Clear minor non-critical excursions via pre-approved CAPA rules.",
-                    "Route Batch Release Dossier to Qualified Person (QP) for digital release."
-                ],
-                "SOP": [
-                    ("Step 1: Electronic BMR Ingestion", "Ingest bioreactor logs, CIP/SIP cycle records, and operator digital signatures."),
-                    ("Step 2: Automated Critical Parameter Check", "Auto-flag out-of-spec pH, temperature, and dissolved oxygen deviations."),
-                    ("Step 3: Deviation CAPA Resolution", "QA sterility specialist signs off root-cause investigations on minor excursions."),
-                    ("Step 4: Batch Release Sign-off", "Quality Responsible Person (QP) issues commercial Batch Release Certificate.")
-                ]
-            }
+            {"Node": "Facility Alpha", "Location": "Sterile Suite A", "Tier": "Tier 3: Site Unit", "Layer": "Sterility Assurance Unit", "Base_Drift": 5.1, "Base_Burn": 450, "Bottleneck": "Manual Batch Record Re-Verification"},
+            {"Node": "Facility Beta", "Location": "Formulation Line", "Tier": "Tier 3: Site Unit", "Layer": "Environmental Monitoring Group", "Base_Drift": 2.8, "Base_Burn": 280, "Bottleneck": "Environmental Monitoring Audit Lag"},
+            {"Node": "Quality Assurance Hub", "Location": "Central Campus", "Tier": "Tier 2: Regional", "Layer": "Release Quality Directorate", "Base_Drift": 1.1, "Base_Burn": 120, "Bottleneck": "QC Certificate Sign-off Queue"}
         ]
     },
     "DEFENSE": {
         "name": "Defense & Aerospace · Sovereign Book",
-        "title": "Defense Fleet & CapEx Control Panel",
+        "title": "Sovereign Fleet Readiness & CapEx Command Post",
         "var_num": 510.00,
         "var_unit": "Million",
         "drift_num": 42.10,
@@ -423,42 +199,14 @@ SECTORS = {
             "Model 8-week sovereign component line procurement drift"
         ],
         "sites": [
-            {
-                "Node": "Naval Yard Alpha",
-                "Location": "Drydock 01",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Structural Certification Group",
-                "Base_Drift": 8.4,
-                "Base_Burn": 1200,
-                "Bottleneck": "Hull Structural Recertification Backlog",
-                "Root_Cause": "Labor / Credentialed Skill",
-                "Root_Detail": "Shortage of certified naval non-destructive testing (NDT) hull ultrasound inspectors.",
-                "Legacy_Delta": "+14.0 Wks (Pre-Digital Baseline: 23.0 Wks)",
-                "Statutory_SLA": "Naval Sea Systems Command Seaworthiness Standard NAVSEA-09",
-                "SLA_Breach": "Critical Sovereign Breach (+56 Days over overhaul schedule)",
-                "Accrued_Loss": "$171,428 / day",
-                "Evidence_Artifacts": [
-                    "NDT Ultrasound Hull Weld Scan Dataset #UW-NAV-01",
-                    "Naval Architect Structural Computations Report",
-                    "Drydock Berth 01 Demurrage Ledger (#NAV-DOCK-88)"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-verify ultrasound thickness scans against hull safety limits.",
-                    "Dispatch localized plate weld repair work-orders to shipyard floor.",
-                    "Issue unconditional Seaworthiness Certificate to Fleet Commander."
-                ],
-                "SOP": [
-                    ("Step 1: NDT Ultrasound Ingestion", "Upload hull weld ultrasound scans, plate thickness maps, and corrosion logs."),
-                    ("Step 2: Automated Stress Modeling", "Auto-simulate structural integrity under high-sea dynamic load states."),
-                    ("Step 3: Naval Architect Sign-off", "Chief Naval Engineer resolves localized plate replacement work packets."),
-                    ("Step 4: Drydock Flooding Release", "Issue structural seaworthiness certificate and clear drydock berth.")
-                ]
-            }
+            {"Node": "Naval Yard Alpha", "Location": "Drydock 01", "Tier": "Tier 3: Site Unit", "Layer": "Structural Certification Group", "Base_Drift": 8.4, "Base_Burn": 1200, "Bottleneck": "Hull Structural Recertification Backlog"},
+            {"Node": "Air Base Wing 04", "Location": "Depot West", "Tier": "Tier 3: Site Unit", "Layer": "Avionics Integration Unit", "Base_Drift": 4.1, "Base_Burn": 600, "Bottleneck": "Avionics Subsystem Retrofit Delay"},
+            {"Node": "Materiel Command Hub", "Location": "Central Logistics", "Tier": "Tier 1: Central", "Layer": "Sovereign Assurance Directorate", "Base_Drift": 2.3, "Base_Burn": 300, "Bottleneck": "Sovereign Component Line Audit"}
         ]
     },
     "APRA": {
         "name": "APRA Banking · Prudential Book",
-        "title": "APRA Capital & Prudential Control Panel",
+        "title": "APRA Capital Reserve & Risk Command Post",
         "var_num": 1.20,
         "var_unit": "Billion",
         "drift_num": 95.00,
@@ -472,42 +220,13 @@ SECTORS = {
             "Evaluate 6-week regulatory capital allocation stall"
         ],
         "sites": [
-            {
-                "Node": "Risk Modeling Hub Alpha",
-                "Location": "Sydney",
-                "Tier": "Tier 2: Regional",
-                "Layer": "Prudential Risk Directorate",
-                "Base_Drift": 6.2,
-                "Base_Burn": 2500,
-                "Bottleneck": "Internal Rating Model Validation Lag",
-                "Root_Cause": "Process / Automation Gap",
-                "Root_Detail": "Manual model back-testing re-keying across institutional loan portfolios.",
-                "Legacy_Delta": "+10.5 Wks (Pre-Digital Baseline: 17.0 Wks)",
-                "Statutory_SLA": "APRA Prudential Standard APS 113 / Basel III IRB SLA",
-                "SLA_Breach": "Statutory Drift (+40 Days beyond quarterly reporting gate)",
-                "Accrued_Loss": "$357,142 / day",
-                "Evidence_Artifacts": [
-                    "Internal Ratings-Based (IRB) Probability of Default Model Code",
-                    "Monte Carlo Macroeconomic Shock Dataset (10,000 Iterations)",
-                    "Prudential Capital Allocation Variance Sheet #APRA-RWA-24"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-run Python back-test against historical default curves.",
-                    "Verify Risk-Weighted Asset (RWA) sensitivity within 1% tolerance.",
-                    "Submit verified capital adequacy relief packet to APRA portal."
-                ],
-                "SOP": [
-                    ("Step 1: Model Code Ingestion", "Upload internal ratings-based (IRB) probability of default (PD) algorithms."),
-                    ("Step 2: Automated Stress Backtest", "Run automated Monte Carlo stress scenarios across macroeconomic shock curves."),
-                    ("Step 3: Independent Validation Gate", "Chief Risk Officer signs off model parameter sensitivity reports."),
-                    ("Step 4: APRA Submission Release", "Submit validated risk-weighted asset (RWA) calculations for capital relief.")
-                ]
-            }
+            {"Node": "Risk Modeling Hub Alpha", "Location": "Sydney", "Tier": "Tier 2: Regional", "Layer": "Prudential Risk Directorate", "Base_Drift": 6.2, "Base_Burn": 2500, "Bottleneck": "Internal Rating Model Validation Lag"},
+            {"Node": "Capital Treasury Unit", "Location": "Melbourne", "Tier": "Tier 1: Central", "Layer": "Treasury Governance Group", "Base_Drift": 3.0, "Base_Burn": 2000, "Bottleneck": "Liquidity Stress-Testing Re-Keying"}
         ]
     },
     "PORT": {
         "name": "Port Logistics · Freight Book",
-        "title": "Port Logistics & Freight Control Panel",
+        "title": "Port Freight Velocity & Dwell Command Post",
         "var_num": 64.00,
         "var_unit": "Million",
         "drift_num": 8.20,
@@ -521,42 +240,13 @@ SECTORS = {
             "Model 4-week intermodal rail transfer dwell escalation"
         ],
         "sites": [
-            {
-                "Node": "Container Terminal 01",
-                "Location": "Pier 4",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Crane Operations Group",
-                "Base_Drift": 3.9,
-                "Base_Burn": 250,
-                "Bottleneck": "Automated Crane Sync Delay",
-                "Root_Cause": "Process / Automation Gap",
-                "Root_Detail": "TOS software mismatch between automated stacking cranes and vessel stowage plans.",
-                "Legacy_Delta": "+6.0 Wks (Pre-Digital Baseline: 10.2 Wks)",
-                "Statutory_SLA": "Terminal Operating Agreement 24-Hr Vessel Turnaround SLA",
-                "SLA_Breach": "Active Breach (+18 Days container dwell inflation)",
-                "Accrued_Loss": "$35,714 / day",
-                "Evidence_Artifacts": [
-                    "BAPLIE 2.2 Container Stowage EDI Feed #BAP-PIER4-88",
-                    "Automated Stacking Crane (ASC) Exception Error Logs",
-                    "Port Authority Vessel Demurrage Billing Notice"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-reconcile EDI container weights against crane load cells.",
-                    "Trigger automated crane path optimization script to clear bottleneck stacks.",
-                    "Dispatch digital gate passes to rail freight haulers."
-                ],
-                "SOP": [
-                    ("Step 1: BAPLIE Stowage Ingestion", "Ingest vessel container placement EDI files and reefer temperature logs."),
-                    ("Step 2: Automated Crane Path Optimizer", "Auto-calculate practical crane moves to minimize dwell time."),
-                    ("Step 3: Terminal Supt Override", "Stevedore supervisor resolves physical container seal discrepancy alerts."),
-                    ("Step 4: Intermodal Gate Release", "Dispatch automated gate barcodes to haulage trucks for immediate collection.")
-                ]
-            }
+            {"Node": "Container Terminal 01", "Location": "Pier 4", "Tier": "Tier 3: Site Unit", "Layer": "Crane Operations Group", "Base_Drift": 3.9, "Base_Burn": 250, "Bottleneck": "Automated Crane Sync Delay"},
+            {"Node": "Freight Rail Hub North", "Location": "Inland Port", "Tier": "Tier 2: Regional", "Layer": "Customs Clearance Directorate", "Base_Drift": 2.1, "Base_Burn": 160, "Bottleneck": "Customs Paper Manifest Audit"}
         ]
     },
     "NHS": {
         "name": "NHS Recovery · Surgical Book",
-        "title": "NHS Elective Recovery Control Panel",
+        "title": "NHS Elective Surgical Hub Command Post",
         "var_num": 210.00,
         "var_unit": "Million",
         "drift_num": 31.50,
@@ -570,48 +260,19 @@ SECTORS = {
             "Model 45-day elective surgical elective recovery stall"
         ],
         "sites": [
-            {
-                "Node": "Surgical Hub North",
-                "Location": "Trust Main",
-                "Tier": "Tier 3: Site Unit",
-                "Layer": "Clinical Assessment Team",
-                "Base_Drift": 5.5,
-                "Base_Burn": 650,
-                "Bottleneck": "Pre-Op Assessment Paperwork Queue",
-                "Root_Cause": "Labor / Credentialed Skill",
-                "Root_Detail": "Pre-assessment nurse shortage requiring manual re-checking of paper cardiology clearance.",
-                "Legacy_Delta": "+9.5 Wks (Pre-Digital Baseline: 15.0 Wks)",
-                "Statutory_SLA": "NHS Constitution 18-Week Referral-to-Treatment (RTT) Mandate",
-                "SLA_Breach": "Critical Statutory Breach (+38 Days over 18-week RTT target)",
-                "Accrued_Loss": "$92,857 / day",
-                "Evidence_Artifacts": [
-                    "Patient Electronic Health Record (EHR) Lodgement #NHS-EHR-1092",
-                    "ECG Diagnostic Cardiology Clearance PDF Document",
-                    "Operating Theatre Unallocated Capacity Log #THEATRE-N4"
-                ],
-                "Clearance_Checklist": [
-                    "Auto-calculate American Society of Anesthesiologists (ASA) operative score.",
-                    "Match cleared patient file to nearest open theatre slot across Trust network.",
-                    "Lock patient into operating schedule with zero cancellation risk."
-                ],
-                "SOP": [
-                    ("Step 1: Patient Health Questionnaire Ingestion", "Digitally ingest patient comorbidities, drug charts, and GP records."),
-                    ("Step 2: ASA Fitness Auto-Scoring", "Auto-calculate American Society of Anesthesiologists (ASA) operative risk score."),
-                    ("Step 3: Anesthetic Consultant Review", "Consultant anesthesiologist reviews complex airway and cardiac flags."),
-                    ("Step 4: Theatre Booking Confirmation", "Lock patient into confirmed operating theatre slot with zero day-of cancellation risk.")
-                ]
-            }
+            {"Node": "Surgical Hub North", "Location": "Trust Main", "Tier": "Tier 3: Site Unit", "Layer": "Clinical Assessment Team", "Base_Drift": 5.5, "Base_Burn": 650, "Bottleneck": "Pre-Op Assessment Paperwork Queue"},
+            {"Node": "Regional Infirmary West", "Location": "District Hub", "Tier": "Tier 2: Regional", "Layer": "Theatre Planning Directorate", "Base_Drift": 2.9, "Base_Burn": 500, "Bottleneck": "Theatre Capacity Re-Allocation Queue"}
         ]
     }
 }
 
 # --- 2. URL PARAMETER ROUTING ---
 params = st.query_params
-url_co = params.get("co", "GRID_TX").upper()
+url_co = params.get("co", "ERCOT").upper()
 if url_co not in SECTORS:
-    url_co = "GRID_TX"
+    url_co = "ERCOT"
 
-# --- 3. SIDEBAR CONTROL PLANE ---
+# --- 3. SIDEBAR: THE ENTERPRISE CONTROL PLANE ---
 st.sidebar.markdown(
     """
     <div style='padding-bottom: 10px;'>
@@ -624,6 +285,7 @@ st.sidebar.markdown(
 
 st.sidebar.markdown("---")
 
+# A. Operating Sector Selector
 selected_key = st.sidebar.selectbox(
     "🏢 Operating Sector Book",
     options=list(SECTORS.keys()),
@@ -633,6 +295,7 @@ selected_key = st.sidebar.selectbox(
 
 active_data = SECTORS[selected_key]
 
+# B. Top-Down Command Hierarchy Selector
 view_mode = st.sidebar.radio(
     "🏛️ Command Hierarchy",
     [
@@ -643,42 +306,129 @@ view_mode = st.sidebar.radio(
     index=0
 )
 
+# C. Directorate Domain Controls and Chairman Apex Authority
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🏛️ Directorate Domain Control")
+chairman_override = st.sidebar.toggle(
+    "Chairman Apex Director Authority Override",
+    value=False,
+    help="Chairman authority activates every directorate and unlocks macro stress controls."
+)
+
+directorate_domains = {
+    "COO": st.sidebar.toggle("COO · Operations Control", value=True, disabled=chairman_override),
+    "CFO": st.sidebar.toggle("CFO · Capital Control", value=True, disabled=chairman_override),
+    "Legal": st.sidebar.toggle("Legal · Statutory Control", value=True, disabled=chairman_override),
+    "CTO": st.sidebar.toggle("CTO · Systems Control", value=True, disabled=chairman_override),
+}
+if chairman_override:
+    directorate_domains = {domain: True for domain in directorate_domains}
+
+# D. Live Drift Stress-Tester (Locked Strictly to Tier 1 or Chairman Authority)
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⚡ Live Drift Stress-Tester")
 
-is_tier_1 = view_mode.startswith("Tier 1")
-if is_tier_1:
-    stress_lag = st.sidebar.slider("Simulate Friction Lag Escalation:", 0, 8, 0, format="+%d Wks")
+is_tier_1_authority = view_mode.startswith("Tier 1") or chairman_override
+
+if is_tier_1_authority:
+    stress_lag = st.sidebar.slider(
+        "Simulate Friction Lag Escalation:",
+        min_value=0,
+        max_value=8,
+        value=0,
+        format="+%d Wks",
+        key="active_stress_slider"
+    )
 else:
     st.sidebar.caption("🔒 Macro Stress Simulation Locked to Tier 1 Executive Authority.")
-    stress_lag = st.sidebar.slider("Simulate Friction Lag Escalation (Locked):", 0, 8, 0, format="+%d Wks", disabled=True)
+    stress_lag = st.sidebar.slider(
+        "Simulate Friction Lag Escalation (Locked):",
+        min_value=0,
+        max_value=8,
+        value=0,
+        format="+%d Wks",
+        disabled=True,
+        key="locked_stress_slider"
+    )
 
-# --- 4. COMPUTED METRICS ---
+st.sidebar.markdown("---")
+if st.sidebar.button("🔄 Sync Telemetry Stream", use_container_width=True):
+    st.sidebar.success("Telemetry feed re-indexed from edge nodes.")
+
+# --- 4. COMPUTED DYNAMIC METRICS & RAG STATUS ---
 multiplier = 1.0 + (stress_lag * 0.12)
 display_var = f"${active_data['var_num'] * multiplier:.2f} {active_data['var_unit']}"
 display_drift = f"${active_data['drift_num'] * multiplier:.2f} {active_data['drift_unit']}"
 display_acl = f"${int(active_data['acl_num'] * multiplier):,} {active_data['acl_unit']}"
 
+# --- 5. GOVERNANCE CALCULATIONS ---
+# The buckets reconcile to the existing weekly ACL and remain transparent inputs.
+weekly_acl = active_data["acl_num"] * multiplier
+loss_buckets = {
+    "Idle labour": weekly_acl * 0.42,
+    "WACC / demurrage carry": weekly_acl * 0.38,
+    "Statutory penalties": weekly_acl * 0.20,
+}
+total_holding_loss = sum(loss_buckets.values())
+realization_fee = total_holding_loss * 0.10
+client_realization = total_holding_loss * 0.90
+
+audit_payload = "|".join([
+    selected_key,
+    view_mode,
+    str(stress_lag),
+    str(chairman_override),
+    ",".join(f"{domain}:{enabled}" for domain, enabled in directorate_domains.items()),
+    f"{total_holding_loss:.2f}",
+])
+previous_hash = st.session_state.get("audit_chain_head", "GENESIS")
+proof_nonce = 0
+while True:
+    audit_hash = hashlib.sha256(
+        f"{previous_hash}|{audit_payload}|{proof_nonce}".encode("utf-8")
+    ).hexdigest()
+    if audit_hash.startswith("00"):
+        break
+    proof_nonce += 1
+st.session_state.audit_chain_head = audit_hash
+audit_row = {
+    "UTC Timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    "Authority": "Chairman Apex Override" if chairman_override else view_mode.split(":", 1)[0],
+    "Domain State": " / ".join(domain for domain, enabled in directorate_domains.items() if enabled),
+    "Holding Loss": f"${total_holding_loss:,.2f} / wk",
+    "Nonce": proof_nonce,
+    "Proof-of-Work": audit_hash[:16],
+    "Previous Proof": previous_hash[:16],
+}
+if audit_row["Proof-of-Work"] != st.session_state.get("last_audit_proof"):
+    st.session_state.setdefault("audit_ledger", []).append(audit_row)
+    st.session_state.last_audit_proof = audit_row["Proof-of-Work"]
+
 computed_sites = []
 for site in active_data["sites"]:
     adjusted_drift = site["Base_Drift"] + stress_lag
     adjusted_burn = int(site["Base_Burn"] * multiplier)
-    rag_badge = f"🔴 +{adjusted_drift:.1f} Wks (Critical)" if adjusted_drift >= 5.0 else f"🟡 +{adjusted_drift:.1f} Wks (Elevated)"
+    
+    if adjusted_drift <= 2.0:
+        rag_badge = f"🟢 +{adjusted_drift:.1f} Wks (Nominal)"
+    elif adjusted_drift < 5.0:
+        rag_badge = f"🟡 +{adjusted_drift:.1f} Wks (Elevated)"
+    else:
+        rag_badge = f"🔴 +{adjusted_drift:.1f} Wks (Critical Drag)"
 
     computed_sites.append({
         "Operational Node": f"{site['Node']} ({site['Location']})",
-        "Management Layer": f"{site['Tier']} · {site['Layer']}",
-        "Root-Cause Driver": site["Root_Cause"],
+        "Management Hierarchy": f"{site['Tier']} · {site['Layer']}",
         "Drift Status": rag_badge,
         "Weekly Burn Rate": f"${adjusted_burn}k / wk",
         "Active Bottleneck Queue": site["Bottleneck"]
     })
 
-# --- 5. MAIN EXECUTIVE HEADER ---
+# --- 5. MAIN HEADER ---
 st.markdown(
     f"""
     <div style='text-align: center; padding: 10px 0 20px 0;'>
-        <h1 style='color: #00E5FF; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.8px; margin: 0; line-height: 1.2;'>
+        <h1 style='color: #00E5FF; font-size: 2.6rem; font-weight: 900; letter-spacing: -0.8px; margin: 0; line-line: 1.2;'>
             🎯 {active_data['title']}
         </h1>
     </div>
@@ -686,85 +436,86 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- 6. STRATEGIC EXPOSURE METRICS ---
-if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2"):
+# --- 6. STRATEGIC EXPOSURE METRICS (Visible for Tier 1 and Tier 2) ---
+if (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2")) and directorate_domains["CFO"]:
     st.markdown("---")
     st.subheader("⚡ Strategic Balance-Sheet Telemetry")
+    
     col1, col2, col3 = st.columns(3)
-    col1.metric("Macro Valuation at Risk 🔒", display_var, help="Total Enterprise Capital Exposure")
-    col2.metric("Annual Velocity Drift Cost 🔒", display_drift, help="Financing Drag & Revenue Loss")
-    col3.metric("Actionable Controllable Loss 🔒", display_acl, help="Active Administrative Holding Burn")
+    with col1:
+        st.metric("Macro Valuation at Risk 🔒", display_var, help="Basis: Total Enterprise Exposure")
+    with col2:
+        st.metric("Annual Velocity Drift Cost 🔒", display_drift, help="Basis: Operational Drag Rate")
+    with col3:
+        st.metric("Actionable Controllable Loss 🔒", display_acl, help="Basis: Administrative Friction Drag")
+
     st.info(f"⚡ **DIRECT OPERATIONAL BRIDGE:** {active_data['bridge']}")
 
-# --- 7. OPERATIONAL MATRIX, FORENSIC DOSSIER & TIER 4 PLAYBOOKS ---
-if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 3"):
+    st.markdown("### 💰 Deconstructed Holding Loss & Realization Ledger")
+    loss_rows = [
+        {"Holding Loss Bucket": bucket, "Weekly Exposure": f"${amount:,.2f}", "Share": f"{amount / total_holding_loss:.0%}"}
+        for bucket, amount in loss_buckets.items()
+    ]
+    loss_rows.extend([
+        {"Holding Loss Bucket": "Total verified holding loss", "Weekly Exposure": f"${total_holding_loss:,.2f}", "Share": "100%"},
+        {"Holding Loss Bucket": "Client realization (90%)", "Weekly Exposure": f"${client_realization:,.2f}", "Share": "90%"},
+        {"Holding Loss Bucket": "Phoenix realization fee (10%)", "Weekly Exposure": f"${realization_fee:,.2f}", "Share": "10%"},
+    ])
+    st.table(loss_rows)
+
+if directorate_domains["Legal"] and (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2")):
+    st.markdown("### 🔐 Immutable Proof-of-Work Audit Ledger")
+    st.caption("Append-only session ledger. Each proof is chained to the preceding record.")
+    st.table(st.session_state.get("audit_ledger", []))
+
+# --- 7. OPERATIONAL MANAGEMENT & SITE UNITS (Visible for Tier 1 and Tier 3) ---
+if (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 3")) and directorate_domains["COO"]:
     st.markdown("---")
-    with st.expander("🔓 Management Depth & Operational Site Queues (Tier 3 & Tier 4)", expanded=True):
-        st.markdown("### 🔍 Granular Bottleneck & Root-Cause Matrix")
+    with st.expander("🔓 Management Depth & Operational Site Queues", expanded=True):
+        st.markdown("### 🔍 Granular Bottleneck & Node Telemetry")
         st.table(computed_sites)
         
-        st.markdown("---")
-        st.markdown("### 📋 Forensic Audit Evidence Dossier & Tier 4 SOP Gates")
-        st.caption("Select an active operational node to inspect statutory non-compliance evidence and actionable clearance checklists:")
-        
-        node_names = [f"{s['Node']} ({s['Location']})" for s in active_data["sites"]]
-        selected_node_idx = st.selectbox("Select Node Architecture:", range(len(node_names)), format_func=lambda i: node_names[i])
-        active_node = active_data["sites"][selected_node_idx]
-        
-        # FORENSIC EVIDENCE DOSSIER CARD
-        st.markdown(
-            f"""
-            <div style='background: #161b22; border: 1px solid #30363d; border-left: 5px solid #ff4b4b; border-radius: 8px; padding: 18px; margin-bottom: 20px;'>
-                <h4 style='color: #ff4b4b; margin: 0 0 10px 0;'>⚖️ FORENSIC AUDIT EVIDENCE DOSSIER · {active_node['Node']}</h4>
-                <p style='color: #c9d1d9; font-size: 0.95rem; margin: 4px 0;'><strong>Statutory / Tariff Standard:</strong> {active_node['Statutory_SLA']}</p>
-                <p style='color: #ff7b72; font-size: 0.95rem; margin: 4px 0;'><strong>Compliance Status:</strong> ⚠️ {active_node['SLA_Breach']}</p>
-                <p style='color: #00E5FF; font-size: 0.95rem; margin: 4px 0;'><strong>Daily Accrued Holding Liability:</strong> {active_node['Accrued_Loss']}</p>
-                <p style='color: #8b949e; font-size: 0.95rem; margin: 4px 0;'><strong>Root-Cause Classification:</strong> {active_node['Root_Cause']} ({active_node['Root_Detail']})</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        col_ev1, col_ev2 = st.columns(2)
-        with col_ev1:
-            st.markdown("#### 📂 Immutable Evidence Artifacts:")
-            for artifact in active_node["Evidence_Artifacts"]:
-                st.markdown(f"* `{artifact}`")
-        with col_ev2:
-            st.markdown("#### 🛠️ Frontline Clear-to-Close Checklist:")
-            for task in active_node["Clearance_Checklist"]:
-                st.markdown(f"* [ ] **{task}**")
-
-        st.markdown("---")
-        st.markdown("#### 🔄 4-Step Standard Operating Procedure (SOP) Clearance Gate:")
-        for step_title, step_desc in active_node["SOP"]:
-            st.markdown(f"* **{step_title}:** {step_desc}")
-
-        st.markdown("")
         if st.button("⚡ Dispatch Immediate Operational Clearance Directive", use_container_width=True):
             st.balloons()
-            st.success(f"Forensic Directive Dispatched: Statutory non-compliance packet served for {active_node['Node']}. Pre-clearing Steps 1 & 2 automated gates.")
+            st.success("Operational clearance directive dispatched to regional hubs.")
 
-# --- 8. DYNAMIC NOTEBOOK LANE ---
-if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2"):
+# --- 8. DYNAMIC NOTEBOOK LANE & EXECUTIVE PROMPTING ENGINE (Tier 1 & Tier 2) ---
+if (view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2")) and directorate_domains["CTO"]:
     st.markdown("---")
     with st.expander("🧠 Notebook Lane & Automated Executive Prompting Engine", expanded=True):
         st.markdown("### Automated Executive Scenario Prompts")
+        st.caption("Select a pre-configured scenario chip to synthesize exposure without manual typing:")
+
         if "current_query" not in st.session_state:
             st.session_state.current_query = active_data["presets"][0]
 
+        # 3 Dynamic Prompt Chips with Large Touch Targets
         chip_cols = st.columns(3)
         for idx, preset in enumerate(active_data["presets"]):
             with chip_cols[idx]:
                 if st.button(f"⚡ Scenario {idx+1}:\n{preset}", key=f"chip_{selected_key}_{idx}", use_container_width=True):
                     st.session_state.current_query = preset
 
-        user_query = st.text_input("Active Operational Query:", value=st.session_state.current_query)
+        user_query = st.text_input(
+            "Active Operational Query:",
+            value=st.session_state.current_query
+        )
 
         if user_query:
             days_match = re.search(r'(\d+)\s*(?:day|days)', user_query, re.IGNORECASE)
-            weeks = float(days_match.group(1))/7.0 if days_match else 4.0
-            time_str = f"{int(weeks*7)} Days ({weeks:.1f} Weeks)"
+            weeks_match = re.search(r'(\d+)\s*(?:week|weeks|wk|wks)', user_query, re.IGNORECASE)
+            
+            if days_match:
+                days = float(days_match.group(1))
+                weeks = days / 7.0
+                time_str = f"{int(days)} Days ({weeks:.1f} Weeks)"
+            elif weeks_match:
+                weeks = float(weeks_match.group(1))
+                days = weeks * 7.0
+                time_str = f"{int(weeks)} Weeks ({int(days)} Days)"
+            else:
+                weeks = 4.0
+                time_str = "30 Days (Standard 4-Week Baseline)"
 
             calc_loss = weeks * (active_data['acl_num'] * multiplier)
             compound_drift_delta = (active_data['drift_num'] * multiplier) * (weeks * 0.12)
@@ -778,35 +529,45 @@ if view_mode.startswith("Tier 1") or view_mode.startswith("Tier 2"):
                 * **Cumulative Controllable Holding Loss:** **${calc_loss:,.2f}**
                 * **Compounded Velocity Drift Escalation:** **+${compound_drift_delta:.2f} {active_data['drift_unit']}**
                 * **Critical Constraint Layer:** **{critical_site['Tier']} · {critical_site['Layer']}** ({critical_site['Bottleneck']})
-                * **Forensic Non-Compliance Status:** `{critical_site['SLA_Breach']}`
                 
-                > **Executive Directive:** Queue friction accumulates **${calc_loss:,.2f}** in balance-sheet drag over **{time_str}**. Discharging the **Forensic Clearance Directive** at **{critical_site['Node']}** collapses delay by serving non-compliance notices directly to the operator.
+                > **Executive Action Directive:** Delay friction across the active queues burns **${calc_loss:,.2f}** over **{time_str}**. Discharging the **Immediate Operational Clearance Directive** at **{critical_site['Node']}** collapses sequential lag back to nominal thresholds.
                 """
             )
 
-# --- 9. TOP-LOADED EXECUTIVE OUTREACH GENERATOR ---
+# --- 9. TOP-LOADED GAINSHARE OUTREACH BRIEF GENERATOR ---
 st.markdown("---")
 with st.expander("✉️ Generate Client Briefing & Executive Email (Top-Loaded Offer)", expanded=False):
+    st.markdown(f"### 📋 Outreach Memo: {active_data['name']}")
+    
     client_url = f"https://aatphoenix.streamlit.app/?co={selected_key}"
-    email_memo = f"""Subject: Forensic Audit of Stranded Interconnection & Operational Holding Costs — {active_data['title']}
+    
+    email_memo = f"""Subject: Automated Operational Drift Recovery — {active_data['title']}
 
 Hi [Executive First Name],
 
-The Offer: We connect your stalled operational queues into an immutable forensic telemetry plane at zero upfront cost. We only charge a percentage of the verified balance-sheet holding capital we recover.
+The Offer: We connect your operations into a fully automated, immutable audited command plane that re-indexes at 02:00 AM daily—eliminating your active queue bottlenecks at zero upfront cost. You only pay a percentage of the verified holding capital we recover on your balance sheet.
 
-This command post demonstrates how real-time statutory SLA tracking and forensic evidence dossiers isolate administrative and utility delays:
+This demonstration post uses public operational baselines to illustrate how our automated telemetry sync aligns executive oversight with site-level bottlenecks in real time:
 
 👉 Direct Executive Surface: {client_url}
 
 ---
 
-WHAT THIS FORENSIC PLATFORM PROVES IN 30 SECONDS:
-• Stranded Valuation at Risk: ${active_data['var_num']:.2f} {active_data['var_unit']}
-• Annual Velocity Drift Drag: ${active_data['drift_num']:.2f} {active_data['drift_unit']}
-• Actionable Controllable Loss: ${int(active_data['acl_num']):,} {active_data['acl_unit']}
-• Forensic Statutory Dossiers: Automatically logs statutory and tariff SLA breaches with exact daily accrued holding liabilities.
+WHAT THIS COMMAND POST ISOLATES IN 30 SECONDS:
+• Macro Valuation at Risk (VaR): ${active_data['var_num']:.2f} {active_data['var_unit']}
+• Annual Velocity Drift Cost: ${active_data['drift_num']:.2f} {active_data['drift_unit']}
+• Actionable Controllable Loss (ACL): ${int(active_data['acl_num']):,} {active_data['acl_unit']}
+• Active Bottleneck Bridge: {active_data['bridge']}
 
-If you are open to recovering lost capital velocity across delayed operational queues without budget risk, let us know which operational node to calibrate first.
+INTERACTIVE SCENARIO MODELING:
+Navigate to the provided link and tap any prompt chip inside the Notebook Lane to calculate the holding cost of 30, 45, or 60-day process stalls.
+
+ENTERPRISE SECURITY & AUDIT GOVERNANCE:
+• Access is strictly limited to authenticated personnel via role-based access controls.
+• A comprehensive, immutable audit trail logs all user interactions for regulatory compliance.
+• Macro stress simulation multipliers are strictly locked to Tier 1 Executive Authority.
+
+Explore the live model at your convenience. If you are open to recovering lost velocity without budget risk, let us know which operational node to calibrate first.
 
 Best regards,
 
@@ -814,3 +575,4 @@ Best regards,
 AAT Phoenix Engine
 """
     st.text_area("Ready-to-send Executive Memo:", value=email_memo, height=420)
+    st.caption("💡 Fully formatted and ready to copy into your email client. Automatically syncs whenever you switch sectors.")
