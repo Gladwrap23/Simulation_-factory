@@ -44,12 +44,25 @@ st.markdown(
     section[data-testid="stSidebar"] .stRadio label,
     section[data-testid="stSidebar"] .stCheckbox label,
     section[data-testid="stSidebar"] .stSelectbox label,
+    section[data-testid="stSidebar"] .stToggle label,
     section[data-testid="stSidebar"] .stSlider label,
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
     section[data-testid="stSidebar"] .stMarkdown,
-    section[data-testid="stSidebar"] .stMarkdown p { color:#1f2937; }
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] [data-baseweb="select"] * { color:#0f172a !important; font-weight:700; }
     section[data-testid="stSidebar"] h2 { font-size:1.35rem; }
+    [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stMetricLabel"],
+    [data-testid="stMetricLabel"] p,
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p,
+    .callout, .callout b,
     [data-testid="stAlert"],
-    [data-testid="stAlert"] * { color:#1f2937; }
+    [data-testid="stAlert"] * { color:#111827 !important; font-weight:700; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -57,29 +70,37 @@ st.markdown(
 
 
 BOOKS = {
-    "PORT": {
+    "ERCOT_BESS": {
+        "name": "ERCOT BESS / storage operations",
+        "exposure": 88.5,
+        "drift": 12.3,
+        "burn": 610000,
+        "nodes": ["BESS Storage Hub 01", "Solar Substation Beta", "ERCOT Control Centre"],
+        "bottleneck": "Telemetry validation and inverter testing",
+    },
+    "GRID_TRANSMISSION": {
+        "name": "Grid & transmission infrastructure",
+        "exposure": 126.0,
+        "drift": 15.7,
+        "burn": 740000,
+        "nodes": ["BESS Storage Hub 01", "Solar Substation Beta", "Regional Control Centre"],
+        "bottleneck": "Interconnection testing and construction clearance",
+    },
+    "ACC_NZ": {
+        "name": "ACC NZ Scheme / claims governance",
+        "exposure": 210.0,
+        "drift": 31.5,
+        "burn": 1150000,
+        "nodes": ["Northern Hub 01", "Midland Hub 02", "Central Operations Hub"],
+        "bottleneck": "Entitlement audit and clinical verification",
+    },
+    "PORT_LOGISTICS": {
         "name": "Port logistics / container flow",
         "exposure": 64.0,
         "drift": 8.2,
         "burn": 410000,
         "nodes": ["Container Terminal 01", "Freight Rail Hub North", "Gate Complex 4"],
         "bottleneck": "Manifest audit and intermodal handoff",
-    },
-    "ENERGY": {
-        "name": "Energy / storage commissioning",
-        "exposure": 88.5,
-        "drift": 12.3,
-        "burn": 610000,
-        "nodes": ["BESS Storage Hub 01", "Solar Substation Beta", "Regional Control Centre"],
-        "bottleneck": "Telemetry validation and inverter testing",
-    },
-    "BIOPHARMA": {
-        "name": "Biopharma / GMP release",
-        "exposure": 142.0,
-        "drift": 18.4,
-        "burn": 850000,
-        "nodes": ["Facility Alpha", "Facility Beta", "Quality Assurance Hub"],
-        "bottleneck": "Batch record verification and QC release",
     },
 }
 
@@ -112,7 +133,19 @@ def append_audit(event, authority, details):
 
 st.sidebar.markdown("## FACTORY COMMAND POST")
 st.sidebar.caption("Live operating book | control plane online")
-book_key = st.sidebar.selectbox("Operating book", list(BOOKS), format_func=lambda key: BOOKS[key]["name"])
+
+
+def switch_book():
+    st.rerun()
+
+
+book_key = st.sidebar.selectbox(
+    "Operating book",
+    list(BOOKS),
+    format_func=lambda key: BOOKS[key]["name"],
+    key="operating_book",
+    on_change=switch_book,
+)
 book = BOOKS[book_key]
 
 st.sidebar.markdown("### Authority routing")
