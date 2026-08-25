@@ -35,7 +35,21 @@ st.markdown(
     .artifact strong { color:var(--teal); font:700 .8rem monospace; }
     .lock { color:var(--red); font:700 .78rem monospace; }
     section[data-testid="stSidebar"] { background:#e6e1d5; }
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] h5,
+    section[data-testid="stSidebar"] h6,
+    section[data-testid="stSidebar"] .stRadio label,
+    section[data-testid="stSidebar"] .stCheckbox label,
+    section[data-testid="stSidebar"] .stSelectbox label,
+    section[data-testid="stSidebar"] .stSlider label,
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .stMarkdown p { color:#1f2937; }
     section[data-testid="stSidebar"] h2 { font-size:1.35rem; }
+    [data-testid="stAlert"],
+    [data-testid="stAlert"] * { color:#1f2937; }
     </style>
     """,
     unsafe_allow_html=True,
