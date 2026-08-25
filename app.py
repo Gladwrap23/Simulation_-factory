@@ -120,18 +120,20 @@ def money(value):
     return f"${value:,.0f}"
 
 
-def append_audit(event, authority, details):
+def append_audit(event, authority, node, total_recovered):
     previous = st.session_state.get("audit_head", "GENESIS")
-    payload = f"{previous}|{event}|{authority}|{details}"
+    client_retained = total_recovered * 0.90
+    phoenix_fee = total_recovered * 0.10
+    payload = f"{previous}|{event}|{authority}|{node}|{total_recovered:.2f}"
     proof = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     st.session_state.audit_head = proof
     st.session_state.setdefault("audit_ledger", []).insert(0, {
-        "UTC": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "Timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "Node": node,
         "Authority": authority,
-        "Event": event,
-        "Details": details,
-        "Proof": proof[:16],
-        "Previous": previous[:16],
+        "Total Recovered": money(total_recovered),
+        "Client Retained (90%)": money(client_retained),
+        "Phoenix Fee (10%)": money(phoenix_fee),
     })
 
 
@@ -203,11 +205,32 @@ if is_chairman_view:
     metric_cols[1].metric("Velocity drift", f"${book['drift'] * multiplier:.1f}M")
     metric_cols[2].metric("Weekly holding burn", money(weekly_burn))
     metric_cols[3].metric("Active domains", f"{sum(domains.values())}/4")
+    idle_labour = weekly_burn * 0.55
+    wacc_carry = weekly_burn * 0.25
+    statutory_penalties = weekly_burn * 0.20
+    total_holding_loss = idle_labour + wacc_carry + statutory_penalties
+    client_realization = total_holding_loss * 0.90
+    phoenix_realization_fee = total_holding_loss * 0.10
+    realization_ledger = [
+        {"Component": "Idle Labour", "Amount": money(idle_labour)},
+        {"Component": "WACC Carry", "Amount": money(wacc_carry)},
+        {"Component": "Statutory Penalties", "Amount": money(statutory_penalties)},
+        {"Component": "Total Holding Loss", "Amount": money(total_holding_loss)},
+        {"Component": "Client Realization (90%)", "Amount": money(client_realization)},
+        {"Component": "Phoenix Realization Fee (10%)", "Amount": money(phoenix_realization_fee)},
+    ]
+    st.subheader("Deconstructed Holding Loss & Realization Ledger")
+    st.dataframe(realization_ledger, use_container_width=True, hide_index=True)
     st.markdown(f"<div class='callout'><b>Chairman decision brief:</b> {book['bottleneck']}. A {stress_lag}-week lag creates {money(weekly_burn * max(stress_lag, 1))} of controllable holding burn. Release the Tier 2 surge plan and keep the Tier 3 evidence chain attached.</div>", unsafe_allow_html=True)
     st.subheader("Chairman-gated audit ledger")
     if chairman_override:
         if st.button("Record Chairman directive", type="primary"):
-            append_audit("Directorate override reviewed", "Chairman", f"{book_key}; lag={stress_lag}; surge={surge_budget}%")
+            append_audit(
+                "Directorate override reviewed",
+                "Chairman",
+                book["nodes"][0],
+                total_holding_loss,
+            )
             st.toast("Directive appended to the chained ledger")
         st.dataframe(st.session_state.get("audit_ledger", []), use_container_width=True, hide_index=True)
     else:
@@ -245,7 +268,12 @@ elif tier.startswith("Tier 2"):
     st.subheader("Directive translation register")
     st.dataframe(domain_rows, use_container_width=True, hide_index=True)
     if st.button("Issue translated directive", type="primary"):
-        append_audit("General management directive issued", "General Management", directive[:120])
+        append_audit(
+            "General management directive issued",
+            "General Management",
+            book["nodes"][0],
+            total_recovered=weekly_burn,
+        )
         st.success("Directive issued to active domains. Site operators now receive the latest SLA clock.")
 
 else:
@@ -272,5 +300,10 @@ else:
     st.slider("Queue lag surge (weeks)", 0, 8, stress_lag, disabled=True, key="site_lag")
     st.slider("Surge budget (%)", 0, 40, surge_budget, 5, disabled=True, key="site_budget")
     if st.button("Submit site evidence", type="primary"):
-        append_audit("Site evidence submitted", "Site Operations", f"{book_key}; SOP={completed}/{len(checks)}")
+        append_audit(
+            "Site evidence submitted",
+            "Site Operations",
+            book["nodes"][0],
+            total_recovered=weekly_burn,
+        )
         st.success("Evidence package queued for General Management review.")
