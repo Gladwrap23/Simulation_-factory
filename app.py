@@ -14,27 +14,27 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    :root { --ink:#17221e; --muted:#61706a; --paper:#f5f1e8; --panel:#fffdf8;
-            --line:#d9d2c3; --teal:#087f78; --amber:#d08432; --red:#b64035; }
-    .stApp { background:var(--paper); color:var(--ink); }
+        :root { --ink:#ffffff; --muted:#c9d1d9; --paper:#0d1117; --panel:#161b22;
+            --line:#30363d; --teal:#00E5FF; --amber:#ffb454; --red:#ff7b72; }
+        .stApp { background:var(--paper); color:var(--ink); }
     [data-testid="stHeader"] { background:transparent; }
     footer, #MainMenu { visibility:hidden; }
-    h1, h2, h3 { font-family:Georgia, serif; letter-spacing:0; color:var(--ink); }
+        h1, h2, h3 { font-family:Georgia, serif; letter-spacing:0; color:#ffffff; }
     h1 { font-size:2.5rem; line-height:1.05; }
     h2 { border-bottom:1px solid var(--line); padding-bottom:.45rem; }
     [data-testid="stMetric"] { background:var(--panel); border:1px solid var(--line);
       border-top:4px solid var(--teal); padding:1rem; }
-    [data-testid="stMetricValue"] { color:var(--teal); }
+    [data-testid="stMetricValue"] { color:#00E5FF !important; }
     .eyebrow { color:var(--teal); font:700 .75rem/1.2 monospace; letter-spacing:.12em;
       text-transform:uppercase; }
     .mast { border-bottom:5px solid var(--ink); padding:1rem 0 1.25rem; margin-bottom:1.2rem; }
-    .status { background:var(--ink); color:#f8f3e8; padding:.65rem .85rem; font:700 .8rem monospace; }
-    .status span { color:#e7a45b; }
-    .callout { background:#e7f0ec; border-left:5px solid var(--teal); padding:1rem 1.1rem; }
+    .status { background:#161b22; color:#ffffff; padding:.65rem .85rem; font:700 .8rem monospace; }
+    .status span { color:#00E5FF; }
+    .callout { background:#161b22; border-left:5px solid var(--teal); padding:1rem 1.1rem; }
     .artifact { background:var(--panel); border:1px solid var(--line); padding:.8rem 1rem; min-height:120px; }
     .artifact strong { color:var(--teal); font:700 .8rem monospace; }
     .lock { color:var(--red); font:700 .78rem monospace; }
-    section[data-testid="stSidebar"] { background:#e6e1d5; }
+    section[data-testid="stSidebar"] { background:#161b22; }
     section[data-testid="stSidebar"] h1,
     section[data-testid="stSidebar"] h2,
     section[data-testid="stSidebar"] h3,
@@ -52,7 +52,8 @@ st.markdown(
     section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
     section[data-testid="stSidebar"] .stMarkdown,
     section[data-testid="stSidebar"] .stMarkdown p,
-    section[data-testid="stSidebar"] [data-baseweb="select"] * { color:#0f172a !important; font-weight:700; }
+    section[data-testid="stSidebar"] [data-baseweb="select"] *,
+    section[data-testid="stSidebar"] [data-baseweb="menu"] * { opacity:1 !important; color:#ffffff !important; font-weight:600 !important; }
     section[data-testid="stSidebar"] h2 { font-size:1.35rem; }
     [data-testid="stWidgetLabel"],
     [data-testid="stWidgetLabel"] p,
@@ -62,7 +63,10 @@ st.markdown(
     [data-testid="stCaptionContainer"] p,
     .callout, .callout b,
     [data-testid="stAlert"],
-    [data-testid="stAlert"] * { color:#111827 !important; font-weight:700; }
+    [data-testid="stAlert"] * { color:#ffffff !important; font-weight:600; }
+    [data-testid="stMetric"], .artifact { background:#161b22; border-color:#30363d; }
+    [data-baseweb="menu"], [data-baseweb="popover"] { background:#161b22; color:#ffffff; }
+    [data-baseweb="menu"] *, [data-baseweb="popover"] * { opacity:1 !important; color:#ffffff !important; font-weight:600 !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -135,16 +139,11 @@ st.sidebar.markdown("## FACTORY COMMAND POST")
 st.sidebar.caption("Live operating book | control plane online")
 
 
-def switch_book():
-    st.rerun()
-
-
 book_key = st.sidebar.selectbox(
     "Operating book",
     list(BOOKS),
     format_func=lambda key: BOOKS[key]["name"],
     key="operating_book",
-    on_change=switch_book,
 )
 book = BOOKS[book_key]
 
@@ -207,14 +206,31 @@ elif tier.startswith("Tier 2"):
     st.markdown("<div class='eyebrow'>Tier 2 / translation and allocation</div>", unsafe_allow_html=True)
     st.header("General Management Directive & Domain Translation Console")
     st.info("Convert the Chairman outcome into accountable domain instructions, surge budgets, and time-bound service levels.")
-    directive = st.text_area("Management directive", value=f"Stabilise {book['bottleneck']} and restore the {sla_days}-day release SLA.", height=90)
+    directive = st.text_area(
+        "Management directive",
+        value=f"Stabilise {book['bottleneck']} and restore the {sla_days}-day release SLA.",
+        height=90,
+        key=f"directive_{book_key}",
+    )
     domain_cols = st.columns(4)
     domain_rows = []
     for index, domain in enumerate(domains):
         with domain_cols[index]:
-            allocation = st.number_input(f"{domain} surge budget (%)", 0, 40, 10 if domains[domain] else 0, 5, key=f"budget_{domain}")
-            service_level = st.selectbox(f"{domain} SLA", ["4 hours", "1 business day", "3 business days", "7 days"], index=1, key=f"sla_{domain}")
-            domain_rows.append({"Domain": domain, "State": "ACTIVE" if domains[domain] else "PAUSED", "Surge": f"{allocation}%", "SLA": service_level})
+            allocation = st.number_input(
+                f"{domain} surge budget (%)",
+                0,
+                40,
+                10 if domains[domain] else 0,
+                5,
+                key=f"budget_{book_key}_{domain}",
+            )
+            service_level = st.selectbox(
+                f"{domain} SLA",
+                ["4 hours", "1 business day", "3 business days", "7 days"],
+                index=1,
+                key=f"sla_{book_key}_{domain}",
+            )
+            domain_rows.append({"Book": book_key, "Domain": domain, "State": "ACTIVE" if domains[domain] else "PAUSED", "Surge": f"{allocation}%", "SLA": service_level})
     st.subheader("Directive translation register")
     st.dataframe(domain_rows, use_container_width=True, hide_index=True)
     if st.button("Issue translated directive", type="primary"):
