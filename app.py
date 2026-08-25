@@ -139,12 +139,23 @@ st.sidebar.markdown("## FACTORY COMMAND POST")
 st.sidebar.caption("Live operating book | control plane online")
 
 
-book_key = st.sidebar.selectbox(
+book_options = list(BOOKS)
+if st.session_state.get("active_book") not in book_options:
+    st.session_state["active_book"] = book_options[0]
+
+
+def switch_book():
+    st.rerun()
+
+
+st.sidebar.selectbox(
     "Operating book",
-    list(BOOKS),
+    book_options,
     format_func=lambda key: BOOKS[key]["name"],
-    key="operating_book",
+    key="active_book",
+    on_change=switch_book,
 )
+book_key = st.session_state["active_book"]
 book = BOOKS[book_key]
 
 st.sidebar.markdown("### Authority routing")
