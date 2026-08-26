@@ -191,7 +191,7 @@ with management:
 		[18, 12, 8],
 	):
 		with column:
-			st.number_input(label, min_value=0, max_value=100, value=value, step=1, format="%d%%", key=key)
+			st.number_input(label, min_value=0, max_value=100, value=value, step=1, format="%d", key=key)
 	st.markdown('<div class="section-rule"></div>', unsafe_allow_html=True)
 	st.markdown("**SLA routing")
 	r1, r2, r3 = st.columns(3)
