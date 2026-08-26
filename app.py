@@ -34,6 +34,10 @@ st.markdown(
     .artifact { background:var(--panel); border:1px solid var(--line); padding:.8rem 1rem; min-height:120px; }
     .artifact strong { color:var(--teal); font:700 .8rem monospace; }
     .lock { color:var(--red); font:700 .78rem monospace; }
+        .governance-badge { display:inline-block; background:#161b22; border:1px solid #30363d;
+            border-radius:4px; color:#ffffff; margin:0 .35rem .45rem 0; padding:.45rem .65rem; }
+        .governance-badge strong { color:#00E5FF; }
+        .governance-badge.paused { border-color:#ff7b72; color:#ff7b72; }
     section[data-testid="stSidebar"] { background:#161b22; }
     section[data-testid="stSidebar"] h1,
     section[data-testid="stSidebar"] h2,
@@ -268,6 +272,17 @@ elif tier.startswith("Tier 2"):
     st.subheader("Directive translation register")
     st.dataframe(domain_rows, use_container_width=True, hide_index=True)
     if st.button("Issue translated directive", type="primary"):
+        st.session_state.setdefault("active_directives", {})[book_key] = {
+            "issued_by": "General Management",
+            "domains": {
+                row["Domain"]: {
+                    "state": row["State"],
+                    "surge": row["Surge"],
+                    "sla": row["SLA"],
+                }
+                for row in domain_rows
+            },
+        }
         append_audit(
             "General management directive issued",
             "General Management",
@@ -280,6 +295,27 @@ else:
     st.markdown("<div class='eyebrow'>Tier 3 / evidence-led execution</div>", unsafe_allow_html=True)
     st.header("Site Operations Hub")
     st.caption(f"Operating nodes: {' | '.join(book['nodes'])}  |  Live bottleneck: {book['bottleneck']}")
+    issued_directive = st.session_state.get("active_directives", {}).get(book_key)
+    st.subheader("Upstream Governance")
+    if issued_directive:
+        governance_badges = []
+        for domain, directive in issued_directive["domains"].items():
+            if directive["state"] == "PAUSED":
+                governance_badges.append(
+                    f"<span class='governance-badge paused'><strong>{domain}</strong> 🔴 PAUSED | Surge {directive['surge']} | SLA {directive['sla']}</span>"
+                )
+            else:
+                governance_badges.append(
+                    f"<span class='governance-badge'><strong>{domain}</strong> | ACTIVE | Surge {directive['surge']} | SLA {directive['sla']}</span>"
+                )
+        st.markdown("".join(governance_badges), unsafe_allow_html=True)
+    else:
+        st.warning("No Tier 2 directive has been issued for this operating book.")
+    required_domains = list(domains)
+    required_domains_active = bool(issued_directive) and all(
+        issued_directive["domains"].get(domain, {}).get("state") == "ACTIVE"
+        for domain in required_domains
+    )
     st.subheader("Authentic control artifacts")
     artifact_cols = st.columns(4)
     for index, (code, title, detail) in enumerate(ARTIFACTS):
@@ -293,13 +329,15 @@ else:
         "BAPLIE plan reconciled with berth and reefer manifest",
         "Exception owner and next review time assigned",
     ]
-    completed = sum(st.checkbox(item, key=f"sop_{index}") for index, item in enumerate(checks))
+    completed = sum(st.checkbox(item, key=f"sop_{book_key}_{index}") for index, item in enumerate(checks))
     st.progress(completed / len(checks), text=f"SOP evidence complete: {completed}/{len(checks)}")
+    if not required_domains_active:
+        st.error("Full field SOP execution is locked until every required domain is ACTIVE in Tier 2.")
     st.subheader("Locked stress envelope")
     st.caption("Stress sliders are visible for situational awareness but require Chairman Directorate Override to move.")
     st.slider("Queue lag surge (weeks)", 0, 8, stress_lag, disabled=True, key="site_lag")
     st.slider("Surge budget (%)", 0, 40, surge_budget, 5, disabled=True, key="site_budget")
-    if st.button("Submit site evidence", type="primary"):
+    if st.button("Submit site evidence", type="primary", disabled=not required_domains_active):
         append_audit(
             "Site evidence submitted",
             "Site Operations",
