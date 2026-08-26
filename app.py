@@ -195,6 +195,9 @@ st.sidebar.selectbox(
 )
 book_key = st.session_state["active_book"]
 book = BOOKS[book_key]
+active_node = book["nodes"][0]
+cleared_nodes = st.session_state.setdefault("cleared_nodes", {})
+node_clearance = cleared_nodes.get(active_node)
 
 st.sidebar.markdown("### Authority routing")
 tier = st.sidebar.radio(
@@ -239,7 +242,10 @@ if is_chairman_view:
     metric_cols = st.columns(4)
     metric_cols[0].metric("Enterprise exposure", f"${book['exposure'] * multiplier:.1f}M")
     metric_cols[1].metric("Velocity drift", f"${book['drift'] * multiplier:.1f}M")
-    metric_cols[2].metric("Weekly holding burn", money(weekly_burn))
+    metric_cols[2].metric(
+        "Weekly holding burn",
+        "$0 (RESOLVED)" if node_clearance else money(weekly_burn),
+    )
     metric_cols[3].metric("Active domains", f"{sum(domains.values())}/4")
     idle_labour = weekly_burn * 0.55
     wacc_carry = weekly_burn * 0.25
@@ -257,7 +263,10 @@ if is_chairman_view:
     ]
     st.subheader("Deconstructed Holding Loss & Realization Ledger")
     st.dataframe(realization_ledger, use_container_width=True, hide_index=True)
-    st.markdown(f"<div class='callout'><b>Chairman decision brief:</b> {book['bottleneck']}. A {stress_lag}-week lag creates {money(weekly_burn * max(stress_lag, 1))} of controllable holding burn. Release the Tier 2 surge plan and keep the Tier 3 evidence chain attached.</div>", unsafe_allow_html=True)
+    if node_clearance:
+        st.success("🟢 Field SOP Verified & Clearance Confirmed")
+    else:
+        st.markdown(f"<div class='callout'><b>Chairman decision brief:</b> {book['bottleneck']}. A {stress_lag}-week lag creates {money(weekly_burn * max(stress_lag, 1))} of controllable holding burn. Release the Tier 2 surge plan and keep the Tier 3 evidence chain attached.</div>", unsafe_allow_html=True)
     st.subheader("Chairman-gated audit ledger")
     if chairman_override:
         if st.button("Record Chairman directive", type="primary"):
@@ -300,7 +309,7 @@ elif tier.startswith("Tier 2"):
                 index=1,
                 key=f"sla_{book_key}_{domain}",
             )
-            domain_rows.append({"Book": book_key, "Domain": domain, "State": "ACTIVE" if domains[domain] else "PAUSED", "Surge": f"{allocation}%", "SLA": service_level})
+            domain_rows.append({"Book": book_key, "Domain": domain, "State": "🟢 COMPLETED" if node_clearance and domains[domain] else "ACTIVE" if domains[domain] else "PAUSED", "Surge": f"{allocation}%", "SLA": service_level})
     st.subheader("Directive translation register")
     st.dataframe(domain_rows, use_container_width=True, hide_index=True)
     if st.button("Issue translated directive", type="primary"):
@@ -308,7 +317,7 @@ elif tier.startswith("Tier 2"):
             "issued_by": "General Management",
             "domains": {
                 row["Domain"]: {
-                    "state": row["State"],
+                    "state": "ACTIVE" if row["State"] == "🟢 COMPLETED" else row["State"],
                     "surge": row["Surge"],
                     "sla": row["SLA"],
                 }
@@ -345,7 +354,7 @@ else:
         st.warning("No Tier 2 directive has been issued for this operating book.")
     required_domains = list(domains)
     required_domains_active = bool(issued_directive) and all(
-        issued_directive["domains"].get(domain, {}).get("state") == "ACTIVE"
+        issued_directive["domains"].get(domain, {}).get("state") in {"ACTIVE", "🟢 COMPLETED"}
         for domain in required_domains
     )
     st.subheader("Authentic control artifacts")
@@ -364,11 +373,17 @@ else:
     st.caption("Stress sliders are visible for situational awareness but require Chairman Directorate Override to move.")
     st.slider("Queue lag surge (weeks)", 0, 8, stress_lag, disabled=True, key="site_lag")
     st.slider("Surge budget (%)", 0, 40, surge_budget, 5, disabled=True, key="site_budget")
-    if st.button("Submit site evidence", type="primary", disabled=not required_domains_active):
-        append_audit(
-            "Site evidence submitted",
-            "Site Operations",
-            book["nodes"][0],
-            total_recovered=weekly_burn,
-        )
-        st.success("Evidence package queued for General Management review.")
+    if completed == len(checks) and required_domains_active and not node_clearance:
+        if st.button("⚡ Submit Frontline SOP Sign-off & Notify Command", type="primary"):
+            clearance_timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            cleared_nodes[active_node] = clearance_timestamp
+            st.session_state.setdefault("audit_ledger", []).insert(0, {
+                "Timestamp": clearance_timestamp,
+                "Node": active_node,
+                "Authority": "Tier 3 Field Sign-off",
+                "Capital Recovered": "$610k",
+                "Fee": "$61k",
+            })
+            st.rerun()
+    if node_clearance:
+        st.success(f"🟢 Frontline SOP sign-off confirmed at {node_clearance}.")
