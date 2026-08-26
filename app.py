@@ -8,6 +8,10 @@ OPERATING_BOOKS = {
     "ERCOT BESS / storage operations": {
         "exposure": "$88.5M",
         "burn": 610000,
+        "region": "West Texas — Permian Substation POI 345kV",
+        "bottleneck": "PSCAD Inverter EMT Validation & 4-sec ICCP Telemetry Lag",
+        "impact": "Holding $610k/wk in idle contractor carry and interconnection penalties",
+        "remedy": "Inject synthetic frequency test packets, certify IEEE 2800, and execute Part 2 COD attestation",
         "loss_breakdown": [
             ("Idle Contractor Overtime", 220000),
             ("WACC Carrying Demurrage", 250000),
@@ -33,6 +37,10 @@ OPERATING_BOOKS = {
     "Grid Infrastructure / PJM Cluster": {
         "exposure": "$142.0M",
         "burn": 940000,
+        "region": "PJM Western Hub — Keystone 500kV Transformer Bank",
+        "bottleneck": "Transformer energization study rework and NERC CIP evidence gap",
+        "impact": "Holding $940k/wk in transformer standby demurrage and interconnection study carry",
+        "remedy": "Authorize the re-study envelope, release the NERC CIP packet, and issue the HV energization work order",
         "loss_breakdown": [
             ("Transformer Standby Demurrage", 340000),
             ("Interconnection Study Carry", 290000),
@@ -58,6 +66,10 @@ OPERATING_BOOKS = {
     "ACC NZ Scheme / Claims Review": {
         "exposure": "$210.0M",
         "burn": 480000,
+        "region": "Northern Hub 01 — Auckland Clinical Claims Queue",
+        "bottleneck": "Manual medical paper verification and sequential delegation review",
+        "impact": "Holding $480k/wk in extended rehabilitation dwell and unreconciled provider invoices",
+        "remedy": "Approve the triage mandate, deploy digital ACC45 intake, and issue the provider reconciliation work order",
         "loss_breakdown": [
             ("Extended Rehabilitation Dwell", 210000),
             ("Provider Invoice Reconciliation", 150000),
@@ -83,6 +95,10 @@ OPERATING_BOOKS = {
     "Port Logistics / Container Flow": {
         "exposure": "$64.0M",
         "burn": 320000,
+        "region": "Terminal 3 — North Quay Gate and Yard Interface",
+        "bottleneck": "Paper manifest verification and customs inspection queue at gate release",
+        "impact": "Holding $320k/wk in vessel waiting time, yard dwell, and quay productivity penalties",
+        "remedy": "Authorize OCR manifest clearance, release the customs exception queue, and issue the quay release work order",
         "loss_breakdown": [
             ("Vessel Waiting Time", 120000),
             ("Yard Dwell and Rehandles", 110000),
@@ -137,6 +153,17 @@ st.markdown(
         .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-family: monospace; font-weight: bold; }
         .badge-active { background: rgba(0,229,255,0.15); color: var(--teal); border: 1px solid var(--teal); }
         .badge-success { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
+        .blueprint-banner { background: #21161a; border: 1px solid var(--red); border-left: 6px solid var(--red); border-radius: 6px; padding: 18px 20px; margin: 18px 0 8px; }
+        .blueprint-kicker, .blueprint-label { color: var(--text-muted); font-family: monospace; font-size: 0.72rem; font-weight: bold; letter-spacing: 0.04em; }
+        .blueprint-kicker { color: var(--red); margin-bottom: 14px; }
+        .blueprint-grid { display: grid; grid-template-columns: 1fr 1.2fr 1.3fr; gap: 20px; }
+        .blueprint-value { color: var(--text-main); font-size: 1.05rem; font-weight: bold; margin-top: 8px; }
+        .blueprint-risk { color: var(--red); font-weight: bold; margin-top: 8px; }
+        .blueprint-impact, .blueprint-remedy { color: var(--text-main); margin-top: 8px; }
+        .blueprint-action { color: var(--text-main); line-height: 1.7; margin-top: 8px; }
+        .blueprint-action strong { color: var(--teal); font-family: monospace; }
+        .blueprint-remedy { border-top: 1px solid #63343b; padding-top: 8px; }
+        @media (max-width: 900px) { .blueprint-grid { grid-template-columns: 1fr; gap: 14px; } }
     </style>
     """,
     unsafe_allow_html=True,
@@ -184,6 +211,34 @@ m2.metric("Holding Burn", burn, "Cleared" if book_cleared else "Active Drag")
 m3.metric("Client Realization", f"${book_data['burn'] * 0.9:,.0f}", "90% retained")
 m4.metric("Phoenix Fee", f"${book_data['burn'] * 0.1:,.0f}", "10% accrual")
 m5.metric("SOP Readiness", "8 / 8" if book_cleared else "Pending Sign-off", "Field Gate")
+
+st.markdown(
+    f"""
+    <div class="blueprint-banner">
+        <div class="blueprint-kicker">REGIONAL BOTTLENECK &amp; TACTICAL ACTION BLUEPRINT</div>
+        <div class="blueprint-grid">
+            <div>
+                <div class="blueprint-label">TARGET ASSET &amp; REGION</div>
+                <span class="badge badge-active">ACTIVE NODE</span>
+                <div class="blueprint-value">{book_data['region']}</div>
+            </div>
+            <div>
+                <div class="blueprint-label">ACTIVE BOTTLENECK</div>
+                <div class="blueprint-risk">{book_data['bottleneck']}</div>
+                <div class="blueprint-impact">{book_data['impact']}</div>
+            </div>
+            <div>
+                <div class="blueprint-label">TACTICAL ACTION REQUIRED</div>
+                <div class="blueprint-action"><strong>1. BOARD</strong> authorize the domain envelope<br>
+                <strong>2. GM</strong> translate the mandate into work orders<br>
+                <strong>3. SITE</strong> execute and return verified evidence</div>
+                <div class="blueprint-remedy">{book_data['remedy']}</div>
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.divider()
 
