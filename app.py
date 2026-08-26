@@ -186,6 +186,17 @@ with st.sidebar:
     st.title("FACTORY COMMAND POST")
     st.caption("Live operating book | control plane online")
     book = st.selectbox("Operating book", list(OPERATING_BOOKS.keys()))
+    book_slug = {
+        "ERCOT BESS / storage operations": "ercot",
+        "Grid Infrastructure / PJM Cluster": "grid",
+        "ACC NZ Scheme / Claims Review": "acc",
+        "Port Logistics / Container Flow": "port",
+    }[book]
+    if st.button("Reset Book State"):
+        st.session_state["cleared_books"][book] = False
+        for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
+            st.session_state.pop(check_key, None)
+        st.rerun()
     view = st.radio(
         "Command view",
         [
@@ -200,7 +211,9 @@ with st.sidebar:
 book_data = OPERATING_BOOKS[book]
 st.session_state["selected_book"] = book
 st.session_state["selected_book_data"] = book_data
-book_cleared = st.session_state["cleared_books"].get(book, False)
+check_keys = [f"chk_{book_slug}_{index}" for index in range(1, 9)]
+completed_checks = sum([st.session_state.get(check_key, False) for check_key in check_keys])
+book_cleared = st.session_state["cleared_books"].get(book, False) and completed_checks == 8
 
 exposure = book_data["exposure"]
 burn = "$0 / wk (RESOLVED)" if book_cleared else f"${book_data['burn']:,.0f} / wk"
@@ -210,7 +223,7 @@ m1.metric("Total Exposure", exposure, book)
 m2.metric("Holding Burn", burn, "Cleared" if book_cleared else "Active Drag")
 m3.metric("Client Realization", f"${book_data['burn'] * 0.9:,.0f}", "90% retained")
 m4.metric("Phoenix Fee", f"${book_data['burn'] * 0.1:,.0f}", "10% accrual")
-m5.metric("SOP Readiness", "8 / 8" if book_cleared else "Pending Sign-off", "Field Gate")
+m5.metric("SOP Readiness", f"{completed_checks} / 8", "Field Gate")
 
 st.markdown(
     f"""
@@ -314,7 +327,7 @@ elif view == "Tier 3 | Site Operations":
     checklist_columns = st.columns(2)
     for index, item in enumerate(book_data["checklist"]):
         with checklist_columns[index % 2]:
-            checks.append(st.checkbox(item, value=book_cleared, key=f"{book}_sop_{index}"))
+            checks.append(st.checkbox(item, key=check_keys[index]))
     if all(checks):
         if book_cleared:
             st.success(f"{book} cleared. Holding burn is $0 / wk (RESOLVED).")
