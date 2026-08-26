@@ -206,7 +206,11 @@ with st.sidebar:
             "Forensic Audit Ledger",
         ],
     )
-    st.toggle("Chairman Directorate Override", value=False)
+    override = st.sidebar.toggle("Chairman Directorate Override", value=False)
+    if override:
+        master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, 25, 5)
+    else:
+        master_surge = None
 
 book_data = OPERATING_BOOKS[book]
 st.session_state["selected_book"] = book
@@ -286,19 +290,22 @@ if view == "Tier 1 | Chairman Directorate":
 
 elif view == "Tier 2 | General Management":
     st.header("General Management Directive & Domain Translation")
+    if override:
+        st.warning("⚠️ CHAIRMAN OVERRIDE ACTIVE: Standard delegation suspended. Surge envelopes locked to Master Cap.")
+        st.session_state["surges"] = {domain: master_surge for domain in ("ops", "cap", "comp", "sys")}
     st.write(f"Convert board mandates into operating controls for {book}.")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        ops_surge = st.number_input("Operations surge budget (%)", 0, 100, st.session_state["surges"]["ops"], step=5)
+        ops_surge = st.number_input("Operations surge budget (%)", 0, 100, st.session_state["surges"]["ops"], step=5, disabled=override)
         ops_sla = st.selectbox("Operations SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     with col2:
-        cap_surge = st.number_input("Capital surge budget (%)", 0, 100, st.session_state["surges"]["cap"], step=5)
+        cap_surge = st.number_input("Capital surge budget (%)", 0, 100, st.session_state["surges"]["cap"], step=5, disabled=override)
         cap_sla = st.selectbox("Capital SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     with col3:
-        comp_surge = st.number_input("Compliance surge budget (%)", 0, 100, st.session_state["surges"]["comp"], step=5)
+        comp_surge = st.number_input("Compliance surge budget (%)", 0, 100, st.session_state["surges"]["comp"], step=5, disabled=override)
         comp_sla = st.selectbox("Compliance SLA", ["4 hours", "1 business day", "3 business days"], index=2)
     with col4:
-        sys_surge = st.number_input("Systems surge budget (%)", 0, 100, st.session_state["surges"]["sys"], step=5)
+        sys_surge = st.number_input("Systems surge budget (%)", 0, 100, st.session_state["surges"]["sys"], step=5, disabled=override)
         sys_sla = st.selectbox("Systems SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     if st.button("⚡ Issue Translated Directive", type="primary"):
         st.session_state["surges"] = {"ops": ops_surge, "cap": cap_surge, "comp": comp_surge, "sys": sys_surge}
@@ -308,6 +315,8 @@ elif view == "Tier 2 | General Management":
 
 elif view == "Tier 3 | Site Operations":
     st.header(f"Site Operations Hub / {book}")
+    if override:
+        st.warning("⚠️ CHAIRMAN OVERRIDE ACTIVE: Standard delegation suspended. Surge envelopes locked to Master Cap.")
     st.subheader("Upstream Governance Status")
     g1, g2, g3, g4 = st.columns(4)
     governance_values = [
