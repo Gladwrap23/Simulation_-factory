@@ -112,12 +112,40 @@ BOOKS = {
     },
 }
 
-ARTIFACTS = [
-    ("ICCP 4-sec", "Inter-Control Centre Protocol", "Telemetry heartbeat: 04.0 sec | checksum: 9F-A2 | state: nominal"),
-    ("ASTM D877", "Dielectric breakdown test", "Oil sample: TX-204 | 11.8 kV | 5-run mean: 48.2 kV | pass"),
-    ("ACC45", "Asset condition certificate", "Asset: STK-04 | inspection window: 2026-08-25 | sign-off: pending"),
-    ("BAPLIE", "Bay plan / loading exchange", "Voyage: NZ-118 | berth: P4 | reefer plugs: 38/40 | reconciled"),
-]
+ARTIFACTS_BY_BOOK = {
+    "ERCOT_BESS": [
+        ("ICCP 4-sec Telemetry", "Inter-Control Centre Protocol", "Telemetry heartbeat: 04.0 sec | checksum: 9F-A2 | state: nominal"),
+        ("PSCAD EMT Model", "Electromagnetic transient model", "Inverter model: BESS-01 | version: 7.2 | validation: pending"),
+        ("IEEE 2800 Test Packet", "Grid interconnection test packet", "Ride-through: verified | reactive response: verified | sign-off: pending"),
+        ("Part 2 COD Attestation", "Commercial operation declaration", "Asset: BESS-01 | COD evidence: assembled | attestation: pending"),
+    ],
+    "GRID_TRANSMISSION": [
+        ("FAT Transformer Certificate", "Factory acceptance test certificate", "Transformer: TX-204 | ratio: verified | witness sign-off: pending"),
+        ("ASTM D877 Oil Assay", "Dielectric breakdown oil assay", "Oil sample: TX-204 | 11.8 kV | 5-run mean: 48.2 kV | pass"),
+        ("ASTM D3612 DGA Log", "Dissolved gas analysis log", "Transformer: TX-204 | sample window: 2026-08-25 | trend: nominal"),
+        ("IEEE 693 Grounding Record", "Seismic and grounding compliance record", "Substation: Beta | ground grid: tested | record: pending"),
+    ],
+    "ACC_NZ": [
+        ("Digital ACC45 GP Lodgement", "ACC45 general practitioner lodgement", "Claim: ACC-45-204 | provider: verified | lodgement: complete"),
+        ("ICD-10 Diagnostic Map", "Diagnostic coding reconciliation", "Claim cohort: 204 | code map: reconciled | review: pending"),
+        ("ACC2152 Treatment Injury Dossier", "Treatment injury evidence dossier", "Claim: ACC-2152-04 | clinical records: attached | review: pending"),
+        ("Section 54 Cover Plan", "Section 54 coverage plan", "Claim: ACC-54-04 | entitlement path: mapped | approval: pending"),
+    ],
+    "PORT_LOGISTICS": [
+        ("UN/EDIFACT BAPLIE 2.2 EDI", "Bay plan and loading exchange", "Voyage: NZ-118 | berth: P4 | reefer plugs: 38/40 | reconciled"),
+        ("Navis N4 ASC Queue Log", "Automated stacking crane queue log", "Terminal: T3 | queue depth: 12 | timestamp: live | state: nominal"),
+        ("SOLAS VGM Verification", "Verified gross mass record", "Voyage: NZ-118 | containers: 248 | exceptions: 0 | verified"),
+        ("Demurrage Assessment", "Container dwell cost assessment", "Voyage: NZ-118 | dwell window: 4.1 days | assessment: pending"),
+    ],
+}
+
+SOP_CHECKS_BY_BOOK = {
+    book_key: [
+        f"{artifact[0]} evidence verified",
+        f"{artifact[0]} record attached to release packet",
+    ]
+    for book_key, artifacts in ARTIFACTS_BY_BOOK.items()
+}
 
 
 def money(value):
@@ -318,17 +346,12 @@ else:
     )
     st.subheader("Authentic control artifacts")
     artifact_cols = st.columns(4)
-    for index, (code, title, detail) in enumerate(ARTIFACTS):
+    artifacts = ARTIFACTS_BY_BOOK[book_key]
+    for index, (code, title, detail) in enumerate(artifacts):
         with artifact_cols[index]:
             st.markdown(f"<div class='artifact'><strong>{code}</strong><br><b>{title}</b><br><small>{detail}</small></div>", unsafe_allow_html=True)
     st.subheader("SOP release checklist")
-    checks = [
-        "ICCP heartbeat verified against edge timestamp",
-        "ASTM D877 sample and instrument serial attached",
-        "ACC45 condition certificate countersigned",
-        "BAPLIE plan reconciled with berth and reefer manifest",
-        "Exception owner and next review time assigned",
-    ]
+    checks = SOP_CHECKS_BY_BOOK[book_key]
     completed = sum(st.checkbox(item, key=f"sop_{book_key}_{index}") for index, item in enumerate(checks))
     st.progress(completed / len(checks), text=f"SOP evidence complete: {completed}/{len(checks)}")
     if not required_domains_active:
