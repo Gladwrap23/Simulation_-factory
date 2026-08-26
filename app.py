@@ -141,8 +141,12 @@ ARTIFACTS_BY_BOOK = {
 
 SOP_CHECKS_BY_BOOK = {
     book_key: [
-        f"{artifact[0]} evidence verified",
-        f"{artifact[0]} record attached to release packet",
+        check
+        for item in artifacts
+        for check in (
+            f"{item[0]} evidence verified",
+            f"{item[0]} record attached to release packet",
+        )
     ]
     for book_key, artifacts in ARTIFACTS_BY_BOOK.items()
 }
