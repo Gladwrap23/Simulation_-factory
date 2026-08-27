@@ -181,6 +181,20 @@ if "surges" not in st.session_state:
     st.session_state["surges"] = {"ops": 10, "cap": 10, "comp": 15, "sys": 10}
 if "slas" not in st.session_state:
     st.session_state["slas"] = {"ops": "1 business day", "cap": "1 business day", "comp": "3 business days", "sys": "1 business day"}
+if "board_escalation" not in st.session_state:
+    st.session_state["board_escalation"] = False
+if "board_escalation_context" not in st.session_state:
+    st.session_state["board_escalation_context"] = ""
+if "board_escalation_category" not in st.session_state:
+    st.session_state["board_escalation_category"] = ""
+if "board_escalation_timestamp" not in st.session_state:
+    st.session_state["board_escalation_timestamp"] = ""
+if "emergency_surge_mandate" not in st.session_state:
+    st.session_state["emergency_surge_mandate"] = False
+if "override_activation_pending" not in st.session_state:
+    st.session_state["override_activation_pending"] = False
+if "chairman_override" not in st.session_state:
+    st.session_state["chairman_override"] = False
 
 
 with st.sidebar:
@@ -195,6 +209,9 @@ with st.sidebar:
     }[book]
     if st.button("Reset Book State"):
         st.session_state["cleared_books"][book] = False
+        st.session_state["board_escalation"] = False
+        st.session_state["emergency_surge_mandate"] = False
+        st.session_state["chairman_override"] = False
         for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
             st.session_state.pop(check_key, None)
         st.rerun()
@@ -207,7 +224,10 @@ with st.sidebar:
             "Forensic Audit Ledger",
         ],
     )
-    override = st.sidebar.toggle("Chairman Directorate Override", value=False)
+    if st.session_state["override_activation_pending"]:
+        st.session_state["chairman_override"] = True
+        st.session_state["override_activation_pending"] = False
+    override = st.sidebar.toggle("Chairman Directorate Override", key="chairman_override")
     if override:
         master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, 25, 5)
     else:
@@ -272,6 +292,27 @@ st.markdown(
 st.divider()
 
 if view == "Tier 1 | Chairman Directorate":
+    if st.session_state["board_escalation"]:
+        st.error(
+            f"🚨 CRITICAL FRONTLINE IMPEDIMENT: {st.session_state['board_escalation_category']}\n\n"
+            f"Field context: {st.session_state['board_escalation_context']}\n\n"
+            f"Financial exposure at risk: ${base_burn:,.0f} / wk"
+        )
+        if st.button("⚡ Authorize Emergency Surge Mandate to GM", type="primary"):
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            st.session_state["board_escalation"] = False
+            st.session_state["emergency_surge_mandate"] = True
+            st.session_state["override_activation_pending"] = True
+            st.session_state["ledger"].append({
+                "Timestamp": timestamp,
+                "Operating Book": book,
+                "Action": "Chairman Mandate: Emergency Surge Authorization to GM",
+                "Capital Recovered": "Pending frontline release",
+                "Client Preserved (90%)": "Pending frontline release",
+                "Phoenix Fee (10%)": "Pending frontline release",
+                "Cryptographic Hash": hashlib.sha256(f"{book}{timestamp}MANDATE".encode()).hexdigest()[:16],
+            })
+            st.rerun()
     st.header("Apex Board Governance & Oversight")
     st.write(f"Authorize domain envelopes and review {book} balance sheet recovery.")
     c1, c2 = st.columns(2)
@@ -304,6 +345,8 @@ if view == "Tier 1 | Chairman Directorate":
 
 elif view == "Tier 2 | General Management":
     st.header("General Management Directive & Domain Translation")
+    if st.session_state["emergency_surge_mandate"]:
+        st.warning("⚡ CHAIRMAN EMERGENCY SURGE MANDATE ISSUED: Authorized budget automatically applied to all domain envelopes.")
     if override:
         st.warning("⚠️ CHAIRMAN OVERRIDE ACTIVE: Standard delegation suspended. Surge envelopes locked to Master Cap.")
         st.session_state["surges"] = {domain: master_surge for domain in ("ops", "cap", "comp", "sys")}
@@ -356,12 +399,13 @@ elif view == "Tier 3 | Site Operations":
             st.success(f"{book} cleared. Holding burn is $0 / wk (RESOLVED).")
         elif st.button("⚡ Submit Frontline SOP Sign-off & Notify Command", type="primary"):
             st.session_state["cleared_books"][book] = True
+            st.session_state["emergency_surge_mandate"] = False
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             entry_hash = hashlib.sha256(f"{book}{timestamp}CLEARED".encode()).hexdigest()[:16]
             st.session_state["ledger"].append({
                 "Timestamp": timestamp,
                 "Operating Book": book,
-                "Action": "Frontline SOP Sign-off & Interconnection Cleared",
+                "Action": "Frontline Release: SOP Sign-off & Interconnection Cleared",
                 "Capital Recovered": f"${book_data['burn']:,.0f} / wk",
                 "Client Preserved (90%)": f"${book_data['burn'] * 0.9:,.0f}",
                 "Phoenix Fee (10%)": f"${book_data['burn'] * 0.1:,.0f}",
@@ -371,6 +415,31 @@ elif view == "Tier 3 | Site Operations":
             st.rerun()
     else:
         st.info(f"{sum(checks)}/8 checks complete. All checks are required before sign-off.")
+    with st.expander("🚨 Transmit Critical Impediment to Chairman"):
+        impediment_category = st.selectbox(
+            "Impediment Category",
+            ["Specialist Labor Shortage", "Critical Hardware/Testing Delay", "Regulatory Compliance Hold"],
+        )
+        field_context = st.text_input(
+            "Field Context",
+            value="Frontline blocked on final compliance gate; requires emergency Board surge authorization",
+        )
+        if st.button("🚨 Dispatch Emergency Ticket to Board Chairman", type="primary"):
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            st.session_state["board_escalation"] = True
+            st.session_state["board_escalation_category"] = impediment_category
+            st.session_state["board_escalation_context"] = field_context
+            st.session_state["board_escalation_timestamp"] = timestamp
+            st.session_state["ledger"].append({
+                "Timestamp": timestamp,
+                "Operating Book": book,
+                "Action": "Field Escalation: Critical Impediment to Chairman",
+                "Capital Recovered": "At risk",
+                "Client Preserved (90%)": "At risk",
+                "Phoenix Fee (10%)": "At risk",
+                "Cryptographic Hash": hashlib.sha256(f"{book}{timestamp}ESCALATION".encode()).hexdigest()[:16],
+            })
+            st.success("Emergency ticket transmitted to the Board Chairman.")
 
 else:
     st.header("Immutable Governance & Forensic Audit Ledger")
