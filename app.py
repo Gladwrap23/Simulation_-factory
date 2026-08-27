@@ -221,6 +221,54 @@ if "active_view" not in st.session_state:
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
 
 
+def nav_to(target_view):
+    st.session_state["active_view"] = target_view
+
+
+def reset_book(book_name):
+    st.session_state["cleared_books"][book_name] = False
+    st.session_state["directive_issued"][book_name] = False
+    st.session_state["board_escalation"][book_name] = False
+    st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
+    for index in range(8):
+        st.session_state[f"chk_{book_name}_{index}"] = False
+
+
+def dispatch_escalation(book_name, category, context):
+    st.session_state["board_escalation"][book_name] = True
+    st.session_state["board_escalation_category"] = category
+    st.session_state["board_escalation_context"] = context
+    st.session_state["board_escalation_timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    timestamp = st.session_state["board_escalation_timestamp"]
+    st.session_state["ledger"].append({
+        "Timestamp": timestamp,
+        "Operating Book": book_name,
+        "Action": "Field Escalation: Critical Impediment to Chairman",
+        "Capital Recovered": "At risk",
+        "Client Preserved (90%)": "At risk",
+        "Phoenix Fee (10%)": "At risk",
+        "Cryptographic Hash": hashlib.sha256(f"{book_name}{timestamp}ESCALATION".encode()).hexdigest()[:16],
+    })
+    nav_to("1️⃣ Tier 1 | Chairman Directorate")
+
+
+def complete_book(book_name, book_data):
+    st.session_state["cleared_books"][book_name] = True
+    st.session_state["emergency_surge_mandate"] = False
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    entry_hash = hashlib.sha256(f"{book_name}{timestamp}CLEARED".encode()).hexdigest()[:16]
+    st.session_state["ledger"].append({
+        "Timestamp": timestamp,
+        "Operating Book": book_name,
+        "Action": "Frontline Release: SOP Sign-off & Interconnection Cleared",
+        "Capital Recovered": f"${book_data['burn']:,.0f} / wk",
+        "Client Preserved (90%)": f"${book_data['burn'] * 0.9:,.0f}",
+        "Phoenix Fee (10%)": f"${book_data['burn'] * 0.1:,.0f}",
+        "Cryptographic Hash": entry_hash,
+    })
+    nav_to("4️⃣ Forensic Audit Ledger")
+
+
 with st.sidebar:
     st.title("FACTORY COMMAND POST")
     st.caption("Live operating book | control plane online")
@@ -256,16 +304,7 @@ with st.sidebar:
         ("3. Site Operations", "✅ 8/8 VERIFIED" if stage_3_complete else "⏳ IN PROGRESS"),
         ("4. Audit Settlement", "✅ COMMITTED" if stage_4_complete else "⏳ PENDING"),
     ]
-    if st.button("Reset Book State"):
-        st.session_state["cleared_books"][book] = False
-        st.session_state["board_escalation"][book] = False
-        st.session_state["directive_issued"][book] = False
-        st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
-        st.session_state["emergency_surge_mandate"] = False
-        st.session_state["chairman_override"] = False
-        for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
-            st.session_state.pop(check_key, None)
-        st.rerun()
+    st.sidebar.button("🔄 Reset Book State", on_click=reset_book, args=(book,))
 
     view = st.radio(
         "Command view",
@@ -406,9 +445,13 @@ if "Tier 1" in view:
         st.table(rows)
     stage_columns = st.columns([1.5, 1])
     with stage_columns[1]:
-        if st.button("➡️ Advance to Tier 2 (General Management)", type="primary", disabled=not stage_1_complete):
-            st.session_state["active_view"] = "2️⃣ Tier 2 | General Management"
-            st.rerun()
+        st.button(
+            "➡️ Advance to Tier 2 (General Management)",
+            type="primary",
+            disabled=not stage_1_complete,
+            on_click=nav_to,
+            args=("2️⃣ Tier 2 | General Management",),
+        )
 
 elif "Tier 2" in view:
     st.header("General Management Directive & Domain Translation")
@@ -441,9 +484,13 @@ elif "Tier 2" in view:
         st.success(f"Directive dispatched to {book} frontline teams.")
     stage_columns = st.columns([1.5, 1])
     with stage_columns[1]:
-        if st.button("➡️ Advance to Tier 3 (Site Operations)", type="primary", disabled=not st.session_state["directive_issued"].get(book, False)):
-            st.session_state["active_view"] = "3️⃣ Tier 3 | Site Operations"
-            st.rerun()
+        st.button(
+            "➡️ Advance to Tier 3 (Site Operations)",
+            type="primary",
+            disabled=not st.session_state["directive_issued"].get(book, False),
+            on_click=nav_to,
+            args=("3️⃣ Tier 3 | Site Operations",),
+        )
 
 elif "Tier 3" in view:
     st.header(f"Site Operations Hub / {book}")
@@ -475,24 +522,12 @@ elif "Tier 3" in view:
         else:
             action_columns = st.columns([2, 1])
             with action_columns[1]:
-                submit_signoff = st.button("⚡ Submit Frontline SOP Sign-off & Notify Command", type="primary")
-        if all(checks) and not book_cleared and submit_signoff:
-            st.session_state["cleared_books"][book] = True
-            st.session_state["emergency_surge_mandate"] = False
-            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-            entry_hash = hashlib.sha256(f"{book}{timestamp}CLEARED".encode()).hexdigest()[:16]
-            st.session_state["ledger"].append({
-                "Timestamp": timestamp,
-                "Operating Book": book,
-                "Action": "Frontline Release: SOP Sign-off & Interconnection Cleared",
-                "Capital Recovered": f"${book_data['burn']:,.0f} / wk",
-                "Client Preserved (90%)": f"${book_data['burn'] * 0.9:,.0f}",
-                "Phoenix Fee (10%)": f"${book_data['burn'] * 0.1:,.0f}",
-                "Cryptographic Hash": entry_hash,
-            })
-            st.success(f"{book} clearance verified. Upstream command notified.")
-            st.session_state["active_view"] = "4️⃣ Forensic Audit Ledger"
-            st.rerun()
+                st.button(
+                    "⚡ Submit Frontline SOP Sign-off & Notify Command",
+                    type="primary",
+                    on_click=complete_book,
+                    args=(book, book_data),
+                )
     else:
         st.info(f"{sum(checks)}/8 checks complete. All checks are required before sign-off.")
     with st.expander("🚨 Transmit Critical Impediment to Chairman"):
@@ -506,25 +541,12 @@ elif "Tier 3" in view:
         )
         action_columns = st.columns([2, 1])
         with action_columns[1]:
-            dispatch_ticket = st.button("🚨 Dispatch Emergency Ticket to Board Chairman", type="primary")
-        if dispatch_ticket:
-            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-            st.session_state["board_escalation"][book] = True
-            st.session_state["board_escalation_category"] = impediment_category
-            st.session_state["board_escalation_context"] = field_context
-            st.session_state["board_escalation_timestamp"] = timestamp
-            st.session_state["ledger"].append({
-                "Timestamp": timestamp,
-                "Operating Book": book,
-                "Action": "Field Escalation: Critical Impediment to Chairman",
-                "Capital Recovered": "At risk",
-                "Client Preserved (90%)": "At risk",
-                "Phoenix Fee (10%)": "At risk",
-                "Cryptographic Hash": hashlib.sha256(f"{book}{timestamp}ESCALATION".encode()).hexdigest()[:16],
-            })
-            st.success("Emergency ticket transmitted to the Board Chairman.")
-            st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
-            st.rerun()
+            st.button(
+                "🚨 Dispatch Emergency Ticket to Board Chairman",
+                type="primary",
+                on_click=dispatch_escalation,
+                args=(book, impediment_category, field_context),
+            )
 
 else:
     st.header("Immutable Governance & Forensic Audit Ledger")
