@@ -172,6 +172,21 @@ st.markdown(
         .pipeline-complete { color: var(--green); }
         .pipeline-pending { color: #ffcc66; }
         @media (max-width: 900px) { .blueprint-grid { grid-template-columns: 1fr; gap: 14px; } }
+        @media (pointer: coarse) {
+            .stButton > button {
+                min-height: 48px !important;
+                font-size: 1.05rem !important;
+                font-weight: 600 !important;
+                padding: 10px 24px !important;
+                border-radius: 8px !important;
+            }
+            div[role="radiogroup"] label {
+                min-height: 44px !important;
+                display: flex !important;
+                align-items: center !important;
+                font-size: 1rem !important;
+            }
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -203,7 +218,7 @@ if "override_activation_pending" not in st.session_state:
 if "chairman_override" not in st.session_state:
     st.session_state["chairman_override"] = False
 if "command_view" not in st.session_state:
-    st.session_state["command_view"] = "1️⃣ Tier 1 | Chairman Directorate"
+    st.session_state["command_view"] = "1. Chairman Directorate"
 
 
 def advance_to(view_name):
@@ -220,15 +235,6 @@ with st.sidebar:
         "ACC NZ Scheme / Claims Review": "acc",
         "Port Logistics / Container Flow": "port",
     }[book]
-    if st.button("Reset Book State"):
-        st.session_state["cleared_books"][book] = False
-        st.session_state["board_escalation"] = False
-        st.session_state["emergency_surge_mandate"] = False
-        st.session_state["chairman_override"] = False
-        for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
-            st.session_state.pop(check_key, None)
-        st.rerun()
-
     committee_keys = [
         "committee_operations",
         "committee_audit",
@@ -260,13 +266,22 @@ with st.sidebar:
         pipeline_html += f"<div class='pipeline-step'><span>{step}</span><strong class='{status_class}'>{status}</strong></div>"
     pipeline_html += "</div>"
     st.markdown(pipeline_html, unsafe_allow_html=True)
+    if st.button("Reset Book State"):
+        st.session_state["cleared_books"][book] = False
+        st.session_state["board_escalation"] = False
+        st.session_state["emergency_surge_mandate"] = False
+        st.session_state["chairman_override"] = False
+        for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
+            st.session_state.pop(check_key, None)
+        st.rerun()
+
     view = st.radio(
         "Command view",
         [
-            "1️⃣ Tier 1 | Chairman Directorate",
-            "2️⃣ Tier 2 | General Management",
-            "3️⃣ Tier 3 | Site Operations",
-            "4️⃣ Forensic Audit Ledger",
+            "1. Chairman Directorate",
+            "2. General Management",
+            "3. Site Operations",
+            "4. Forensic Audit Ledger",
         ],
         key="command_view",
     )
@@ -279,7 +294,6 @@ with st.sidebar:
     else:
         master_surge = None
 
-view = view.split(" | ", 1)[-1] if view.startswith(("1️⃣", "2️⃣", "3️⃣")) else view
 book_data = OPERATING_BOOKS[book]
 st.session_state["selected_book"] = book
 st.session_state["selected_book_data"] = book_data
@@ -345,7 +359,10 @@ if view == "Tier 1 | Chairman Directorate":
             f"Field context: {st.session_state['board_escalation_context']}\n\n"
             f"Financial exposure at risk: ${base_burn:,.0f} / wk"
         )
-        if st.button("⚡ Authorize Emergency Surge Mandate to GM", type="primary"):
+        action_columns = st.columns([2, 1])
+        with action_columns[1]:
+            authorize_surge = st.button("⚡ Authorize Emergency Surge Mandate to GM", type="primary")
+        if authorize_surge:
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             st.session_state["board_escalation"] = False
             st.session_state["emergency_surge_mandate"] = True
@@ -394,7 +411,7 @@ if view == "Tier 1 | Chairman Directorate":
         type="primary",
         disabled=not stage_1_complete,
         on_click=advance_to,
-        args=("2️⃣ Tier 2 | General Management",),
+        args=("2. General Management",),
     )
 
 elif view == "Tier 2 | General Management":
@@ -407,18 +424,21 @@ elif view == "Tier 2 | General Management":
     st.write(f"Convert board mandates into operating controls for {book}.")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        ops_surge = st.number_input("Operations surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["ops"], step=5, disabled=override)
+        ops_surge = st.slider("Operations surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["ops"], 5, disabled=override)
         ops_sla = st.selectbox("Operations SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     with col2:
-        cap_surge = st.number_input("Capital surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["cap"], step=5, disabled=override)
+        cap_surge = st.slider("Capital surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["cap"], 5, disabled=override)
         cap_sla = st.selectbox("Capital SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     with col3:
-        comp_surge = st.number_input("Compliance surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["comp"], step=5, disabled=override)
+        comp_surge = st.slider("Compliance surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["comp"], 5, disabled=override)
         comp_sla = st.selectbox("Compliance SLA", ["4 hours", "1 business day", "3 business days"], index=2)
     with col4:
-        sys_surge = st.number_input("Systems surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["sys"], step=5, disabled=override)
+        sys_surge = st.slider("Systems surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["sys"], 5, disabled=override)
         sys_sla = st.selectbox("Systems SLA", ["4 hours", "1 business day", "3 business days"], index=1)
-    if st.button("⚡ Issue Translated Directive", type="primary"):
+    action_columns = st.columns([2, 1])
+    with action_columns[1]:
+        issue_directive = st.button("⚡ Issue Translated Directive", type="primary")
+    if issue_directive:
         st.session_state["surges"] = {"ops": ops_surge, "cap": cap_surge, "comp": comp_surge, "sys": sys_surge}
         st.session_state["slas"] = {"ops": ops_sla, "cap": cap_sla, "comp": comp_sla, "sys": sys_sla}
         st.session_state["directive_issued"] = True
@@ -428,7 +448,7 @@ elif view == "Tier 2 | General Management":
         type="primary",
         disabled=not st.session_state["directive_issued"],
         on_click=advance_to,
-        args=("3️⃣ Tier 3 | Site Operations",),
+        args=("3. Site Operations",),
     )
 
 elif view == "Tier 3 | Site Operations":
@@ -458,7 +478,11 @@ elif view == "Tier 3 | Site Operations":
     if all(checks):
         if book_cleared:
             st.success(f"{book} cleared. Holding burn is $0 / wk (RESOLVED).")
-        elif st.button("⚡ Submit Frontline SOP Sign-off & Notify Command", type="primary"):
+        else:
+            action_columns = st.columns([2, 1])
+            with action_columns[1]:
+                submit_signoff = st.button("⚡ Submit Frontline SOP Sign-off & Notify Command", type="primary")
+        if all(checks) and not book_cleared and submit_signoff:
             st.session_state["cleared_books"][book] = True
             st.session_state["emergency_surge_mandate"] = False
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -485,7 +509,10 @@ elif view == "Tier 3 | Site Operations":
             "Field Context",
             value="Frontline blocked on final compliance gate; requires emergency Board surge authorization",
         )
-        if st.button("🚨 Dispatch Emergency Ticket to Board Chairman", type="primary"):
+        action_columns = st.columns([2, 1])
+        with action_columns[1]:
+            dispatch_ticket = st.button("🚨 Dispatch Emergency Ticket to Board Chairman", type="primary")
+        if dispatch_ticket:
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             st.session_state["board_escalation"] = True
             st.session_state["board_escalation_category"] = impediment_category
@@ -506,7 +533,7 @@ elif view == "Tier 3 | Site Operations":
         type="primary",
         disabled=not stage_3_complete,
         on_click=advance_to,
-        args=("4️⃣ Forensic Audit Ledger",),
+        args=("4. Forensic Audit Ledger",),
     )
 
 else:
