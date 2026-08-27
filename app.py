@@ -217,12 +217,8 @@ if "override_activation_pending" not in st.session_state:
     st.session_state["override_activation_pending"] = False
 if "chairman_override" not in st.session_state:
     st.session_state["chairman_override"] = False
-if "command_view" not in st.session_state:
-    st.session_state["command_view"] = "1️⃣ Tier 1 | Chairman Directorate"
-
-
-def advance_to(view_name):
-    st.session_state["command_view"] = view_name
+if "active_view" not in st.session_state:
+    st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
 
 
 with st.sidebar:
@@ -264,6 +260,7 @@ with st.sidebar:
         st.session_state["cleared_books"][book] = False
         st.session_state["board_escalation"][book] = False
         st.session_state["directive_issued"][book] = False
+        st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
         st.session_state["emergency_surge_mandate"] = False
         st.session_state["chairman_override"] = False
         for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
@@ -278,7 +275,7 @@ with st.sidebar:
             "3️⃣ Tier 3 | Site Operations",
             "4️⃣ Forensic Audit Ledger",
         ],
-        key="command_view",
+        key="active_view",
     )
     if st.session_state["override_activation_pending"]:
         st.session_state["chairman_override"] = True
@@ -407,13 +404,11 @@ if "Tier 1" in view:
             "Phoenix Accrual (10%)": f"${total_burn * 0.1:,.0f}",
         })
         st.table(rows)
-    st.button(
-        "➡️ Advance to Next Stage",
-        type="primary",
-        disabled=not stage_1_complete,
-        on_click=advance_to,
-        args=("2. General Management",),
-    )
+    stage_columns = st.columns([1.5, 1])
+    with stage_columns[1]:
+        if st.button("➡️ Advance to Tier 2 (General Management)", type="primary", disabled=not stage_1_complete):
+            st.session_state["active_view"] = "2️⃣ Tier 2 | General Management"
+            st.rerun()
 
 elif "Tier 2" in view:
     st.header("General Management Directive & Domain Translation")
@@ -444,13 +439,11 @@ elif "Tier 2" in view:
         st.session_state["slas"] = {"ops": ops_sla, "cap": cap_sla, "comp": comp_sla, "sys": sys_sla}
         st.session_state["directive_issued"][book] = True
         st.success(f"Directive dispatched to {book} frontline teams.")
-    st.button(
-        "➡️ Advance to Next Stage",
-        type="primary",
-        disabled=not st.session_state["directive_issued"].get(book, False),
-        on_click=advance_to,
-        args=("3️⃣ Tier 3 | Site Operations",),
-    )
+    stage_columns = st.columns([1.5, 1])
+    with stage_columns[1]:
+        if st.button("➡️ Advance to Tier 3 (Site Operations)", type="primary", disabled=not st.session_state["directive_issued"].get(book, False)):
+            st.session_state["active_view"] = "3️⃣ Tier 3 | Site Operations"
+            st.rerun()
 
 elif "Tier 3" in view:
     st.header(f"Site Operations Hub / {book}")
@@ -498,6 +491,7 @@ elif "Tier 3" in view:
                 "Cryptographic Hash": entry_hash,
             })
             st.success(f"{book} clearance verified. Upstream command notified.")
+            st.session_state["active_view"] = "4️⃣ Forensic Audit Ledger"
             st.rerun()
     else:
         st.info(f"{sum(checks)}/8 checks complete. All checks are required before sign-off.")
@@ -529,13 +523,8 @@ elif "Tier 3" in view:
                 "Cryptographic Hash": hashlib.sha256(f"{book}{timestamp}ESCALATION".encode()).hexdigest()[:16],
             })
             st.success("Emergency ticket transmitted to the Board Chairman.")
-    st.button(
-        "➡️ Advance to Next Stage",
-        type="primary",
-        disabled=not stage_3_complete,
-        on_click=advance_to,
-        args=("4️⃣ Forensic Audit Ledger",),
-    )
+            st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
+            st.rerun()
 
 else:
     st.header("Immutable Governance & Forensic Audit Ledger")
