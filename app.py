@@ -163,6 +163,7 @@ st.markdown(
         .blueprint-action { color: var(--text-main); line-height: 1.7; margin-top: 8px; }
         .blueprint-action strong { color: var(--teal); font-family: monospace; }
         .blueprint-remedy { border-top: 1px solid #63343b; padding-top: 8px; }
+        [data-testid="stMetricDelta"] { color: #ffcc66 !important; }
         @media (max-width: 900px) { .blueprint-grid { grid-template-columns: 1fr; gap: 14px; } }
     </style>
     """,
@@ -221,10 +222,18 @@ book_cleared = st.session_state["cleared_books"].get(book, False) and completed_
 
 exposure = book_data["exposure"]
 burn = "$0 / wk (RESOLVED)" if book_cleared else f"${book_data['burn']:,.0f} / wk"
+holding_burn_amount = book_data["burn"]
+surge_authorized = holding_burn_amount * (master_surge / 100) if override else 0
+holding_burn_value = f"${holding_burn_amount:,.0f} / wk" if override else burn
+holding_burn_delta = (
+    f"⚠️ {master_surge}% Surge Authorized (${surge_authorized:,.0f})"
+    if override
+    else ("Cleared" if book_cleared else "Active Drag")
+)
 
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Total Exposure", exposure, book)
-m2.metric("Holding Burn", burn, "Cleared" if book_cleared else "Active Drag")
+m2.metric("Holding Burn", holding_burn_value, holding_burn_delta)
 m3.metric("Client Realization", f"${book_data['burn'] * 0.9:,.0f}", "90% retained")
 m4.metric("Phoenix Fee", f"${book_data['burn'] * 0.1:,.0f}", "10% accrual")
 m5.metric("SOP Readiness", f"{completed_checks} / 8", "Field Gate")
@@ -277,12 +286,14 @@ if view == "Tier 1 | Chairman Directorate":
             rows.append({
                 "Category": category,
                 "Weekly Amount": f"${amount:,.0f}",
+                "Surge Capital Allocated": f"${amount * (master_surge / 100):,.0f}" if override else "$0",
                 "Client Retained (90%)": f"${amount * 0.9:,.0f}",
                 "Phoenix Accrual (10%)": f"${amount * 0.1:,.0f}",
             })
         rows.append({
             "Category": "Total Weekly Burn",
             "Weekly Amount": f"${total_burn:,.0f}",
+            "Surge Capital Allocated": f"${total_burn * (master_surge / 100):,.0f}" if override else "$0",
             "Client Retained (90%)": f"${total_burn * 0.9:,.0f}",
             "Phoenix Accrual (10%)": f"${total_burn * 0.1:,.0f}",
         })
@@ -296,16 +307,16 @@ elif view == "Tier 2 | General Management":
     st.write(f"Convert board mandates into operating controls for {book}.")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        ops_surge = st.number_input("Operations surge budget (%)", 0, 100, st.session_state["surges"]["ops"], step=5, disabled=override)
+        ops_surge = st.number_input("Operations surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["ops"], step=5, disabled=override)
         ops_sla = st.selectbox("Operations SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     with col2:
-        cap_surge = st.number_input("Capital surge budget (%)", 0, 100, st.session_state["surges"]["cap"], step=5, disabled=override)
+        cap_surge = st.number_input("Capital surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["cap"], step=5, disabled=override)
         cap_sla = st.selectbox("Capital SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     with col3:
-        comp_surge = st.number_input("Compliance surge budget (%)", 0, 100, st.session_state["surges"]["comp"], step=5, disabled=override)
+        comp_surge = st.number_input("Compliance surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["comp"], step=5, disabled=override)
         comp_sla = st.selectbox("Compliance SLA", ["4 hours", "1 business day", "3 business days"], index=2)
     with col4:
-        sys_surge = st.number_input("Systems surge budget (%)", 0, 100, st.session_state["surges"]["sys"], step=5, disabled=override)
+        sys_surge = st.number_input("Systems surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["sys"], step=5, disabled=override)
         sys_sla = st.selectbox("Systems SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     if st.button("⚡ Issue Translated Directive", type="primary"):
         st.session_state["surges"] = {"ops": ops_surge, "cap": cap_surge, "comp": comp_surge, "sys": sys_surge}
