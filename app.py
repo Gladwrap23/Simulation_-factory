@@ -148,7 +148,7 @@ st.markdown(
         .stApp { background-color: var(--bg-base); color: var(--text-main); }
         section[data-testid="stSidebar"] { background-color: var(--bg-panel); border-right: 1px solid var(--line); }
         div[data-testid="stMetric"] { background-color: var(--bg-panel); border: 1px solid var(--line); border-top: 3px solid var(--teal); border-radius: 6px; padding: 12px; }
-        div[data-testid="stMetricValue"] { color: var(--teal) !important; font-family: monospace; }
+        div[data-testid="stMetricValue"] { color: var(--teal) !important; font-family: monospace; font-size: 1.45rem !important; overflow: visible !important; white-space: nowrap !important; }
         .card { background-color: var(--bg-panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
         .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-family: monospace; font-weight: bold; }
         .badge-active { background: rgba(0,229,255,0.15); color: var(--teal); border: 1px solid var(--teal); }
@@ -221,21 +221,24 @@ completed_checks = sum([st.session_state.get(check_key, False) for check_key in 
 book_cleared = st.session_state["cleared_books"].get(book, False) and completed_checks == 8
 
 exposure = book_data["exposure"]
-burn = "$0 / wk (RESOLVED)" if book_cleared else f"${book_data['burn']:,.0f} / wk"
-holding_burn_amount = book_data["burn"]
-surge_authorized = holding_burn_amount * (master_surge / 100) if override else 0
-holding_burn_value = f"${holding_burn_amount:,.0f} / wk" if override else burn
+base_burn = book_data["burn"]
+surge_amount = base_burn * (master_surge / 100) if override else 0
+net_burn = base_burn - surge_amount
+holding_burn_value = "$0 / wk" if book_cleared else f"${net_burn:,.0f} / wk" if override else f"${base_burn:,.0f} / wk"
+surge_authorized = surge_amount
 holding_burn_delta = (
     f"⚠️ {master_surge}% Surge Authorized (${surge_authorized:,.0f})"
     if override
     else ("Cleared" if book_cleared else "Active Drag")
 )
+realization_value = base_burn * 0.9 if book_cleared else net_burn * 0.9 if override else base_burn * 0.9
+fee_value = base_burn * 0.1 if book_cleared else net_burn * 0.1 if override else base_burn * 0.1
 
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Total Exposure", exposure, book)
 m2.metric("Holding Burn", holding_burn_value, holding_burn_delta)
-m3.metric("Client Realization", f"${book_data['burn'] * 0.9:,.0f}", "90% retained")
-m4.metric("Phoenix Fee", f"${book_data['burn'] * 0.1:,.0f}", "10% accrual")
+m3.metric("Client Realization", f"${realization_value:,.0f}", "90% retained")
+m4.metric("Phoenix Fee", f"${fee_value:,.0f}", "10% accrual")
 m5.metric("SOP Readiness", f"{completed_checks} / 8", "Field Gate")
 
 st.markdown(
