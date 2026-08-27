@@ -205,6 +205,8 @@ if "slas" not in st.session_state or not isinstance(st.session_state["slas"], di
     st.session_state["slas"] = {"ops": "1 business day", "cap": "1 business day", "comp": "3 business days", "sys": "1 business day"}
 if "board_escalation" not in st.session_state or not isinstance(st.session_state["board_escalation"], dict):
     st.session_state["board_escalation"] = {}
+if "board_quorum" not in st.session_state or not isinstance(st.session_state["board_quorum"], dict):
+    st.session_state["board_quorum"] = {}
 if "board_escalation_context" not in st.session_state:
     st.session_state["board_escalation_context"] = ""
 if "board_escalation_category" not in st.session_state:
@@ -225,10 +227,23 @@ def nav_to(target_view):
     st.session_state["active_view"] = target_view
 
 
+def authorize_board(book_name):
+    st.session_state["board_quorum"][book_name] = True
+    nav_to("2️⃣ Tier 2 | General Management")
+
+
+def dispatch_directive(book_name, surge_values, sla_values):
+    st.session_state["surges"] = surge_values
+    st.session_state["slas"] = sla_values
+    st.session_state["directive_issued"][book_name] = True
+    nav_to("3️⃣ Tier 3 | Site Operations")
+
+
 def reset_book(book_name):
     st.session_state["cleared_books"][book_name] = False
     st.session_state["directive_issued"][book_name] = False
     st.session_state["board_escalation"][book_name] = False
+    st.session_state["board_quorum"][book_name] = False
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
     for committee in ("ops", "afic", "risk", "tech"):
         st.session_state[f"comm_{book_name}_{committee}"] = False
@@ -295,7 +310,9 @@ with st.sidebar:
         for committee in committee_names
     )
     quorum_achieved = quorum_count == 4
-    tier_2_unlocked = quorum_achieved or st.session_state["chairman_override"]
+    if quorum_achieved:
+        st.session_state["board_quorum"][book] = True
+    tier_2_unlocked = st.session_state["board_quorum"].get(book, False) or st.session_state["chairman_override"]
     stage_2_complete = st.session_state["directive_issued"].get(book, False)
     stage_3_complete = completed_checks == 8
     stage_4_complete = st.session_state["cleared_books"].get(book, False)
@@ -456,8 +473,8 @@ if "Tier 1" in view:
             "➡️ Advance to Tier 2 (General Management)",
             type="primary",
             disabled=not tier_2_unlocked,
-            on_click=nav_to,
-            args=("2️⃣ Tier 2 | General Management",),
+            on_click=authorize_board,
+            args=(book,),
         )
 
 elif "Tier 2" in view:
@@ -488,12 +505,16 @@ elif "Tier 2" in view:
         sys_sla = st.selectbox("Systems SLA", ["4 hours", "1 business day", "3 business days"], index=1)
     action_columns = st.columns([2, 1])
     with action_columns[1]:
-        issue_directive = st.button("⚡ Issue Translated Directive", type="primary")
-    if issue_directive:
-        st.session_state["surges"] = {"ops": ops_surge, "cap": cap_surge, "comp": comp_surge, "sys": sys_surge}
-        st.session_state["slas"] = {"ops": ops_sla, "cap": cap_sla, "comp": comp_sla, "sys": sys_sla}
-        st.session_state["directive_issued"][book] = True
-        st.success(f"Directive dispatched to {book} frontline teams.")
+        st.button(
+            "⚡ Issue Translated Directive",
+            type="primary",
+            on_click=dispatch_directive,
+            args=(
+                book,
+                {"ops": ops_surge, "cap": cap_surge, "comp": comp_surge, "sys": sys_surge},
+                {"ops": ops_sla, "cap": cap_sla, "comp": comp_sla, "sys": sys_sla},
+            ),
+        )
     stage_columns = st.columns([1.5, 1])
     with stage_columns[1]:
         st.button(
