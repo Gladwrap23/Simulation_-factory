@@ -230,6 +230,8 @@ def reset_book(book_name):
     st.session_state["directive_issued"][book_name] = False
     st.session_state["board_escalation"][book_name] = False
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
+    for committee in ("ops", "afic", "risk", "tech"):
+        st.session_state[f"comm_{book_name}_{committee}"] = False
     for index in range(8):
         st.session_state[f"chk_{book_name}_{index}"] = False
 
@@ -279,27 +281,26 @@ with st.sidebar:
         "ACC NZ Scheme / Claims Review": "acc",
         "Port Logistics / Container Flow": "port",
     }[book]
-    committee_keys = [
-        "committee_operations",
-        "committee_audit",
-        "committee_risk",
-        "committee_technology",
-    ]
-    for committee_key in committee_keys:
+    committee_names = ("ops", "afic", "risk", "tech")
+    for committee in committee_names:
+        committee_key = f"comm_{book}_{committee}"
         if committee_key not in st.session_state:
-            st.session_state[committee_key] = True
+            st.session_state[committee_key] = False
     completed_checks = sum(
         st.session_state.get(f"chk_{book_slug}_{index}", False)
         for index in range(1, 9)
     )
-    stage_1_complete = st.session_state["chairman_override"] or all(
-        st.session_state[committee_key] for committee_key in committee_keys
+    quorum_count = sum(
+        st.session_state.get(f"comm_{book}_{committee}", False)
+        for committee in committee_names
     )
+    quorum_achieved = quorum_count == 4
+    tier_2_unlocked = quorum_achieved or st.session_state["chairman_override"]
     stage_2_complete = st.session_state["directive_issued"].get(book, False)
     stage_3_complete = completed_checks == 8
     stage_4_complete = st.session_state["cleared_books"].get(book, False)
     pipeline_steps = [
-        ("1. Apex Board", "✅ AUTHORIZED" if stage_1_complete else "⏳ PENDING"),
+        ("1. Apex Board", "✅ AUTHORIZED" if tier_2_unlocked else "⏳ PENDING"),
         ("2. GM Directive", "✅ DISPATCHED" if stage_2_complete else "⏳ PENDING"),
         ("3. Site Operations", "✅ 8/8 VERIFIED" if stage_3_complete else "⏳ IN PROGRESS"),
         ("4. Audit Settlement", "✅ COMMITTED" if stage_4_complete else "⏳ PENDING"),
@@ -419,10 +420,16 @@ if "Tier 1" in view:
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Board Sub-Committee Authorizations")
-        st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", key="committee_operations")
-        st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", key="committee_audit")
-        st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", key="committee_risk")
-        st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", key="committee_technology")
+        st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", key=f"comm_{book}_ops")
+        st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", key=f"comm_{book}_afic")
+        st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", key=f"comm_{book}_risk")
+        st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", key=f"comm_{book}_tech")
+        if not tier_2_unlocked:
+            st.warning(
+                f"⚠️ BOARD DEADLOCK: Quorum incomplete ({quorum_count}/4). All 4 Sub-Committees must authorize, or the Chairman must invoke Directorate Override to proceed."
+            )
+        else:
+            st.success("⚡ CHAIRMAN OVERRIDE ACTIVE" if st.session_state["chairman_override"] else "✅ BOARD QUORUM ESTABLISHED")
     with c2:
         st.subheader("Holding Loss Recovery Allocation")
         total_burn = book_data["burn"]
@@ -448,13 +455,18 @@ if "Tier 1" in view:
         st.button(
             "➡️ Advance to Tier 2 (General Management)",
             type="primary",
-            disabled=not stage_1_complete,
+            disabled=not tier_2_unlocked,
             on_click=nav_to,
             args=("2️⃣ Tier 2 | General Management",),
         )
 
 elif "Tier 2" in view:
     st.header("General Management Directive & Domain Translation")
+    if not tier_2_unlocked:
+        st.error(
+            "🔒 TIER 2 LOCKED: Board quorum has not been established. Return to Tier 1 and obtain all 4 Sub-Committee authorizations, or invoke Directorate Override."
+        )
+        st.stop()
     if st.session_state["emergency_surge_mandate"]:
         st.warning("⚡ CHAIRMAN EMERGENCY SURGE MANDATE ISSUED: Authorized budget automatically applied to all domain envelopes.")
     if override:
