@@ -164,6 +164,13 @@ st.markdown(
         .blueprint-action strong { color: var(--teal); font-family: monospace; }
         .blueprint-remedy { border-top: 1px solid #63343b; padding-top: 8px; }
         [data-testid="stMetricDelta"] { color: #ffcc66 !important; }
+        .pipeline-card { background: #090d12; border: 1px solid #52606d; border-left: 4px solid var(--teal); border-radius: 6px; padding: 14px; margin: 10px 0 16px; }
+        .pipeline-title { color: var(--teal); font-family: monospace; font-size: 0.76rem; font-weight: bold; letter-spacing: 0.06em; margin-bottom: 12px; }
+        .pipeline-step { border-top: 1px solid #27313a; color: var(--text-main); display: flex; justify-content: space-between; gap: 8px; padding: 9px 0; font-size: 0.82rem; }
+        .pipeline-step:first-of-type { border-top: 0; }
+        .pipeline-step strong { font-family: monospace; font-size: 0.68rem; text-align: right; white-space: nowrap; }
+        .pipeline-complete { color: var(--green); }
+        .pipeline-pending { color: #ffcc66; }
         @media (max-width: 900px) { .blueprint-grid { grid-template-columns: 1fr; gap: 14px; } }
     </style>
     """,
@@ -195,6 +202,12 @@ if "override_activation_pending" not in st.session_state:
     st.session_state["override_activation_pending"] = False
 if "chairman_override" not in st.session_state:
     st.session_state["chairman_override"] = False
+if "command_view" not in st.session_state:
+    st.session_state["command_view"] = "1️⃣ Tier 1 | Chairman Directorate"
+
+
+def advance_to(view_name):
+    st.session_state["command_view"] = view_name
 
 
 with st.sidebar:
@@ -215,14 +228,47 @@ with st.sidebar:
         for check_key in [f"chk_{book_slug}_{index}" for index in range(1, 9)]:
             st.session_state.pop(check_key, None)
         st.rerun()
+
+    committee_keys = [
+        "committee_operations",
+        "committee_audit",
+        "committee_risk",
+        "committee_technology",
+    ]
+    for committee_key in committee_keys:
+        if committee_key not in st.session_state:
+            st.session_state[committee_key] = True
+    completed_checks = sum(
+        st.session_state.get(f"chk_{book_slug}_{index}", False)
+        for index in range(1, 9)
+    )
+    stage_1_complete = st.session_state["chairman_override"] or all(
+        st.session_state[committee_key] for committee_key in committee_keys
+    )
+    stage_2_complete = st.session_state["directive_issued"]
+    stage_3_complete = completed_checks == 8
+    stage_4_complete = st.session_state["cleared_books"].get(book, False)
+    pipeline_steps = [
+        ("1. Apex Board", "✅ AUTHORIZED" if stage_1_complete else "⏳ PENDING"),
+        ("2. GM Directive", "✅ DISPATCHED" if stage_2_complete else "⏳ PENDING"),
+        ("3. Site Operations", "✅ 8/8 VERIFIED" if stage_3_complete else "⏳ IN PROGRESS"),
+        ("4. Audit Settlement", "✅ COMMITTED" if stage_4_complete else "⏳ PENDING"),
+    ]
+    pipeline_html = "<div class='pipeline-card'><div class='pipeline-title'>OPERATING PIPELINE SEQUENCE</div>"
+    for step, status in pipeline_steps:
+        status_class = "pipeline-complete" if status.startswith("✅") else "pipeline-pending"
+        pipeline_html += f"<div class='pipeline-step'><span>{step}</span><strong class='{status_class}'>{status}</strong></div>"
+    pipeline_html += "</div>"
+    st.markdown(pipeline_html, unsafe_allow_html=True)
     view = st.radio(
         "Command view",
         [
-            "Tier 1 | Chairman Directorate",
-            "Tier 2 | General Management",
-            "Tier 3 | Site Operations",
-            "Forensic Audit Ledger",
+            "1️⃣ Tier 1 | Chairman Directorate",
+            "2️⃣ Tier 2 | General Management",
+            "3️⃣ Tier 3 | Site Operations",
+            "4️⃣ Forensic Audit Ledger",
         ],
+        key="command_view",
     )
     if st.session_state["override_activation_pending"]:
         st.session_state["chairman_override"] = True
@@ -233,6 +279,7 @@ with st.sidebar:
     else:
         master_surge = None
 
+view = view.split(" | ", 1)[-1] if view.startswith(("1️⃣", "2️⃣", "3️⃣")) else view
 book_data = OPERATING_BOOKS[book]
 st.session_state["selected_book"] = book
 st.session_state["selected_book_data"] = book_data
@@ -318,10 +365,10 @@ if view == "Tier 1 | Chairman Directorate":
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Board Sub-Committee Authorizations")
-        st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", value=True)
-        st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", value=True)
-        st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", value=True)
-        st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", value=True)
+        st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", key="committee_operations")
+        st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", key="committee_audit")
+        st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", key="committee_risk")
+        st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", key="committee_technology")
     with c2:
         st.subheader("Holding Loss Recovery Allocation")
         total_burn = book_data["burn"]
@@ -342,6 +389,13 @@ if view == "Tier 1 | Chairman Directorate":
             "Phoenix Accrual (10%)": f"${total_burn * 0.1:,.0f}",
         })
         st.table(rows)
+    st.button(
+        "➡️ Advance to Next Stage",
+        type="primary",
+        disabled=not stage_1_complete,
+        on_click=advance_to,
+        args=("2️⃣ Tier 2 | General Management",),
+    )
 
 elif view == "Tier 2 | General Management":
     st.header("General Management Directive & Domain Translation")
@@ -369,6 +423,13 @@ elif view == "Tier 2 | General Management":
         st.session_state["slas"] = {"ops": ops_sla, "cap": cap_sla, "comp": comp_sla, "sys": sys_sla}
         st.session_state["directive_issued"] = True
         st.success(f"Directive dispatched to {book} frontline teams.")
+    st.button(
+        "➡️ Advance to Next Stage",
+        type="primary",
+        disabled=not st.session_state["directive_issued"],
+        on_click=advance_to,
+        args=("3️⃣ Tier 3 | Site Operations",),
+    )
 
 elif view == "Tier 3 | Site Operations":
     st.header(f"Site Operations Hub / {book}")
@@ -440,6 +501,13 @@ elif view == "Tier 3 | Site Operations":
                 "Cryptographic Hash": hashlib.sha256(f"{book}{timestamp}ESCALATION".encode()).hexdigest()[:16],
             })
             st.success("Emergency ticket transmitted to the Board Chairman.")
+    st.button(
+        "➡️ Advance to Next Stage",
+        type="primary",
+        disabled=not stage_3_complete,
+        on_click=advance_to,
+        args=("4️⃣ Forensic Audit Ledger",),
+    )
 
 else:
     st.header("Immutable Governance & Forensic Audit Ledger")
