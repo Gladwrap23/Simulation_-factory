@@ -193,17 +193,17 @@ st.markdown(
 )
 
 
-if "cleared_books" not in st.session_state:
+if "cleared_books" not in st.session_state or not isinstance(st.session_state["cleared_books"], dict):
     st.session_state["cleared_books"] = {}
-if "ledger" not in st.session_state:
+if "ledger" not in st.session_state or not isinstance(st.session_state["ledger"], list):
     st.session_state["ledger"] = []
-if "directive_issued" not in st.session_state:
+if "directive_issued" not in st.session_state or not isinstance(st.session_state["directive_issued"], dict):
     st.session_state["directive_issued"] = {}
-if "surges" not in st.session_state:
+if "surges" not in st.session_state or not isinstance(st.session_state["surges"], dict):
     st.session_state["surges"] = {"ops": 10, "cap": 10, "comp": 15, "sys": 10}
-if "slas" not in st.session_state:
+if "slas" not in st.session_state or not isinstance(st.session_state["slas"], dict):
     st.session_state["slas"] = {"ops": "1 business day", "cap": "1 business day", "comp": "3 business days", "sys": "1 business day"}
-if "board_escalation" not in st.session_state:
+if "board_escalation" not in st.session_state or not isinstance(st.session_state["board_escalation"], dict):
     st.session_state["board_escalation"] = {}
 if "board_escalation_context" not in st.session_state:
     st.session_state["board_escalation_context"] = ""
