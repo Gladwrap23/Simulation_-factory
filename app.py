@@ -370,20 +370,25 @@ exposure = book_data["exposure"]
 base_burn = book_data["burn"]
 surge_amount = base_burn * active_surge / 100
 net_burn = base_burn * (1 - active_surge / 100)
-holding_burn_value = "$0 / wk" if book_cleared else f"${net_burn:,.0f} / wk"
-surge_authorized = surge_amount
+holding_burn_value = "$0 / wk" if book_cleared else f"${base_burn:,.0f} / wk"
 holding_burn_delta = (
-    f"⚠️ {active_surge}% Surge Authorized (${surge_authorized:,.0f})"
-    if override else ("Cleared" if book_cleared else "Active Drag")
+    "✅ Cleared & Resolved"
+    if book_cleared
+    else (
+        f"⚠️ {active_surge}% Surge Authorized (${base_burn * active_surge / 100:,.0f})"
+        if active_surge > 0 else "Active Carrying Drag"
+    )
 )
-realization_value = base_burn * 0.9 if book_cleared else net_burn * 0.9
-fee_value = base_burn * 0.1 if book_cleared else net_burn * 0.1
+realization_value = base_burn * 0.9
+realization_delta = "Preserved (90% retained)" if book_cleared else "At Risk (90% target)"
+fee_value = base_burn * 0.1
+fee_delta = "Earned (10% accrual)" if book_cleared else "Target Accrual (10%)"
 
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Total Exposure", exposure, book)
 m2.metric("Holding Burn", holding_burn_value, holding_burn_delta)
-m3.metric("Client Realization", f"${realization_value:,.0f}", "90% retained")
-m4.metric("Phoenix Fee", f"${fee_value:,.0f}", "10% accrual")
+m3.metric("Client Realization", f"${realization_value:,.0f}", realization_delta)
+m4.metric("Phoenix Fee", f"${fee_value:,.0f}", fee_delta)
 m5.metric("SOP Readiness", f"{completed_checks} / 8", "Field Gate")
 
 st.markdown(
