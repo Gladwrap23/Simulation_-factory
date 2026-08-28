@@ -341,6 +341,7 @@ DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
 for key, default in [
     ('ledger', []), ('cleared_books', {}), ('directive_issued', {}),
     ('board_escalation', {}), ('board_quorum', {}), ('active_phase', {}), ('phase_2_authorized', {}),
+    ('detection_time', {}), ('override_logged', {}),
     ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0)
@@ -365,6 +366,8 @@ def reset_book(book_name):
     st.session_state['master_surge'] = 0
     st.session_state['active_phase'][book_name] = 1
     st.session_state['phase_2_authorized'][book_name] = False
+    st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
+    st.session_state['override_logged'][book_name] = False
     st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
@@ -384,6 +387,39 @@ def get_phase_context(book_name):
         'regime_detail': 'The site team has cleared Phase 1 but a second dependency remains pending executive approval.'
     })
     return active_phase, phase_2
+
+
+def append_forensic_entry(book_name, authority, resolution_time=None):
+    detection_time = st.session_state['detection_time'].get(book_name)
+    if detection_time is None:
+        detection_time = datetime.now(timezone.utc)
+        st.session_state['detection_time'][book_name] = detection_time
+    if resolution_time is None:
+        resolution_time = datetime.now(timezone.utc)
+
+    gov_lag = resolution_time - detection_time
+    lag_seconds = max(gov_lag.total_seconds(), 0)
+    hesitation_cost = (DATA_MATRIX[book_name]['base_burn'] / (7 * 86400)) * lag_seconds
+
+    forensic_entry = {
+        "Book": book_name,
+        "T0 Agent Detection": detection_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "T1 Action Resolved": resolution_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "Governance Lag": f"{lag_seconds:.0f} seconds",
+        "Hesitation Cost ($)": f"${hesitation_cost:,.2f}",
+        "Authorizing Authority": authority,
+    }
+    signature_payload = "|".join([
+        forensic_entry["Book"],
+        forensic_entry["T0 Agent Detection"],
+        forensic_entry["T1 Action Resolved"],
+        forensic_entry["Governance Lag"],
+        forensic_entry["Hesitation Cost ($)"],
+        forensic_entry["Authorizing Authority"],
+    ])
+    forensic_entry["SHA-256 Signature"] = hashlib.sha256(signature_payload.encode()).hexdigest()
+    st.session_state['ledger'].append(forensic_entry)
+    st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
 
 # Sidebar Controls
 st.sidebar.title("FACTORY COMMAND POST")
@@ -420,6 +456,12 @@ st.sidebar.markdown("---")
 override = st.sidebar.toggle("Chairman Directorate Override", value=st.session_state['override_active'], key="override_toggle")
 st.session_state['override_active'] = override
 
+if override and not st.session_state['override_logged'].get(book, False):
+    append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
+    st.session_state['override_logged'][book] = True
+elif not override:
+    st.session_state['override_logged'][book] = False
+
 master_surge = 0
 if override:
     master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, st.session_state['master_surge'], step=5)
@@ -431,6 +473,9 @@ if is_quorum:
     st.session_state['board_quorum'][book] = True
 else:
     st.session_state['board_quorum'][book] = False
+
+if not st.session_state['cleared_books'].get(book, False) and not st.session_state['detection_time'].get(book):
+    st.session_state['detection_time'][book] = datetime.now(timezone.utc)
 
 # Operating Pipeline Sequence Widget
 is_cleared = st.session_state['cleared_books'].get(book, False)
@@ -714,6 +759,7 @@ elif "Tier 3" in view:
             "Phoenix Fee (10%)": f"${base_burn*0.1:,.0f}",
             "Cryptographic Hash": entry_hash
         })
+        append_forensic_entry(book, "Tier 3 SOP Sign-off", datetime.now(timezone.utc))
         st.session_state['active_phase'][book] = 2
         st.session_state['phase_2_authorized'][book] = False
         st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
