@@ -361,10 +361,16 @@ if override:
     master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, st.session_state['master_surge'], step=5)
     st.session_state['master_surge'] = master_surge
 
+quorum_count = sum([st.session_state.get(f"comm_{book}_{c}", False) for c in ['ops', 'afic', 'risk', 'tech']])
+is_quorum = (quorum_count == 4) or override
+if is_quorum:
+    st.session_state['board_quorum'][book] = True
+else:
+    st.session_state['board_quorum'][book] = False
+
 # Operating Pipeline Sequence Widget
 is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
-is_quorum = st.session_state['board_quorum'].get(book, False) or override
 
 st.sidebar.markdown(f'''
 <div class="pipeline-card">
@@ -512,14 +518,10 @@ if "Tier 1" in view:
     st.subheader("Board Sub-Committee Statutory Quorum")
     q1, q2 = st.columns(2)
     with q1:
-        ops_chk = st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", key=f"comm_{book}_ops")
-        afic_chk = st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", key=f"comm_{book}_afic")
-        risk_chk = st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", key=f"comm_{book}_risk")
-        tech_chk = st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", key=f"comm_{book}_tech")
-        
-        quorum_count = sum([ops_chk, afic_chk, risk_chk, tech_chk])
-        if quorum_count == 4:
-            st.session_state['board_quorum'][book] = True
+        st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", key=f"comm_{book}_ops")
+        st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", key=f"comm_{book}_afic")
+        st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", key=f"comm_{book}_risk")
+        st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", key=f"comm_{book}_tech")
     with q2:
         st.subheader("Holding Loss Recovery Allocation")
         st.table({
