@@ -124,6 +124,57 @@ OPERATING_BOOKS = {
 }
 
 
+FAILURE_MODES = {
+    "Specialized Labor Shortage": {
+        "focus": "Operations",
+        "remedy": "Authorize 24/7 emergency overtime surge and fly in certified technicians",
+        "bottleneck": "Certified technician coverage is insufficient for continuous field execution",
+    },
+    "Technical & Protocol Failure": {
+        "focus": "Systems",
+        "remedy": "Inject synthetic frequency test packets and recalibrate PSCAD/IEEE 2800 models",
+        "bottleneck": "Control-protocol validation is failing at the telemetry and model interface",
+    },
+    "Critical Hardware / Vendor Delay": {
+        "focus": "Capital",
+        "remedy": "Expedite replacement RTU hardware via air-freight courier",
+        "bottleneck": "Critical replacement hardware remains blocked in the vendor fulfillment queue",
+    },
+    "Regulatory / Interconnection Hold": {
+        "focus": "Compliance",
+        "remedy": "File 24-hr statutory cure notice and provisional COD waiver",
+        "bottleneck": "Regulatory evidence and interconnection approval remain on administrative hold",
+    },
+}
+
+DATA_MATRIX = {
+    book: {
+        mode: {
+            **details,
+            "impact": f"Holding {book_data['burn']:,.0f}/wk in {details['focus'].lower()} execution drag",
+            "artifacts": [
+                (f"{details['focus']} Diagnostic Brief", f"{mode} / Scope: {book_data['region']}"),
+                (f"{details['focus']} Evidence Packet", f"{details['remedy']} / Status: Ready"),
+                ("Root-Cause Validation Record", f"{mode} / Validation: Required"),
+                ("Prescriptive Work Order", f"Owner: {details['focus']} / Release: Pending"),
+            ],
+            "checklist": [
+                f"{mode} diagnosis verified",
+                f"{details['focus']} evidence packet assembled",
+                f"{details['focus']} prescriptive remedy authorized",
+                f"{details['focus']} work order released",
+                "Root-cause validation record attached",
+                "Targeted surge deployment verified",
+                "Site execution evidence verified",
+                "Final clearance record attached",
+            ],
+        }
+        for mode, details in FAILURE_MODES.items()
+    }
+    for book, book_data in OPERATING_BOOKS.items()
+}
+
+
 st.set_page_config(
     page_title="Factory Command Post",
     page_icon="⚡",
@@ -209,6 +260,8 @@ if "board_quorum" not in st.session_state or not isinstance(st.session_state["bo
     st.session_state["board_quorum"] = {}
 if "master_surge_cap" not in st.session_state:
     st.session_state["master_surge_cap"] = 0
+if "diagnostic_root_cause" not in st.session_state:
+    st.session_state["diagnostic_root_cause"] = "Technical & Protocol Failure"
 if "board_escalation_context" not in st.session_state:
     st.session_state["board_escalation_context"] = ""
 if "board_escalation_category" not in st.session_state:
@@ -253,8 +306,9 @@ def reset_book(book_name):
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
     for committee in ("ops", "afic", "risk", "tech"):
         st.session_state[f"comm_{book_name}_{committee}"] = False
-    for index in range(8):
-        st.session_state[f"chk_{book_name}_{index}"] = False
+    for mode in DATA_MATRIX.get(book_name, {}):
+        for index in range(1, 9):
+            st.session_state[f"chk_{book_name}_{mode}_{index}"] = False
 
 
 def dispatch_escalation(book_name, category, context):
@@ -360,9 +414,15 @@ with st.sidebar:
     st.markdown(pipeline_html, unsafe_allow_html=True)
 
 book_data = OPERATING_BOOKS[book]
+diagnostic_root_cause = st.selectbox(
+    "Diagnostic Root-Cause",
+    list(DATA_MATRIX[book]),
+    key="diagnostic_root_cause",
+)
+diagnostic = DATA_MATRIX[book][diagnostic_root_cause]
 st.session_state["selected_book"] = book
 st.session_state["selected_book_data"] = book_data
-check_keys = [f"chk_{book_slug}_{index}" for index in range(1, 9)]
+check_keys = [f"chk_{book_slug}_{diagnostic_root_cause}_{index}" for index in range(1, 9)]
 completed_checks = sum([st.session_state.get(check_key, False) for check_key in check_keys])
 book_cleared = st.session_state["cleared_books"].get(book, False) and completed_checks == 8
 
@@ -403,15 +463,17 @@ st.markdown(
             </div>
             <div>
                 <div class="blueprint-label">ACTIVE BOTTLENECK</div>
-                <div class="blueprint-risk">{book_data['bottleneck']}</div>
-                <div class="blueprint-impact">{book_data['impact']}</div>
+                <div class="blueprint-risk">{diagnostic['bottleneck']}</div>
+                <div class="blueprint-impact">{diagnostic['impact']}</div>
             </div>
             <div>
                 <div class="blueprint-label">TACTICAL ACTION REQUIRED</div>
-                <div class="blueprint-action"><strong>1. BOARD</strong> authorize the domain envelope<br>
+                <div class="blueprint-action"><strong>DIAGNOSIS</strong> {diagnostic_root_cause}<br>
+                <strong>FOCUS</strong> {diagnostic['focus']} Committee<br>
+                <strong>1. BOARD</strong> authorize the domain envelope<br>
                 <strong>2. GM</strong> translate the mandate into work orders<br>
                 <strong>3. SITE</strong> execute and return verified evidence</div>
-                <div class="blueprint-remedy">{book_data['remedy']}</div>
+                <div class="blueprint-remedy">{diagnostic['remedy']}</div>
             </div>
         </div>
     </div>
@@ -505,19 +567,27 @@ elif "Tier 2" in view:
     )
     st.write(f"Board-directed work orders for {book}; financial envelopes are locked at the statutory mandate.")
     mandate_amount = base_burn * board_cap / 100
+    mandate_directives = {
+        "Operations": "Deploy 24/7 dedicated testing crews and secure vendor stand-by.",
+        "Capital": "Release milestone drawdowns and clear contractor carry penalties.",
+        "Compliance": "Assemble IEEE 2800 and COD attestation evidence packet for grid operator review.",
+        "Systems": "Inject synthetic ICCP frequency telemetry packets and validate PSCAD model.",
+    }
+    mandate_directives[diagnostic["focus"]] = diagnostic["remedy"]
     mandates = [
-        ("Operations", "COO Oversight", "1 business day", "Deploy 24/7 dedicated testing crews and secure vendor stand-by."),
-        ("Capital", "CFO / AFIC Oversight", "1 business day", "Release milestone drawdowns and clear contractor carry penalties."),
-        ("Compliance", "CLO Oversight", "3 business days", "Assemble IEEE 2800 and COD attestation evidence packet for grid operator review."),
-        ("Systems", "CTO Oversight", "1 business day", "Inject synthetic ICCP frequency telemetry packets and validate PSCAD model."),
+        ("Operations", "COO Oversight", "1 business day"),
+        ("Capital", "CFO / AFIC Oversight", "1 business day"),
+        ("Compliance", "CLO Oversight", "3 business days"),
+        ("Systems", "CTO Oversight", "1 business day"),
     ]
     mandate_columns = st.columns(4)
-    for column, (domain, chair, sla, directive) in zip(mandate_columns, mandates):
+    for column, (domain, chair, sla) in zip(mandate_columns, mandates):
+        badge_class = "badge-success" if domain == diagnostic["focus"] else "badge-active"
         column.markdown(
-            f"<div class='card'><span class='badge badge-active'>{domain.upper()}</span>"
+            f"<div class='card'><span class='badge {badge_class}'>{domain.upper()}</span>"
             f"<br><strong>{chair}</strong><br>Surge: {board_cap}% locked"
             f"<br>Allocation: ${mandate_amount:,.0f}/wk<br>SLA: {sla}"
-            f"<br><small>Directive: {directive}</small></div>",
+            f"<br><small>Directive: {mandate_directives[domain]}</small></div>",
             unsafe_allow_html=True,
         )
     st.session_state["surges"] = {domain: board_cap for domain in ("ops", "cap", "comp", "sys")}
@@ -549,6 +619,7 @@ elif "Tier 3" in view:
     st.header(f"Site Operations Hub / {book}")
     if override:
         st.warning("⚠️ CHAIRMAN OVERRIDE ACTIVE: Standard delegation suspended. Surge envelopes locked to Master Cap.")
+    st.info(f"Prescriptive Work Order ({diagnostic['focus']}): {diagnostic['remedy']}")
     st.subheader("Upstream Governance Status")
     g1, g2, g3, g4 = st.columns(4)
     governance_values = [
@@ -561,12 +632,12 @@ elif "Tier 3" in view:
         column.markdown(f"<div class='card'><span class='badge badge-active'>{label}</span><br>Surge: {surge}%<br>SLA: {sla}</div>", unsafe_allow_html=True)
     st.subheader(f"Authentic Control Artifacts ({book})")
     artifact_columns = st.columns(4)
-    for column, (name, detail) in zip(artifact_columns, book_data["artifacts"]):
+    for column, (name, detail) in zip(artifact_columns, diagnostic["artifacts"]):
         column.markdown(f"<div class='card'><strong>{name}</strong><br><small>{detail}<br>State: Verified</small></div>", unsafe_allow_html=True)
     st.subheader("Frontline SOP Release Checklist")
     checks = []
     checklist_columns = st.columns(2)
-    for index, item in enumerate(book_data["checklist"]):
+    for index, item in enumerate(diagnostic["checklist"]):
         with checklist_columns[index % 2]:
             checks.append(st.checkbox(item, key=check_keys[index]))
     if all(checks):
