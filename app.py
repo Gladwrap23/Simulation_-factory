@@ -68,6 +68,14 @@ st.markdown('''
     .agent-card { background: rgba(22, 27, 34, 0.95); border: 1px solid var(--purple); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
     .blueprint-card { background: rgba(22, 27, 34, 0.85); border: 1px solid #ff7b72; border-radius: 8px; padding: 16px; margin: 12px 0 20px 0; }
     .forecast-card { background: rgba(22, 27, 34, 0.85); border: 1px solid var(--amber); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .critical-forecast-card { background: rgba(255, 77, 79, 0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 0 0 1px rgba(255,77,79,0.35), 0 0 20px rgba(255,77,79,0.7); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
+    @keyframes pulseCritical {
+        0% { box-shadow: 0 0 0 1px rgba(255,77,79,0.2), 0 0 12px rgba(255,77,79,0.35); }
+        100% { box-shadow: 0 0 0 1px rgba(255,77,79,0.7), 0 0 24px rgba(255,77,79,0.9); }
+    }
+    .critical-agent-card { border: 2px solid rgba(255, 122, 78, 0.95) !important; background: rgba(210,153,34,0.12) !important; box-shadow: 0 0 18px rgba(255,77,79,0.5); }
+    .secondary-agent-card { opacity: 0.5; }
+    .critical-path-row { background: rgba(255,77,79,0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 0 18px rgba(255,77,79,0.25); }
     .pipeline-card { background-color: #0b0e14; border: 1px solid var(--teal); border-radius: 8px; padding: 12px; margin-top: 14px; }
     .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; font-weight: bold; }
     .badge-active { background: rgba(0,229,255,0.15); color: var(--teal); border: 1px solid var(--teal); }
@@ -95,6 +103,7 @@ DATA_MATRIX = {
             "CLO": {"status": "STATUTORY NOTICE", "memo": "ERCOT IA Section 4.2 allows filing an expedited 24-hr Provisional Part 2 COD Waiver packet."},
             "CTO": {"status": "PARAMETER MISMATCH", "memo": "Inverter firmware 2.41 dropping DNP3 heartbeat packets. Synthetic packet injection rig can clear IEEE 2800 in 4 hours."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("ICCP 4-sec Telemetry", "Heartbeat: 04.0s / Verified"), ("PSCAD EMT Model", "Inverter: BESS-01 / Verified"), ("IEEE 2800 Test Packet", "Ride-through: Verified"), ("Part 2 COD Attestation", "Commercial ops declaration / Assembled")],
         "checks": ["ICCP telemetry evidence verified", "ICCP telemetry record attached", "PSCAD EMT model evidence verified", "PSCAD EMT model record attached", "IEEE 2800 test packet verified", "IEEE 2800 test record attached", "COD attestation evidence verified", "COD attestation record attached"]
     },
@@ -113,6 +122,7 @@ DATA_MATRIX = {
             "CLO": {"status": "SCHEDULE 12 RISK", "memo": "PJM tariff clause triggers daily standby demurrage starting Day 14. Statutory cure notice ready."},
             "CTO": {"status": "PERIMETER SECURE", "memo": "NERC CIP-005 Electronic Security Perimeter validated and pre-energization interlock telemetry certified."}
         },
+        "critical_lead": "COO",
         "artifacts": [("ASTM D877 Dielectric Log", "Breakdown Voltage: >35kV / Verified"), ("Schedule 12 Agreement", "Facility Study Review: Complete"), ("NERC CIP-005 Perimeter", "Electronic Perimeter: Certified"), ("HV Energization Sign-off", "Safety Protocol: Assembled")],
         "checks": ["Dielectric log evidence verified", "Dielectric log record attached", "Schedule 12 agreement verified", "Schedule 12 record attached", "NERC CIP perimeter verified", "NERC CIP perimeter record attached", "HV energization sign-off verified", "HV energization record attached"]
     },
@@ -131,6 +141,7 @@ DATA_MATRIX = {
             "CLO": {"status": "DELEGATION COMPLIANCE", "memo": "Crown Ministerial Delegation Schedule allows automated digital fast-track triage under ACC45 statutory framework."},
             "CTO": {"status": "INTAKE AUTOMATION", "memo": "Digital ACC45 triage gateway configured; ready for immediate deployment to replace paper routing."}
         },
+        "critical_lead": "CLO",
         "artifacts": [("ACC45 Lodgement Log", "Digital Intake: Verified"), ("Clinical Triage Matrix", "Complex Claim Review: Cleared"), ("Vocational Assessment", "Independence Evaluation: Certified"), ("Crown Delegation Cert", "Statutory Sign-off: Assembled")],
         "checks": ["ACC45 intake evidence verified", "ACC45 intake record attached", "Clinical triage evidence verified", "Clinical triage record attached", "Vocational evaluation verified", "Vocational evaluation record attached", "Crown delegation evidence verified", "Crown delegation record attached"]
     },
@@ -149,6 +160,7 @@ DATA_MATRIX = {
             "CLO": {"status": "CUSTOMS CLEARANCE", "memo": "Customs electronic holds cleared; sole remaining blocker is EDIFACT BAPLIE data schema certification."},
             "CTO": {"status": "SCHEMA PATCH READY", "memo": "BAPLIE 2.2 parser translation mapping hotfix prepared; restores automated crane sequence planning instantly."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("BAPLIE 2.2 EDI Log", "Container Manifest: Verified"), ("TOS Berth Sequence", "Berth Allocation Plan: Active"), ("Crane Load Cell Cert", "Calibration: Approved"), ("Quay Release Authority", "Port Authority Gate: Assembled")],
         "checks": ["BAPLIE manifest verified", "BAPLIE manifest attached", "TOS sequence plan verified", "TOS sequence plan attached", "Load cell calibration verified", "Load cell calibration attached", "Quay release authority verified", "Quay release authority attached"]
     },
@@ -167,6 +179,7 @@ DATA_MATRIX = {
             "CLO": {"status": "EPA COMPLIANCE", "memo": "EPA Section 608 attestation required for SF6 gas handling before closing breaker onto utility feeder."},
             "CTO": {"status": "TELEMETRY READY", "memo": "Substation RTU fiber loop and backup power transfer switch logic validated."}
         },
+        "critical_lead": "COO",
         "artifacts": [("SF6 Pressure Attestation", "Gas Density: Nominal / Sealed"), ("GIS Dielectric Cert", "HV Pressure Test: Passed"), ("EPA 608 Environmental Sign-off", "Emissions Compliance: Certified"), ("Utility Intertie Release", "Breaker Sync: Assembled")],
         "checks": ["SF6 density log verified", "SF6 density record attached", "GIS dielectric cert verified", "GIS dielectric cert attached", "EPA compliance verified", "EPA compliance attached", "Breaker sync verified", "Breaker sync attached"]
     },
@@ -185,6 +198,7 @@ DATA_MATRIX = {
             "CLO": {"status": "MARITIME PERMIT", "memo": "UK Crown Estate seabed lease work window expires in 11 days. Regulatory extension drafted."},
             "CTO": {"status": "DTS CALIBRATION", "memo": "Subsea fiber distributed temperature sensing (DTS) optical splice recalibration script ready."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("OTDR Optical Splice Log", "Reflectometry: 0.02dB / Verified"), ("HVDC Joint Pressure Attestation", "Hydrostatic Seal: Passed"), ("Crown Estate Seabed Cert", "Work Permit: Active"), ("Platform COD Protocol", "Energization: Assembled")],
         "checks": ["OTDR splice log verified", "OTDR splice log attached", "Joint pressure cert verified", "Joint pressure cert attached", "Seabed permit verified", "Seabed permit attached", "Platform COD verified", "Platform COD attached"]
     },
@@ -203,6 +217,7 @@ DATA_MATRIX = {
             "CLO": {"status": "CHIPS ACT AUDIT", "memo": "Federal grant milestone compliance verification protocol ready for submission upon cleanroom sign-off."},
             "CTO": {"status": "ANALYZER RECAL", "memo": "Ultra-Pure Water TOC sensor zero-point baseline firmware recalibration code compiled."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("ISO Class 1 Particle Log", "0.1μm Count: <10 / Verified"), ("UPW TOC Analysis", "Total Organic Carbon: <0.5ppb"), ("Cleanroom Pressure Cert", "Positive Pressure: 45Pa"), ("EUV Bay Handover", "Tool Delivery Clearance: Ready")],
         "checks": ["Particle log evidence verified", "Particle log record attached", "UPW TOC log verified", "UPW TOC log record attached", "Pressure cert verified", "Pressure cert attached", "Bay handover verified", "Bay handover attached"]
     },
@@ -221,6 +236,7 @@ DATA_MATRIX = {
             "CLO": {"status": "EPA DISCHARGE PERMIT", "memo": "Western Australia DWER discharge license conditions verified and water treatment logs cleared."},
             "CTO": {"status": "PYROMETRY TELEMETRY", "memo": "Thermal imaging pyrometry array operational and ready for post-repair kiln light-up."}
         },
+        "critical_lead": "COO",
         "artifacts": [("Kiln Thermal Attestation", "Temperature Gradient: Nominal"), ("Refractory Masonry Cert", "High-Alumina Brick: Certified"), ("DWER Environmental Permit", "Water Discharge: Approved"), ("Calcination Commissioning", "First Spodumene Feed: Ready")],
         "checks": ["Kiln thermal log verified", "Kiln thermal log attached", "Masonry cert verified", "Masonry cert attached", "DWER permit verified", "DWER permit attached", "Calcination log verified", "Calcination log attached"]
     },
@@ -239,6 +255,7 @@ DATA_MATRIX = {
             "CLO": {"status": "FRA MANDATE", "memo": "Federal Railroad Administration 49 CFR Part 236 safety compliance sign-off prepared."},
             "CTO": {"status": "PTC KEY ROTATION", "memo": "Wayside Interface Unit PKI encryption certificate re-push payload ready for transmission."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("PTC Transponder Telemetry", "Sync Heartbeat: <10ms / Verified"), ("Wayside PKI Security Cert", "Encryption Key: Active"), ("FRA Part 236 Attestation", "Safety Appliance: Certified"), ("Yard Dispatch Release", "Interlocking Sequence: Active")],
         "checks": ["PTC telemetry verified", "PTC telemetry attached", "PKI security cert verified", "PKI security cert attached", "FRA attestation verified", "FRA attestation attached", "Yard release verified", "Yard release attached"]
     },
@@ -257,6 +274,7 @@ DATA_MATRIX = {
             "CLO": {"status": "NAVSEA COMPLIANCE", "memo": "NAVSEA Technical Publication 248 welding attestation and MIL-STD compliance packet assembled."},
             "CTO": {"status": "PHASED ARRAY DATA", "memo": "Phased Array Ultrasonic Testing (PAUT) digital radiography imaging database operational."}
         },
+        "critical_lead": "COO",
         "artifacts": [("PAUT NDT Weld Map", "Volumetric Scan: 100% / Passed"), ("Level III Radiographer Cert", "NAVSEA Qualified: Verified"), ("NAVSEA 248 Compliance", "Hull Integrity: Approved"), ("Drydock Flooding Authority", "Submersion Gate: Assembled")],
         "checks": ["NDT weld map verified", "NDT weld map attached", "Radiographer cert verified", "Radiographer cert attached", "NAVSEA attestation verified", "NAVSEA attestation attached", "Flooding authority verified", "Flooding authority attached"]
     },
@@ -275,6 +293,7 @@ DATA_MATRIX = {
             "CLO": {"status": "POTABLE WATER STD", "memo": "Title 22 California Drinking Water Standards compliance testing certification ready."},
             "CTO": {"status": "SCADA DOSING PROFILE", "memo": "PLC chemical feed PID loop tuning parameter payload ready for deployment."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("SDI Membrane Permeate Log", "SDI15: 2.8 / Passed"), ("Boron Rejection Analysis", "Boron: <0.5mg/L / Verified"), ("Title 22 Potable Water Cert", "Health Standard: Approved"), ("Municipal Distribution Gate", "Water Delivery Release: Active")],
         "checks": ["SDI permeate log verified", "SDI permeate log attached", "Boron analysis verified", "Boron analysis attached", "Title 22 cert verified", "Title 22 cert attached", "Distribution gate verified", "Distribution gate attached"]
     },
@@ -293,12 +312,14 @@ DATA_MATRIX = {
             "CLO": {"status": "FAA 14 CFR 43.9", "memo": "FAA airworthiness conformity and maintenance log entry ready for Chief Inspector release."},
             "CTO": {"status": "SPEC2000 API PATCH", "memo": "ATA Spec 2000 digital certificate XML exchange gateway re-push configured and ready."}
         },
+        "critical_lead": "CTO",
         "artifacts": [("FAA 8130-3 Airworthiness Tag", "Dual Release: Verified"), ("Spec 2000 Digital Trace", "Engine Mount Serial: Matched"), ("Chief Inspector Release", "Airworthiness: Signed"), ("Flight Operations Handover", "Tail In-Service: Ready")],
         "checks": ["FAA 8130-3 evidence verified", "FAA 8130-3 record attached", "Spec 2000 trace verified", "Spec 2000 trace attached", "Inspector release verified", "Inspector release attached", "Flight ops handover verified", "Flight ops handover attached"]
     }
 }
 
 for book_name, book_data in DATA_MATRIX.items():
+    book_data.setdefault("critical_lead", None)
     book_data.setdefault("phase_2", {
         "bottleneck": "Phase 2: Secondary Recovery Queue Awaiting Director Approval",
         "target_director": "CTO",
@@ -309,6 +330,7 @@ for book_name, book_data in DATA_MATRIX.items():
         "regime_detail": "Sensing layer detected a phase-two process gate beyond initial commissioning. The site team has cleared the first wave but a second dependency remains in the queue.",
     })
 
+DATA_MATRIX["ERCOT BESS / storage operations"]["critical_lead"] = "CTO"
 DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
     "bottleneck": "Phase 2: 100-Hour Continuous C-Rate Thermal Run & Cell Balancing",
     "target_director": "CTO",
@@ -318,6 +340,7 @@ DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "Phase 1 telemetry locks are cleared, but cell balancing still fails under sustained C-rate stress and must be corrected before final release.",
 }
+DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["critical_lead"] = "COO"
 DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
     "bottleneck": "Phase 2: Substation Interlock Logic & Relay Trip Calibration",
     "target_director": "COO",
@@ -327,6 +350,7 @@ DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "The transmission study is resolved, but the live relay logic remains out of calibration and can short-circuit the next commissioning stage.",
 }
+DATA_MATRIX["ACC NZ Scheme / Claims Review"]["critical_lead"] = "CLO"
 DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
     "bottleneck": "Phase 2: Complex Vocational Rehabilitation Delegation Gate",
     "target_director": "CLO",
@@ -336,6 +360,9 @@ DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "The digital triage lane is active, but high-complexity vocational cases remain pending ministerial delegation and cannot advance without legal approval.",
 }
+DATA_MATRIX["Critical Minerals / Lithium Refining Facility"]["critical_lead"] = "COO"
+DATA_MATRIX["Defense Manufacturing / Naval Shipyard"]["critical_lead"] = "COO"
+DATA_MATRIX["Commercial Aviation / Fleet AOG Turnaround"]["critical_lead"] = "CTO"
 
 # Defensive Session State Initialization
 for key, default in [
@@ -616,46 +643,79 @@ if "Tier 1" in view:
         <small>Preserved via Targeted Cure: <strong>${mitigated_preservation[1]:,.0f}</strong></small>
     </div>
     ''', unsafe_allow_html=True)
+    terminal_critical = unmitigated_loss[2] >= 1_500_000
+    f3_card_class = "critical-forecast-card" if terminal_critical else "forecast-card"
+    f3_banner = "🚨 TERMINAL DEFAULT IMMINENT" if terminal_critical else "90-DAY TERMINAL RISK"
     f3.markdown(f'''
-    <div class="forecast-card">
-        <span class="badge badge-danger">90-DAY TERMINAL RISK</span><br>
+    <div class="{f3_card_class}">
+        <span class="badge badge-danger">{f3_banner}</span><br>
         <h3 style="color:#ff7b72; margin:6px 0;">${unmitigated_loss[2]:,.0f}</h3>
         <small>PPA/Offtake Forfeiture Risk: <strong>CRITICAL</strong></small>
     </div>
     ''', unsafe_allow_html=True)
 
     st.subheader("Autonomous Board Committee Research Dossiers")
+    critical_lead = book_data.get('critical_lead')
+    agent_map = {
+        "COO": ("COO AGENT | ASSET DELIVERY", "Operations & Asset Delivery Committee (Chair: COO Oversight)", book_data['agents']['COO']),
+        "AFIC": ("CFO AGENT | AFIC CAPITAL DEFENSE", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", book_data['agents']['AFIC']),
+        "CLO": ("CLO AGENT | RISK & REGULATORY", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", book_data['agents']['CLO']),
+        "CTO": ("CTO AGENT | SYSTEMS & TELEMETRY", "Technology & Infrastructure Committee (Chair: CTO Oversight)", book_data['agents']['CTO']),
+    }
     ag_col1, ag_col2 = st.columns(2)
     with ag_col1:
-        st.markdown(f'''
-        <div class="agent-card">
-            <span class="badge badge-agent">COO AGENT | ASSET DELIVERY</span> <strong>Status: {book_data['agents']['COO']['status']}</strong><br>
-            <small>{book_data['agents']['COO']['memo']}</small>
-        </div>
-        <div class="agent-card">
-            <span class="badge badge-agent">CLO AGENT | RISK & REGULATORY</span> <strong>Status: {book_data['agents']['CLO']['status']}</strong><br>
-            <small>{book_data['agents']['CLO']['memo']}</small>
-        </div>
-        ''', unsafe_allow_html=True)
+        for role, (title, _, agent_info) in [
+            ("COO", agent_map["COO"]),
+            ("CLO", agent_map["CLO"]),
+        ]:
+            card_style = "critical-agent-card" if critical_lead == role else "secondary-agent-card" if critical_lead is not None and critical_lead != role else "agent-card"
+            badge = "🚨 CRITICAL PATH LEAD BOTTLENECK" if critical_lead == role else "AGENT"
+            st.markdown(f'''
+            <div class="{card_style}" style="padding: 14px; border-radius: 8px;">
+                <span class="badge badge-agent">{badge} | {title}</span> <strong>Status: {agent_info['status']}</strong><br>
+                <small>{agent_info['memo']}</small>
+            </div>
+            ''', unsafe_allow_html=True)
     with ag_col2:
-        st.markdown(f'''
-        <div class="agent-card">
-            <span class="badge badge-agent">CFO AGENT | AFIC CAPITAL DEFENSE</span> <strong>Status: {book_data['agents']['AFIC']['status']}</strong><br>
-            <small>{book_data['agents']['AFIC']['memo']}</small>
-        </div>
-        <div class="agent-card">
-            <span class="badge badge-agent">CTO AGENT | SYSTEMS & TELEMETRY</span> <strong>Status: {book_data['agents']['CTO']['status']}</strong><br>
-            <small>{book_data['agents']['CTO']['memo']}</small>
-        </div>
-        ''', unsafe_allow_html=True)
+        for role, (title, _, agent_info) in [
+            ("AFIC", agent_map["AFIC"]),
+            ("CTO", agent_map["CTO"]),
+        ]:
+            card_style = "critical-agent-card" if critical_lead == role else "secondary-agent-card" if critical_lead is not None and critical_lead != role else "agent-card"
+            badge = "🚨 CRITICAL PATH LEAD BOTTLENECK" if critical_lead == role else "AGENT"
+            st.markdown(f'''
+            <div class="{card_style}" style="padding: 14px; border-radius: 8px;">
+                <span class="badge badge-agent">{badge} | {title}</span> <strong>Status: {agent_info['status']}</strong><br>
+                <small>{agent_info['memo']}</small>
+            </div>
+            ''', unsafe_allow_html=True)
     
     st.subheader("Board Sub-Committee Statutory Quorum")
     q1, q2 = st.columns(2)
     with q1:
-        st.checkbox("Operations & Asset Delivery Committee (Chair: COO Oversight)", key=f"comm_{book}_ops")
-        st.checkbox("Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", key=f"comm_{book}_afic")
-        st.checkbox("Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", key=f"comm_{book}_risk")
-        st.checkbox("Technology & Infrastructure Committee (Chair: CTO Oversight)", key=f"comm_{book}_tech")
+        critical_label_map = {
+            "COO": "Operations & Asset Delivery Committee (Chair: COO Oversight)",
+            "AFIC": "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)",
+            "CLO": "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)",
+            "CTO": "Technology & Infrastructure Committee (Chair: CTO Oversight)",
+        }
+        critical_key_order = [
+            ("COO", "Operations & Asset Delivery Committee (Chair: COO Oversight)"),
+            ("AFIC", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)"),
+            ("CLO", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)"),
+            ("CTO", "Technology & Infrastructure Committee (Chair: CTO Oversight)"),
+        ]
+        for role, label in critical_key_order:
+            checkbox_key = f"comm_{book}_{'ops' if role == 'COO' else 'afic' if role == 'AFIC' else 'risk' if role == 'CLO' else 'tech'}"
+            is_required = critical_lead == role
+            if is_required:
+                st.markdown('<div class="critical-path-row">', unsafe_allow_html=True)
+                checked = st.checkbox(f"{label}  ⚠️ REQUIRED CRITICAL PATH SIGN-OFF", value=st.session_state.get(checkbox_key, False), key=checkbox_key)
+                if not checked:
+                    st.caption("⚠️ REQUIRED CRITICAL PATH SIGN-OFF")
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.checkbox(label, key=checkbox_key)
     with q2:
         st.subheader("Holding Loss Recovery Allocation")
         st.table({
