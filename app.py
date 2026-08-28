@@ -239,7 +239,9 @@ def sla_for_surge(surge):
     raise ValueError(f"Unsupported surge value: {surge}")
 
 
-def nav_to(target_view):
+def nav_to(target_view, book_name=None):
+    if book_name is not None:
+        st.session_state["directive_issued"][book_name] = True
     st.session_state["active_view"] = target_view
 
 
@@ -503,63 +505,42 @@ elif "Tier 2" in view:
             "🔒 TIER 2 LOCKED: Board quorum has not been established. Return to Tier 1 and obtain all 4 Sub-Committee authorizations, or invoke Directorate Override."
         )
         st.stop()
-    if st.session_state["emergency_surge_mandate"]:
-        st.warning("⚡ CHAIRMAN EMERGENCY SURGE MANDATE ISSUED: Authorized budget automatically applied to all domain envelopes.")
-    if override:
-        st.warning("⚠️ CHAIRMAN OVERRIDE ACTIVE: Standard delegation suspended. Surge envelopes locked to Master Cap.")
-        st.session_state["surges"] = {domain: master_surge for domain in ("ops", "cap", "comp", "sys")}
-    st.write(f"Convert board mandates into operating controls for {book}.")
-    budget_banner = st.empty()
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        ops_surge = st.slider("Operations surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["ops"], 5, disabled=override)
-        ops_sla, ops_days = sla_for_surge(ops_surge)
-        st.selectbox("Operations SLA", [ops_sla], index=0, disabled=True)
-    with col2:
-        cap_surge = st.slider("Capital surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["cap"], 5, disabled=override)
-        cap_sla, cap_days = sla_for_surge(cap_surge)
-        st.selectbox("Capital SLA", [cap_sla], index=0, disabled=True)
-    with col3:
-        comp_surge = st.slider("Compliance surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["comp"], 5, disabled=override)
-        comp_sla, comp_days = sla_for_surge(comp_surge)
-        st.selectbox("Compliance SLA", [comp_sla], index=0, disabled=True)
-    with col4:
-        sys_surge = st.slider("Systems surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["sys"], 5, disabled=override)
-        sys_sla, sys_days = sla_for_surge(sys_surge)
-        st.selectbox("Systems SLA", [sys_sla], index=0, disabled=True)
-    domain_slas = {
-        "Operations": (ops_surge, ops_sla, ops_days),
-        "Capital": (cap_surge, cap_sla, cap_days),
-        "Compliance": (comp_surge, comp_sla, comp_days),
-        "Systems": (sys_surge, sys_sla, sys_days),
-    }
-    critical_domain, (_, critical_sla, critical_days) = max(
-        domain_slas.items(), key=lambda item: item[1][2]
-    )
     board_cap = st.session_state.get("board_surge_cap", 30)
-    gm_allocated = (ops_surge + cap_surge + comp_surge + sys_surge) / 4.0
-    budget_banner.warning(
-        f"Authorized Board Envelope: {board_cap}% (${base_burn * board_cap / 100:,.0f})  |  "
-        f"Management Allocated: {gm_allocated:.1f}% (${base_burn * gm_allocated / 100:,.0f})  |  "
-        f"Remaining Headroom: {board_cap - gm_allocated:.1f}%"
+    st.info(
+        f"Authorized Board Statutory Envelope: {board_cap}% "
+        f"(${base_burn * board_cap / 100:,.0f}/wk) | Status: Mandates Received from Boardroom"
     )
-    overrun = gm_allocated > board_cap and not override
-    if overrun:
-        st.error(
-            f"🚨 DELEGATED FINANCIAL AUTHORITY BREACH: Total allocations exceed the Board Authorized Envelope by {gm_allocated - board_cap:.1f}%. Reduce department budgets or request Chairman Override."
+    st.write(f"Board-directed work orders for {book}; financial envelopes are locked at the statutory mandate.")
+    mandate_amount = base_burn * board_cap / 100
+    mandates = [
+        ("Operations", "COO Oversight", "1 business day", "Deploy 24/7 dedicated testing crews and secure vendor stand-by."),
+        ("Capital", "CFO / AFIC Oversight", "1 business day", "Release milestone drawdowns and clear contractor carry penalties."),
+        ("Compliance", "CLO Oversight", "3 business days", "Assemble IEEE 2800 and COD attestation evidence packet for grid operator review."),
+        ("Systems", "CTO Oversight", "1 business day", "Inject synthetic ICCP frequency telemetry packets and validate PSCAD model."),
+    ]
+    mandate_columns = st.columns(4)
+    for column, (domain, chair, sla, directive) in zip(mandate_columns, mandates):
+        column.markdown(
+            f"<div class='card'><span class='badge badge-active'>{domain.upper()}</span>"
+            f"<br><strong>{chair}</strong><br>Surge: {board_cap}% locked"
+            f"<br>Allocation: ${mandate_amount:,.0f}/wk<br>SLA: {sla}"
+            f"<br><small>Directive: {directive}</small></div>",
+            unsafe_allow_html=True,
         )
+    st.session_state["surges"] = {domain: board_cap for domain in ("ops", "cap", "comp", "sys")}
+    st.session_state["slas"] = {
+        "ops": "1 business day",
+        "cap": "1 business day",
+        "comp": "3 business days",
+        "sys": "1 business day",
+    }
     action_columns = st.columns([2, 1])
     with action_columns[1]:
         st.button(
-            "⚡ Issue Translated Directive to Frontline",
+            "⚡ Dispatch Translated Board Work Orders to Site Operations",
             type="primary",
-            disabled=overrun,
-            on_click=dispatch_directive,
-            args=(
-                book,
-                {"ops": ops_surge, "cap": cap_surge, "comp": comp_surge, "sys": sys_surge},
-                {"ops": ops_sla, "cap": cap_sla, "comp": comp_sla, "sys": sys_sla},
-            ),
+            on_click=nav_to,
+            args=("3️⃣ Tier 3 | Site Operations", book),
         )
     stage_columns = st.columns([1.5, 1])
     with stage_columns[1]:
