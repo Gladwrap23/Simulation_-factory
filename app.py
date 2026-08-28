@@ -207,8 +207,8 @@ if "board_escalation" not in st.session_state or not isinstance(st.session_state
     st.session_state["board_escalation"] = {}
 if "board_quorum" not in st.session_state or not isinstance(st.session_state["board_quorum"], dict):
     st.session_state["board_quorum"] = {}
-if "board_surge_cap" not in st.session_state:
-    st.session_state["board_surge_cap"] = 30
+if "master_surge_cap" not in st.session_state:
+    st.session_state["master_surge_cap"] = 0
 if "board_escalation_context" not in st.session_state:
     st.session_state["board_escalation_context"] = ""
 if "board_escalation_category" not in st.session_state:
@@ -223,20 +223,6 @@ if "chairman_override" not in st.session_state:
     st.session_state["chairman_override"] = False
 if "active_view" not in st.session_state:
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
-
-
-SLA_BY_SURGE = (
-    (50, "4 hours (Expedited Surge)", 4 / 24),
-    (20, "1 business day (Priority)", 1),
-    (0, "3 business days (Standard Queue)", 3),
-)
-
-
-def sla_for_surge(surge):
-    for minimum_surge, sla, business_days in SLA_BY_SURGE:
-        if surge >= minimum_surge:
-            return sla, business_days
-    raise ValueError(f"Unsupported surge value: {surge}")
 
 
 def nav_to(target_view, book_name=None):
@@ -262,6 +248,8 @@ def reset_book(book_name):
     st.session_state["directive_issued"][book_name] = False
     st.session_state["board_escalation"][book_name] = False
     st.session_state["board_quorum"][book_name] = False
+    st.session_state["chairman_override"] = False
+    st.session_state["master_surge_cap"] = 0
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
     for committee in ("ops", "afic", "risk", "tech"):
         st.session_state[f"comm_{book_name}_{committee}"] = False
@@ -357,9 +345,13 @@ with st.sidebar:
         st.session_state["override_activation_pending"] = False
     override = st.sidebar.toggle("Chairman Directorate Override", key="chairman_override")
     if override:
-        master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, 25, 5)
+        master_surge = st.sidebar.slider(
+            "Master Surge Cap Override (%)", 0, 100, 0, 5, key="master_surge_cap"
+        )
+        active_surge = master_surge
     else:
-        master_surge = None
+        st.session_state["master_surge_cap"] = 0
+        active_surge = 0
     pipeline_html = "<div class='pipeline-card'><div class='pipeline-title'>OPERATING PIPELINE SEQUENCE</div>"
     for step, status in pipeline_steps:
         status_class = "pipeline-complete" if status.startswith("✅") else "pipeline-pending"
@@ -376,17 +368,16 @@ book_cleared = st.session_state["cleared_books"].get(book, False) and completed_
 
 exposure = book_data["exposure"]
 base_burn = book_data["burn"]
-surge_amount = base_burn * (master_surge / 100) if override else 0
-net_burn = base_burn - surge_amount
-holding_burn_value = "$0 / wk" if book_cleared else f"${net_burn:,.0f} / wk" if override else f"${base_burn:,.0f} / wk"
+surge_amount = base_burn * active_surge / 100
+net_burn = base_burn * (1 - active_surge / 100)
+holding_burn_value = "$0 / wk" if book_cleared else f"${net_burn:,.0f} / wk"
 surge_authorized = surge_amount
 holding_burn_delta = (
-    f"⚠️ {master_surge}% Surge Authorized (${surge_authorized:,.0f})"
-    if override
-    else ("Cleared" if book_cleared else "Active Drag")
+    f"⚠️ {active_surge}% Surge Authorized (${surge_authorized:,.0f})"
+    if override else ("Cleared" if book_cleared else "Active Drag")
 )
-realization_value = base_burn * 0.9 if book_cleared else net_burn * 0.9 if override else base_burn * 0.9
-fee_value = base_burn * 0.1 if book_cleared else net_burn * 0.1 if override else base_burn * 0.1
+realization_value = base_burn * 0.9 if book_cleared else net_burn * 0.9
+fee_value = base_burn * 0.1 if book_cleared else net_burn * 0.1
 
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Total Exposure", exposure, book)
@@ -466,9 +457,6 @@ if "Tier 1" in view:
         else:
             st.success("⚡ CHAIRMAN OVERRIDE ACTIVE" if st.session_state["chairman_override"] else "✅ BOARD QUORUM ESTABLISHED")
     with c2:
-        st.slider(
-            "Authorized Board Surge Envelope (%)", 0, 100, 30, 5, key="board_surge_cap"
-        )
         st.subheader("Holding Loss Recovery Allocation")
         total_burn = book_data["burn"]
         rows = []
@@ -476,14 +464,14 @@ if "Tier 1" in view:
             rows.append({
                 "Category": category,
                 "Weekly Amount": f"${amount:,.0f}",
-                "Surge Capital Allocated": f"${amount * (master_surge / 100):,.0f}" if override else "$0",
+                "Surge Capital Allocated": f"${amount * active_surge / 100:,.0f}",
                 "Client Retained (90%)": f"${amount * 0.9:,.0f}",
                 "Phoenix Accrual (10%)": f"${amount * 0.1:,.0f}",
             })
         rows.append({
             "Category": "Total Weekly Burn",
             "Weekly Amount": f"${total_burn:,.0f}",
-            "Surge Capital Allocated": f"${total_burn * (master_surge / 100):,.0f}" if override else "$0",
+            "Surge Capital Allocated": f"${total_burn * active_surge / 100:,.0f}",
             "Client Retained (90%)": f"${total_burn * 0.9:,.0f}",
             "Phoenix Accrual (10%)": f"${total_burn * 0.1:,.0f}",
         })
@@ -505,7 +493,7 @@ elif "Tier 2" in view:
             "🔒 TIER 2 LOCKED: Board quorum has not been established. Return to Tier 1 and obtain all 4 Sub-Committee authorizations, or invoke Directorate Override."
         )
         st.stop()
-    board_cap = st.session_state.get("board_surge_cap", 30)
+    board_cap = active_surge
     st.info(
         f"Authorized Board Statutory Envelope: {board_cap}% "
         f"(${base_burn * board_cap / 100:,.0f}/wk) | Status: Mandates Received from Boardroom"
