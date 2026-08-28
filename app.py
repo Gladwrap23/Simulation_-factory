@@ -298,10 +298,50 @@ DATA_MATRIX = {
     }
 }
 
+for book_name, book_data in DATA_MATRIX.items():
+    book_data.setdefault("phase_2", {
+        "bottleneck": "Phase 2: Secondary Recovery Queue Awaiting Director Approval",
+        "target_director": "CTO",
+        "focus": "Systems Revalidation",
+        "failure_mode": "Secondary queue gate remains unresolved after Phase 1 release.",
+        "recommended_resolution": "Stage the follow-on technical remediation and route the issue to the designated executive director for approval.",
+        "regime": "SECONDARY QUEUE HOLD",
+        "regime_detail": "Sensing layer detected a phase-two process gate beyond initial commissioning. The site team has cleared the first wave but a second dependency remains in the queue.",
+    })
+
+DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
+    "bottleneck": "Phase 2: 100-Hour Continuous C-Rate Thermal Run & Cell Balancing",
+    "target_director": "CTO",
+    "focus": "Thermal Firmware Patch",
+    "failure_mode": "Thermal drift continues after Phase 1 release, leaving the battery in a continuous C-rate balancing loop.",
+    "recommended_resolution": "Deploy the thermal firmware patch and re-run continuous balancing under the 100-hour validation window.",
+    "regime": "SECONDARY QUEUE HOLD",
+    "regime_detail": "Phase 1 telemetry locks are cleared, but cell balancing still fails under sustained C-rate stress and must be corrected before final release.",
+}
+DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
+    "bottleneck": "Phase 2: Substation Interlock Logic & Relay Trip Calibration",
+    "target_director": "COO",
+    "focus": "Protection Crew Mobilization",
+    "failure_mode": "Relay trip calibration remains misaligned after the initial energization gate and is creating a protection logic hold.",
+    "recommended_resolution": "Mobilize the protection crew and complete interlock logic calibration before re-entering the dispatch sequence.",
+    "regime": "SECONDARY QUEUE HOLD",
+    "regime_detail": "The transmission study is resolved, but the live relay logic remains out of calibration and can short-circuit the next commissioning stage.",
+}
+DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
+    "bottleneck": "Phase 2: Complex Vocational Rehabilitation Delegation Gate",
+    "target_director": "CLO",
+    "focus": "Ministerial Waiver",
+    "failure_mode": "Complex vocational rehabilitation approvals are still caught behind a ministerial delegation gate after intake triage is complete.",
+    "recommended_resolution": "Secure the delegated ministerial waiver and release the complex case review workflow to the next action queue.",
+    "regime": "SECONDARY QUEUE HOLD",
+    "regime_detail": "The digital triage lane is active, but high-complexity vocational cases remain pending ministerial delegation and cannot advance without legal approval.",
+}
+
 # Defensive Session State Initialization
 for key, default in [
     ('ledger', []), ('cleared_books', {}), ('directive_issued', {}),
-    ('board_escalation', {}), ('board_quorum', {}), ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
+    ('board_escalation', {}), ('board_quorum', {}), ('active_phase', {}), ('phase_2_authorized', {}),
+    ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0)
 ]:
@@ -323,11 +363,27 @@ def reset_book(book_name):
     st.session_state['board_quorum'][book_name] = False
     st.session_state['override_active'] = False
     st.session_state['master_surge'] = 0
+    st.session_state['active_phase'][book_name] = 1
+    st.session_state['phase_2_authorized'][book_name] = False
     st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
     for c in ['ops', 'afic', 'risk', 'tech']:
         st.session_state[f"comm_{book_name}_{c}"] = False
+
+
+def get_phase_context(book_name):
+    active_phase = st.session_state['active_phase'].get(book_name, 1)
+    phase_2 = DATA_MATRIX[book_name].get('phase_2', {
+        'bottleneck': 'Phase 2: Secondary Recovery Queue Awaiting Director Approval',
+        'target_director': 'CTO',
+        'focus': 'Systems Revalidation',
+        'failure_mode': 'Secondary queue gate remains unresolved after Phase 1 release.',
+        'recommended_resolution': 'Deploy the follow-on technical remediation and route approval to the designated executive director.',
+        'regime': 'SECONDARY QUEUE HOLD',
+        'regime_detail': 'The site team has cleared Phase 1 but a second dependency remains pending executive approval.'
+    })
+    return active_phase, phase_2
 
 # Sidebar Controls
 st.sidebar.title("FACTORY COMMAND POST")
@@ -335,6 +391,14 @@ st.sidebar.caption("Autonomous Capital Defense Control Plane")
 
 book = st.sidebar.selectbox("Operating book (Top 12 Sectors)", list(DATA_MATRIX.keys()))
 book_data = DATA_MATRIX[book]
+
+if 'active_phase' not in st.session_state:
+    st.session_state['active_phase'] = {}
+if 'phase_2_authorized' not in st.session_state:
+    st.session_state['phase_2_authorized'] = {}
+st.session_state['active_phase'].setdefault(book, 1)
+st.session_state['phase_2_authorized'].setdefault(book, False)
+active_phase, phase_2 = get_phase_context(book)
 
 sync_c1, sync_c2 = st.sidebar.columns(2)
 sync_c1.button("🔄 Sync State", on_click=trigger_sync)
@@ -419,11 +483,18 @@ m4.metric("Phoenix Fee", phoenix_fee, "10% accrual" if not is_cleared else "Earn
 m5.metric("SOP Readiness", sop_badge, "Field Gate")
 
 # Regional Bottleneck Blueprint & Live Drift Radar
+phase_context = phase_2 if active_phase == 2 else book_data
+current_bottleneck = phase_context.get('bottleneck', book_data['bottleneck'])
+current_regime = phase_context.get('regime', book_data['regime'])
+current_regime_detail = phase_context.get('regime_detail', book_data['regime_detail'])
+current_circuit_breaker = phase_context.get('circuit_breaker', book_data['circuit_breaker'])
+phase_banner_title = "PHASE 2 SECONDARY BOTTLENECK & FORENSIC BLUEPRINT" if active_phase == 2 else "REGIONAL BOTTLENECK & FORENSIC BLUEPRINT"
+
 st.markdown(f'''
 <div class="blueprint-card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:0.8rem; font-family:monospace; color:#ff7b72; font-weight:bold; letter-spacing:1px;">REGIONAL BOTTLENECK & FORENSIC BLUEPRINT</span>
-        <span class="badge {'badge-danger' if 'DEPENDENCY' in book_data['regime'] else 'badge-active'}">REGIME: {book_data['regime']}</span>
+        <span style="font-size:0.8rem; font-family:monospace; color:#ff7b72; font-weight:bold; letter-spacing:1px;">{phase_banner_title}</span>
+        <span class="badge {'badge-danger' if 'DEPENDENCY' in current_regime or 'QUEUE' in current_regime else 'badge-active'}">REGIME: {current_regime}</span>
     </div>
     <div style="display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap: 14px;">
         <div>
@@ -436,12 +507,12 @@ st.markdown(f'''
             </small>
         </div>
         <div>
-            <strong style="color: #ff7b72;">{book_data['bottleneck']}</strong><br>
-            <small>{book_data['regime_detail']}</small>
+            <strong style="color: #ff7b72;">{current_bottleneck}</strong><br>
+            <small>{current_regime_detail}</small>
         </div>
         <div>
             <span class="badge badge-agent">CAPITAL DEFENSE CIRCUIT BREAKER</span><br>
-            <small><em>{book_data['circuit_breaker']}</em></small>
+            <small><em>{current_circuit_breaker}</em></small>
         </div>
     </div>
 </div>
@@ -451,6 +522,24 @@ st.markdown(f'''
 if "Tier 1" in view:
     st.header("Apex Board Governance & Oversight")
     st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
+
+    if active_phase == 2:
+        target_director = phase_2['target_director']
+        failure_mode = phase_2['failure_mode']
+        recommended_resolution = phase_2['recommended_resolution']
+        st.markdown(f'''
+        <div class="agent-card" style="border: 1px solid var(--amber); background: rgba(210,153,34,0.08);">
+            <span class="badge badge-agent">📩 DIRECT AGENT NOTIFICATION | TO: {target_director} CHAIR</span><br>
+            <strong>Failure mode:</strong> {failure_mode}<br>
+            <strong>Resolution:</strong> {recommended_resolution}
+            <div style="margin-top: 10px;">
+                <button type="button" style="background: var(--amber); color: #111; border: none; border-radius: 6px; padding: 10px 14px; font-weight: 700; cursor: pointer;">⚡ Authorize Domain Fix</button>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+        if st.button("⚡ Authorize Domain Fix", type="primary"):
+            st.session_state['phase_2_authorized'][book] = True
+            st.toast(f"Phase 2 directive authorized for {book} and routed to {target_director}.", icon="✅")
     
     if st.session_state['board_escalation'].get(book, False):
         st.error("🚨 **CRITICAL FRONTLINE ESCALATION:** Site team has encountered a blocking constraint requiring Board intervention.")
@@ -543,6 +632,14 @@ if "Tier 1" in view:
 elif "Tier 2" in view:
     st.header("General Management Directive & Domain Translation")
     st.write(f"Operational translation of Boardroom mandates for {book}.")
+
+    if active_phase == 2:
+        target_director = phase_2['target_director']
+        st.markdown(f'''
+        <div class="card" style="border-left: 4px solid var(--amber);">
+            <strong>ℹ️ GM ADVISORY:</strong> Sensing layer detected Phase 2 gate requirement. Staged pending {target_director} approval.
+        </div>
+        ''', unsafe_allow_html=True)
     
     if not is_quorum:
         st.error("🔒 **TIER 2 LOCKED:** Board Quorum has not been authorized in Tier 1. Return to Chairman Directorate to establish quorum.")
@@ -617,6 +714,8 @@ elif "Tier 3" in view:
             "Phoenix Fee (10%)": f"${base_burn*0.1:,.0f}",
             "Cryptographic Hash": entry_hash
         })
+        st.session_state['active_phase'][book] = 2
+        st.session_state['phase_2_authorized'][book] = False
         st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
 
     def escalate_to_board():
