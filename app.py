@@ -223,6 +223,20 @@ if "active_view" not in st.session_state:
     st.session_state["active_view"] = "1️⃣ Tier 1 | Chairman Directorate"
 
 
+SLA_BY_SURGE = (
+    (50, "4 hours (Expedited Surge)", 4 / 24),
+    (20, "1 business day (Priority)", 1),
+    (0, "3 business days (Standard Queue)", 3),
+)
+
+
+def sla_for_surge(surge):
+    for minimum_surge, sla, business_days in SLA_BY_SURGE:
+        if surge >= minimum_surge:
+            return sla, business_days
+    raise ValueError(f"Unsupported surge value: {surge}")
+
+
 def nav_to(target_view):
     st.session_state["active_view"] = target_view
 
@@ -493,16 +507,34 @@ elif "Tier 2" in view:
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         ops_surge = st.slider("Operations surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["ops"], 5, disabled=override)
-        ops_sla = st.selectbox("Operations SLA", ["4 hours", "1 business day", "3 business days"], index=1)
+        ops_sla, ops_days = sla_for_surge(ops_surge)
+        st.selectbox("Operations SLA", [ops_sla], index=0, disabled=True)
     with col2:
         cap_surge = st.slider("Capital surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["cap"], 5, disabled=override)
-        cap_sla = st.selectbox("Capital SLA", ["4 hours", "1 business day", "3 business days"], index=1)
+        cap_sla, cap_days = sla_for_surge(cap_surge)
+        st.selectbox("Capital SLA", [cap_sla], index=0, disabled=True)
     with col3:
         comp_surge = st.slider("Compliance surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["comp"], 5, disabled=override)
-        comp_sla = st.selectbox("Compliance SLA", ["4 hours", "1 business day", "3 business days"], index=2)
+        comp_sla, comp_days = sla_for_surge(comp_surge)
+        st.selectbox("Compliance SLA", [comp_sla], index=0, disabled=True)
     with col4:
         sys_surge = st.slider("Systems surge budget (%)", 0, 100, master_surge if override else st.session_state["surges"]["sys"], 5, disabled=override)
-        sys_sla = st.selectbox("Systems SLA", ["4 hours", "1 business day", "3 business days"], index=1)
+        sys_sla, sys_days = sla_for_surge(sys_surge)
+        st.selectbox("Systems SLA", [sys_sla], index=0, disabled=True)
+    domain_slas = {
+        "Operations": (ops_surge, ops_sla, ops_days),
+        "Capital": (cap_surge, cap_sla, cap_days),
+        "Compliance": (comp_surge, comp_sla, comp_days),
+        "Systems": (sys_surge, sys_sla, sys_days),
+    }
+    critical_domain, (critical_surge, critical_sla, critical_days) = max(
+        domain_slas.items(), key=lambda item: item[1][2]
+    )
+    projected_delay_cost = book_data["burn"] * critical_days / 7
+    st.warning(
+        f"Critical Path Bottleneck: {critical_domain} ({critical_sla}) | "
+        f"Projected Minimum Carrying Delay Cost: ${projected_delay_cost:,.0f}"
+    )
     action_columns = st.columns([2, 1])
     with action_columns[1]:
         st.button(
