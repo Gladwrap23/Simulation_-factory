@@ -671,9 +671,9 @@ weekly_burn = book_data['base_burn']
 terminal_loss = (weekly_burn / 7.0) * 90
 fiduciary_ratio = terminal_loss / (weekly_burn * 0.10)
 
-if not st.session_state['cleared_books'].get(book, False) and not st.session_state['detection_time'].get(book):
+if st.session_state['detection_time'].get(book) is None:
     st.session_state['detection_time'][book] = datetime.now(timezone.utc)
-detection_time = st.session_state['detection_time'].get(book, datetime.now(timezone.utc))
+detection_time = st.session_state['detection_time'][book]
 hesitation_seconds = max((datetime.now(timezone.utc) - detection_time).total_seconds(), 0)
 work_order_id = f"WO-{hashlib.sha256(book.encode()).hexdigest()[:12].upper()}"
 

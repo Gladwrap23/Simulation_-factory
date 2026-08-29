@@ -1,6 +1,6 @@
 import hashlib
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -24,6 +24,35 @@ def calculate_hesitation_cost(lag_seconds: float, burn_rate_per_sec: float = 0.7
     return round(lag_seconds * burn_rate_per_sec, 4)
 
 
+def _parse_to_datetime(value) -> datetime:
+    """Convert supported timestamp values to a naive UTC datetime."""
+    if value is None:
+        return datetime.utcnow()
+    if isinstance(value, (int, float)):
+        return datetime.utcfromtimestamp(value)
+    if isinstance(value, str):
+        cleaned_value = value.replace(" UTC", "").replace("Z", "+00:00").strip()
+        try:
+            parsed_value = datetime.fromisoformat(cleaned_value)
+        except ValueError:
+            for format_string in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+                try:
+                    parsed_value = datetime.strptime(cleaned_value, format_string)
+                    break
+                except ValueError:
+                    continue
+            else:
+                return datetime.utcnow()
+        if parsed_value.tzinfo is not None:
+            return parsed_value.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed_value
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+    return datetime.utcnow()
+
+
 def record_ledger_entry(
     book: str,
     tier: int,
@@ -31,14 +60,15 @@ def record_ledger_entry(
     title: str,
     action: str,
     work_order_id: str,
-    t0: datetime,
+    t0,
     blocker: str | None = None,
     notes: str | None = None,
 ):
-    t1 = datetime.utcnow()
-    lag = (t1 - t0).total_seconds()
+    t0_dt = _parse_to_datetime(t0)
+    t1_dt = datetime.utcnow()
+    lag = max(0.0, (t1_dt - t0_dt).total_seconds())
     cost = calculate_hesitation_cost(lag)
-    raw_payload = f"{book}|{tier}|{actor_id}|{title}|{action}|{work_order_id}|{t0}|{t1}|{lag}|{cost}"
+    raw_payload = f"{book}|{tier}|{actor_id}|{title}|{action}|{work_order_id}|{t0_dt.isoformat()}|{t1_dt.isoformat()}|{lag}|{cost}"
     sha_hash = hashlib.sha256(raw_payload.encode()).hexdigest()
 
     with get_db() as conn:
@@ -50,7 +80,12 @@ def record_ledger_entry(
                 hesitation_cost, blocker_category, blocker_notes, sha256_hash
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (book, tier, actor_id, title, action, work_order_id, t0, t1, lag, cost, blocker, notes, sha_hash),
+            (
+                book, tier, actor_id, title, action, work_order_id,
+                t0_dt.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                t1_dt.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                lag, cost, blocker, notes, sha_hash,
+            ),
         )
 
 
