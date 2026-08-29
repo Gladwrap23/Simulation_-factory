@@ -75,7 +75,6 @@ st.markdown('''
     }
     .critical-agent-card { border: 2px solid rgba(255, 122, 78, 0.95) !important; background: rgba(210,153,34,0.12) !important; box-shadow: 0 0 18px rgba(255,77,79,0.5); }
     .secondary-agent-card { opacity: 0.5; }
-    .critical-path-row { background: rgba(255,77,79,0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; box-shadow: 0 0 18px rgba(255,77,79,0.25); }
     .pipeline-card { background-color: #0b0e14; border: 1px solid var(--teal); border-radius: 8px; padding: 12px; margin-top: 14px; }
     .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; font-weight: bold; }
     .badge-active { background: rgba(0,229,255,0.15); color: var(--teal); border: 1px solid var(--teal); }
@@ -734,12 +733,6 @@ if "Tier 1" in view:
     st.subheader("Board Sub-Committee Statutory Quorum")
     q1, q2 = st.columns(2)
     with q1:
-        critical_label_map = {
-            "COO": "Operations & Asset Delivery Committee (Chair: COO Oversight)",
-            "AFIC": "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)",
-            "CLO": "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)",
-            "CTO": "Technology & Infrastructure Committee (Chair: CTO Oversight)",
-        }
         critical_key_order = [
             ("COO", "Operations & Asset Delivery Committee (Chair: COO Oversight)"),
             ("AFIC", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)"),
@@ -749,14 +742,8 @@ if "Tier 1" in view:
         for role, label in critical_key_order:
             checkbox_key = f"comm_{book}_{'ops' if role == 'COO' else 'afic' if role == 'AFIC' else 'risk' if role == 'CLO' else 'tech'}"
             is_required = critical_lead == role
-            if is_required:
-                st.markdown('<div class="critical-path-row">', unsafe_allow_html=True)
-                checked = st.checkbox(f"{label}  ⚠️ REQUIRED CRITICAL PATH SIGN-OFF", value=st.session_state.get(checkbox_key, False), key=checkbox_key)
-                if not checked:
-                    st.caption("⚠️ REQUIRED CRITICAL PATH SIGN-OFF")
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.checkbox(label, key=checkbox_key)
+            checkbox_label = f"{label} — ⚠️ REQUIRED CRITICAL PATH SIGN-OFF" if is_required else label
+            st.checkbox(checkbox_label, value=st.session_state.get(checkbox_key, False), key=checkbox_key)
     with q2:
         st.subheader("Holding Loss Recovery Allocation")
         st.table({
