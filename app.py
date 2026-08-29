@@ -1,5 +1,6 @@
 import hashlib
 import re
+import sqlite3
 from datetime import datetime, timezone
 import numpy as np
 import streamlit as st
@@ -443,6 +444,54 @@ def get_phase_context(book_name):
     return active_phase, phase_2
 
 
+AUDIT_DB_PATH = "audit_ledger.db"
+LEGAL_PRIVILEGE_TAG = "PRIVILEGED — STATUTORY RISK MANAGEMENT WORK PRODUCT"
+
+
+def init_db():
+    conn = sqlite3.connect(AUDIT_DB_PATH)
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS audit_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            book TEXT,
+            t0_detection TEXT,
+            t1_resolution TEXT,
+            governance_lag TEXT,
+            hesitation_cost REAL,
+            authority TEXT,
+            sha256_hash TEXT,
+            legal_privilege_tag TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
+def log_audit_event(book, t0_detection, t1_resolution, governance_lag, hesitation_cost, authority, sha256_hash, legal_privilege_tag=LEGAL_PRIVILEGE_TAG):
+    conn = sqlite3.connect(AUDIT_DB_PATH)
+    conn.execute(
+        "INSERT INTO audit_ledger (timestamp, book, t0_detection, t1_resolution, governance_lag, hesitation_cost, authority, sha256_hash, legal_privilege_tag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            book, t0_detection, t1_resolution, governance_lag, hesitation_cost, authority, sha256_hash, legal_privilege_tag
+        )
+    )
+    conn.commit()
+    conn.close()
+
+
+def fetch_audit_events():
+    conn = sqlite3.connect(AUDIT_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute("SELECT * FROM audit_ledger ORDER BY id DESC").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+init_db()
+
+
 def append_forensic_entry(book_name, authority, resolution_time=None):
     detection_time = st.session_state['detection_time'].get(book_name)
     if detection_time is None:
@@ -473,6 +522,15 @@ def append_forensic_entry(book_name, authority, resolution_time=None):
     ])
     forensic_entry["SHA-256 Signature"] = hashlib.sha256(signature_payload.encode()).hexdigest()
     st.session_state['ledger'].append(forensic_entry)
+    log_audit_event(
+        book=book_name,
+        t0_detection=forensic_entry["T0 Agent Detection"],
+        t1_resolution=forensic_entry["T1 Action Resolved"],
+        governance_lag=forensic_entry["Governance Lag"],
+        hesitation_cost=hesitation_cost,
+        authority=authority,
+        sha256_hash=forensic_entry["SHA-256 Signature"],
+    )
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
 
 
@@ -522,10 +580,7 @@ cost_drift_dollars = parse_cost_drift_dollars(book_data['drift_metrics']['cost_d
 st.session_state['auto_override_triggered'] = False
 if not st.session_state['cleared_books'].get(book, False) and (hesitation_seconds > sla_seconds or (is_critical and fiduciary_ratio > 10.0)):
     st.session_state['auto_override_triggered'] = True
-    st.session_state['override_active'] = True
     st.session_state['master_surge_cap'] = min(50, int(cost_drift_dollars / 5000))
-    st.session_state['master_surge'] = max(st.session_state['master_surge'], st.session_state['master_surge_cap'])
-    st.session_state['override_toggle'] = True
 
 sync_c1, sync_c2 = st.sidebar.columns(2)
 sync_c1.button("🔄 Sync State", on_click=trigger_sync)
@@ -551,7 +606,7 @@ if view == "1️⃣ Tier 1 | Chairman Directorate":
     override = st.sidebar.toggle("Chairman Directorate Override", value=st.session_state['override_active'], key="override_toggle")
     st.session_state['override_active'] = override
 
-    if st.session_state['auto_override_triggered']:
+    if st.session_state['auto_override_triggered'] and override:
         st.sidebar.markdown(f'''
         <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
         ''', unsafe_allow_html=True)
@@ -665,9 +720,23 @@ if "Tier 1" in view:
     st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
 
     if st.session_state['auto_override_triggered']:
-        st.markdown(f'''
-        <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
-        ''', unsafe_allow_html=True)
+        if override:
+            st.markdown(f'''
+            <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
+            ''', unsafe_allow_html=True)
+        else:
+            st.markdown(f'''
+            <div class="radar-card">
+                <strong>🚨 STATUTORY EMERGENCY MITIGATION PROPOSED:</strong> Fiduciary Ratio: {fiduciary_ratio:.1f}x | Algorithmic Surge Cap: {st.session_state['master_surge_cap']}% | Click below to execute Chairman Binding Authorization under Statutory Safe-Harbor Rule.
+            </div>
+            ''', unsafe_allow_html=True)
+            if st.button("⚡ Confirm Chairman Binding Safe-Harbor Directive", type="primary"):
+                st.session_state['override_active'] = True
+                st.session_state['override_toggle'] = True
+                st.session_state['master_surge'] = max(st.session_state['master_surge'], st.session_state['master_surge_cap'])
+                append_forensic_entry(book, "CHAIRMAN_STATUTORY_SAFEHARBOR", datetime.now(timezone.utc))
+                st.session_state['override_logged'][book] = True
+                st.rerun()
 
     if active_phase == 2:
         target_director = phase_2['target_director']
@@ -938,7 +1007,14 @@ elif "Tier 3" in view:
 elif "Ledger" in view:
     st.header("Immutable Governance & Forensic Audit Ledger")
     st.write("Cryptographically verifiable chain of custody across all 12 operating books.")
-    
+
+    st.markdown(f'''
+    <div class="card" style="border: 2px solid var(--red); background: rgba(255,123,114,0.08);">
+        🔒 <strong>CONFIDENTIAL FIDUCIARY WORK PRODUCT</strong> — PROTECTED BY STATUTORY RISK MANAGEMENT PRIVILEGE (DO NOT DISCLOSE WITHOUT GENERAL COUNSEL AUTHORIZATION).
+    </div>
+    ''', unsafe_allow_html=True)
+
+    st.subheader("Session Forensic Ledger")
     ledger_rows = [
         row for row in st.session_state['ledger']
         if str(row.get("Book") or row.get("Operating Book") or "").strip() not in ("", "None")
@@ -947,5 +1023,15 @@ elif "Ledger" in view:
         st.dataframe(ledger_rows, use_container_width=True)
     else:
         st.info("No frontline sign-offs recorded in this session. Complete Tier 3 SOP verification to generate an entry.")
+
+    st.subheader("Persistent Audit Ledger (SQLite — Survives Server Reboots)")
+    audit_rows = [
+        row for row in fetch_audit_events()
+        if str(row.get("book") or "").strip() not in ("", "None")
+    ]
+    if audit_rows:
+        st.dataframe(audit_rows, use_container_width=True)
+    else:
+        st.info("No persisted audit events recorded yet in audit_ledger.db.")
 
 st.caption(f"Factory Command Post | Autonomous Capital Defense Control Plane | Audited Sync: {st.session_state['last_sync']}")
