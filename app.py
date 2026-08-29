@@ -346,6 +346,7 @@ for book_name, book_data in DATA_MATRIX.items():
         "recommended_resolution": "Stage the follow-on technical remediation and route the issue to the designated executive director for approval.",
         "regime": "SECONDARY QUEUE HOLD",
         "regime_detail": "Sensing layer detected a phase-two process gate beyond initial commissioning. The site team has cleared the first wave but a second dependency remains in the queue.",
+        "checks": ["Secondary queue gate evidence verified", "Secondary queue gate record attached", "Director-approved remediation deployed", "Systems revalidation test passed", "Field engineer secondary sign-off verified", "Field engineer secondary sign-off attached", "Secondary compliance attestation verified", "Secondary compliance attestation attached"],
     })
 
 DATA_MATRIX["ERCOT BESS / storage operations"]["critical_lead"] = "CTO"
@@ -357,6 +358,7 @@ DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
     "recommended_resolution": "Deploy the thermal firmware patch and re-run continuous balancing under the 100-hour validation window.",
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "Phase 1 telemetry locks are cleared, but cell balancing still fails under sustained C-rate stress and must be corrected before final release.",
+    "checks": ["Thermal pyrometry array calibrated", "Continuous C-rate load cell stable", "Coolant flow delta within bounds", "Cell balancing firmware patch deployed", "100-hour thermal run log evidence verified", "100-hour thermal run log record attached", "Cell voltage delta within tolerance", "Secondary COD re-attestation signed"],
 }
 DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["critical_lead"] = "COO"
 DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
@@ -367,6 +369,7 @@ DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
     "recommended_resolution": "Mobilize the protection crew and complete interlock logic calibration before re-entering the dispatch sequence.",
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "The transmission study is resolved, but the live relay logic remains out of calibration and can short-circuit the next commissioning stage.",
+    "checks": ["Protection crew mobilized on site", "Relay trip calibration evidence verified", "Relay trip calibration record attached", "Interlock logic sequence validated", "SCADA dispatch handshake confirmed", "Backup protection scheme armed", "Live relay test log evidence verified", "Live relay test log record attached"],
 }
 DATA_MATRIX["ACC NZ Scheme / Claims Review"]["critical_lead"] = "CLO"
 DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
@@ -377,6 +380,7 @@ DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
     "recommended_resolution": "Secure the delegated ministerial waiver and release the complex case review workflow to the next action queue.",
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "The digital triage lane is active, but high-complexity vocational cases remain pending ministerial delegation and cannot advance without legal approval.",
+    "checks": ["Ministerial waiver request filed", "Ministerial waiver evidence verified", "Ministerial waiver record attached", "Complex case review reassigned", "Vocational rehabilitation plan updated", "Independent medical review scheduled", "Delegated authority sign-off verified", "Delegated authority sign-off attached"],
 }
 DATA_MATRIX["Critical Minerals / Lithium Refining Facility"]["critical_lead"] = "COO"
 DATA_MATRIX["Defense Manufacturing / Naval Shipyard"]["critical_lead"] = "COO"
@@ -419,6 +423,7 @@ def reset_book(book_name):
     st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
+        st.session_state[f"chk2_{book_name}_{i}"] = False
     for c in ['ops', 'afic', 'risk', 'tech']:
         st.session_state[f"comm_{book_name}_{c}"] = False
 
@@ -432,7 +437,8 @@ def get_phase_context(book_name):
         'failure_mode': 'Secondary queue gate remains unresolved after Phase 1 release.',
         'recommended_resolution': 'Deploy the follow-on technical remediation and route approval to the designated executive director.',
         'regime': 'SECONDARY QUEUE HOLD',
-        'regime_detail': 'The site team has cleared Phase 1 but a second dependency remains pending executive approval.'
+        'regime_detail': 'The site team has cleared Phase 1 but a second dependency remains pending executive approval.',
+        'checks': ['Secondary queue gate evidence verified', 'Secondary queue gate record attached', 'Director-approved remediation deployed', 'Systems revalidation test passed', 'Field engineer secondary sign-off verified', 'Field engineer secondary sign-off attached', 'Secondary compliance attestation verified', 'Secondary compliance attestation attached'],
     })
     return active_phase, phase_2
 
@@ -871,15 +877,21 @@ elif "Tier 3" in view:
     a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{art[2][1]}</small></div>", unsafe_allow_html=True)
     a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{art[3][1]}</small></div>", unsafe_allow_html=True)
     
-    st.subheader("Frontline SOP Release Checklist")
-    checks_raw = book_data["checks"]
-    critical_idx = book_data.get("critical_check_idx")
+    st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else "Frontline SOP Release Checklist")
+    if active_phase == 2:
+        checks_raw = phase_2["checks"]
+        key_prefix = f"chk2_{book}"
+        critical_idx = None
+    else:
+        checks_raw = book_data["checks"]
+        key_prefix = f"chk_{book}"
+        critical_idx = book_data.get("critical_check_idx")
     c_col1, c_col2 = st.columns(2)
     
     check_states = []
     for i, chk_text in enumerate(checks_raw):
         col_target = c_col1 if i % 2 == 0 else c_col2
-        k = f"chk_{book}_{i}"
+        k = f"{key_prefix}_{i}"
         chk_label = f"🔴 **{chk_text}** — *(🚨 CRITICAL PATH BLOCKER)*" if i == critical_idx else chk_text
         v = col_target.checkbox(chk_label, value=st.session_state.get(k, False), key=k)
         check_states.append(v)
@@ -927,8 +939,12 @@ elif "Ledger" in view:
     st.header("Immutable Governance & Forensic Audit Ledger")
     st.write("Cryptographically verifiable chain of custody across all 12 operating books.")
     
-    if st.session_state['ledger']:
-        st.dataframe(st.session_state['ledger'], use_container_width=True)
+    ledger_rows = [
+        row for row in st.session_state['ledger']
+        if str(row.get("Book") or row.get("Operating Book") or "").strip() not in ("", "None")
+    ]
+    if ledger_rows:
+        st.dataframe(ledger_rows, use_container_width=True)
     else:
         st.info("No frontline sign-offs recorded in this session. Complete Tier 3 SOP verification to generate an entry.")
 
