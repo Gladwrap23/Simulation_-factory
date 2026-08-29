@@ -537,25 +537,28 @@ view = st.sidebar.radio("Command view", [
 
 st.sidebar.markdown("---")
 
-# Chairman Directorate Override
-override = st.sidebar.toggle("Chairman Directorate Override", value=st.session_state['override_active'], key="override_toggle")
-st.session_state['override_active'] = override
+# Chairman Directorate Override (widgets rendered in Tier 1 sidebar only; state persists across all tiers)
+override = st.session_state['override_active']
+master_surge = st.session_state['master_surge']
 
-if st.session_state['auto_override_triggered']:
-    st.sidebar.markdown(f'''
-    <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
-    ''', unsafe_allow_html=True)
+if view == "1️⃣ Tier 1 | Chairman Directorate":
+    override = st.sidebar.toggle("Chairman Directorate Override", value=st.session_state['override_active'], key="override_toggle")
+    st.session_state['override_active'] = override
+
+    if st.session_state['auto_override_triggered']:
+        st.sidebar.markdown(f'''
+        <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
+        ''', unsafe_allow_html=True)
+
+    if override:
+        master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, st.session_state['master_surge'], step=5)
+        st.session_state['master_surge'] = master_surge
 
 if override and not st.session_state['override_logged'].get(book, False):
     append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
     st.session_state['override_logged'][book] = True
 elif not override:
     st.session_state['override_logged'][book] = False
-
-master_surge = 0
-if override:
-    master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, st.session_state['master_surge'], step=5)
-    st.session_state['master_surge'] = master_surge
 
 quorum_count = sum([st.session_state.get(f"comm_{book}_{c}", False) for c in ['ops', 'afic', 'risk', 'tech']])
 is_quorum = (quorum_count == 4) or override
