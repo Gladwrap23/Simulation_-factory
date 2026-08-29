@@ -83,6 +83,11 @@ st.markdown('''
     .badge-success { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
     .badge-danger { background: rgba(255,123,114,0.15); color: var(--red); border: 1px solid var(--red); }
     .badge-agent { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid var(--purple); }
+
+    /* Frontline Blocker Radar & Critical Checklist Item */
+    .radar-card { background: rgba(255, 77, 79, 0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: 0 0 0 1px rgba(255,77,79,0.35), 0 0 20px rgba(255,77,79,0.7); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
+    .radar-card-cleared { background: rgba(63,185,80,0.08); border: 2px solid var(--green); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+    .critical-checklist-card { border: 3px solid #ff4d4f; border-radius: 10px; padding: 10px 12px 2px 12px; margin-bottom: 6px; background: rgba(255, 77, 79, 0.1); box-shadow: 0 0 0 1px rgba(255,77,79,0.4), 0 0 22px rgba(255,77,79,0.85); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -105,7 +110,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("ICCP 4-sec Telemetry", "Heartbeat: 04.0s / Verified"), ("PSCAD EMT Model", "Inverter: BESS-01 / Verified"), ("IEEE 2800 Test Packet", "Ride-through: Verified"), ("Part 2 COD Attestation", "Commercial ops declaration / Assembled")],
-        "checks": ["ICCP telemetry evidence verified", "ICCP telemetry record attached", "PSCAD EMT model evidence verified", "PSCAD EMT model record attached", "IEEE 2800 test packet verified", "IEEE 2800 test record attached", "COD attestation evidence verified", "COD attestation record attached"]
+        "checks": ["ICCP telemetry evidence verified", "ICCP telemetry record attached", "PSCAD EMT model evidence verified", "PSCAD EMT model record attached", "IEEE 2800 test packet verified", "IEEE 2800 test record attached", "COD attestation evidence verified", "COD attestation record attached"],
+        "critical_check_idx": 7
     },
     "Grid Infrastructure / PJM Cluster": {
         "exposure": "$142.0M", "base_burn": 940000,
@@ -124,7 +130,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "COO",
         "artifacts": [("ASTM D877 Dielectric Log", "Breakdown Voltage: >35kV / Verified"), ("Schedule 12 Agreement", "Facility Study Review: Complete"), ("NERC CIP-005 Perimeter", "Electronic Perimeter: Certified"), ("HV Energization Sign-off", "Safety Protocol: Assembled")],
-        "checks": ["Dielectric log evidence verified", "Dielectric log record attached", "Schedule 12 agreement verified", "Schedule 12 record attached", "NERC CIP perimeter verified", "NERC CIP perimeter record attached", "HV energization sign-off verified", "HV energization record attached"]
+        "checks": ["Dielectric log evidence verified", "Dielectric log record attached", "Schedule 12 agreement verified", "Schedule 12 record attached", "NERC CIP perimeter verified", "NERC CIP perimeter record attached", "HV energization sign-off verified", "HV energization record attached"],
+        "critical_check_idx": 0
     },
     "ACC NZ Scheme / Claims Review": {
         "exposure": "$210.0M", "base_burn": 480000,
@@ -143,7 +150,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CLO",
         "artifacts": [("ACC45 Lodgement Log", "Digital Intake: Verified"), ("Clinical Triage Matrix", "Complex Claim Review: Cleared"), ("Vocational Assessment", "Independence Evaluation: Certified"), ("Crown Delegation Cert", "Statutory Sign-off: Assembled")],
-        "checks": ["ACC45 intake evidence verified", "ACC45 intake record attached", "Clinical triage evidence verified", "Clinical triage record attached", "Vocational evaluation verified", "Vocational evaluation record attached", "Crown delegation evidence verified", "Crown delegation record attached"]
+        "checks": ["ACC45 intake evidence verified", "ACC45 intake record attached", "Clinical triage evidence verified", "Clinical triage record attached", "Vocational evaluation verified", "Vocational evaluation record attached", "Crown delegation evidence verified", "Crown delegation record attached"],
+        "critical_check_idx": 6
     },
     "Port Logistics / Container Flow": {
         "exposure": "$64.0M", "base_burn": 320000,
@@ -162,7 +170,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("BAPLIE 2.2 EDI Log", "Container Manifest: Verified"), ("TOS Berth Sequence", "Berth Allocation Plan: Active"), ("Crane Load Cell Cert", "Calibration: Approved"), ("Quay Release Authority", "Port Authority Gate: Assembled")],
-        "checks": ["BAPLIE manifest verified", "BAPLIE manifest attached", "TOS sequence plan verified", "TOS sequence plan attached", "Load cell calibration verified", "Load cell calibration attached", "Quay release authority verified", "Quay release authority attached"]
+        "checks": ["BAPLIE manifest verified", "BAPLIE manifest attached", "TOS sequence plan verified", "TOS sequence plan attached", "Load cell calibration verified", "Load cell calibration attached", "Quay release authority verified", "Quay release authority attached"],
+        "critical_check_idx": 1
     },
     "Hyperscale Data Center / Power Intertie": {
         "exposure": "$310.0M", "base_burn": 1450000,
@@ -181,7 +190,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "COO",
         "artifacts": [("SF6 Pressure Attestation", "Gas Density: Nominal / Sealed"), ("GIS Dielectric Cert", "HV Pressure Test: Passed"), ("EPA 608 Environmental Sign-off", "Emissions Compliance: Certified"), ("Utility Intertie Release", "Breaker Sync: Assembled")],
-        "checks": ["SF6 density log verified", "SF6 density record attached", "GIS dielectric cert verified", "GIS dielectric cert attached", "EPA compliance verified", "EPA compliance attached", "Breaker sync verified", "Breaker sync attached"]
+        "checks": ["SF6 density log verified", "SF6 density record attached", "GIS dielectric cert verified", "GIS dielectric cert attached", "EPA compliance verified", "EPA compliance attached", "Breaker sync verified", "Breaker sync attached"],
+        "critical_check_idx": 1
     },
     "Offshore Wind / North Sea Subsea HVDC": {
         "exposure": "$520.0M", "base_burn": 2100000,
@@ -200,7 +210,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("OTDR Optical Splice Log", "Reflectometry: 0.02dB / Verified"), ("HVDC Joint Pressure Attestation", "Hydrostatic Seal: Passed"), ("Crown Estate Seabed Cert", "Work Permit: Active"), ("Platform COD Protocol", "Energization: Assembled")],
-        "checks": ["OTDR splice log verified", "OTDR splice log attached", "Joint pressure cert verified", "Joint pressure cert attached", "Seabed permit verified", "Seabed permit attached", "Platform COD verified", "Platform COD attached"]
+        "checks": ["OTDR splice log verified", "OTDR splice log attached", "Joint pressure cert verified", "Joint pressure cert attached", "Seabed permit verified", "Seabed permit attached", "Platform COD verified", "Platform COD attached"],
+        "critical_check_idx": 1
     },
     "Semiconductor Fab / Cleanroom Commissioning": {
         "exposure": "$440.0M", "base_burn": 1850000,
@@ -219,7 +230,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("ISO Class 1 Particle Log", "0.1μm Count: <10 / Verified"), ("UPW TOC Analysis", "Total Organic Carbon: <0.5ppb"), ("Cleanroom Pressure Cert", "Positive Pressure: 45Pa"), ("EUV Bay Handover", "Tool Delivery Clearance: Ready")],
-        "checks": ["Particle log evidence verified", "Particle log record attached", "UPW TOC log verified", "UPW TOC log record attached", "Pressure cert verified", "Pressure cert attached", "Bay handover verified", "Bay handover attached"]
+        "checks": ["Particle log evidence verified", "Particle log record attached", "UPW TOC log verified", "UPW TOC log record attached", "Pressure cert verified", "Pressure cert attached", "Bay handover verified", "Bay handover attached"],
+        "critical_check_idx": 3
     },
     "Critical Minerals / Lithium Refining Facility": {
         "exposure": "$175.0M", "base_burn": 720000,
@@ -238,7 +250,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "COO",
         "artifacts": [("Kiln Thermal Attestation", "Temperature Gradient: Nominal"), ("Refractory Masonry Cert", "High-Alumina Brick: Certified"), ("DWER Environmental Permit", "Water Discharge: Approved"), ("Calcination Commissioning", "First Spodumene Feed: Ready")],
-        "checks": ["Kiln thermal log verified", "Kiln thermal log attached", "Masonry cert verified", "Masonry cert attached", "DWER permit verified", "DWER permit attached", "Calcination log verified", "Calcination log attached"]
+        "checks": ["Kiln thermal log verified", "Kiln thermal log attached", "Masonry cert verified", "Masonry cert attached", "DWER permit verified", "DWER permit attached", "Calcination log verified", "Calcination log attached"],
+        "critical_check_idx": 2
     },
     "Rail Freight & Intermodal Corridor": {
         "exposure": "$95.0M", "base_burn": 390000,
@@ -257,7 +270,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("PTC Transponder Telemetry", "Sync Heartbeat: <10ms / Verified"), ("Wayside PKI Security Cert", "Encryption Key: Active"), ("FRA Part 236 Attestation", "Safety Appliance: Certified"), ("Yard Dispatch Release", "Interlocking Sequence: Active")],
-        "checks": ["PTC telemetry verified", "PTC telemetry attached", "PKI security cert verified", "PKI security cert attached", "FRA attestation verified", "FRA attestation attached", "Yard release verified", "Yard release attached"]
+        "checks": ["PTC telemetry verified", "PTC telemetry attached", "PKI security cert verified", "PKI security cert attached", "FRA attestation verified", "FRA attestation attached", "Yard release verified", "Yard release attached"],
+        "critical_check_idx": 3
     },
     "Defense Manufacturing / Naval Shipyard": {
         "exposure": "$680.0M", "base_burn": 2800000,
@@ -276,7 +290,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "COO",
         "artifacts": [("PAUT NDT Weld Map", "Volumetric Scan: 100% / Passed"), ("Level III Radiographer Cert", "NAVSEA Qualified: Verified"), ("NAVSEA 248 Compliance", "Hull Integrity: Approved"), ("Drydock Flooding Authority", "Submersion Gate: Assembled")],
-        "checks": ["NDT weld map verified", "NDT weld map attached", "Radiographer cert verified", "Radiographer cert attached", "NAVSEA attestation verified", "NAVSEA attestation attached", "Flooding authority verified", "Flooding authority attached"]
+        "checks": ["NDT weld map verified", "NDT weld map attached", "Radiographer cert verified", "Radiographer cert attached", "NAVSEA attestation verified", "NAVSEA attestation attached", "Flooding authority verified", "Flooding authority attached"],
+        "critical_check_idx": 2
     },
     "Municipal Water & Desalination Plant": {
         "exposure": "$115.0M", "base_burn": 450000,
@@ -295,7 +310,8 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("SDI Membrane Permeate Log", "SDI15: 2.8 / Passed"), ("Boron Rejection Analysis", "Boron: <0.5mg/L / Verified"), ("Title 22 Potable Water Cert", "Health Standard: Approved"), ("Municipal Distribution Gate", "Water Delivery Release: Active")],
-        "checks": ["SDI permeate log verified", "SDI permeate log attached", "Boron analysis verified", "Boron analysis attached", "Title 22 cert verified", "Title 22 cert attached", "Distribution gate verified", "Distribution gate attached"]
+        "checks": ["SDI permeate log verified", "SDI permeate log attached", "Boron analysis verified", "Boron analysis attached", "Title 22 cert verified", "Title 22 cert attached", "Distribution gate verified", "Distribution gate attached"],
+        "critical_check_idx": 1
     },
     "Commercial Aviation / Fleet AOG Turnaround": {
         "exposure": "$160.0M", "base_burn": 850000,
@@ -314,12 +330,14 @@ DATA_MATRIX = {
         },
         "critical_lead": "CTO",
         "artifacts": [("FAA 8130-3 Airworthiness Tag", "Dual Release: Verified"), ("Spec 2000 Digital Trace", "Engine Mount Serial: Matched"), ("Chief Inspector Release", "Airworthiness: Signed"), ("Flight Operations Handover", "Tail In-Service: Ready")],
-        "checks": ["FAA 8130-3 evidence verified", "FAA 8130-3 record attached", "Spec 2000 trace verified", "Spec 2000 trace attached", "Inspector release verified", "Inspector release attached", "Flight ops handover verified", "Flight ops handover attached"]
+        "checks": ["FAA 8130-3 evidence verified", "FAA 8130-3 record attached", "Spec 2000 trace verified", "Spec 2000 trace attached", "Inspector release verified", "Inspector release attached", "Flight ops handover verified", "Flight ops handover attached"],
+        "critical_check_idx": 3
     }
 }
 
 for book_name, book_data in DATA_MATRIX.items():
     book_data.setdefault("critical_lead", None)
+    book_data.setdefault("critical_check_idx", None)
     book_data.setdefault("phase_2", {
         "bottleneck": "Phase 2: Secondary Recovery Queue Awaiting Director Approval",
         "target_director": "CTO",
@@ -689,7 +707,30 @@ if "Tier 1" in view:
                 <small>{agent_info['memo']}</small>
             </div>
             ''', unsafe_allow_html=True)
-    
+
+    st.subheader("Frontline Verification Hold Radar")
+    critical_idx = book_data.get("critical_check_idx")
+    if critical_idx is not None:
+        item_text = book_data["checks"][critical_idx]
+        item_cleared = st.session_state.get(f"chk_{book}_{critical_idx}", False)
+        if item_cleared:
+            st.markdown(f'''
+            <div class="radar-card-cleared">
+                <span class="badge badge-success">✅ FRONTLINE ARTIFACT CLEARED</span><br>
+                <small>Frontline Item #{critical_idx + 1} [{item_text}] verified and cleared at Site Operations.</small>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
+            st.markdown(f'''
+            <div class="radar-card">
+                <span class="badge badge-danger">🚨 HOLDING GATE</span><br>
+                <strong>HOLDING GATE: Frontline Item #{critical_idx + 1} [{item_text}] is unverified.</strong><br>
+                <small>This is the exact physical artifact currently holding up the critical path in Tier 3 Site Operations.</small>
+            </div>
+            ''', unsafe_allow_html=True)
+    else:
+        st.info("No critical frontline checklist item mapped for this operating book.")
+
     st.subheader("Board Sub-Committee Statutory Quorum")
     q1, q2 = st.columns(2)
     with q1:
@@ -794,13 +835,20 @@ elif "Tier 3" in view:
     
     st.subheader("Frontline SOP Release Checklist")
     checks_raw = book_data["checks"]
+    critical_idx = book_data.get("critical_check_idx")
     c_col1, c_col2 = st.columns(2)
     
     check_states = []
     for i, chk_text in enumerate(checks_raw):
         col_target = c_col1 if i % 2 == 0 else c_col2
         k = f"chk_{book}_{i}"
+        is_active_blocker = critical_idx == i and not st.session_state.get(k, False)
+        if is_active_blocker:
+            col_target.markdown('<div class="critical-checklist-card">', unsafe_allow_html=True)
+            col_target.caption("🚨 ACTIVE CRITICAL PATH BLOCKER (Holding Balance Sheet Clearance)")
         v = col_target.checkbox(chk_text, value=st.session_state.get(k, False), key=k)
+        if is_active_blocker:
+            col_target.markdown('</div>', unsafe_allow_html=True)
         check_states.append(v)
     
     completed_count = sum(check_states)
