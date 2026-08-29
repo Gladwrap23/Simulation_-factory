@@ -349,6 +349,7 @@ DEFAULT_SURGICAL_BUDGET = {
 for book_name, book_data in DATA_MATRIX.items():
     book_data.setdefault("critical_lead", None)
     book_data.setdefault("critical_check_idx", None)
+    book_data.setdefault("checklist", book_data["checks"])
     book_data.setdefault("surgical_budget", {
         **DEFAULT_SURGICAL_BUDGET,
         "surgical_line_items": [item.copy() for item in DEFAULT_SURGICAL_BUDGET["surgical_line_items"]],
@@ -676,6 +677,18 @@ if is_stage_1_execution:
 # Operating Pipeline Sequence Widget
 is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
+frontline_check_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
+frontline_checklist = phase_2["checks"] if active_phase == 2 else book_data["checklist"]
+frontline_check_count = len(frontline_checklist)
+frontline_checks_complete = all(
+    st.session_state.get(f"{frontline_check_prefix}_{index}", False)
+    for index in range(frontline_check_count)
+)
+gm_dispatch_complete = (
+    st.session_state['pipeline_step_2'] == "DISPATCHED"
+    or st.session_state['surgical_spend_authorized'].get(book, False)
+)
+agent_attestation_ready = gm_dispatch_complete and frontline_checks_complete
 
 pipeline_step1_sub = f"Sub-Committee Gate ({book_data.get('critical_lead') or 'Full Board'} Oversight)"
 pipeline_step2_sub = book_data.get("gm_action_title", "Dispatch Engineering Directive")
@@ -1005,13 +1018,15 @@ if "Tier 1" in view:
     st.subheader("Frontline Verification Hold Radar")
     critical_idx = book_data.get("critical_check_idx")
     if critical_idx is not None:
-        item_text = book_data["checks"][critical_idx]
+        item_number = critical_idx + 1
+        item_text = book_data["checklist"][critical_idx]
+        critical_check_label = f"Frontline SOP Check #{item_number}: [{item_text}]"
         item_cleared = st.session_state.get(f"chk_{book}_{critical_idx}", False)
         if item_cleared:
             st.markdown(f'''
             <div class="radar-card-cleared">
                 <span class="badge badge-success">✅ FRONTLINE ARTIFACT CLEARED</span><br>
-                <small>Frontline Item #{critical_idx + 1} [{item_text}] verified and cleared at Site Operations.</small>
+                <small>{critical_check_label} verified and cleared at Site Operations.</small>
             </div>
             ''', unsafe_allow_html=True)
         else:
@@ -1020,7 +1035,7 @@ if "Tier 1" in view:
             st.markdown(f'''
             <div class="radar-card">
                 <span class="badge badge-danger">🚨 HOLDING GATE</span><br>
-                <strong>HOLDING GATE: Frontline Item #{critical_idx + 1} [{item_text}] is unverified.</strong><br>
+                <strong>HOLDING GATE: {critical_check_label} is unverified.</strong><br>
                 <small>This is the exact physical artifact currently holding up the critical path in Tier 3 Site Operations.</small>
                 {f'<br><br><span class="badge badge-agent">FORENSIC BLOCKER DOCKET TRANSMITTED</span><br><strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}' if docket_transmitted else ''}
             </div>
@@ -1042,10 +1057,14 @@ if "Tier 1" in view:
             approved = st.session_state.get(checkbox_key, False)
             is_required = not approved or critical_lead == role
             card_class = "critical-agent-card" if is_required else "agent-card"
-            signoff_label = f"Statutory Sign-off: {committee_label}"
+            signoff_label = (
+                f"{committee_label} — ✅ READY FOR STATUTORY SIGN-OFF"
+                if critical_lead == role and agent_attestation_ready
+                else f"Statutory Sign-off: {committee_label}"
+            )
             hold_reason = "Critical-path authorization remains outstanding." if critical_lead == role else "Committee review remains outstanding before the operating directive can proceed."
             chairman_action = book_data['circuit_breaker'] if critical_lead == role else "Confirm the committee record, preserve the decision basis, and maintain the targeted surge authorization in reserve."
-            frontline_artifact = book_data['checks'][artifact_index]
+            frontline_artifact = book_data['checklist'][artifact_index]
             with st.expander(f"{'🚨 ' if is_required else '✅ '}{committee_label}", expanded=is_required):
                 st.markdown(f'''
                 <div class="{card_class}">
@@ -1057,11 +1076,30 @@ if "Tier 1" in view:
                     <strong>⚖️ Fiduciary Recommendation:</strong> {chairman_action}
                 </div>
                 ''', unsafe_allow_html=True)
+                if critical_lead == role:
+                    if agent_attestation_ready:
+                        st.markdown(f'''
+                        <div class="radar-card-cleared" style="box-shadow: 0 0 20px rgba(63,185,80,0.65);">
+                            <span class="badge badge-success">✅ AGENT ATTESTATION</span><br><br>
+                            <strong>GM Surgical Work Order verified on site. Frontline telemetry artifact confirmed. {committee_label} Chair is fully authorized to execute statutory sign-off.</strong>
+                        </div>
+                        ''', unsafe_allow_html=True)
+                    else:
+                        st.markdown('''
+                        <div class="card" style="border: 2px solid var(--amber); background: rgba(255, 77, 79, 0.08);">
+                            <span class="badge badge-danger">⚠️ AGENT ADVISORY</span><br><br>
+                            <strong>Sign-off held pending GM Reverse-Engineered Dispatch ($35,000 Surgical Cure) and Frontline SOP Verification.</strong>
+                        </div>
+                        ''', unsafe_allow_html=True)
                 if role == "CTO":
                     surgical_budget = book_data["surgical_budget"]
                     st.markdown(
                         f"**Targeted Cure: ${surgical_budget['total_surgical_cost']:,.0f} Surgical Spend "
                         "(Inverter Rig & OEM Lead) clears $610,000/wk holding burn.**"
+                    )
+                    st.markdown(
+                        f"**🎯 Direct Frontline Responsibility: {critical_check_label}**  \n"
+                        "**Status: Unverified on site. Dispatched GM Synthetic Injection Rig required to clear.**"
                     )
                 st.checkbox(signoff_label, value=approved, key=checkbox_key)
         
@@ -1098,7 +1136,8 @@ elif "Tier 2" in view:
         <div class="card" style="border-left: 4px solid var(--teal);">
             <span class="badge badge-active">ACTIVE ENGINEERING DIRECTIVE</span><br><br>
             <strong>Work Order:</strong> {directive}<br>
-            <strong>Technical Execution:</strong> {technical_instruction}
+            <strong>Technical Execution:</strong> {technical_instruction}<br>
+            <strong>Frontline Release Target:</strong> Frontline SOP Check #{book_data['critical_check_idx'] + 1}: [{book_data['checklist'][book_data['critical_check_idx']]}]
         </div>
         ''', unsafe_allow_html=True)
 
@@ -1183,7 +1222,7 @@ elif "Tier 3" in view:
             key_prefix = f"chk2_{book}"
             critical_idx = phase_2.get("critical_check_idx")
         else:
-            checks_raw = book_data["checks"]
+            checks_raw = book_data["checklist"]
             key_prefix = f"chk_{book}"
             critical_idx = book_data.get("critical_check_idx")
 
@@ -1205,7 +1244,10 @@ elif "Tier 3" in view:
         for i, chk_text in enumerate(checks_raw):
             col_target = c_col1 if i % 2 == 0 else c_col2
             k = f"{key_prefix}_{i}"
-            chk_label = f"🔴 **{chk_text}** — *(🚨 CRITICAL PATH BLOCKER)*" if i == critical_idx else chk_text
+            item_number = i + 1
+            chk_label = f"Frontline SOP Check #{item_number}: [{chk_text}]"
+            if i == critical_idx:
+                chk_label = f"🔴 **{chk_label}** — *(🚨 CRITICAL PATH BLOCKER)*"
             v = col_target.checkbox(chk_label, value=st.session_state.get(k, False), key=k)
             check_states.append(v)
 
