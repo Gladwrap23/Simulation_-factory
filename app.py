@@ -377,8 +377,10 @@ DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
     "recommended_resolution": "Deploy the thermal firmware patch and re-run continuous balancing under the 100-hour validation window.",
     "regime": "SECONDARY QUEUE HOLD",
     "regime_detail": "Phase 1 telemetry locks are cleared, but cell balancing still fails under sustained C-rate stress and must be corrected before final release.",
-    "checks": ["Thermal pyrometry array calibrated", "Continuous C-rate load cell stable", "Coolant flow delta within bounds", "Cell balancing firmware patch deployed", "100-hour thermal run log evidence verified", "100-hour thermal run log record attached", "Cell voltage delta within tolerance", "Secondary COD re-attestation signed"],
+    "checks": ["Pyrometry thermal sensor array calibrated", "Continuous C-rate load cell stable at 345kV", "Coolant flow delta within +/- 1.5 deg C bounds", "Cell balancing active equalization verified", "Thermal runaway mitigation circuit verified", "Inverter thermal log attached", "SCADA pyrometry stream attached", "100-Hour continuous run certificate attached"],
+    "critical_check_idx": 7,
 }
+DATA_MATRIX["ERCOT BESS / storage operations"]["phase2_burn"] = "183k"
 DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["critical_lead"] = "COO"
 DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
     "bottleneck": "Phase 2: Substation Interlock Logic & Relay Trip Calibration",
@@ -414,7 +416,10 @@ for key, default in [
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0),
     ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False),
-    ('escalation_transmitted', False)
+    ('escalation_transmitted', False), ('sop_checklist', [False] * 8),
+    ('pipeline_step_1', 'PENDING'), ('pipeline_step_2', 'PENDING'),
+    ('pipeline_step_3', 'PENDING'), ('pipeline_step_4', 'PENDING'),
+    ('chairman_override_active', False), ('quorum_votes', [False, False, False, False])
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
@@ -659,6 +664,21 @@ pipeline_step1_sub = f"Sub-Committee Gate ({book_data.get('critical_lead') or 'F
 pipeline_step2_sub = book_data.get("gm_action_title", "Dispatch Engineering Directive")
 pipeline_step3_sub = book_data.get("site_action_title", "8-Point SOP Checklist Verification")
 pipeline_step4_sub = f"Preserve ${book_data.get('preservation_amt', '549k')} Balance Sheet"
+pipeline_statuses = (
+    {
+        1: st.session_state['pipeline_step_1'],
+        2: st.session_state['pipeline_step_2'],
+        3: st.session_state['pipeline_step_3'],
+        4: st.session_state['pipeline_step_4'],
+    }
+    if active_phase == 2
+    else {
+        1: 'AUTHORIZED' if is_quorum else 'PENDING',
+        2: 'DISPATCHED' if is_directed else 'PENDING',
+        3: 'VERIFIED' if is_cleared else 'IN PROGRESS',
+        4: 'COMMITTED' if is_cleared else 'PENDING',
+    }
+)
 
 if "Tier 3" not in view:
     st.sidebar.markdown(f'''
@@ -666,25 +686,25 @@ if "Tier 3" not in view:
     <strong style="color: var(--teal); font-size: 0.85rem;">OPERATING PIPELINE SEQUENCE</strong><br><br>
     <div style="margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between;">
-            <span>1. Apex Board</span> <span class="badge {'badge-success' if is_quorum else 'badge-pending'}">{'AUTHORIZED' if is_quorum else 'PENDING'}</span>
+            <span>1. Apex Board</span> <span class="badge {'badge-success' if pipeline_statuses[1] == 'AUTHORIZED' else 'badge-pending'}">{pipeline_statuses[1]}</span>
         </div>
         <small style="color: var(--text-muted);">{pipeline_step1_sub}</small>
     </div>
     <div style="margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between;">
-            <span>2. GM Directive</span> <span class="badge {'badge-success' if is_directed else 'badge-pending'}">{'DISPATCHED' if is_directed else 'PENDING'}</span>
+            <span>2. GM Directive</span> <span class="badge {'badge-success' if pipeline_statuses[2] == 'DISPATCHED' else 'badge-pending'}">{pipeline_statuses[2]}</span>
         </div>
         <small style="color: var(--text-muted);">{pipeline_step2_sub}</small>
     </div>
     <div style="margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between;">
-            <span>3. Site Operations</span> <span class="badge {'badge-success' if is_cleared else 'badge-pending'}">{'VERIFIED' if is_cleared else 'IN PROGRESS'}</span>
+            <span>3. Site Operations</span> <span class="badge {'badge-success' if pipeline_statuses[3] == 'VERIFIED' else 'badge-pending'}">{pipeline_statuses[3]}</span>
         </div>
         <small style="color: var(--text-muted);">{pipeline_step3_sub}</small>
     </div>
     <div>
         <div style="display:flex; justify-content:space-between;">
-            <span>4. Audit Settlement</span> <span class="badge {'badge-success' if is_cleared else 'badge-pending'}">{'COMMITTED' if is_cleared else 'PENDING'}</span>
+            <span>4. Audit Settlement</span> <span class="badge {'badge-success' if pipeline_statuses[4] == 'COMMITTED' else 'badge-pending'}">{pipeline_statuses[4]}</span>
         </div>
         <small style="color: var(--text-muted);">{pipeline_step4_sub}</small>
     </div>
@@ -695,7 +715,13 @@ if "Tier 3" not in view:
 base_burn = book_data["base_burn"]
 active_surge = master_surge if override else (book_data["recommended_surge"] if is_quorum else 0)
 
-if is_cleared:
+if active_phase == 2:
+    burn_display = f"${book_data.get('phase2_burn', '183k')} / wk"
+    burn_sub = "Active Carry Defense"
+    client_realization = f"${base_burn * 0.9:,.0f}"
+    phoenix_fee = f"${base_burn * 0.1:,.0f}"
+    sop_badge = "0 / 8"
+elif is_cleared:
     burn_display = "$0 / wk"
     burn_sub = "✅ Cleared & Resolved"
     client_realization = f"${base_burn * 0.9:,.0f}"
@@ -736,12 +762,20 @@ if "Tier 1" in view or ("Tier 3" in view and is_directed):
     def set_inspected_stage(stage_num):
         st.session_state[stage_key] = stage_num
 
-    stage3_title = f"{book_data['artifacts'][-1][0]} Commercial Release"
-    stage_pills = {
-        1: ("Stage 1: Active Blocker", book_data['bottleneck']),
-        2: ("Stage 2: Secondary Queue", phase_2['bottleneck']),
-        3: ("Stage 3: Commercial Gate", stage3_title),
-    }
+    stage3_title = "Part 2 COD Attestation" if book == "ERCOT BESS / storage operations" else f"{book_data['artifacts'][-1][0]} Commercial Release"
+    stage_pills = (
+        {
+            1: ("Stage 1: ✅ PSCAD/DNP3 Telemetry (CLEARED & AUDITED)", "Phase 1 technical gate settled"),
+            2: ("Stage 2: 🚨 ACTIVE BLOCKER (100-Hr Thermal Run & Balancing)", phase_2['bottleneck']),
+            3: ("Stage 3: 🔒 Commercial Gate (Part 2 COD Attestation)", stage3_title),
+        }
+        if book == "ERCOT BESS / storage operations" and active_phase == 2
+        else {
+            1: ("Stage 1: Active Blocker", book_data['bottleneck']),
+            2: ("Stage 2: Secondary Queue", phase_2['bottleneck']),
+            3: ("Stage 3: Commercial Gate", stage3_title),
+        }
+    )
     st.subheader("🔍 Interactive 3-Stage Bottleneck Inspector")
     p1, p2, p3 = st.columns(3)
     for col, stage_num in zip((p1, p2, p3), (1, 2, 3)):
@@ -1079,7 +1113,7 @@ elif "Tier 3" in view:
         if active_phase == 2:
             checks_raw = phase_2["checks"]
             key_prefix = f"chk2_{book}"
-            critical_idx = None
+            critical_idx = phase_2.get("critical_check_idx")
         else:
             checks_raw = book_data["checks"]
             key_prefix = f"chk_{book}"
@@ -1112,6 +1146,21 @@ elif "Tier 3" in view:
         })
         append_forensic_entry(book, "Tier 3 SOP Sign-off", datetime.now(timezone.utc))
         st.session_state['active_phase'][book] = 2
+        st.session_state['sop_checklist'] = [False] * 8
+        st.session_state['pipeline_step_1'] = "PENDING"
+        st.session_state['pipeline_step_2'] = "QUEUED"
+        st.session_state['pipeline_step_3'] = "PENDING"
+        st.session_state['pipeline_step_4'] = "PENDING"
+        st.session_state['chairman_override_active'] = False
+        st.session_state['override_active'] = False
+        st.session_state['safe_harbor_active'] = False
+        st.session_state['quorum_votes'] = [False, False, False, False]
+        st.session_state['board_quorum'][book] = False
+        st.session_state[f"inspected_stage_{book}"] = 2
+        for i in range(8):
+            st.session_state[f"chk2_{book}_{i}"] = False
+        for committee in ['ops', 'afic', 'risk', 'tech']:
+            st.session_state[f"comm_{book}_{committee}"] = False
         st.session_state['phase_2_authorized'][book] = False
         st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
 
