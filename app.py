@@ -2,6 +2,7 @@ import hashlib
 import re
 import sqlite3
 from datetime import datetime, timezone
+import engine
 import numpy as np
 import streamlit as st
 
@@ -438,6 +439,47 @@ DATA_MATRIX["Critical Minerals / Lithium Refining Facility"]["critical_lead"] = 
 DATA_MATRIX["Defense Manufacturing / Naval Shipyard"]["critical_lead"] = "COO"
 DATA_MATRIX["Commercial Aviation / Fleet AOG Turnaround"]["critical_lead"] = "CTO"
 
+FRONTLINE_CHECKLIST_SPEC = [
+    {"id": "ITEM-01", "num": 1, "db_col": "check_1", "title": "Frontline SOP Check #1", "action": "Ministerial waiver request filed"},
+    {"id": "ITEM-02", "num": 2, "db_col": "check_2", "title": "Frontline SOP Check #2", "action": "Ministerial waiver evidence verified"},
+    {"id": "ITEM-03", "num": 3, "db_col": "check_3", "title": "Frontline SOP Check #3", "action": "Ministerial waiver record attached"},
+    {"id": "ITEM-04", "num": 4, "db_col": "check_4", "title": "Frontline SOP Check #4", "action": "Complex case review reassigned"},
+    {"id": "ITEM-05", "num": 5, "db_col": "check_5", "title": "Frontline SOP Check #5", "action": "Vocational rehabilitation plan updated"},
+    {"id": "ITEM-06", "num": 6, "db_col": "check_6", "title": "Frontline SOP Check #6", "action": "Independent medical review scheduled"},
+    {"id": "ITEM-07", "num": 7, "db_col": "check_7", "title": "Frontline SOP Check #7", "action": "Delegated authority sign-off verified"},
+    {"id": "ITEM-08", "num": 8, "db_col": "check_8", "title": "Frontline SOP Check #8", "action": "Delegated authority sign-off attached"},
+]
+
+GM_DIRECTIVE_ROSTER = {
+    "ERCOT BESS / storage operations": {
+        "command_post_title": "General Managers Command Post",
+        "cadence_chair": "CTO Oversight / Grid Systems Lead",
+        "assigned_managers": [
+            {
+                "name": "Marcus Vance",
+                "title": "General Manager - Grid Interconnection & Telemetry",
+                "domain": "Inverter Firmware & IEEE 2800 Compliance",
+                "action_item": "Deploy synthetic telemetry injection rig to clear DNP3 packet drop.",
+                "actor_id": "GM_MARCUS_VANCE",
+            },
+            {
+                "name": "Elena Rostova",
+                "title": "General Manager - Field Operations & Contractor Mobilization",
+                "domain": "High-Voltage Crews & Permian Substation",
+                "action_item": "Hold high-voltage contractor standby; authorize surge funding freeze.",
+                "actor_id": "GM_ELENA_ROSTOVA",
+            },
+            {
+                "name": "David Chen",
+                "title": "General Manager - Regulatory & Market Operations",
+                "domain": "ERCOT Protocol & Queue Adjudication",
+                "action_item": "Submit bypass attestation to ERCOT review queue once telemetry packet clears.",
+                "actor_id": "GM_DAVID_CHEN",
+            },
+        ],
+    },
+}
+
 # Defensive Session State Initialization
 for key, default in [
     ('ledger', []), ('cleared_books', {}), ('directive_issued', {}),
@@ -550,6 +592,7 @@ def fetch_audit_events():
 
 
 init_db()
+engine.init_db()
 
 
 def append_forensic_entry(book_name, authority, resolution_time=None):
@@ -632,6 +675,7 @@ if not st.session_state['cleared_books'].get(book, False) and not st.session_sta
     st.session_state['detection_time'][book] = datetime.now(timezone.utc)
 detection_time = st.session_state['detection_time'].get(book, datetime.now(timezone.utc))
 hesitation_seconds = max((datetime.now(timezone.utc) - detection_time).total_seconds(), 0)
+work_order_id = f"WO-{hashlib.sha256(book.encode()).hexdigest()[:12].upper()}"
 
 sla_seconds_map = {"COO": 86400, "AFIC": 86400, "CLO": 259200, "CTO": 14400}
 sla_seconds = sla_seconds_map.get(critical_lead, 86400)
@@ -681,6 +725,10 @@ if is_stage_1_execution:
 
 if is_stage_1_execution and override and not st.session_state['override_logged'].get(book, False):
     append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
+    engine.record_ledger_entry(
+        book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
+        "CHAIRMAN_STATUTORY_SAFEHARBOR_OVERRIDE", work_order_id, detection_time,
+    )
     st.session_state['override_logged'][book] = True
 elif is_stage_1_execution and not override:
     st.session_state['override_logged'][book] = False
@@ -694,7 +742,7 @@ if is_stage_1_execution:
 is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
 frontline_check_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
-frontline_checklist = phase_2["checks"] if active_phase == 2 else book_data["checklist"]
+frontline_checklist = phase_2["checks"] if active_phase == 2 else [item["action"] for item in FRONTLINE_CHECKLIST_SPEC]
 frontline_check_count = len(frontline_checklist)
 frontline_checks_complete = all(
     st.session_state.get(f"{frontline_check_prefix}_{index}", False)
@@ -1034,9 +1082,8 @@ if "Tier 1" in view:
     st.subheader("Frontline Verification Hold Radar")
     critical_idx = book_data.get("critical_check_idx")
     if critical_idx is not None:
-        item_number = critical_idx + 1
-        item_text = book_data["checklist"][critical_idx]
-        critical_check_label = f"Frontline SOP Check #{item_number}: [{item_text}]"
+        critical_item = FRONTLINE_CHECKLIST_SPEC[critical_idx]
+        critical_check_label = f"[{critical_item['id']}] {critical_item['title']}: [{critical_item['action']}]"
         item_cleared = st.session_state.get(f"chk_{book}_{critical_idx}", False)
         if item_cleared:
             st.markdown(f'''
@@ -1080,7 +1127,7 @@ if "Tier 1" in view:
             )
             hold_reason = "Critical-path authorization remains outstanding." if critical_lead == role else "Committee review remains outstanding before the operating directive can proceed."
             chairman_action = book_data['circuit_breaker'] if critical_lead == role else "Confirm the committee record, preserve the decision basis, and maintain the targeted surge authorization in reserve."
-            frontline_artifact = book_data['checklist'][artifact_index]
+            frontline_artifact = FRONTLINE_CHECKLIST_SPEC[artifact_index]['action']
             with st.expander(f"{'🚨 ' if is_required else '✅ '}{committee_label}", expanded=is_required):
                 st.markdown(f'''
                 <div class="{card_class}">
@@ -1131,7 +1178,13 @@ if "Tier 1" in view:
 
 # ----------------- TIER 2: GENERAL MANAGEMENT -----------------
 elif "Tier 2" in view:
-    st.header(f"📋 General Management Operational Command (Chair: {critical_lead} Oversight)")
+    roster_config = GM_DIRECTIVE_ROSTER.get(book, {
+        "command_post_title": "General Managers Command Post",
+        "cadence_chair": f"{critical_lead or 'General Management'} Oversight",
+        "assigned_managers": [],
+    })
+    st.header(f"📋 {roster_config['command_post_title']}")
+    st.caption(f"Active Oversight: {roster_config['cadence_chair']} | Operating Book: {book}")
 
     if active_phase == 2:
         target_director = phase_2['target_director']
@@ -1146,6 +1199,14 @@ elif "Tier 2" in view:
     else:
         directive = phase_2['recommended_resolution'] if active_phase == 2 else book_data['circuit_breaker']
         technical_instruction = phase_2['failure_mode'] if active_phase == 2 else book_data['agents']['CTO']['memo']
+        release_target = (
+            f"[{FRONTLINE_CHECKLIST_SPEC[book_data['critical_check_idx']]['id']}] "
+            f"{FRONTLINE_CHECKLIST_SPEC[book_data['critical_check_idx']]['title']}: "
+            f"[{FRONTLINE_CHECKLIST_SPEC[book_data['critical_check_idx']]['action']}]"
+            if active_phase != 2
+            else f"Frontline SOP Check #{book_data['critical_check_idx'] + 1}: "
+            f"[{phase_2['checks'][book_data['critical_check_idx']]}]"
+        )
         vendor_sla_hours = max(1, int(sla_seconds / 3600))
         hourly_carry = base_burn / 168
         st.markdown(f'''
@@ -1153,9 +1214,44 @@ elif "Tier 2" in view:
             <span class="badge badge-active">ACTIVE ENGINEERING DIRECTIVE</span><br><br>
             <strong>Work Order:</strong> {directive}<br>
             <strong>Technical Execution:</strong> {technical_instruction}<br>
-            <strong>Frontline Release Target:</strong> Frontline SOP Check #{book_data['critical_check_idx'] + 1}: [{book_data['checklist'][book_data['critical_check_idx']]}]
+            <strong>Frontline Release Target:</strong> {release_target}
         </div>
         ''', unsafe_allow_html=True)
+
+        assigned_managers = roster_config["assigned_managers"]
+        if assigned_managers:
+            st.subheader("Lead GM Assignments")
+            manager_columns = st.columns(len(assigned_managers))
+            for manager_column, manager in zip(manager_columns, assigned_managers):
+                manager_column.markdown(f'''
+                <div class="card" style="min-height: 170px;">
+                    <strong style="color: var(--teal);">{manager['name']}</strong><br>
+                    <small style="color: var(--text-muted);">{manager['title']}</small><br><br>
+                    <small><strong>Domain:</strong> {manager['domain']}</small><br><br>
+                    <small style="color: var(--green);"><strong>Directive:</strong> {manager['action_item']}</small>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            st.subheader("Operational Triage & Intervention Controls")
+            action_col_1, action_col_2 = st.columns(2)
+            with action_col_1:
+                if st.button("Authorize Synthetic Telemetry Rig Deployment", type="primary", use_container_width=True):
+                    marcus = assigned_managers[0]
+                    engine.record_ledger_entry(
+                        book, 2, marcus["actor_id"], marcus["title"], "DEPLOY_SYNTHETIC_TELEMETRY",
+                        work_order_id, detection_time,
+                        notes="Synthetic packet rig deployed to bypass inverter firmware DNP3 drop.",
+                    )
+                    st.success("Directive action authorized by Marcus Vance and recorded in the forensic ledger.")
+            with action_col_2:
+                if st.button("Enforce Standby Rate on Permian Crews", use_container_width=True):
+                    elena = assigned_managers[1]
+                    engine.record_ledger_entry(
+                        book, 2, elena["actor_id"], elena["title"], "FREEZE_SURGE_FUNDING",
+                        work_order_id, detection_time,
+                        notes="Surge funding capped; idle crew rate set to statutory standby limit.",
+                    )
+                    st.warning("Crew standby rate frozen and recorded in the forensic ledger.")
 
         st.subheader("Vendor & Contractor Mobilization Status")
         v1, v2, v3 = st.columns(3)
@@ -1169,6 +1265,11 @@ elif "Tier 2" in view:
             st.session_state['directive_issued'][book] = True
             st.session_state['pipeline_step_2'] = "DISPATCHED"
             st.session_state['surgical_spend_authorized'][book] = True
+            engine.record_ledger_entry(
+                book, 2, "GM_DISPATCH", "Operations General Manager / Dispatch Controller",
+                "DISPATCH_INTERVENTION", work_order_id, detection_time,
+                notes="Surgical work order authorized and dispatched to site operations.",
+            )
             st.session_state['surgical_purchase_orders'][book] = [
                 {
                     "po_number": f"PO-{book[:4].upper().replace(' ', '')}-{index + 1:02d}",
@@ -1215,6 +1316,22 @@ elif "Tier 3" in view:
     if not is_directed:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
     else:
+        sop_data = engine.get_or_create_sop_state(work_order_id, book)
+        blockers = ["None", "Clinical File Missing", "Third-Party Medical Delay", "Delegation Bottleneck", "Legal/Waiver Hold"]
+        current_blocker = sop_data["active_blocker"]
+        blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
+        selected_blocker = st.selectbox(
+            "Operational Blocker Tag (Real-time Telemetry)", blockers, index=blocker_index,
+            key=f"blocker_{work_order_id}",
+        )
+        if selected_blocker != current_blocker:
+            engine.set_sop_blocker(work_order_id, selected_blocker)
+            engine.record_ledger_entry(
+                book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                "BLOCKER_TAG_UPDATED", work_order_id, detection_time, blocker=selected_blocker,
+            )
+            st.rerun()
+
         remediation_dispatched = (
             st.session_state['pipeline_step_2'] == "DISPATCHED"
             or st.session_state['surgical_spend_authorized'].get(book, False)
@@ -1230,13 +1347,13 @@ elif "Tier 3" in view:
         a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{art[2][1]}</small></div>", unsafe_allow_html=True)
         a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{art[3][1]}</small></div>", unsafe_allow_html=True)
 
-        st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else "Frontline SOP Release Checklist")
+        st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else f"Stage 1: Frontline Verification Checklist - Work Order {work_order_id}")
         if active_phase == 2:
             checks_raw = phase_2["checks"]
             key_prefix = f"chk2_{book}"
             critical_idx = phase_2.get("critical_check_idx")
         else:
-            checks_raw = book_data["checklist"]
+            checks_raw = FRONTLINE_CHECKLIST_SPEC
             key_prefix = f"chk_{book}"
             critical_idx = book_data.get("critical_check_idx")
 
@@ -1250,20 +1367,44 @@ elif "Tier 3" in view:
         c_col1, c_col2 = st.columns(2)
 
         check_states = []
-        for i, chk_text in enumerate(checks_raw):
+        for i, check_spec in enumerate(checks_raw):
             col_target = c_col1 if i % 2 == 0 else c_col2
             k = f"{key_prefix}_{i}"
+            db_col = f"check_{i + 1}"
             item_number = i + 1
-            chk_label = f"Frontline SOP Check #{item_number}: [{chk_text}]"
+            if active_phase == 2:
+                chk_label = f"Frontline SOP Check #{item_number}: [{check_spec}]"
+                item_id = f"PHASE-2-ITEM-{item_number:02d}"
+            else:
+                db_col = check_spec["db_col"]
+                item_id = check_spec["id"]
+                chk_label = f"[{item_id}] {check_spec['title']}: [{check_spec['action']}]"
             if i == critical_idx:
                 chk_label = f"🔴 **{chk_label}** — *(🚨 CRITICAL PATH BLOCKER)*"
-            v = col_target.checkbox(chk_label, value=st.session_state.get(k, False), key=k)
+            persisted_value = bool(sop_data[db_col])
+            if k not in st.session_state:
+                st.session_state[k] = persisted_value
+            v = col_target.checkbox(chk_label, value=persisted_value, key=k)
+            if v != persisted_value:
+                engine.update_sop_check(work_order_id, db_col, int(v))
+                engine.record_ledger_entry(
+                    book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                    "SOP_CHECK_UPDATED", work_order_id, detection_time,
+                    notes=f"{item_id} ({db_col}) set to {int(v)}.",
+                )
+                st.rerun()
             check_states.append(v)
 
         completed_count = sum(check_states)
         st.divider()
     
     def signoff_and_settle():
+        engine.finalize_tier3_submission(work_order_id)
+        engine.record_ledger_entry(
+            book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+            "STAGE_1_FRONTLINE_SIGN_OFF" if active_phase == 1 else "TIER_3_FRONTLINE_SIGN_OFF",
+            work_order_id, detection_time,
+        )
         st.session_state['cleared_books'][book] = True
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         entry_hash = hashlib.sha256(f"{book}{timestamp}CLEARED".encode()).hexdigest()[:16]
@@ -1297,6 +1438,12 @@ elif "Tier 3" in view:
         st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
 
     def transmit_forensic_blocker_docket():
+        engine.set_sop_blocker(work_order_id, "Forensic blocker docket transmitted")
+        engine.record_ledger_entry(
+            book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+            "FORENSIC_BLOCKER_DOCKET_TRANSMITTED", work_order_id, detection_time,
+            blocker="Forensic blocker docket transmitted",
+        )
         st.session_state['escalation_transmitted'] = True
         st.session_state['board_escalation'][book] = True
         append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
@@ -1308,7 +1455,8 @@ elif "Tier 3" in view:
             with t3_act:
                 st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
         else:
-            st.info(f"{completed_count}/8 checks complete. All 8 verification checks required for physical sign-off.")
+            stage_label = "Stage 1" if active_phase == 1 else "Phase 2"
+            st.info(f"{completed_count}/8 checks complete. All 8 verification checks are required for {stage_label} sign-off.")
             critical_item_unchecked = critical_idx is not None and not st.session_state.get(f"{key_prefix}_{critical_idx}", False)
             if critical_item_unchecked and not remediation_dispatched:
                 blocker_diagnostic = book_data["blocker_diagnostic"]
@@ -1349,6 +1497,21 @@ elif "Ledger" in view:
         st.dataframe(ledger_rows, use_container_width=True)
     else:
         st.info("No frontline sign-offs recorded in this session. Complete Tier 3 SOP verification to generate an entry.")
+
+    st.subheader("Persistent Cryptographic Ledger (SQLite Engine)")
+    with engine.get_db() as conn:
+        forensic_rows = conn.execute(
+            """
+            SELECT entry_id, operating_book, tier_level, official_title, action_type,
+                   governance_lag_sec, hesitation_cost, blocker_category, sha256_hash
+            FROM forensic_ledger
+            ORDER BY entry_id DESC
+            """
+        ).fetchall()
+    if forensic_rows:
+        st.dataframe([dict(row) for row in forensic_rows], use_container_width=True)
+    else:
+        st.info("No persistent forensic ledger entries have been recorded yet.")
 
     st.subheader("Persistent Audit Ledger (SQLite — Survives Server Reboots)")
     audit_rows = [
