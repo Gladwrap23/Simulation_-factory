@@ -835,35 +835,6 @@ if "Tier 1" in view:
     st.header("Apex Board Governance & Oversight")
     st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
 
-    def switch_active_book(target_book):
-        st.session_state['book_select'] = target_book
-
-    with st.expander("🌐 Portfolio Bottleneck Horizon (Cross-Sector Capital Defense Radar)", expanded=False):
-        hdr = st.columns([2.2, 3, 1.6, 1.3, 1.1, 1.1])
-        hdr[0].markdown("**Sector / Asset**")
-        hdr[1].markdown("**Primary Bottleneck**")
-        hdr[2].markdown("**Regime**")
-        hdr[3].markdown("**Holding Burn**")
-        hdr[4].markdown("**SLA Drift**")
-        hdr[5].markdown("**Criticality**")
-        st.divider()
-        for sector_name, sector_data in DATA_MATRIX.items():
-            sector_regime = sector_data['regime']
-            if 'DEPENDENCY' in sector_regime or 'DEFICIT' in sector_regime:
-                criticality = "CRITICAL"
-            elif 'QUEUE' in sector_regime:
-                criticality = "ELEVATED"
-            else:
-                criticality = "NOMINAL"
-            crit_badge_class = {"CRITICAL": "badge-danger", "ELEVATED": "badge-pending", "NOMINAL": "badge-success"}[criticality]
-            row = st.columns([2.2, 3, 1.6, 1.3, 1.1, 1.1])
-            row[0].button(sector_name, key=f"jump_{sector_name}", on_click=switch_active_book, args=(sector_name,), use_container_width=True)
-            row[1].markdown(f"<small>{sector_data['bottleneck']}</small>", unsafe_allow_html=True)
-            row[2].markdown(f"<span class='badge badge-active'>{sector_regime}</span>", unsafe_allow_html=True)
-            row[3].markdown(f"<small>${sector_data['base_burn']:,.0f}/wk</small>", unsafe_allow_html=True)
-            row[4].markdown(f"<small>{sector_data['drift_metrics']['sla_drift']}</small>", unsafe_allow_html=True)
-            row[5].markdown(f"<span class='badge {crit_badge_class}'>{criticality}</span>", unsafe_allow_html=True)
-
     if st.session_state['auto_override_triggered']:
         safe_harbor_engaged = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
         if safe_harbor_engaged:
