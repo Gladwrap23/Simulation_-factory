@@ -980,201 +980,52 @@ if "Tier 3" not in view:
 
 # ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
 if "Tier 1" in view:
-    st.header("Apex Board Governance & Oversight")
-    st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
+    sop_data = engine.get_or_create_sop_state(work_order_id, book)
+    is_blocked = (
+        sop_data["active_blocker"] != "None" or not sop_data["check_8"]
+    ) and not sop_data["is_submitted"]
 
-    if st.session_state['auto_override_triggered']:
-        safe_harbor_engaged = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
-        if safe_harbor_engaged:
-            st.markdown(f'''
-            <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
-            ''', unsafe_allow_html=True)
-        else:
-            st.markdown(f'''
-            <div class="radar-card">
-                <strong>🚨 STATUTORY EMERGENCY MITIGATION PROPOSED:</strong> Fiduciary Ratio: {fiduciary_ratio:.1f}x | Algorithmic Surge Cap: {st.session_state['master_surge_cap']}% | Click below to execute Chairman Binding Authorization under Statutory Safe-Harbor Rule.
-            </div>
-            ''', unsafe_allow_html=True)
+    st.header("Chairman Command Post")
+    if is_blocked:
+        st.error(f"""
+        ### CRITICAL PATH STALL DETECTED
+        **Active Blocker:** {sop_data["active_blocker"]}<br>
+        **Holding Burn Rate:** ${base_burn:,.0f} / week<br>
+        **Site Impact:** {sum(sop_data[f"check_{index}"] for index in range(1, 9))}/8 SOP checks cleared. Work order is held at the frontline gate.
+        """)
+    else:
+        st.success("### PIPELINE OPERATIONAL - NO CAPITAL FRICTION DETECTED")
 
-            def activate_safe_harbor():
-                cap = min(50, int(cost_drift_dollars / 5000)) if 'cost_drift_dollars' in globals() else 30
+    st.divider()
+    st.subheader("Executive Action Required")
+    summary_column, action_column = st.columns([2, 1])
+    with summary_column:
+        st.markdown(f"""
+        **Operational Diagnosis:**<br>
+        {book_data['bottleneck']}
+
+        **Fiduciary Recommendation:**<br>
+        Execute the Chairman Statutory Safe-Harbor to authorize the targeted GM remediation, unblock {book_data['exposure']} in capital, and stop the ${base_burn:,.0f}/wk holding burn.
+        """)
+    with action_column:
+        if is_blocked:
+            if st.button("EXECUTE STATUTORY OVERRIDE", type="primary", use_container_width=True):
+                engine.finalize_tier3_submission(work_order_id)
+                engine.record_ledger_entry(
+                    book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
+                    "CHAIRMAN_STATUTORY_SAFEHARBOR_OVERRIDE", work_order_id, detection_time,
+                )
                 st.session_state['safe_harbor_active'] = True
                 st.session_state['override_active'] = True
-                st.session_state['master_surge_cap'] = cap
-                st.session_state['master_surge'] = max(st.session_state['master_surge'], cap)
-                append_forensic_entry(book, "CHAIRMAN_STATUTORY_SAFEHARBOR", datetime.now(timezone.utc))
-                st.session_state['override_logged'][book] = True
-
-            st.button(
-                "⚡ Confirm Chairman Binding Safe-Harbor Directive",
-                on_click=activate_safe_harbor,
-                key="btn_confirm_safe_harbor",
-                type="primary"
-            )
-
-    if active_phase == 2:
-        target_director = phase_2['target_director']
-        failure_mode = phase_2['failure_mode']
-        recommended_resolution = phase_2['recommended_resolution']
-        st.markdown(f'''
-        <div class="agent-card" style="border: 1px solid var(--amber); background: rgba(210,153,34,0.08);">
-            <span class="badge badge-agent">📩 DIRECT AGENT NOTIFICATION | TO: {target_director} CHAIR</span><br>
-            <strong>Failure mode:</strong> {failure_mode}<br>
-            <strong>Resolution:</strong> {recommended_resolution}
-            <div style="margin-top: 10px;">
-                <button type="button" style="background: var(--amber); color: #111; border: none; border-radius: 6px; padding: 10px 14px; font-weight: 700; cursor: pointer;">⚡ Authorize Domain Fix</button>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-        if st.button("⚡ Authorize Domain Fix", type="primary"):
-            st.session_state['phase_2_authorized'][book] = True
-            st.toast(f"Phase 2 directive authorized for {book} and routed to {target_director}.", icon="✅")
-    
-    if st.session_state['board_escalation'].get(book, False):
-        st.error("🚨 **CRITICAL FRONTLINE ESCALATION:** Site team has encountered a blocking constraint requiring Board intervention.")
-        c_lsp, c_rbtn = st.columns([1.5, 1])
-        with c_rbtn:
-            if st.button("⚡ Clear Escalation & Dispatch Emergency Mandate", type="primary"):
-                st.session_state['board_escalation'][book] = False
                 st.session_state['board_quorum'][book] = True
+                st.session_state['cleared_books'][book] = True
+                st.session_state['pipeline_step_3'] = "VERIFIED"
+                st.session_state['pipeline_step_4'] = "COMMITTED"
+                st.balloons()
+                st.success("Override executed. Pipeline cleared and logged to the forensic ledger.")
                 st.rerun()
-    
-    # Actuarial Terminal Endpoint Forecaster
-    st.subheader("Actuarial Terminal Endpoint Forecast (Monte Carlo Inaction Loss)")
-    days = [30, 60, 90]
-    unmitigated_loss = [(base_burn / 7.0) * d for d in days]
-    mitigated_preservation = [u * 0.90 for u in unmitigated_loss]
-    
-    f1, f2, f3 = st.columns(3)
-    f1.markdown(f'''
-    <div class="forecast-card">
-        <span class="badge badge-danger">30-DAY INACTION IMPAIRMENT</span><br>
-        <h3 style="color:#ff7b72; margin:6px 0;">${unmitigated_loss[0]:,.0f}</h3>
-        <small>Preserved via Targeted Cure: <strong>${mitigated_preservation[0]:,.0f}</strong></small>
-    </div>
-    ''', unsafe_allow_html=True)
-    f2.markdown(f'''
-    <div class="forecast-card">
-        <span class="badge badge-danger">60-DAY INACTION IMPAIRMENT</span><br>
-        <h3 style="color:#ff7b72; margin:6px 0;">${unmitigated_loss[1]:,.0f}</h3>
-        <small>Preserved via Targeted Cure: <strong>${mitigated_preservation[1]:,.0f}</strong></small>
-    </div>
-    ''', unsafe_allow_html=True)
-    terminal_critical = unmitigated_loss[2] >= 1_500_000
-    f3_card_class = "critical-forecast-card" if terminal_critical else "forecast-card"
-    f3_banner = "🚨 TERMINAL DEFAULT IMMINENT" if terminal_critical else "90-DAY TERMINAL RISK"
-    f3.markdown(f'''
-    <div class="{f3_card_class}">
-        <span class="badge badge-danger">{f3_banner}</span><br>
-        <h3 style="color:#ff7b72; margin:6px 0;">${unmitigated_loss[2]:,.0f}</h3>
-        <small>PPA/Offtake Forfeiture Risk: <strong>CRITICAL</strong></small>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    critical_lead = book_data.get('critical_lead')
-    agent_map = {
-        "COO": ("COO AGENT | ASSET DELIVERY", "Operations & Asset Delivery Committee (Chair: COO Oversight)", book_data['agents']['COO']),
-        "AFIC": ("CFO AGENT | AFIC CAPITAL DEFENSE", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)", book_data['agents']['AFIC']),
-        "CLO": ("CLO AGENT | RISK & REGULATORY", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", book_data['agents']['CLO']),
-        "CTO": ("CTO AGENT | SYSTEMS & TELEMETRY", "Technology & Infrastructure Committee (Chair: CTO Oversight)", book_data['agents']['CTO']),
-    }
-
-    st.subheader("Frontline Verification Hold Radar")
-    critical_idx = book_data.get("critical_check_idx")
-    if critical_idx is not None:
-        critical_item = FRONTLINE_CHECKLIST_SPEC[critical_idx]
-        critical_check_label = f"[{critical_item['id']}] {critical_item['title']}: [{critical_item['action']}]"
-        item_cleared = st.session_state.get(f"chk_{book}_{critical_idx}", False)
-        if item_cleared:
-            st.markdown(f'''
-            <div class="radar-card-cleared">
-                <span class="badge badge-success">✅ FRONTLINE ARTIFACT CLEARED</span><br>
-                <small>{critical_check_label} verified and cleared at Site Operations.</small>
-            </div>
-            ''', unsafe_allow_html=True)
         else:
-            blocker_diagnostic = book_data["blocker_diagnostic"]
-            docket_transmitted = st.session_state.get("escalation_transmitted", False) and st.session_state['board_escalation'].get(book, False)
-            st.markdown(f'''
-            <div class="radar-card">
-                <span class="badge badge-danger">🚨 HOLDING GATE</span><br>
-                <strong>HOLDING GATE: {critical_check_label} is unverified.</strong><br>
-                <small>This is the exact physical artifact currently holding up the critical path in Tier 3 Site Operations.</small>
-                {f'<br><br><span class="badge badge-agent">FORENSIC BLOCKER DOCKET TRANSMITTED</span><br><strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}' if docket_transmitted else ''}
-            </div>
-            ''', unsafe_allow_html=True)
-    else:
-        st.info("No critical frontline checklist item mapped for this operating book.")
-
-    if is_stage_1_execution:
-        st.subheader("Sub-Committee Governance Matrix")
-        committee_rows = [
-            ("COO", "ops", 0),
-            ("AFIC", "afic", 2),
-            ("CLO", "risk", 4),
-            ("CTO", "tech", 6),
-        ]
-        for role, state_key, artifact_index in committee_rows:
-            title, committee_label, agent_info = agent_map[role]
-            checkbox_key = f"comm_{book}_{state_key}"
-            approved = st.session_state.get(checkbox_key, False)
-            is_required = not approved or critical_lead == role
-            card_class = "critical-agent-card" if is_required else "agent-card"
-            signoff_label = (
-                f"{committee_label} — ✅ READY FOR STATUTORY SIGN-OFF"
-                if critical_lead == role and agent_attestation_ready
-                else f"Statutory Sign-off: {committee_label}"
-            )
-            hold_reason = "Critical-path authorization remains outstanding." if critical_lead == role else "Committee review remains outstanding before the operating directive can proceed."
-            chairman_action = book_data['circuit_breaker'] if critical_lead == role else "Confirm the committee record, preserve the decision basis, and maintain the targeted surge authorization in reserve."
-            frontline_artifact = FRONTLINE_CHECKLIST_SPEC[artifact_index]['action']
-            with st.expander(f"{'🚨 ' if is_required else '✅ '}{committee_label}", expanded=is_required):
-                st.markdown(f'''
-                <div class="{card_class}">
-                    <span class="badge {'badge-danger' if is_required else 'badge-success'}">{'🚨 REQUIRED CRITICAL PATH SIGN-OFF' if is_required else 'SIGN-OFF RECORDED'}</span>
-                    <strong>{title}</strong><br><br>
-                    <strong>🤖 Agent Telemetry Diagnosis:</strong> {agent_info['memo']}<br><br>
-                    <strong>📋 GM Supervisory Brief:</strong> {agent_info['status']}. Field standby carry is ${base_burn:,.0f}/wk; {hold_reason}<br><br>
-                    <strong>🛠️ Frontline Dependency:</strong> Tier 3 must verify “{frontline_artifact}” to clear this hold.<br><br>
-                    <strong>⚖️ Fiduciary Recommendation:</strong> {chairman_action}
-                </div>
-                ''', unsafe_allow_html=True)
-                if critical_lead == role:
-                    if agent_attestation_ready:
-                        st.markdown(f'''
-                        <div class="radar-card-cleared" style="box-shadow: 0 0 20px rgba(63,185,80,0.65);">
-                            <span class="badge badge-success">✅ AGENT ATTESTATION</span><br><br>
-                            <strong>GM Surgical Work Order verified on site. Frontline telemetry artifact confirmed. {committee_label} Chair is fully authorized to execute statutory sign-off.</strong>
-                        </div>
-                        ''', unsafe_allow_html=True)
-                    else:
-                        st.markdown('''
-                        <div class="card" style="border: 2px solid var(--amber); background: rgba(255, 77, 79, 0.08);">
-                            <span class="badge badge-danger">⚠️ AGENT ADVISORY</span><br><br>
-                            <strong>Sign-off held pending GM Reverse-Engineered Dispatch ($35,000 Surgical Cure) and Frontline SOP Verification.</strong>
-                        </div>
-                        ''', unsafe_allow_html=True)
-                if role == "CTO":
-                    surgical_budget = book_data["surgical_budget"]
-                    st.markdown(
-                        f"**Targeted Cure: ${surgical_budget['total_surgical_cost']:,.0f} Surgical Spend "
-                        "(Inverter Rig & OEM Lead) clears $610,000/wk holding burn.**"
-                    )
-                    st.markdown(
-                        f"**🎯 Direct Frontline Responsibility: {critical_check_label}**  \n"
-                        "**Status: Unverified on site. Dispatched GM Synthetic Injection Rig required to clear.**"
-                    )
-                st.checkbox(signoff_label, value=approved, key=checkbox_key)
-        
-        st.divider()
-        t1_sp, t1_btn = st.columns([1.5, 1])
-        with t1_btn:
-            if is_quorum:
-                st.button("➡️ Advance to Tier 2 (General Management)", on_click=nav_to, args=("2️⃣ Tier 2 | General Management",), type="primary")
-            else:
-                st.warning(f"⚠️ Quorum Incomplete ({quorum_count}/4). Full committee quorum or Chairman Override required.")
-    else:
-        st.info("Stage 2 and Stage 3 are briefing-only Board reviews. Return to Stage 1 to change quorum or use the Chairman Override.")
+            st.info("No executive intervention required at this time.")
 
 # ----------------- TIER 2: GENERAL MANAGEMENT -----------------
 elif "Tier 2" in view:
