@@ -395,7 +395,7 @@ for key, default in [
     ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0),
-    ('auto_override_triggered', False), ('master_surge_cap', 0)
+    ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False)
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
@@ -417,6 +417,7 @@ def reset_book(book_name):
     st.session_state['master_surge'] = 0
     st.session_state['auto_override_triggered'] = False
     st.session_state['master_surge_cap'] = 0
+    st.session_state['safe_harbor_active'] = False
     st.session_state['active_phase'][book_name] = 1
     st.session_state['phase_2_authorized'][book_name] = False
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
@@ -599,11 +600,12 @@ view = st.sidebar.radio("Command view", [
 st.sidebar.markdown("---")
 
 # Chairman Directorate Override (widgets rendered in Tier 1 sidebar only; state persists across all tiers)
-override = st.session_state['override_active']
+override = st.session_state['override_active'] or st.session_state.get('safe_harbor_active', False)
 master_surge = st.session_state['master_surge']
 
 if view == "1️⃣ Tier 1 | Chairman Directorate":
-    override = st.sidebar.toggle("Chairman Directorate Override", value=st.session_state['override_active'], key="override_toggle")
+    override_val = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
+    override = st.sidebar.toggle("Chairman Directorate Override", value=override_val, key="manual_override_toggle")
     st.session_state['override_active'] = override
 
     if st.session_state['auto_override_triggered'] and override:
@@ -720,7 +722,8 @@ if "Tier 1" in view:
     st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
 
     if st.session_state['auto_override_triggered']:
-        if override:
+        safe_harbor_engaged = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
+        if safe_harbor_engaged:
             st.markdown(f'''
             <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
             ''', unsafe_allow_html=True)
@@ -730,13 +733,22 @@ if "Tier 1" in view:
                 <strong>🚨 STATUTORY EMERGENCY MITIGATION PROPOSED:</strong> Fiduciary Ratio: {fiduciary_ratio:.1f}x | Algorithmic Surge Cap: {st.session_state['master_surge_cap']}% | Click below to execute Chairman Binding Authorization under Statutory Safe-Harbor Rule.
             </div>
             ''', unsafe_allow_html=True)
-            if st.button("⚡ Confirm Chairman Binding Safe-Harbor Directive", type="primary"):
+
+            def activate_safe_harbor():
+                cap = min(50, int(cost_drift_dollars / 5000)) if 'cost_drift_dollars' in globals() else 30
+                st.session_state['safe_harbor_active'] = True
                 st.session_state['override_active'] = True
-                st.session_state['override_toggle'] = True
-                st.session_state['master_surge'] = max(st.session_state['master_surge'], st.session_state['master_surge_cap'])
+                st.session_state['master_surge_cap'] = cap
+                st.session_state['master_surge'] = max(st.session_state['master_surge'], cap)
                 append_forensic_entry(book, "CHAIRMAN_STATUTORY_SAFEHARBOR", datetime.now(timezone.utc))
                 st.session_state['override_logged'][book] = True
-                st.rerun()
+
+            st.button(
+                "⚡ Confirm Chairman Binding Safe-Harbor Directive",
+                on_click=activate_safe_harbor,
+                key="btn_confirm_safe_harbor",
+                type="primary"
+            )
 
     if active_phase == 2:
         target_director = phase_2['target_director']
