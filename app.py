@@ -350,6 +350,24 @@ for book_name, book_data in DATA_MATRIX.items():
         "checks": ["Secondary queue gate evidence verified", "Secondary queue gate record attached", "Director-approved remediation deployed", "Systems revalidation test passed", "Field engineer secondary sign-off verified", "Field engineer secondary sign-off attached", "Secondary compliance attestation verified", "Secondary compliance attestation attached"],
     })
 
+BLOCKER_DIAGNOSTICS = {
+    "ERCOT BESS / storage operations": {"technical_root_cause": "Inverter firmware v2.41 drops DNP3 heartbeat telemetry packets during the 4-second polling cycle.", "missing_artifact_name": "Signed Part 2 COD Commercial Operation Attestation and 4-hour clean packet trace.", "standby_impact": "High-voltage switchgear crew idle at the Permian POI; $220,000/week idle carry.", "gm_remediation_request": "Authorize dispatch of the Synthetic Packet Injection Rig or file the expedited 24-hour Provisional Part 2 COD Waiver under ERCOT IA Section 4.2."},
+    "Grid Infrastructure / PJM Cluster": {"technical_root_cause": "ASTM D877 dielectric validation is stalled in the regional transformer-oil laboratory backlog.", "missing_artifact_name": "Certified ASTM D877 dielectric breakdown log and executed Schedule 12 Facility Study Review.", "standby_impact": "Energization contractor pool remains idle at the 500kV intertie; daily standby demurrage begins on Day 14.", "gm_remediation_request": "Authorize emergency mobilization of a mobile ASTM testing laboratory with third-party certified high-voltage engineers."},
+    "ACC NZ Scheme / Claims Review": {"technical_root_cause": "Sequential physical-paper routing between Northern Hub and Wellington is holding the statutory delegation chain.", "missing_artifact_name": "Executed Crown delegation certificate and digitally lodged ACC45 evidence record.", "standby_impact": "Clinical assessors are idle behind the paper queue; claims dwell is carrying $480,000/week.", "gm_remediation_request": "Authorize the digital ACC45 fast-track triage workflow and obtain the delegated ministerial approval for complex cases."},
+    "Port Logistics / Container Flow": {"technical_root_cause": "The Port Authority TOS rejects the EDIFACT BAPLIE 2.2 stowage manifest because of a deserialization schema mismatch.", "missing_artifact_name": "Certified BAPLIE translation trace and Port Authority quay release authority.", "standby_impact": "Quay cranes 03 and 04 and stevedore crews are standing down; vessel demurrage is $45,000/day.", "gm_remediation_request": "Authorize deployment of the BAPLIE 2.2 parser translation hotfix and obtain Port Authority schema certification."},
+    "Hyperscale Data Center / Power Intertie": {"technical_root_cause": "GIS SF6 pressure validation cannot close because no certified OEM technician is available to attest the gas-leak remediation.", "missing_artifact_name": "Signed SF6 pressure attestation and EPA Section 608 environmental handling sign-off.", "standby_impact": "Server racks remain on diesel backup at $210,000/day while the primary feeder crew awaits breaker close.", "gm_remediation_request": "Authorize an emergency OEM GIS field-service flight team to complete the pressure test and issue the SF6 attestation."},
+    "Offshore Wind / North Sea Subsea HVDC": {"technical_root_cause": "The subsea DTS optical splice calibration is misreading the temperature threshold during OTDR verification.", "missing_artifact_name": "Calibrated OTDR optical splice log and signed HVDC joint pressure attestation.", "standby_impact": "The DP2 cable-laying vessel is weather-standby offshore at $180,000/day.", "gm_remediation_request": "Authorize remote deployment of the DTS optical recalibration script and retain the vessel through the verification retest."},
+    "Semiconductor Fab / Cleanroom Commissioning": {"technical_root_cause": "The ultra-pure-water TOC analyzer has a zero-point sensor baseline drift, invalidating cleanroom release evidence.", "missing_artifact_name": "Signed UPW TOC calibration trace and ISO Class 1 cleanroom handover record.", "standby_impact": "ASML EUV installation specialists are idle in Phoenix East while the 3nm bay remains uncertified.", "gm_remediation_request": "Authorize immediate TOC analyzer firmware recalibration and an expedited cleanroom recertification run."},
+    "Critical Minerals / Lithium Refining Facility": {"technical_root_cause": "A rotary-kiln refractory hot spot exceeds the allowed thermal gradient and requires certified masonry repair.", "missing_artifact_name": "Post-repair kiln thermal attestation and certified refractory masonry record.", "standby_impact": "Calcination commissioning is held in Pilbara with FIFO maintenance crews awaiting a safe light-up window.", "gm_remediation_request": "Authorize a FIFO air charter for certified rotary-kiln refractory masons and release the post-repair pyrometry test."},
+    "Rail Freight & Intermodal Corridor": {"technical_root_cause": "Wayside Interface Unit encryption keys are out of sync, preventing Positive Train Control interlocking confirmation.", "missing_artifact_name": "Reissued Wayside PKI security certificate and PTC transponder synchronization trace.", "standby_impact": "Locomotives and manifest trains are held on siding at Chicago Intermodal, carrying $390,000/week in dwell penalties.", "gm_remediation_request": "Authorize the WIU cryptographic certificate re-push and a supervised PTC interlocking retest."},
+    "Defense Manufacturing / Naval Shipyard": {"technical_root_cause": "HY-80 weld disposition is waiting on a Top Secret-cleared Level III ultrasonic NDT radiographer.", "missing_artifact_name": "NAVSEA-qualified Level III radiographer certificate and signed PAUT weld-map disposition.", "standby_impact": "Drydock hull assembly is held with $2.8 million/week occupancy carry.", "gm_remediation_request": "Authorize emergency travel for a cleared Level III NDT radiographer from the secondary naval facility."},
+    "Municipal Water & Desalination Plant": {"technical_root_cause": "The SCADA chemical-feed PID profile is overdosing coagulant, leaving the membrane SDI above the potable-water release threshold.", "missing_artifact_name": "Verified SDI permeate log and signed boron rejection analysis.", "standby_impact": "High-pressure pump trains remain in recirculation while pretreatment chemicals and idle power carry $450,000/week.", "gm_remediation_request": "Authorize deployment of the PLC chemical-feed tuning payload and an accelerated Title 22 confirmation sample."},
+    "Commercial Aviation / Fleet AOG Turnaround": {"technical_root_cause": "The ATA Spec 2000 gateway cannot match the FAA Form 8130-3 dual-release serial to the replacement engine mount.", "missing_artifact_name": "Matched FAA Form 8130-3 dual-release tag and signed Spec 2000 digital trace.", "standby_impact": "A&P mechanics and the widebody aircraft remain AOG at Dallas MRO; revenue and lease carry is $850,000/week.", "gm_remediation_request": "Authorize an OEM digital-signature API retransmission and Chief Inspector priority review for tail release."},
+}
+
+for book_name, blocker_diagnostic in BLOCKER_DIAGNOSTICS.items():
+    DATA_MATRIX[book_name]["blocker_diagnostic"] = blocker_diagnostic
+
 DATA_MATRIX["ERCOT BESS / storage operations"]["critical_lead"] = "CTO"
 DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
     "bottleneck": "Phase 2: 100-Hour Continuous C-Rate Thermal Run & Cell Balancing",
@@ -395,7 +413,8 @@ for key, default in [
     ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0),
-    ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False)
+    ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False),
+    ('escalation_transmitted', False)
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
@@ -418,6 +437,7 @@ def reset_book(book_name):
     st.session_state['auto_override_triggered'] = False
     st.session_state['master_surge_cap'] = 0
     st.session_state['safe_harbor_active'] = False
+    st.session_state['escalation_transmitted'] = False
     st.session_state['active_phase'][book_name] = 1
     st.session_state['phase_2_authorized'][book_name] = False
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
@@ -944,11 +964,14 @@ if "Tier 1" in view:
             </div>
             ''', unsafe_allow_html=True)
         else:
+            blocker_diagnostic = book_data["blocker_diagnostic"]
+            docket_transmitted = st.session_state.get("escalation_transmitted", False) and st.session_state['board_escalation'].get(book, False)
             st.markdown(f'''
             <div class="radar-card">
                 <span class="badge badge-danger">🚨 HOLDING GATE</span><br>
                 <strong>HOLDING GATE: Frontline Item #{critical_idx + 1} [{item_text}] is unverified.</strong><br>
                 <small>This is the exact physical artifact currently holding up the critical path in Tier 3 Site Operations.</small>
+                {f'<br><br><span class="badge badge-agent">FORENSIC BLOCKER DOCKET TRANSMITTED</span><br><strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}' if docket_transmitted else ''}
             </div>
             ''', unsafe_allow_html=True)
     else:
@@ -1092,8 +1115,10 @@ elif "Tier 3" in view:
         st.session_state['phase_2_authorized'][book] = False
         st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
 
-    def escalate_to_board():
+    def transmit_forensic_blocker_docket():
+        st.session_state['escalation_transmitted'] = True
         st.session_state['board_escalation'][book] = True
+        append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
         st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
 
     if is_directed:
@@ -1103,12 +1128,23 @@ elif "Tier 3" in view:
                 st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
         else:
             st.info(f"{completed_count}/8 checks complete. All 8 verification checks required for physical sign-off.")
-            with st.expander("🚨 Transmit Critical Impediment to Chairman"):
-                st.selectbox("Impediment Category", ["Specialist Labor Shortage", "Critical Hardware/Testing Delay", "Regulatory Compliance Hold"])
-                st.text_input("Field Context", "Frontline blocked on compliance gate; requires emergency Board intervention.")
+            critical_item_unchecked = critical_idx is not None and not st.session_state.get(f"{key_prefix}_{critical_idx}", False)
+            if critical_item_unchecked:
+                blocker_diagnostic = book_data["blocker_diagnostic"]
+                st.markdown(f'''
+                <div class="radar-card">
+                    <span class="badge badge-danger">🚨 FRONTLINE BOTTLENECK FORENSIC DIAGNOSIS</span><br><br>
+                    <strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><br>
+                    <strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><br>
+                    <strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><br>
+                    <strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}
+                </div>
+                ''', unsafe_allow_html=True)
                 esc_sp, esc_btn = st.columns([1.5, 1])
                 with esc_btn:
-                    st.button("🚨 Dispatch Emergency Ticket to Chairman", on_click=escalate_to_board, type="primary")
+                    st.button("⚡ Transmit Forensic Blocker Docket to Tier 2 (GM) & Tier 1 (Chairman)", on_click=transmit_forensic_blocker_docket, type="primary")
+            else:
+                st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
 
 # ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
 elif "Ledger" in view:
