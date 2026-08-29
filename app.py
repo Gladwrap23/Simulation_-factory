@@ -336,9 +336,23 @@ DATA_MATRIX = {
     }
 }
 
+DEFAULT_SURGICAL_BUDGET = {
+    "blunt_spend_warning": "🛑 Blunt Spend Trap: Adding 14 electrician headcounts costs $220,000/wk but cannot resolve firmware communication errors.",
+    "surgical_line_items": [
+        {"item": "Inverter OEM Senior Firmware Specialist (On-Site)", "cost": 15000, "vendor": "PowerGrid Dynamics"},
+        {"item": "Synthetic DNP3 Packet Injection Test Rig Lease (48-hr)", "cost": 20000, "vendor": "Substation Systems Corp"},
+    ],
+    "total_surgical_cost": 35000,
+    "capital_efficiency_ratio": "15.7x Value Preserved vs. Surgical Spend",
+}
+
 for book_name, book_data in DATA_MATRIX.items():
     book_data.setdefault("critical_lead", None)
     book_data.setdefault("critical_check_idx", None)
+    book_data.setdefault("surgical_budget", {
+        **DEFAULT_SURGICAL_BUDGET,
+        "surgical_line_items": [item.copy() for item in DEFAULT_SURGICAL_BUDGET["surgical_line_items"]],
+    })
     book_data.setdefault("phase_2", {
         "bottleneck": "Phase 2: Secondary Recovery Queue Awaiting Director Approval",
         "target_director": "CTO",
@@ -411,6 +425,7 @@ DATA_MATRIX["Commercial Aviation / Fleet AOG Turnaround"]["critical_lead"] = "CT
 for key, default in [
     ('ledger', []), ('cleared_books', {}), ('directive_issued', {}),
     ('board_escalation', {}), ('board_quorum', {}), ('active_phase', {}), ('phase_2_authorized', {}),
+    ('surgical_spend_authorized', {}), ('surgical_purchase_orders', {}),
     ('detection_time', {}), ('override_logged', {}),
     ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
@@ -445,6 +460,8 @@ def reset_book(book_name):
     st.session_state['escalation_transmitted'] = False
     st.session_state['active_phase'][book_name] = 1
     st.session_state['phase_2_authorized'][book_name] = False
+    st.session_state['surgical_spend_authorized'][book_name] = False
+    st.session_state['surgical_purchase_orders'][book_name] = []
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
     st.session_state['override_logged'][book_name] = False
     st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
@@ -1040,6 +1057,12 @@ if "Tier 1" in view:
                     <strong>⚖️ Fiduciary Recommendation:</strong> {chairman_action}
                 </div>
                 ''', unsafe_allow_html=True)
+                if role == "CTO":
+                    surgical_budget = book_data["surgical_budget"]
+                    st.markdown(
+                        f"**Targeted Cure: ${surgical_budget['total_surgical_cost']:,.0f} Surgical Spend "
+                        "(Inverter Rig & OEM Lead) clears $610,000/wk holding burn.**"
+                    )
                 st.checkbox(signoff_label, value=approved, key=checkbox_key)
         
         st.divider()
@@ -1089,11 +1112,46 @@ elif "Tier 2" in view:
         
         def dispatch_directive():
             st.session_state['directive_issued'][book] = True
+            st.session_state['surgical_spend_authorized'][book] = True
+            st.session_state['surgical_purchase_orders'][book] = [
+                {
+                    "po_number": f"PO-{book[:4].upper().replace(' ', '')}-{index + 1:02d}",
+                    "vendor": line_item["vendor"],
+                    "cost": line_item["cost"],
+                }
+                for index, line_item in enumerate(book_data["surgical_budget"]["surgical_line_items"])
+            ]
             st.session_state['active_view'] = '3️⃣ Tier 3 | Site Operations'
             
+        surgical_budget = book_data["surgical_budget"]
+        surgical_rows = "".join(
+            f"<tr><td>{line_item['item']}</td><td>{line_item['vendor']}</td><td>${line_item['cost']:,.0f}</td></tr>"
+            for line_item in surgical_budget["surgical_line_items"]
+        )
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid var(--teal); background: #0b0e14;">
+            <span class="badge badge-active">🛠️ REVERSE-ENGINEERED SURGICAL SPEND ALLOCATION</span><br><br>
+            <div style="background: rgba(210,153,34,0.12); border-left: 4px solid var(--amber); color: var(--text-muted); padding: 10px; margin-bottom: 12px;">
+                {surgical_budget['blunt_spend_warning']}
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                <thead><tr style="color:var(--teal); text-align:left;"><th style="padding:6px; border-bottom:1px solid var(--line);">Item</th><th style="padding:6px; border-bottom:1px solid var(--line);">Vendor</th><th style="padding:6px; border-bottom:1px solid var(--line);">Cost</th></tr></thead>
+                <tbody>{surgical_rows}</tbody>
+            </table>
+            <div style="display:flex; justify-content:space-between; gap:12px; margin-top:14px; font-family:monospace;">
+                <strong style="color:var(--red);">Blunt Weekly Carry: $220k/wk</strong>
+                <strong style="color:var(--green);">Total Surgical Cure: ${surgical_budget['total_surgical_cost']:,.0f}</strong>
+            </div>
+            <small style="color:var(--text-muted);">{surgical_budget['capital_efficiency_ratio']}</small>
+        </div>
+        ''', unsafe_allow_html=True)
         t2_sp, t2_btn = st.columns([1.5, 1])
         with t2_btn:
-            st.button("🚀 Issue Binding Operational Directive to Site Operations", on_click=dispatch_directive, type="primary")
+            st.button(
+                f"⚡ Authorize Ring-Fenced Surgical Spend (${surgical_budget['total_surgical_cost']:,.0f}) & Dispatch Work Order",
+                on_click=dispatch_directive,
+                type="primary"
+            )
 
 # ----------------- TIER 3: SITE OPERATIONS -----------------
 elif "Tier 3" in view:
