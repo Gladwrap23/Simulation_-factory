@@ -86,7 +86,6 @@ st.markdown('''
     /* Frontline Blocker Radar & Critical Checklist Item */
     .radar-card { background: rgba(255, 77, 79, 0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: 0 0 0 1px rgba(255,77,79,0.35), 0 0 20px rgba(255,77,79,0.7); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
     .radar-card-cleared { background: rgba(63,185,80,0.08); border: 2px solid var(--green); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
-    .critical-checklist-card { border: 3px solid #ff4d4f; border-radius: 10px; padding: 10px 12px 2px 12px; margin-bottom: 6px; background: rgba(255, 77, 79, 0.1); box-shadow: 0 0 0 1px rgba(255,77,79,0.4), 0 0 22px rgba(255,77,79,0.85); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -742,7 +741,7 @@ if "Tier 1" in view:
         for role, label in critical_key_order:
             checkbox_key = f"comm_{book}_{'ops' if role == 'COO' else 'afic' if role == 'AFIC' else 'risk' if role == 'CLO' else 'tech'}"
             is_required = critical_lead == role
-            checkbox_label = f"{label} — ⚠️ REQUIRED CRITICAL PATH SIGN-OFF" if is_required else label
+            checkbox_label = f"{label} — 🚨 **REQUIRED CRITICAL PATH SIGN-OFF**" if is_required else label
             st.checkbox(checkbox_label, value=st.session_state.get(checkbox_key, False), key=checkbox_key)
     with q2:
         st.subheader("Holding Loss Recovery Allocation")
@@ -829,13 +828,8 @@ elif "Tier 3" in view:
     for i, chk_text in enumerate(checks_raw):
         col_target = c_col1 if i % 2 == 0 else c_col2
         k = f"chk_{book}_{i}"
-        is_active_blocker = critical_idx == i and not st.session_state.get(k, False)
-        if is_active_blocker:
-            col_target.markdown('<div class="critical-checklist-card">', unsafe_allow_html=True)
-            col_target.caption("🚨 ACTIVE CRITICAL PATH BLOCKER (Holding Balance Sheet Clearance)")
-        v = col_target.checkbox(chk_text, value=st.session_state.get(k, False), key=k)
-        if is_active_blocker:
-            col_target.markdown('</div>', unsafe_allow_html=True)
+        chk_label = f"🔴 **{chk_text}** — *(🚨 CRITICAL PATH BLOCKER)*" if i == critical_idx else chk_text
+        v = col_target.checkbox(chk_label, value=st.session_state.get(k, False), key=k)
         check_states.append(v)
     
     completed_count = sum(check_states)
