@@ -952,7 +952,6 @@ if "Tier 1" in view:
     </div>
     ''', unsafe_allow_html=True)
 
-    st.subheader("Autonomous Board Committee Research Dossiers")
     critical_lead = book_data.get('critical_lead')
     agent_map = {
         "COO": ("COO AGENT | ASSET DELIVERY", "Operations & Asset Delivery Committee (Chair: COO Oversight)", book_data['agents']['COO']),
@@ -960,33 +959,6 @@ if "Tier 1" in view:
         "CLO": ("CLO AGENT | RISK & REGULATORY", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)", book_data['agents']['CLO']),
         "CTO": ("CTO AGENT | SYSTEMS & TELEMETRY", "Technology & Infrastructure Committee (Chair: CTO Oversight)", book_data['agents']['CTO']),
     }
-    ag_col1, ag_col2 = st.columns(2)
-    with ag_col1:
-        for role, (title, _, agent_info) in [
-            ("COO", agent_map["COO"]),
-            ("CLO", agent_map["CLO"]),
-        ]:
-            card_style = "critical-agent-card" if critical_lead == role else "secondary-agent-card" if critical_lead is not None and critical_lead != role else "agent-card"
-            badge = "🚨 CRITICAL PATH LEAD BOTTLENECK" if critical_lead == role else "AGENT"
-            st.markdown(f'''
-            <div class="{card_style}" style="padding: 14px; border-radius: 8px;">
-                <span class="badge badge-agent">{badge} | {title}</span> <strong>Status: {agent_info['status']}</strong><br>
-                <small>{agent_info['memo']}</small>
-            </div>
-            ''', unsafe_allow_html=True)
-    with ag_col2:
-        for role, (title, _, agent_info) in [
-            ("AFIC", agent_map["AFIC"]),
-            ("CTO", agent_map["CTO"]),
-        ]:
-            card_style = "critical-agent-card" if critical_lead == role else "secondary-agent-card" if critical_lead is not None and critical_lead != role else "agent-card"
-            badge = "🚨 CRITICAL PATH LEAD BOTTLENECK" if critical_lead == role else "AGENT"
-            st.markdown(f'''
-            <div class="{card_style}" style="padding: 14px; border-radius: 8px;">
-                <span class="badge badge-agent">{badge} | {title}</span> <strong>Status: {agent_info['status']}</strong><br>
-                <small>{agent_info['memo']}</small>
-            </div>
-            ''', unsafe_allow_html=True)
 
     st.subheader("Frontline Verification Hold Radar")
     critical_idx = book_data.get("critical_check_idx")
@@ -1012,28 +984,35 @@ if "Tier 1" in view:
         st.info("No critical frontline checklist item mapped for this operating book.")
 
     if is_stage_1_execution:
-        st.subheader("Board Sub-Committee Statutory Quorum")
-        q1, q2 = st.columns(2)
-        with q1:
-            critical_key_order = [
-                ("COO", "Operations & Asset Delivery Committee (Chair: COO Oversight)"),
-                ("AFIC", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)"),
-                ("CLO", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)"),
-                ("CTO", "Technology & Infrastructure Committee (Chair: CTO Oversight)"),
-            ]
-            for role, label in critical_key_order:
-                checkbox_key = f"comm_{book}_{'ops' if role == 'COO' else 'afic' if role == 'AFIC' else 'risk' if role == 'CLO' else 'tech'}"
-                is_required = critical_lead == role
-                checkbox_label = f"{label} — 🚨 **REQUIRED CRITICAL PATH SIGN-OFF**" if is_required else label
-                st.checkbox(checkbox_label, value=st.session_state.get(checkbox_key, False), key=checkbox_key)
-        with q2:
-            st.subheader("Holding Loss Recovery Allocation")
-            st.table({
-                "Category": ["Primary Operating Standby", "WACC Carrying Demurrage", "Regulatory Delay Penalty", "Total Weekly Exposure"],
-                "Weekly Amount": [f"${base_burn*0.35:,.0f}", f"${base_burn*0.40:,.0f}", f"${base_burn*0.25:,.0f}", f"${base_burn:,.0f}"],
-                "Client Retained (90%)": [f"${base_burn*0.35*0.9:,.0f}", f"${base_burn*0.40*0.9:,.0f}", f"${base_burn*0.25*0.9:,.0f}", f"${base_burn*0.9:,.0f}"],
-                "Phoenix Accrual (10%)": [f"${base_burn*0.35*0.1:,.0f}", f"${base_burn*0.40*0.1:,.0f}", f"${base_burn*0.25*0.1:,.0f}", f"${base_burn*0.1:,.0f}"]
-            })
+        st.subheader("Sub-Committee Governance Matrix")
+        committee_rows = [
+            ("COO", "ops", 0),
+            ("AFIC", "afic", 2),
+            ("CLO", "risk", 4),
+            ("CTO", "tech", 6),
+        ]
+        for role, state_key, artifact_index in committee_rows:
+            title, committee_label, agent_info = agent_map[role]
+            checkbox_key = f"comm_{book}_{state_key}"
+            approved = st.session_state.get(checkbox_key, False)
+            is_required = not approved or critical_lead == role
+            card_class = "critical-agent-card" if is_required else "agent-card"
+            signoff_label = f"Statutory Sign-off: {committee_label}"
+            hold_reason = "Critical-path authorization remains outstanding." if critical_lead == role else "Committee review remains outstanding before the operating directive can proceed."
+            chairman_action = book_data['circuit_breaker'] if critical_lead == role else "Confirm the committee record, preserve the decision basis, and maintain the targeted surge authorization in reserve."
+            frontline_artifact = book_data['checks'][artifact_index]
+            with st.expander(f"{'🚨 ' if is_required else '✅ '}{committee_label}", expanded=is_required):
+                st.markdown(f'''
+                <div class="{card_class}">
+                    <span class="badge {'badge-danger' if is_required else 'badge-success'}">{'🚨 REQUIRED CRITICAL PATH SIGN-OFF' if is_required else 'SIGN-OFF RECORDED'}</span>
+                    <strong>{title}</strong><br><br>
+                    <strong>🤖 Agent Telemetry Diagnosis:</strong> {agent_info['memo']}<br><br>
+                    <strong>📋 GM Supervisory Brief:</strong> {agent_info['status']}. Field standby carry is ${base_burn:,.0f}/wk; {hold_reason}<br><br>
+                    <strong>🛠️ Frontline Dependency:</strong> Tier 3 must verify “{frontline_artifact}” to clear this hold.<br><br>
+                    <strong>⚖️ Fiduciary Recommendation:</strong> {chairman_action}
+                </div>
+                ''', unsafe_allow_html=True)
+                st.checkbox(signoff_label, value=approved, key=checkbox_key)
         
         st.divider()
         t1_sp, t1_btn = st.columns([1.5, 1])
