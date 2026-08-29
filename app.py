@@ -1,4 +1,5 @@
 import hashlib
+import re
 from datetime import datetime, timezone
 import numpy as np
 import streamlit as st
@@ -82,6 +83,7 @@ st.markdown('''
     .badge-success { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
     .badge-danger { background: rgba(255,123,114,0.15); color: var(--red); border: 1px solid var(--red); }
     .badge-agent { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid var(--purple); }
+    .badge-safe-harbor { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid #58a6ff; }
 
     /* Frontline Blocker Radar & Critical Checklist Item */
     .radar-card { background: rgba(255, 77, 79, 0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: 0 0 0 1px rgba(255,77,79,0.35), 0 0 20px rgba(255,77,79,0.7); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
@@ -387,7 +389,8 @@ for key, default in [
     ('detection_time', {}), ('override_logged', {}),
     ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
-    ('override_active', False), ('master_surge', 0)
+    ('override_active', False), ('master_surge', 0),
+    ('auto_override_triggered', False), ('master_surge_cap', 0)
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
@@ -407,6 +410,8 @@ def reset_book(book_name):
     st.session_state['board_quorum'][book_name] = False
     st.session_state['override_active'] = False
     st.session_state['master_surge'] = 0
+    st.session_state['auto_override_triggered'] = False
+    st.session_state['master_surge_cap'] = 0
     st.session_state['active_phase'][book_name] = 1
     st.session_state['phase_2_authorized'][book_name] = False
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
@@ -464,6 +469,19 @@ def append_forensic_entry(book_name, authority, resolution_time=None):
     st.session_state['ledger'].append(forensic_entry)
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
 
+
+def parse_cost_drift_dollars(cost_drift_str):
+    match = re.search(r'\$([\d.]+)([kM]?)', cost_drift_str)
+    if not match:
+        return 0.0
+    value, suffix = match.groups()
+    value = float(value)
+    if suffix == 'k':
+        value *= 1_000
+    elif suffix == 'M':
+        value *= 1_000_000
+    return value
+
 # Sidebar Controls
 st.sidebar.title("FACTORY COMMAND POST")
 st.sidebar.caption("Autonomous Capital Defense Control Plane")
@@ -478,6 +496,30 @@ if 'phase_2_authorized' not in st.session_state:
 st.session_state['active_phase'].setdefault(book, 1)
 st.session_state['phase_2_authorized'].setdefault(book, False)
 active_phase, phase_2 = get_phase_context(book)
+
+# Mathematical Algorithmic Override: fiduciary-ratio / hesitation-lag safe-harbor trigger
+critical_lead = book_data.get('critical_lead')
+is_critical = critical_lead is not None
+weekly_burn = book_data['base_burn']
+terminal_loss = (weekly_burn / 7.0) * 90
+fiduciary_ratio = terminal_loss / (weekly_burn * 0.10)
+
+if not st.session_state['cleared_books'].get(book, False) and not st.session_state['detection_time'].get(book):
+    st.session_state['detection_time'][book] = datetime.now(timezone.utc)
+detection_time = st.session_state['detection_time'].get(book, datetime.now(timezone.utc))
+hesitation_seconds = max((datetime.now(timezone.utc) - detection_time).total_seconds(), 0)
+
+sla_seconds_map = {"COO": 86400, "AFIC": 86400, "CLO": 259200, "CTO": 14400}
+sla_seconds = sla_seconds_map.get(critical_lead, 86400)
+cost_drift_dollars = parse_cost_drift_dollars(book_data['drift_metrics']['cost_drift'])
+
+st.session_state['auto_override_triggered'] = False
+if not st.session_state['cleared_books'].get(book, False) and (hesitation_seconds > sla_seconds or (is_critical and fiduciary_ratio > 10.0)):
+    st.session_state['auto_override_triggered'] = True
+    st.session_state['override_active'] = True
+    st.session_state['master_surge_cap'] = min(50, int(cost_drift_dollars / 5000))
+    st.session_state['master_surge'] = max(st.session_state['master_surge'], st.session_state['master_surge_cap'])
+    st.session_state['override_toggle'] = True
 
 sync_c1, sync_c2 = st.sidebar.columns(2)
 sync_c1.button("🔄 Sync State", on_click=trigger_sync)
@@ -499,6 +541,11 @@ st.sidebar.markdown("---")
 override = st.sidebar.toggle("Chairman Directorate Override", value=st.session_state['override_active'], key="override_toggle")
 st.session_state['override_active'] = override
 
+if st.session_state['auto_override_triggered']:
+    st.sidebar.markdown(f'''
+    <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
+    ''', unsafe_allow_html=True)
+
 if override and not st.session_state['override_logged'].get(book, False):
     append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
     st.session_state['override_logged'][book] = True
@@ -516,9 +563,6 @@ if is_quorum:
     st.session_state['board_quorum'][book] = True
 else:
     st.session_state['board_quorum'][book] = False
-
-if not st.session_state['cleared_books'].get(book, False) and not st.session_state['detection_time'].get(book):
-    st.session_state['detection_time'][book] = datetime.now(timezone.utc)
 
 # Operating Pipeline Sequence Widget
 is_cleared = st.session_state['cleared_books'].get(book, False)
@@ -610,6 +654,11 @@ st.markdown(f'''
 if "Tier 1" in view:
     st.header("Apex Board Governance & Oversight")
     st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
+
+    if st.session_state['auto_override_triggered']:
+        st.markdown(f'''
+        <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
+        ''', unsafe_allow_html=True)
 
     if active_phase == 2:
         target_director = phase_2['target_director']
