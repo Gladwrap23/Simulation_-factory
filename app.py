@@ -640,8 +640,9 @@ pipeline_step2_sub = book_data.get("gm_action_title", "Dispatch Engineering Dire
 pipeline_step3_sub = book_data.get("site_action_title", "8-Point SOP Checklist Verification")
 pipeline_step4_sub = f"Preserve ${book_data.get('preservation_amt', '549k')} Balance Sheet"
 
-st.sidebar.markdown(f'''
-<div class="pipeline-card">
+if "Tier 3" not in view:
+    st.sidebar.markdown(f'''
+    <div class="pipeline-card">
     <strong style="color: var(--teal); font-size: 0.85rem;">OPERATING PIPELINE SEQUENCE</strong><br><br>
     <div style="margin-bottom:8px;">
         <div style="display:flex; justify-content:space-between;">
@@ -667,8 +668,8 @@ st.sidebar.markdown(f'''
         </div>
         <small style="color: var(--text-muted);">{pipeline_step4_sub}</small>
     </div>
-</div>
-''', unsafe_allow_html=True)
+    </div>
+    ''', unsafe_allow_html=True)
 
 # Financial Computations
 base_burn = book_data["base_burn"]
@@ -690,13 +691,14 @@ else:
     completed_checks = sum([st.session_state.get(f"chk_{book}_{i}", False) for i in range(8)])
     sop_badge = f"{completed_checks} / 8"
 
-# Top Metric Cards Bar
-m1, m2, m3, m4, m5 = st.columns(5)
-m1.metric("Total Exposure", book_data["exposure"], "Board Limit")
-m2.metric("Holding Burn", burn_display, burn_sub)
-m3.metric("Client Realization", client_realization, "90% target" if not is_cleared else "Preserved")
-m4.metric("Phoenix Fee", phoenix_fee, "10% accrual" if not is_cleared else "Earned")
-m5.metric("SOP Readiness", sop_badge, "Field Gate")
+if "Tier 3" not in view:
+    # Top Metric Cards Bar
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Total Exposure", book_data["exposure"], "Board Limit")
+    m2.metric("Holding Burn", burn_display, burn_sub)
+    m3.metric("Client Realization", client_realization, "90% target" if not is_cleared else "Preserved")
+    m4.metric("Phoenix Fee", phoenix_fee, "10% accrual" if not is_cleared else "Earned")
+    m5.metric("SOP Readiness", sop_badge, "Field Gate")
 
 # Regional Bottleneck Blueprint & Live Drift Radar
 phase_context = phase_2 if active_phase == 2 else book_data
@@ -707,7 +709,7 @@ current_circuit_breaker = phase_context.get('circuit_breaker', book_data['circui
 phase_banner_title = "PHASE 2 SECONDARY BOTTLENECK & FORENSIC BLUEPRINT" if active_phase == 2 else "REGIONAL BOTTLENECK & FORENSIC BLUEPRINT"
 
 # Interactive 3-Stage Bottleneck Inspector — exposes role-specific intelligence in Tier 1 and Tier 3.
-if "Tier 1" in view or "Tier 3" in view:
+if "Tier 1" in view or ("Tier 3" in view and is_directed):
     stage_key = f"inspected_stage_{book}"
     st.session_state.setdefault(stage_key, active_phase)
 
@@ -799,8 +801,9 @@ if "Tier 1" in view or "Tier 3" in view:
         </div>
         ''', unsafe_allow_html=True)
 
-st.markdown(f'''
-<div class="blueprint-card">
+if "Tier 3" not in view:
+    st.markdown(f'''
+    <div class="blueprint-card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <span style="font-size:0.8rem; font-family:monospace; color:#ff7b72; font-weight:bold; letter-spacing:1px;">{phase_banner_title}</span>
         <span class="badge {'badge-danger' if 'DEPENDENCY' in current_regime or 'QUEUE' in current_regime else 'badge-active'}">REGIME: {current_regime}</span>
@@ -824,8 +827,8 @@ st.markdown(f'''
             <small><em>{current_circuit_breaker}</em></small>
         </div>
     </div>
-</div>
-''', unsafe_allow_html=True)
+    </div>
+    ''', unsafe_allow_html=True)
 
 # ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
 if "Tier 1" in view:
@@ -1044,8 +1047,7 @@ if "Tier 1" in view:
 
 # ----------------- TIER 2: GENERAL MANAGEMENT -----------------
 elif "Tier 2" in view:
-    st.header("General Management Directive & Domain Translation")
-    st.write(f"Operational translation of Boardroom mandates for {book}.")
+    st.header(f"📋 General Management Operational Command (Chair: {critical_lead} Oversight)")
 
     if active_phase == 2:
         target_director = phase_2['target_director']
@@ -1058,19 +1060,23 @@ elif "Tier 2" in view:
     if not is_quorum:
         st.error("🔒 **TIER 2 LOCKED:** Board Quorum has not been authorized in Tier 1. Return to Chairman Directorate to establish quorum.")
     else:
+        directive = phase_2['recommended_resolution'] if active_phase == 2 else book_data['circuit_breaker']
+        technical_instruction = phase_2['failure_mode'] if active_phase == 2 else book_data['agents']['CTO']['memo']
+        vendor_sla_hours = max(1, int(sla_seconds / 3600))
+        hourly_carry = base_burn / 168
         st.markdown(f'''
         <div class="card" style="border-left: 4px solid var(--teal);">
-            <strong>Statutory Mandate Active:</strong> {active_surge}% Surge Capital Envelope Authorized | 
-            <strong>Regime:</strong> {book_data['regime']} | 
-            <strong>Action:</strong> Domain Work Orders Ready for Site Dispatch
+            <span class="badge badge-active">ACTIVE ENGINEERING DIRECTIVE</span><br><br>
+            <strong>Work Order:</strong> {directive}<br>
+            <strong>Technical Execution:</strong> {technical_instruction}
         </div>
         ''', unsafe_allow_html=True)
-        
-        g1, g2, g3, g4 = st.columns(4)
-        g1.markdown(f"<div class='card'><span class='badge badge-active'>OPERATIONS (COO)</span><br>Surge: {active_surge}%<br>SLA: 1 business day<br><small>Deploy dedicated 24/7 testing crew and clear standby logs.</small></div>", unsafe_allow_html=True)
-        g2.markdown(f"<div class='card'><span class='badge badge-active'>CAPITAL (CFO)</span><br>Surge: {active_surge}%<br>SLA: 1 business day<br><small>Release milestone payment upon certified artifact verification.</small></div>", unsafe_allow_html=True)
-        g3.markdown(f"<div class='card'><span class='badge badge-active'>COMPLIANCE (CLO)</span><br>Surge: {active_surge}%<br>SLA: 3 business days<br><small>Transmit compliance attestation to governing authority.</small></div>", unsafe_allow_html=True)
-        g4.markdown(f"<div class='card'><span class='badge badge-active'>SYSTEMS (CTO)</span><br>Surge: {active_surge}%<br>SLA: 4 hours<br><small>Deploy synthetic calibration scripts and clear telemetry lock.</small></div>", unsafe_allow_html=True)
+
+        st.subheader("Vendor & Contractor Mobilization Status")
+        v1, v2, v3 = st.columns(3)
+        v1.markdown(f"<div class='card'><span class='badge badge-active'>FIELD CONTRACTOR POOL</span><br>Standby headcount: 12<br><small>Mobilized for {book_data['artifacts'][0][0]} execution.</small></div>", unsafe_allow_html=True)
+        v2.markdown(f"<div class='card'><span class='badge badge-pending'>STANDBY CARRY</span><br>${hourly_carry:,.0f} / hour<br><small>Active contractor and test-equipment carry.</small></div>", unsafe_allow_html=True)
+        v3.markdown(f"<div class='card'><span class='badge badge-active'>VENDOR SLA COUNTDOWN</span><br>{vendor_sla_hours} hours<br><small>Required response window for {critical_lead} escalation.</small></div>", unsafe_allow_html=True)
         
         st.divider()
         
@@ -1080,48 +1086,43 @@ elif "Tier 2" in view:
             
         t2_sp, t2_btn = st.columns([1.5, 1])
         with t2_btn:
-            st.button("⚡ Dispatch Translated Directive to Frontline", on_click=dispatch_directive, type="primary")
+            st.button("🚀 Issue Binding Operational Directive to Site Operations", on_click=dispatch_directive, type="primary")
 
 # ----------------- TIER 3: SITE OPERATIONS -----------------
 elif "Tier 3" in view:
     st.header(f"Site Operations Hub / {book}")
-    
-    st.subheader("Upstream Governance Status")
-    ug1, ug2, ug3, ug4 = st.columns(4)
-    ug1.markdown(f"<div class='card'><span class='badge badge-active'>OPERATIONS</span><br>Surge: {active_surge}%<br>SLA: 1 business day</div>", unsafe_allow_html=True)
-    ug2.markdown(f"<div class='card'><span class='badge badge-active'>CAPITAL</span><br>Surge: {active_surge}%<br>SLA: 1 business day</div>", unsafe_allow_html=True)
-    ug3.markdown(f"<div class='card'><span class='badge badge-active'>COMPLIANCE</span><br>Surge: {active_surge}%<br>SLA: 3 business days</div>", unsafe_allow_html=True)
-    ug4.markdown(f"<div class='card'><span class='badge badge-active'>SYSTEMS</span><br>Surge: {active_surge}%<br>SLA: 4 hours</div>", unsafe_allow_html=True)
-    
-    st.subheader(f"Authentic Control Artifacts ({book})")
-    art = book_data["artifacts"]
-    a1, a2, a3, a4 = st.columns(4)
-    a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{art[0][1]}</small></div>", unsafe_allow_html=True)
-    a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{art[1][1]}</small></div>", unsafe_allow_html=True)
-    a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{art[2][1]}</small></div>", unsafe_allow_html=True)
-    a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{art[3][1]}</small></div>", unsafe_allow_html=True)
-    
-    st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else "Frontline SOP Release Checklist")
-    if active_phase == 2:
-        checks_raw = phase_2["checks"]
-        key_prefix = f"chk2_{book}"
-        critical_idx = None
+    if not is_directed:
+        st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
     else:
-        checks_raw = book_data["checks"]
-        key_prefix = f"chk_{book}"
-        critical_idx = book_data.get("critical_check_idx")
-    c_col1, c_col2 = st.columns(2)
-    
-    check_states = []
-    for i, chk_text in enumerate(checks_raw):
-        col_target = c_col1 if i % 2 == 0 else c_col2
-        k = f"{key_prefix}_{i}"
-        chk_label = f"🔴 **{chk_text}** — *(🚨 CRITICAL PATH BLOCKER)*" if i == critical_idx else chk_text
-        v = col_target.checkbox(chk_label, value=st.session_state.get(k, False), key=k)
-        check_states.append(v)
-    
-    completed_count = sum(check_states)
-    st.divider()
+        st.subheader(f"Physical Test Criteria ({book})")
+        art = book_data["artifacts"]
+        a1, a2, a3, a4 = st.columns(4)
+        a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{art[0][1]}</small></div>", unsafe_allow_html=True)
+        a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{art[1][1]}</small></div>", unsafe_allow_html=True)
+        a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{art[2][1]}</small></div>", unsafe_allow_html=True)
+        a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{art[3][1]}</small></div>", unsafe_allow_html=True)
+
+        st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else "Frontline SOP Release Checklist")
+        if active_phase == 2:
+            checks_raw = phase_2["checks"]
+            key_prefix = f"chk2_{book}"
+            critical_idx = None
+        else:
+            checks_raw = book_data["checks"]
+            key_prefix = f"chk_{book}"
+            critical_idx = book_data.get("critical_check_idx")
+        c_col1, c_col2 = st.columns(2)
+
+        check_states = []
+        for i, chk_text in enumerate(checks_raw):
+            col_target = c_col1 if i % 2 == 0 else c_col2
+            k = f"{key_prefix}_{i}"
+            chk_label = f"🔴 **{chk_text}** — *(🚨 CRITICAL PATH BLOCKER)*" if i == critical_idx else chk_text
+            v = col_target.checkbox(chk_label, value=st.session_state.get(k, False), key=k)
+            check_states.append(v)
+
+        completed_count = sum(check_states)
+        st.divider()
     
     def signoff_and_settle():
         st.session_state['cleared_books'][book] = True
@@ -1145,18 +1146,19 @@ elif "Tier 3" in view:
         st.session_state['board_escalation'][book] = True
         st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
 
-    if completed_count == 8:
-        t3_sp, t3_act = st.columns([1.5, 1])
-        with t3_act:
-            st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
-    else:
-        st.info(f"{completed_count}/8 checks complete. All 8 verification checks required for physical sign-off.")
-        with st.expander("🚨 Transmit Critical Impediment to Chairman"):
-            st.selectbox("Impediment Category", ["Specialist Labor Shortage", "Critical Hardware/Testing Delay", "Regulatory Compliance Hold"])
-            st.text_input("Field Context", "Frontline blocked on compliance gate; requires emergency Board intervention.")
-            esc_sp, esc_btn = st.columns([1.5, 1])
-            with esc_btn:
-                st.button("🚨 Dispatch Emergency Ticket to Chairman", on_click=escalate_to_board, type="primary")
+    if is_directed:
+        if completed_count == 8:
+            t3_sp, t3_act = st.columns([1.5, 1])
+            with t3_act:
+                st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
+        else:
+            st.info(f"{completed_count}/8 checks complete. All 8 verification checks required for physical sign-off.")
+            with st.expander("🚨 Transmit Critical Impediment to Chairman"):
+                st.selectbox("Impediment Category", ["Specialist Labor Shortage", "Critical Hardware/Testing Delay", "Regulatory Compliance Hold"])
+                st.text_input("Field Context", "Frontline blocked on compliance gate; requires emergency Board intervention.")
+                esc_sp, esc_btn = st.columns([1.5, 1])
+                with esc_btn:
+                    st.button("🚨 Dispatch Emergency Ticket to Chairman", on_click=escalate_to_board, type="primary")
 
 # ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
 elif "Ledger" in view:
