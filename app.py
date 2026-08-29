@@ -634,20 +634,37 @@ else:
 is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
 
+pipeline_step1_sub = f"Sub-Committee Gate ({book_data.get('critical_lead') or 'Full Board'} Oversight)"
+pipeline_step2_sub = book_data.get("gm_action_title", "Dispatch Engineering Directive")
+pipeline_step3_sub = book_data.get("site_action_title", "8-Point SOP Checklist Verification")
+pipeline_step4_sub = f"Preserve ${book_data.get('preservation_amt', '549k')} Balance Sheet"
+
 st.sidebar.markdown(f'''
 <div class="pipeline-card">
     <strong style="color: var(--teal); font-size: 0.85rem;">OPERATING PIPELINE SEQUENCE</strong><br><br>
-    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-        <span>1. Apex Board</span> <span class="badge {'badge-success' if is_quorum else 'badge-pending'}">{'AUTHORIZED' if is_quorum else 'PENDING'}</span>
+    <div style="margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between;">
+            <span>1. Apex Board</span> <span class="badge {'badge-success' if is_quorum else 'badge-pending'}">{'AUTHORIZED' if is_quorum else 'PENDING'}</span>
+        </div>
+        <small style="color: var(--text-muted);">{pipeline_step1_sub}</small>
     </div>
-    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-        <span>2. GM Directive</span> <span class="badge {'badge-success' if is_directed else 'badge-pending'}">{'DISPATCHED' if is_directed else 'PENDING'}</span>
+    <div style="margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between;">
+            <span>2. GM Directive</span> <span class="badge {'badge-success' if is_directed else 'badge-pending'}">{'DISPATCHED' if is_directed else 'PENDING'}</span>
+        </div>
+        <small style="color: var(--text-muted);">{pipeline_step2_sub}</small>
     </div>
-    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-        <span>3. Site Operations</span> <span class="badge {'badge-success' if is_cleared else 'badge-pending'}">{'VERIFIED' if is_cleared else 'IN PROGRESS'}</span>
+    <div style="margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between;">
+            <span>3. Site Operations</span> <span class="badge {'badge-success' if is_cleared else 'badge-pending'}">{'VERIFIED' if is_cleared else 'IN PROGRESS'}</span>
+        </div>
+        <small style="color: var(--text-muted);">{pipeline_step3_sub}</small>
     </div>
-    <div style="display:flex; justify-content:space-between;">
-        <span>4. Audit Settlement</span> <span class="badge {'badge-success' if is_cleared else 'badge-pending'}">{'COMMITTED' if is_cleared else 'PENDING'}</span>
+    <div>
+        <div style="display:flex; justify-content:space-between;">
+            <span>4. Audit Settlement</span> <span class="badge {'badge-success' if is_cleared else 'badge-pending'}">{'COMMITTED' if is_cleared else 'PENDING'}</span>
+        </div>
+        <small style="color: var(--text-muted);">{pipeline_step4_sub}</small>
     </div>
 </div>
 ''', unsafe_allow_html=True)
@@ -688,6 +705,54 @@ current_regime_detail = phase_context.get('regime_detail', book_data['regime_det
 current_circuit_breaker = phase_context.get('circuit_breaker', book_data['circuit_breaker'])
 phase_banner_title = "PHASE 2 SECONDARY BOTTLENECK & FORENSIC BLUEPRINT" if active_phase == 2 else "REGIONAL BOTTLENECK & FORENSIC BLUEPRINT"
 
+# Interactive 3-Stage Bottleneck Inspector (Tier 1 only) — lets the Chairman browse any stage's forensic detail
+if "Tier 1" in view:
+    stage_key = f"inspected_stage_{book}"
+    st.session_state.setdefault(stage_key, active_phase)
+
+    def set_inspected_stage(stage_num):
+        st.session_state[stage_key] = stage_num
+
+    stage3_title = f"{book_data['artifacts'][-1][0]} Commercial Release"
+    stage_pills = {
+        1: ("Stage 1: Active Blocker", book_data['bottleneck']),
+        2: ("Stage 2: Secondary Queue", phase_2['bottleneck']),
+        3: ("Stage 3: Commercial Gate", stage3_title),
+    }
+    st.subheader("🔍 Interactive 3-Stage Bottleneck Inspector")
+    p1, p2, p3 = st.columns(3)
+    for col, stage_num in zip((p1, p2, p3), (1, 2, 3)):
+        title, subtitle = stage_pills[stage_num]
+        is_selected = st.session_state[stage_key] == stage_num
+        col.button(
+            f"{'🔴 ' if is_selected else ''}{title}\n{subtitle}",
+            key=f"stage_pill_{book}_{stage_num}",
+            on_click=set_inspected_stage,
+            args=(stage_num,),
+            type="primary" if is_selected else "secondary",
+            use_container_width=True
+        )
+
+    inspected_stage = st.session_state[stage_key]
+    if inspected_stage == 1:
+        current_bottleneck = book_data['bottleneck']
+        current_regime = book_data['regime']
+        current_regime_detail = book_data['regime_detail']
+        current_circuit_breaker = book_data['circuit_breaker']
+        phase_banner_title = "STAGE 1 · ACTIVE BLOCKER FORENSIC BLUEPRINT"
+    elif inspected_stage == 2:
+        current_bottleneck = phase_2['bottleneck']
+        current_regime = phase_2['regime']
+        current_regime_detail = phase_2['regime_detail']
+        current_circuit_breaker = phase_2['recommended_resolution']
+        phase_banner_title = "STAGE 2 · SECONDARY QUEUE FORENSIC BLUEPRINT"
+    else:
+        current_bottleneck = f"Terminal COD & Offtake Gate — {stage3_title} Pending Final Settlement"
+        current_regime = "TERMINAL SETTLEMENT GATE"
+        current_regime_detail = "Commercial operations date and offtake agreement release require both Phase 1 and Phase 2 verification packets fully executed and Board-ratified before funds are released."
+        current_circuit_breaker = "LOCKED: Submit the final Tier 3 Phase 2 SOP checklist and Board audit sign-off to trigger terminal settlement release."
+        phase_banner_title = "STAGE 3 · COMMERCIAL GATE FORENSIC BLUEPRINT"
+
 st.markdown(f'''
 <div class="blueprint-card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -715,30 +780,6 @@ st.markdown(f'''
     </div>
 </div>
 ''', unsafe_allow_html=True)
-
-if "Tier 1" in view:
-    stage1_critical = 'DEPENDENCY' in current_regime or 'DEFICIT' in current_regime or 'QUEUE' in current_regime
-    stage1_style = "background: rgba(255,77,79,0.15); border: 2px solid #ff4d4f; box-shadow: 0 0 14px rgba(255,77,79,0.5);" if stage1_critical else "background: rgba(63,185,80,0.1); border: 2px solid var(--green);"
-    stage2_label = phase_2.get('bottleneck', 'Phase 2: Secondary Recovery Queue Awaiting Director Approval')
-    st.markdown(f'''
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-        <div class="card" style="{stage1_style}">
-            <span class="badge badge-danger">STAGE 1 · ACTIVE</span><br>
-            <strong>{current_bottleneck}</strong><br>
-            <small>Primary bottleneck currently blocking capital release.</small>
-        </div>
-        <div class="card" style="background: rgba(210,153,34,0.1); border: 2px dashed var(--amber);">
-            <span class="badge badge-pending">STAGE 2 · QUEUED</span><br>
-            <strong>{stage2_label}</strong><br>
-            <small>Secondary gate staged pending Phase 1 clearance and director approval.</small>
-        </div>
-        <div class="card" style="background: rgba(48,54,61,0.4); border: 2px dashed var(--line); opacity: 0.85;">
-            <span class="badge" style="background: rgba(139,148,158,0.15); color: var(--text-muted); border: 1px solid var(--text-muted);">STAGE 3 · LOCKED</span><br>
-            <strong>Terminal COD & Offtake Gate</strong><br>
-            <small>Final commercial operation date / offtake settlement gate — locked until Stage 2 resolves.</small>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
 
 # ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
 if "Tier 1" in view:
