@@ -346,10 +346,26 @@ DEFAULT_SURGICAL_BUDGET = {
     "capital_efficiency_ratio": "15.7x Value Preserved vs. Surgical Spend",
 }
 
+SURGICAL_REMEDIATION_SUMMARIES = {
+    "ERCOT BESS / storage operations": "Inverter OEM Specialist and Synthetic DNP3 Packet Injection Rig active on site.",
+    "Grid Infrastructure / PJM Cluster": "Mobile ASTM dielectric testing laboratory and certified high-voltage engineers active at the intertie.",
+    "ACC NZ Scheme / Claims Review": "Crown Delegation Statutory Review Panel convened; specialized triage adjudicators active on site.",
+    "Port Logistics / Container Flow": "BAPLIE 2.2 parser translation team and Port Authority schema-certification specialists active at the terminal.",
+    "Hyperscale Data Center / Power Intertie": "OEM GIS field-service flight team active on site for SF6 remediation and pressure attestation.",
+    "Offshore Wind / North Sea Subsea HVDC": "DTS optical recalibration specialists active with the offshore OTDR verification crew.",
+    "Semiconductor Fab / Cleanroom Commissioning": "UPW TOC analyzer firmware specialists and cleanroom recertification team active on site.",
+    "Critical Minerals / Lithium Refining Facility": "FIFO rotary-kiln refractory masons and pyrometry test team active at the calcination train.",
+    "Rail Freight & Intermodal Corridor": "WIU cryptographic certificate team and supervised PTC interlocking retest crew active in the yard.",
+    "Defense Manufacturing / Naval Shipyard": "Top Secret-cleared Level III NDT radiographer and PAUT disposition team active at the drydock.",
+    "Municipal Water & Desalination Plant": "PLC chemical-feed tuning specialists and Title 22 confirmation sampling team active at the plant.",
+    "Commercial Aviation / Fleet AOG Turnaround": "OEM digital-signature API specialist and Chief Inspector priority review team active at the MRO hub.",
+}
+
 for book_name, book_data in DATA_MATRIX.items():
     book_data.setdefault("critical_lead", None)
     book_data.setdefault("critical_check_idx", None)
     book_data.setdefault("checklist", book_data["checks"])
+    book_data.setdefault("surgical_remediation_summary", SURGICAL_REMEDIATION_SUMMARIES[book_name])
     book_data.setdefault("surgical_budget", {
         **DEFAULT_SURGICAL_BUDGET,
         "surgical_line_items": [item.copy() for item in DEFAULT_SURGICAL_BUDGET["surgical_line_items"]],
@@ -1204,11 +1220,9 @@ elif "Tier 3" in view:
             or st.session_state['surgical_spend_authorized'].get(book, False)
         )
 
-        def auto_verify_checklist():
-            for index in range(8):
-                st.session_state[f"{key_prefix}_{index}"] = True
-
         st.subheader(f"Physical Test Criteria ({book})")
+        st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
+        st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
         art = book_data["artifacts"]
         a1, a2, a3, a4 = st.columns(4)
         a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{art[0][1]}</small></div>", unsafe_allow_html=True)
@@ -1227,17 +1241,12 @@ elif "Tier 3" in view:
             critical_idx = book_data.get("critical_check_idx")
 
         if remediation_dispatched:
-            st.markdown('''
+            st.markdown(f'''
             <div class="radar-card-cleared">
-                <span class="badge badge-success">✅ REMEDIATION DISPATCHED</span><br><br>
-                <strong>Inverter OEM Specialist &amp; Synthetic DNP3 Rig active on site. Frontline verification unlocked.</strong>
+                <span class="badge badge-success">✅ SURGICAL WORK ORDER ACTIVE</span><br><br>
+                <strong>{book_data.get('surgical_remediation_summary', 'Specialized remediation directive active on site.')} Frontline verification unlocked.</strong>
             </div>
             ''', unsafe_allow_html=True)
-            st.button(
-                "⚡ Run Synthetic Telemetry Stream & Auto-Verify Checklist (8/8)",
-                on_click=auto_verify_checklist,
-                type="primary"
-            )
         c_col1, c_col2 = st.columns(2)
 
         check_states = []
@@ -1316,7 +1325,7 @@ elif "Tier 3" in view:
                 with esc_btn:
                     st.button("⚡ Transmit Forensic Blocker Docket to Tier 2 (GM) & Tier 1 (Chairman)", on_click=transmit_forensic_blocker_docket, type="primary")
             elif critical_item_unchecked:
-                st.info("Remediation is active on site. Verify the remaining frontline checklist items or run the synthetic telemetry stream.")
+                st.info("Remediation is active on site. The Authorized Lead Inspector must manually verify each frontline SOP check.")
             else:
                 st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
 
