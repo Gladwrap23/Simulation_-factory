@@ -1112,6 +1112,7 @@ elif "Tier 2" in view:
         
         def dispatch_directive():
             st.session_state['directive_issued'][book] = True
+            st.session_state['pipeline_step_2'] = "DISPATCHED"
             st.session_state['surgical_spend_authorized'][book] = True
             st.session_state['surgical_purchase_orders'][book] = [
                 {
@@ -1159,6 +1160,15 @@ elif "Tier 3" in view:
     if not is_directed:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
     else:
+        remediation_dispatched = (
+            st.session_state['pipeline_step_2'] == "DISPATCHED"
+            or st.session_state['surgical_spend_authorized'].get(book, False)
+        )
+
+        def auto_verify_checklist():
+            for index in range(8):
+                st.session_state[f"{key_prefix}_{index}"] = True
+
         st.subheader(f"Physical Test Criteria ({book})")
         art = book_data["artifacts"]
         a1, a2, a3, a4 = st.columns(4)
@@ -1176,6 +1186,19 @@ elif "Tier 3" in view:
             checks_raw = book_data["checks"]
             key_prefix = f"chk_{book}"
             critical_idx = book_data.get("critical_check_idx")
+
+        if remediation_dispatched:
+            st.markdown('''
+            <div class="radar-card-cleared">
+                <span class="badge badge-success">✅ REMEDIATION DISPATCHED</span><br><br>
+                <strong>Inverter OEM Specialist &amp; Synthetic DNP3 Rig active on site. Frontline verification unlocked.</strong>
+            </div>
+            ''', unsafe_allow_html=True)
+            st.button(
+                "⚡ Run Synthetic Telemetry Stream & Auto-Verify Checklist (8/8)",
+                on_click=auto_verify_checklist,
+                type="primary"
+            )
         c_col1, c_col2 = st.columns(2)
 
         check_states = []
@@ -1236,7 +1259,7 @@ elif "Tier 3" in view:
         else:
             st.info(f"{completed_count}/8 checks complete. All 8 verification checks required for physical sign-off.")
             critical_item_unchecked = critical_idx is not None and not st.session_state.get(f"{key_prefix}_{critical_idx}", False)
-            if critical_item_unchecked:
+            if critical_item_unchecked and not remediation_dispatched:
                 blocker_diagnostic = book_data["blocker_diagnostic"]
                 st.markdown(f'''
                 <div class="radar-card">
@@ -1250,6 +1273,8 @@ elif "Tier 3" in view:
                 esc_sp, esc_btn = st.columns([1.5, 1])
                 with esc_btn:
                     st.button("⚡ Transmit Forensic Blocker Docket to Tier 2 (GM) & Tier 1 (Chairman)", on_click=transmit_forensic_blocker_docket, type="primary")
+            elif critical_item_unchecked:
+                st.info("Remediation is active on site. Verify the remaining frontline checklist items or run the synthetic telemetry stream.")
             else:
                 st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
 
