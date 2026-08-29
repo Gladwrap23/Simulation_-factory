@@ -551,7 +551,7 @@ def parse_cost_drift_dollars(cost_drift_str):
 st.sidebar.title("FACTORY COMMAND POST")
 st.sidebar.caption("Autonomous Capital Defense Control Plane")
 
-book = st.sidebar.selectbox("Operating book (Top 12 Sectors)", list(DATA_MATRIX.keys()))
+book = st.sidebar.selectbox("Operating book (Top 12 Sectors)", list(DATA_MATRIX.keys()), key="book_select")
 book_data = DATA_MATRIX[book]
 
 if 'active_phase' not in st.session_state:
@@ -716,10 +716,63 @@ st.markdown(f'''
 </div>
 ''', unsafe_allow_html=True)
 
+if "Tier 1" in view:
+    stage1_critical = 'DEPENDENCY' in current_regime or 'DEFICIT' in current_regime or 'QUEUE' in current_regime
+    stage1_style = "background: rgba(255,77,79,0.15); border: 2px solid #ff4d4f; box-shadow: 0 0 14px rgba(255,77,79,0.5);" if stage1_critical else "background: rgba(63,185,80,0.1); border: 2px solid var(--green);"
+    stage2_label = phase_2.get('bottleneck', 'Phase 2: Secondary Recovery Queue Awaiting Director Approval')
+    st.markdown(f'''
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div class="card" style="{stage1_style}">
+            <span class="badge badge-danger">STAGE 1 · ACTIVE</span><br>
+            <strong>{current_bottleneck}</strong><br>
+            <small>Primary bottleneck currently blocking capital release.</small>
+        </div>
+        <div class="card" style="background: rgba(210,153,34,0.1); border: 2px dashed var(--amber);">
+            <span class="badge badge-pending">STAGE 2 · QUEUED</span><br>
+            <strong>{stage2_label}</strong><br>
+            <small>Secondary gate staged pending Phase 1 clearance and director approval.</small>
+        </div>
+        <div class="card" style="background: rgba(48,54,61,0.4); border: 2px dashed var(--line); opacity: 0.85;">
+            <span class="badge" style="background: rgba(139,148,158,0.15); color: var(--text-muted); border: 1px solid var(--text-muted);">STAGE 3 · LOCKED</span><br>
+            <strong>Terminal COD & Offtake Gate</strong><br>
+            <small>Final commercial operation date / offtake settlement gate — locked until Stage 2 resolves.</small>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
 # ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
 if "Tier 1" in view:
     st.header("Apex Board Governance & Oversight")
     st.write(f"Domain statutory envelopes, agent forensic research memos, and quorum gating for {book}.")
+
+    def switch_active_book(target_book):
+        st.session_state['book_select'] = target_book
+
+    with st.expander("🌐 Portfolio Bottleneck Horizon (Cross-Sector Capital Defense Radar)", expanded=False):
+        hdr = st.columns([2.2, 3, 1.6, 1.3, 1.1, 1.1])
+        hdr[0].markdown("**Sector / Asset**")
+        hdr[1].markdown("**Primary Bottleneck**")
+        hdr[2].markdown("**Regime**")
+        hdr[3].markdown("**Holding Burn**")
+        hdr[4].markdown("**SLA Drift**")
+        hdr[5].markdown("**Criticality**")
+        st.divider()
+        for sector_name, sector_data in DATA_MATRIX.items():
+            sector_regime = sector_data['regime']
+            if 'DEPENDENCY' in sector_regime or 'DEFICIT' in sector_regime:
+                criticality = "CRITICAL"
+            elif 'QUEUE' in sector_regime:
+                criticality = "ELEVATED"
+            else:
+                criticality = "NOMINAL"
+            crit_badge_class = {"CRITICAL": "badge-danger", "ELEVATED": "badge-pending", "NOMINAL": "badge-success"}[criticality]
+            row = st.columns([2.2, 3, 1.6, 1.3, 1.1, 1.1])
+            row[0].button(sector_name, key=f"jump_{sector_name}", on_click=switch_active_book, args=(sector_name,), use_container_width=True)
+            row[1].markdown(f"<small>{sector_data['bottleneck']}</small>", unsafe_allow_html=True)
+            row[2].markdown(f"<span class='badge badge-active'>{sector_regime}</span>", unsafe_allow_html=True)
+            row[3].markdown(f"<small>${sector_data['base_burn']:,.0f}/wk</small>", unsafe_allow_html=True)
+            row[4].markdown(f"<small>{sector_data['drift_metrics']['sla_drift']}</small>", unsafe_allow_html=True)
+            row[5].markdown(f"<span class='badge {crit_badge_class}'>{criticality}</span>", unsafe_allow_html=True)
 
     if st.session_state['auto_override_triggered']:
         safe_harbor_engaged = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
