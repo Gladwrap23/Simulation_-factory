@@ -599,11 +599,14 @@ view = st.sidebar.radio("Command view", [
 
 st.sidebar.markdown("---")
 
-# Chairman Directorate Override (widgets rendered in Tier 1 sidebar only; state persists across all tiers)
+# Chairman Directorate Override is available only for active Stage 1 execution.
 override = st.session_state['override_active'] or st.session_state.get('safe_harbor_active', False)
 master_surge = st.session_state['master_surge']
 
-if view == "1️⃣ Tier 1 | Chairman Directorate":
+stage_key = f"inspected_stage_{book}"
+is_stage_1_execution = "Tier 1" in view and st.session_state.get(stage_key, active_phase) == 1
+
+if is_stage_1_execution:
     override_val = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
     override = st.sidebar.toggle("Chairman Directorate Override", value=override_val, key="manual_override_toggle")
     st.session_state['override_active'] = override
@@ -617,18 +620,16 @@ if view == "1️⃣ Tier 1 | Chairman Directorate":
         master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, st.session_state['master_surge'], step=5)
         st.session_state['master_surge'] = master_surge
 
-if override and not st.session_state['override_logged'].get(book, False):
+if is_stage_1_execution and override and not st.session_state['override_logged'].get(book, False):
     append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
     st.session_state['override_logged'][book] = True
-elif not override:
+elif is_stage_1_execution and not override:
     st.session_state['override_logged'][book] = False
 
 quorum_count = sum([st.session_state.get(f"comm_{book}_{c}", False) for c in ['ops', 'afic', 'risk', 'tech']])
 is_quorum = (quorum_count == 4) or override
-if is_quorum:
-    st.session_state['board_quorum'][book] = True
-else:
-    st.session_state['board_quorum'][book] = False
+if is_stage_1_execution:
+    st.session_state['board_quorum'][book] = is_quorum
 
 # Operating Pipeline Sequence Widget
 is_cleared = st.session_state['cleared_books'].get(book, False)
@@ -705,8 +706,8 @@ current_regime_detail = phase_context.get('regime_detail', book_data['regime_det
 current_circuit_breaker = phase_context.get('circuit_breaker', book_data['circuit_breaker'])
 phase_banner_title = "PHASE 2 SECONDARY BOTTLENECK & FORENSIC BLUEPRINT" if active_phase == 2 else "REGIONAL BOTTLENECK & FORENSIC BLUEPRINT"
 
-# Interactive 3-Stage Bottleneck Inspector (Tier 1 only) — lets the Chairman browse any stage's forensic detail
-if "Tier 1" in view:
+# Interactive 3-Stage Bottleneck Inspector — exposes role-specific intelligence in Tier 1 and Tier 3.
+if "Tier 1" in view or "Tier 3" in view:
     stage_key = f"inspected_stage_{book}"
     st.session_state.setdefault(stage_key, active_phase)
 
@@ -752,6 +753,51 @@ if "Tier 1" in view:
         current_regime_detail = "Commercial operations date and offtake agreement release require both Phase 1 and Phase 2 verification packets fully executed and Board-ratified before funds are released."
         current_circuit_breaker = "LOCKED: Submit the final Tier 3 Phase 2 SOP checklist and Board audit sign-off to trigger terminal settlement release."
         phase_banner_title = "STAGE 3 · COMMERCIAL GATE FORENSIC BLUEPRINT"
+
+    if "Tier 1" in view:
+        stage_intelligence = {
+            1: {
+                "risk": f"{book_data['bottleneck']}. {book_data['regime_detail']}",
+                "loss": base_burn,
+                "oversight": book_data['agents']['CLO']['memo'],
+                "action": f"{book_data['circuit_breaker']} Pre-draft the governing waiver and queue the targeted capital authorization only after the technical gate is validated.",
+            },
+            2: {
+                "risk": f"{phase_2['bottleneck']}. {phase_2['regime_detail']}",
+                "loss": base_burn,
+                "oversight": f"DGCL duty-of-care exposure rises if the Board does not document review of the Phase 2 {phase_2['target_director']} remediation path.",
+                "action": f"Pre-clear a conditional {phase_2['target_director']} capital approval and preserve the Board record for the secondary gate cure.",
+            },
+            3: {
+                "risk": f"Terminal settlement remains blocked until the final {stage3_title} packet is complete and ratified.",
+                "loss": base_burn,
+                "oversight": "DGCL fiduciary exposure arises from releasing commercial proceeds before documented completion of the required control packets.",
+                "action": "Pre-draft conditional release resolutions and retain settlement authority pending verified Phase 1 and Phase 2 artifacts.",
+            },
+        }[inspected_stage]
+        st.markdown(f'''
+        <div class="agent-card">
+            <span class="badge badge-agent">🤖 CHAIRMAN'S FIDUCIARY AGENT BRIEFING | STAGE {inspected_stage}</span><br><br>
+            <strong>Stage Risk &amp; Technical Root Cause:</strong> {stage_intelligence['risk']}<br><br>
+            <strong>Projected Holding Loss ($/wk):</strong> ${stage_intelligence['loss']:,.0f} if this stage stalls upon activation.<br><br>
+            <strong>Statutory Oversight Vulnerability (DGCL / Fiduciary exposure):</strong> {stage_intelligence['oversight']}<br><br>
+            <strong>Recommended Pre-emptive Board Action:</strong> {stage_intelligence['action']}
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        stage_checks = book_data['checks'] if inspected_stage == 1 else phase_2['checks'] if inspected_stage == 2 else [artifact[0] for artifact in book_data['artifacts']]
+        stage_artifacts = book_data['artifacts'] if inspected_stage != 2 else [(check, "Required Phase 2 verification") for check in phase_2['checks']]
+        telemetry_threshold = book_data['drift_metrics']['telemetry_drift'] if inspected_stage == 1 else "Phase 2 verification packet complete" if inspected_stage == 2 else "All control artifacts verified before terminal release"
+        safety_interlock = book_data['agents']['CTO']['memo'] if inspected_stage == 1 else phase_2['recommended_resolution'] if inspected_stage == 2 else f"Maintain terminal release lock until {stage3_title} verification is complete."
+        st.markdown(f'''
+        <div class="agent-card" style="border-color: var(--teal);">
+            <span class="badge badge-active">🛠️ ENGINEERING FIELD COPILOT | STAGE {inspected_stage}</span><br><br>
+            <strong>Raw Telemetry Threshold:</strong> {telemetry_threshold}<br><br>
+            <strong>Required Tooling:</strong> {', '.join(artifact[0] for artifact in stage_artifacts[:4])}<br><br>
+            <strong>Physical Safety Interlocks:</strong> {safety_interlock}<br><br>
+            <strong>Frontline Verification Checklist:</strong> {'; '.join(stage_checks)}
+        </div>
+        ''', unsafe_allow_html=True)
 
 st.markdown(f'''
 <div class="blueprint-card">
@@ -962,36 +1008,39 @@ if "Tier 1" in view:
     else:
         st.info("No critical frontline checklist item mapped for this operating book.")
 
-    st.subheader("Board Sub-Committee Statutory Quorum")
-    q1, q2 = st.columns(2)
-    with q1:
-        critical_key_order = [
-            ("COO", "Operations & Asset Delivery Committee (Chair: COO Oversight)"),
-            ("AFIC", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)"),
-            ("CLO", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)"),
-            ("CTO", "Technology & Infrastructure Committee (Chair: CTO Oversight)"),
-        ]
-        for role, label in critical_key_order:
-            checkbox_key = f"comm_{book}_{'ops' if role == 'COO' else 'afic' if role == 'AFIC' else 'risk' if role == 'CLO' else 'tech'}"
-            is_required = critical_lead == role
-            checkbox_label = f"{label} — 🚨 **REQUIRED CRITICAL PATH SIGN-OFF**" if is_required else label
-            st.checkbox(checkbox_label, value=st.session_state.get(checkbox_key, False), key=checkbox_key)
-    with q2:
-        st.subheader("Holding Loss Recovery Allocation")
-        st.table({
-            "Category": ["Primary Operating Standby", "WACC Carrying Demurrage", "Regulatory Delay Penalty", "Total Weekly Exposure"],
-            "Weekly Amount": [f"${base_burn*0.35:,.0f}", f"${base_burn*0.40:,.0f}", f"${base_burn*0.25:,.0f}", f"${base_burn:,.0f}"],
-            "Client Retained (90%)": [f"${base_burn*0.35*0.9:,.0f}", f"${base_burn*0.40*0.9:,.0f}", f"${base_burn*0.25*0.9:,.0f}", f"${base_burn*0.9:,.0f}"],
-            "Phoenix Accrual (10%)": [f"${base_burn*0.35*0.1:,.0f}", f"${base_burn*0.40*0.1:,.0f}", f"${base_burn*0.25*0.1:,.0f}", f"${base_burn*0.1:,.0f}"]
-        })
-    
-    st.divider()
-    t1_sp, t1_btn = st.columns([1.5, 1])
-    with t1_btn:
-        if is_quorum:
-            st.button("➡️ Advance to Tier 2 (General Management)", on_click=nav_to, args=("2️⃣ Tier 2 | General Management",), type="primary")
-        else:
-            st.warning(f"⚠️ Quorum Incomplete ({quorum_count}/4). Full committee quorum or Chairman Override required.")
+    if is_stage_1_execution:
+        st.subheader("Board Sub-Committee Statutory Quorum")
+        q1, q2 = st.columns(2)
+        with q1:
+            critical_key_order = [
+                ("COO", "Operations & Asset Delivery Committee (Chair: COO Oversight)"),
+                ("AFIC", "Audit, Finance & Investment Committee / AFIC (Chair: CFO Oversight)"),
+                ("CLO", "Risk, Regulatory & Legal Committee (Chair: CLO Oversight)"),
+                ("CTO", "Technology & Infrastructure Committee (Chair: CTO Oversight)"),
+            ]
+            for role, label in critical_key_order:
+                checkbox_key = f"comm_{book}_{'ops' if role == 'COO' else 'afic' if role == 'AFIC' else 'risk' if role == 'CLO' else 'tech'}"
+                is_required = critical_lead == role
+                checkbox_label = f"{label} — 🚨 **REQUIRED CRITICAL PATH SIGN-OFF**" if is_required else label
+                st.checkbox(checkbox_label, value=st.session_state.get(checkbox_key, False), key=checkbox_key)
+        with q2:
+            st.subheader("Holding Loss Recovery Allocation")
+            st.table({
+                "Category": ["Primary Operating Standby", "WACC Carrying Demurrage", "Regulatory Delay Penalty", "Total Weekly Exposure"],
+                "Weekly Amount": [f"${base_burn*0.35:,.0f}", f"${base_burn*0.40:,.0f}", f"${base_burn*0.25:,.0f}", f"${base_burn:,.0f}"],
+                "Client Retained (90%)": [f"${base_burn*0.35*0.9:,.0f}", f"${base_burn*0.40*0.9:,.0f}", f"${base_burn*0.25*0.9:,.0f}", f"${base_burn*0.9:,.0f}"],
+                "Phoenix Accrual (10%)": [f"${base_burn*0.35*0.1:,.0f}", f"${base_burn*0.40*0.1:,.0f}", f"${base_burn*0.25*0.1:,.0f}", f"${base_burn*0.1:,.0f}"]
+            })
+        
+        st.divider()
+        t1_sp, t1_btn = st.columns([1.5, 1])
+        with t1_btn:
+            if is_quorum:
+                st.button("➡️ Advance to Tier 2 (General Management)", on_click=nav_to, args=("2️⃣ Tier 2 | General Management",), type="primary")
+            else:
+                st.warning(f"⚠️ Quorum Incomplete ({quorum_count}/4). Full committee quorum or Chairman Override required.")
+    else:
+        st.info("Stage 2 and Stage 3 are briefing-only Board reviews. Return to Stage 1 to change quorum or use the Chairman Override.")
 
 # ----------------- TIER 2: GENERAL MANAGEMENT -----------------
 elif "Tier 2" in view:
