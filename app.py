@@ -1431,7 +1431,7 @@ elif "Tier 3" in view:
                 use_container_width=True,
             )
         else:
-            st.info(f"{completed_count}/8 checks complete. All 8 verification checks are required for Stage 1 sign-off.")
+            st.warning(f"⚠️ {completed_count}/8 checks verified. The Lead Inspector must manually verify and attach all 8 physical records.")
             critical_item_unchecked = critical_idx is not None and not st.session_state.get(
                 f"sop_chk_{book_index}_{critical_idx}", False
             )
