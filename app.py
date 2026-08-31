@@ -556,6 +556,8 @@ def reset_book(book_name):
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
         st.session_state[f"chk2_{book_name}_{i}"] = False
+        book_index = list(DATA_MATRIX).index(book_name)
+        st.session_state[f"sop_chk_{book_index}_{i}"] = False
     for c in ['ops', 'afic', 'risk', 'tech']:
         st.session_state[f"comm_{book_name}_{c}"] = False
 
@@ -711,13 +713,13 @@ if (
     or st.session_state['current_checklist_phase'] != active_phase
 ):
     checklist_labels = phase_2["checks"] if active_phase == 2 else book_data["checks"]
-    checklist_key_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
     persisted_checklist = engine.get_or_create_sop_state(work_order_id, book)
+    book_index = list(DATA_MATRIX).index(book)
     st.session_state['current_book'] = book
     st.session_state['current_checklist_phase'] = active_phase
     st.session_state['checklist_labels'] = checklist_labels
     for index in range(len(checklist_labels)):
-        st.session_state[f"{checklist_key_prefix}_{index}"] = bool(
+        st.session_state[f"sop_chk_{book_index}_{index}"] = bool(
             persisted_checklist[f"check_{index + 1}"]
         )
 
@@ -790,11 +792,11 @@ has_active_capital_friction = (
     sop_state["active_blocker"] not in ("None", "None (Nominal Telemetry)") or not sop_state["check_8"]
 ) and not sop_state["is_submitted"]
 tier_1_nominal = not has_active_capital_friction or weekly_burn == 0 or not active_phase
-frontline_check_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
 frontline_checklist = phase_2["checks"] if active_phase == 2 else [item["action"] for item in FRONTLINE_CHECKLIST_SPEC]
 frontline_check_count = len(frontline_checklist)
+book_index = list(DATA_MATRIX).index(book)
 frontline_checks_complete = all(
-    st.session_state.get(f"{frontline_check_prefix}_{index}", False)
+    st.session_state.get(f"sop_chk_{book_index}_{index}", False)
     for index in range(frontline_check_count)
 )
 gm_dispatch_complete = (
@@ -1266,8 +1268,7 @@ elif "Tier 3" in view:
             if selected_blocker != blockers[0]:
                 for check_index in selected_check_indexes:
                     engine.update_sop_check(work_order_id, f"check_{check_index + 1}", 0)
-                    checklist_key_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
-                    st.session_state[f"{checklist_key_prefix}_{check_index}"] = False
+                    st.session_state[f"sop_chk_{book_index}_{check_index}"] = False
             engine.record_ledger_entry(
                 book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
                 "BLOCKER_TAG_UPDATED", work_order_id, detection_time, blocker=selected_blocker,
@@ -1293,11 +1294,9 @@ elif "Tier 3" in view:
         st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else f"Stage 1: Frontline Verification Checklist - Work Order {work_order_id}")
         if active_phase == 2:
             checks_raw = st.session_state["checklist_labels"]
-            key_prefix = f"chk2_{book}"
             critical_idx = phase_2.get("critical_check_idx")
         else:
             checks_raw = st.session_state["checklist_labels"]
-            key_prefix = f"chk_{book}"
             critical_idx = book_data.get("critical_check_idx")
 
         if remediation_dispatched:
@@ -1317,7 +1316,7 @@ elif "Tier 3" in view:
         check_states = []
         for i, check_spec in enumerate(checks_raw):
             col_target = c_col1 if i % 2 == 0 else c_col2
-            k = f"{key_prefix}_{i}"
+            k = f"sop_chk_{book_index}_{i}"
             db_col = f"check_{i + 1}"
             item_number = i + 1
             if active_phase == 2:
@@ -1333,7 +1332,7 @@ elif "Tier 3" in view:
             persisted_value = bool(sop_data[db_col])
             if k not in st.session_state:
                 st.session_state[k] = persisted_value
-            v = col_target.checkbox(chk_label, value=persisted_value, key=k)
+            v = col_target.checkbox(chk_label, key=k)
             if v != persisted_value:
                 engine.update_sop_check(work_order_id, db_col, int(v))
                 engine.record_ledger_entry(
@@ -1344,7 +1343,10 @@ elif "Tier 3" in view:
                 st.rerun()
             check_states.append(v)
 
-        completed_count = sum(check_states)
+        completed_count = sum(
+            1 for index in range(8)
+            if st.session_state.get(f"sop_chk_{book_index}_{index}", False)
+        )
         if selected_check_indexes:
             active_fault_note = (
                 "Polling latency exceeds 4.0s; synthetic test packet required to verify."
@@ -1393,6 +1395,7 @@ elif "Tier 3" in view:
         st.session_state[f"inspected_stage_{book}"] = 2
         for i in range(8):
             st.session_state[f"chk2_{book}_{i}"] = False
+            st.session_state[f"sop_chk_{book_index}_{i}"] = False
         for committee in ['ops', 'afic', 'risk', 'tech']:
             st.session_state[f"comm_{book}_{committee}"] = False
         st.session_state['phase_2_authorized'][book] = False
@@ -1423,9 +1426,10 @@ elif "Tier 3" in view:
                 use_container_width=True,
             )
         else:
-            stage_label = "Stage 1" if active_phase == 1 else "Phase 2"
-            st.info(f"{completed_count}/8 checks complete. All 8 verification checks are required for {stage_label} sign-off.")
-            critical_item_unchecked = critical_idx is not None and not st.session_state.get(f"{key_prefix}_{critical_idx}", False)
+            st.info(f"{completed_count}/8 checks complete. All 8 verification checks are required for Stage 1 sign-off.")
+            critical_item_unchecked = critical_idx is not None and not st.session_state.get(
+                f"sop_chk_{book_index}_{critical_idx}", False
+            )
             if critical_item_unchecked and not remediation_dispatched:
                 blocker_diagnostic = book_data["blocker_diagnostic"]
                 st.markdown(f'''
