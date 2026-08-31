@@ -519,6 +519,7 @@ for key, default in [
     ('override_active', False), ('master_surge', 0),
     ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False),
     ('escalation_transmitted', False), ('sop_checklist', [False] * 8),
+    ('current_book', None), ('current_checklist_phase', None), ('checklist_labels', []),
     ('pipeline_step_1', 'PENDING'), ('pipeline_step_2', 'PENDING'),
     ('pipeline_step_3', 'PENDING'), ('pipeline_step_4', 'PENDING'),
     ('chairman_override_active', False), ('quorum_votes', [False, False, False, False])
@@ -704,6 +705,21 @@ if st.session_state['detection_time'].get(book) is None:
 detection_time = st.session_state['detection_time'][book]
 hesitation_seconds = max((datetime.now(timezone.utc) - detection_time).total_seconds(), 0)
 work_order_id = f"WO-{hashlib.sha256(book.encode()).hexdigest()[:12].upper()}"
+
+if (
+    st.session_state['current_book'] != book
+    or st.session_state['current_checklist_phase'] != active_phase
+):
+    checklist_labels = phase_2["checks"] if active_phase == 2 else book_data["checks"]
+    checklist_key_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
+    persisted_checklist = engine.get_or_create_sop_state(work_order_id, book)
+    st.session_state['current_book'] = book
+    st.session_state['current_checklist_phase'] = active_phase
+    st.session_state['checklist_labels'] = checklist_labels
+    for index in range(len(checklist_labels)):
+        st.session_state[f"{checklist_key_prefix}_{index}"] = bool(
+            persisted_checklist[f"check_{index + 1}"]
+        )
 
 sla_seconds_map = {"COO": 86400, "AFIC": 86400, "CLO": 259200, "CTO": 14400}
 sla_seconds = sla_seconds_map.get(critical_lead, 86400)
@@ -1254,11 +1270,11 @@ elif "Tier 3" in view:
 
         st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else f"Stage 1: Frontline Verification Checklist - Work Order {work_order_id}")
         if active_phase == 2:
-            checks_raw = phase_2["checks"]
+            checks_raw = st.session_state["checklist_labels"]
             key_prefix = f"chk2_{book}"
             critical_idx = phase_2.get("critical_check_idx")
         else:
-            checks_raw = FRONTLINE_CHECKLIST_SPEC
+            checks_raw = st.session_state["checklist_labels"]
             key_prefix = f"chk_{book}"
             critical_idx = book_data.get("critical_check_idx")
 
@@ -1281,9 +1297,22 @@ elif "Tier 3" in view:
                 chk_label = f"Frontline SOP Check #{item_number}: [{check_spec}]"
                 item_id = f"PHASE-2-ITEM-{item_number:02d}"
             else:
-                db_col = check_spec["db_col"]
-                item_id = check_spec["id"]
-                chk_label = f"[{item_id}] {check_spec['title']}: [{check_spec['action']}]"
+                item_id = f"ITEM-{item_number:02d}"
+                chk_label = f"Check #{item_number}: {check_spec}"
+            is_ercot_polling_check = (
+                book == "ERCOT BESS / storage operations"
+                and selected_blocker == "IEEE 2800 Telemetry Polling Lag"
+                and i in (4, 5)
+            )
+            if is_ercot_polling_check:
+                if i == 4:
+                    st.markdown('''
+                    <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
+                        <strong style="color: var(--amber);">⚠️ ACTIVE TELEMETRY FAULT</strong><br>
+                        Polling latency exceeds 4.0s; synthetic test packet required to verify.
+                    </div>
+                    ''', unsafe_allow_html=True)
+                chk_label = f"🟠 {chk_label}"
             if i == critical_idx:
                 chk_label = f"🔴 **{chk_label}** — *(🚨 CRITICAL PATH BLOCKER)*"
             persisted_value = bool(sop_data[db_col])
