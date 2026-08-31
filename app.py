@@ -741,6 +741,11 @@ if is_stage_1_execution:
 # Operating Pipeline Sequence Widget
 is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
+sop_state = engine.get_or_create_sop_state(work_order_id, book)
+has_active_capital_friction = (
+    sop_state["active_blocker"] != "None" or not sop_state["check_8"]
+) and not sop_state["is_submitted"]
+tier_1_nominal = not has_active_capital_friction or weekly_burn == 0 or not active_phase
 frontline_check_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
 frontline_checklist = phase_2["checks"] if active_phase == 2 else [item["action"] for item in FRONTLINE_CHECKLIST_SPEC]
 frontline_check_count = len(frontline_checklist)
@@ -980,10 +985,8 @@ if "Tier 3" not in view:
 
 # ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
 if "Tier 1" in view:
-    sop_data = engine.get_or_create_sop_state(work_order_id, book)
-    is_blocked = (
-        sop_data["active_blocker"] != "None" or not sop_data["check_8"]
-    ) and not sop_data["is_submitted"]
+    sop_data = sop_state
+    is_blocked = has_active_capital_friction
 
     st.header("Chairman Command Post")
     if is_blocked:
@@ -1027,6 +1030,20 @@ if "Tier 1" in view:
         else:
             st.info("No executive intervention required at this time.")
 
+    if is_quorum or tier_1_nominal:
+        st.markdown('''
+        <div class="card" style="border: 2px solid var(--green); background: rgba(63,185,80,0.08);">
+            <strong style="color: var(--green);">✅ GOVERNANCE STATE: NOMINAL / AUTHORIZED</strong>
+        </div>
+        ''', unsafe_allow_html=True)
+        st.button(
+            "➡️ Proceed to Tier 2: General Management Directives",
+            on_click=nav_to,
+            args=('2️⃣ Tier 2 | General Management',),
+            type="primary",
+            use_container_width=True,
+        )
+
 # ----------------- TIER 2: GENERAL MANAGEMENT -----------------
 elif "Tier 2" in view:
     roster_config = GM_DIRECTIVE_ROSTER.get(book, {
@@ -1045,7 +1062,7 @@ elif "Tier 2" in view:
         </div>
         ''', unsafe_allow_html=True)
     
-    if not is_quorum:
+    if not (is_quorum or tier_1_nominal):
         st.error("🔒 **TIER 2 LOCKED:** Board Quorum has not been authorized in Tier 1. Return to Chairman Directorate to establish quorum.")
     else:
         directive = phase_2['recommended_resolution'] if active_phase == 2 else book_data['circuit_breaker']
@@ -1129,7 +1146,6 @@ elif "Tier 2" in view:
                 }
                 for index, line_item in enumerate(book_data["surgical_budget"]["surgical_line_items"])
             ]
-            st.session_state['active_view'] = '3️⃣ Tier 3 | Site Operations'
             
         surgical_budget = book_data["surgical_budget"]
         surgical_rows = "".join(
@@ -1159,6 +1175,15 @@ elif "Tier 2" in view:
                 f"⚡ Authorize Ring-Fenced Surgical Spend (${surgical_budget['total_surgical_cost']:,.0f}) & Dispatch Work Order",
                 on_click=dispatch_directive,
                 type="primary"
+            )
+
+        if is_directed:
+            st.button(
+                "➡️ Proceed to Tier 3: Frontline Site Operations",
+                on_click=nav_to,
+                args=('3️⃣ Tier 3 | Site Operations',),
+                type="primary",
+                use_container_width=True,
             )
 
 # ----------------- TIER 3: SITE OPERATIONS -----------------
@@ -1305,6 +1330,13 @@ elif "Tier 3" in view:
             t3_sp, t3_act = st.columns([1.5, 1])
             with t3_act:
                 st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
+            st.button(
+                "➡️ Proceed to Tier 4: Forensic Audit Ledger & Settlement",
+                on_click=nav_to,
+                args=('4️⃣ Forensic Audit Ledger',),
+                type="primary",
+                use_container_width=True,
+            )
         else:
             stage_label = "Stage 1" if active_phase == 1 else "Phase 2"
             st.info(f"{completed_count}/8 checks complete. All 8 verification checks are required for {stage_label} sign-off.")

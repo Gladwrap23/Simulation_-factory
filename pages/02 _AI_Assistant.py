@@ -108,23 +108,38 @@ if "assistant_messages" not in st.session_state:
     ]
 
 
-def get_signoffs():
+def get_signoffs(book=None):
     audit_records = st.session_state.get("audit_ledger", [])
     legacy_records = st.session_state.get("ledger", [])
+    if book:
+        legacy_records = [
+            record for record in legacy_records
+            if record.get("Operating Book") == book
+        ]
     return audit_records, legacy_records
+
+
+def get_book_context():
+    return st.session_state.get(
+        "selected_book_data",
+        {"exposure": "$88.5M", "burn": 610000, "artifacts": []},
+    )
 
 
 def answer_question(question):
     normalized = question.lower()
-    audit_records, legacy_records = get_signoffs()
-    resolved = st.session_state.get("burn_resolved", st.session_state.get("cleared", False))
-    burn = "$0 / wk (RESOLVED)" if resolved else "$610k / wk"
+    book = st.session_state.get("selected_book", "ERCOT BESS / storage operations")
+    book_context = get_book_context()
+    audit_records, legacy_records = get_signoffs(book)
+    cleared_books = st.session_state.get("cleared_books", {})
+    resolved = cleared_books.get(book, st.session_state.get("burn_resolved", st.session_state.get("cleared", False)))
+    burn = "$0 / wk (RESOLVED)" if resolved else f"${book_context['burn']:,.0f} / wk"
     signoff_count = len(audit_records) + len(legacy_records)
 
     if any(term in normalized for term in ("exposure", "balance sheet", "88.5", "capital")):
-        return "Active balance sheet exposure is $88.5M across the command position. The current board posture is monitoring the exposure against the approved operating ceiling."
+        return f"Active balance sheet exposure for {book} is {book_context['exposure']}. The current board posture is monitoring the exposure against the approved operating ceiling."
     if any(term in normalized for term in ("burn", "holding loss", "holding", "loss", "610")):
-        return f"Weekly holding loss is {burn}. The current realization decomposition is $549k client value and $61k Phoenix fee, totaling $610k."
+        return f"Weekly holding loss for {book} is {burn}. The active realization split is 90% client value and 10% Phoenix fee."
     if any(term in normalized for term in ("audit", "ledger", "sign-off", "signoff", "clearance")):
         if signoff_count:
             latest = audit_records[-1] if audit_records else legacy_records[-1]
@@ -132,8 +147,8 @@ def answer_question(question):
             return f"The audit chain contains {signoff_count} recorded event(s). Latest sign-off state: {event}. Frontline clearance is {'resolved' if resolved else 'still pending'}."
         return "No frontline sign-offs are recorded in this session. Tier 3 must complete all SOP checks before clearance can be written to the audit ledger."
     if any(term in normalized for term in ("status", "summary", "what do you know", "brief")):
-        return f"Command summary: $88.5M exposure, {burn} holding loss, and {signoff_count} audit record(s). Ask for exposure, burn, or sign-off detail for a focused readout."
-    return "I can answer questions about the active $88.5M exposure, the $610k per week holding loss, realization allocation, and audit ledger sign-offs."
+        return f"Command summary for {book}: {book_context['exposure']} exposure, {burn} holding loss, and {signoff_count} audit record(s). Ask for exposure, burn, or sign-off detail for a focused readout."
+    return f"I can answer questions about {book}'s active exposure, weekly holding loss, realization allocation, and audit ledger sign-offs."
 
 
 with st.sidebar:
@@ -146,20 +161,23 @@ with st.sidebar:
     st.markdown("**AVAILABLE CONTEXT**")
     st.markdown("Exposure ledger\n\nHolding loss register\n\nFrontline sign-off chain")
 
+selected_book = st.session_state.get("selected_book", "ERCOT BESS / storage operations")
+book_context = get_book_context()
 st.markdown('<div class="eyebrow">EXECUTIVE SYNTHESIS / LIVE SESSION CONTEXT</div>', unsafe_allow_html=True)
 st.title("Command intelligence, on demand.")
-st.caption("A conversational assistant grounded in the active balance sheet and operational audit state.")
+st.caption(f"A conversational assistant grounded in the active balance sheet and operational audit state for {selected_book}.")
 
 exposure_col, burn_col, signoff_col = st.columns(3)
 with exposure_col:
-    st.markdown('<div class="context-card"><div class="context-label">ACTIVE BALANCE SHEET EXPOSURE</div><div class="context-value">$88.5M</div><div class="context-label">Board-visible operating position</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="context-card"><div class="context-label">ACTIVE BALANCE SHEET EXPOSURE</div><div class="context-value">{book_context["exposure"]}</div><div class="context-label">{escape(selected_book)}</div></div>', unsafe_allow_html=True)
 with burn_col:
-    resolved = st.session_state.get("burn_resolved", st.session_state.get("cleared", False))
-    burn_value = "$0 / wk" if resolved else "$610k / wk"
+    cleared_books = st.session_state.get("cleared_books", {})
+    resolved = cleared_books.get(selected_book, st.session_state.get("burn_resolved", st.session_state.get("cleared", False)))
+    burn_value = "$0 / wk" if resolved else f"${book_context['burn']:,.0f} / wk"
     burn_note = "RESOLVED" if resolved else "ACTIVE HOLDING LOSS"
     st.markdown(f'<div class="context-card"><div class="context-label">WEEKLY HOLDING LOSS</div><div class="context-value">{burn_value}</div><div class="context-label">{burn_note}</div></div>', unsafe_allow_html=True)
 with signoff_col:
-    audit_records, legacy_records = get_signoffs()
+    audit_records, legacy_records = get_signoffs(selected_book)
     st.markdown(f'<div class="context-card"><div class="context-label">AUDIT LEDGER SIGN-OFFS</div><div class="context-value">{len(audit_records) + len(legacy_records)}</div><div class="context-label">Cryptographically recorded events</div></div>', unsafe_allow_html=True)
 
 st.divider()

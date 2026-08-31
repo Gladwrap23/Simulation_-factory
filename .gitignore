@@ -37,6 +37,7 @@ yarn-error.log*
 .streamlit/secrets.toml
 *.log
 .cache/
+audit_ledger.db
 
 # OS / editor
 .DS_Store
