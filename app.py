@@ -100,7 +100,7 @@ DATA_MATRIX = {
         "region": "West Texas — Permian Substation POI 345kV",
         "bottleneck": "PSCAD Inverter EMT Validation & 4-sec ICCP Telemetry Lag",
         "drift_metrics": {"sla_drift": "+2.5 Days", "telemetry_drift": "+8.4s (Lagging)", "cost_drift": "+$183k Carry"},
-        "blocker_tags": ["None", "Inverter Firmware v2.41 DNP3 Drop", "PSCAD EMT Simulation Drift", "IEEE 2800 Telemetry Polling Lag", "ERCOT IA § 4.2 Part 2 COD Hold"],
+        "blocker_tags": ["None (Nominal Telemetry)", "[Checks #1-#2] ICCP / Inverter Firmware v2.41 DNP3 Drop", "[Checks #3-#4] PSCAD EMT Simulation Drift", "[Checks #5-#6] IEEE 2800 Telemetry Polling Lag", "[Checks #7-#8] ERCOT IA § 4.2 Part 2 COD Attestation Hold"],
         "telemetry_diagnostics": {
             "Inverter Firmware v2.41 DNP3 Drop": [
                 ("ICCP 4-sec Telemetry", "Heartbeat: DROPPED / Firmware v2.41 DNP3 loss detected"),
@@ -787,7 +787,7 @@ is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
 sop_state = engine.get_or_create_sop_state(work_order_id, book)
 has_active_capital_friction = (
-    sop_state["active_blocker"] != "None" or not sop_state["check_8"]
+    sop_state["active_blocker"] not in ("None", "None (Nominal Telemetry)") or not sop_state["check_8"]
 ) and not sop_state["is_submitted"]
 tier_1_nominal = not has_active_capital_friction or weekly_burn == 0 or not active_phase
 frontline_check_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
@@ -1237,8 +1237,23 @@ elif "Tier 3" in view:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
     else:
         sop_data = engine.get_or_create_sop_state(work_order_id, book)
-        default_blocker_tags = ["None", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
-        blockers = book_data.get("blocker_tags", default_blocker_tags)
+        default_blocker_tags = ["None (Nominal Telemetry)", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
+        raw_blocker_tags = book_data.get("blocker_tags", default_blocker_tags)
+        if raw_blocker_tags[0] == "None":
+            raw_blocker_tags = ["None (Nominal Telemetry)", *raw_blocker_tags[1:]]
+        blockers = [
+            raw_blocker_tags[0],
+            *[
+                tag if tag.startswith("[Checks #") else f"[Checks #{index * 2 - 1}-#{index * 2}] {tag}"
+                for index, tag in enumerate(raw_blocker_tags[1:], start=1)
+            ],
+        ]
+        blocker_faults = {
+            display_tag: re.sub(r"^\[Checks #\d+-#\d+\]\s*", "", raw_tag)
+            .removeprefix("ICCP / ")
+            .replace("COD Attestation Hold", "COD Hold")
+            for display_tag, raw_tag in zip(blockers[1:], raw_blocker_tags[1:])
+        }
         current_blocker = sop_data["active_blocker"]
         blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
         selected_blocker = st.selectbox(
@@ -1247,6 +1262,12 @@ elif "Tier 3" in view:
         )
         if selected_blocker != current_blocker:
             engine.set_sop_blocker(work_order_id, selected_blocker)
+            selected_check_indexes = range((blockers.index(selected_blocker) - 1) * 2, (blockers.index(selected_blocker) - 1) * 2 + 2)
+            if selected_blocker != blockers[0]:
+                for check_index in selected_check_indexes:
+                    engine.update_sop_check(work_order_id, f"check_{check_index + 1}", 0)
+                    checklist_key_prefix = f"chk2_{book}" if active_phase == 2 else f"chk_{book}"
+                    st.session_state[f"{checklist_key_prefix}_{check_index}"] = False
             engine.record_ledger_entry(
                 book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
                 "BLOCKER_TAG_UPDATED", work_order_id, detection_time, blocker=selected_blocker,
@@ -1261,7 +1282,8 @@ elif "Tier 3" in view:
         st.subheader(f"Physical Test Criteria ({book})")
         st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
         st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
-        art = book_data.get("telemetry_diagnostics", {}).get(selected_blocker, book_data["artifacts"])
+        active_fault = blocker_faults.get(selected_blocker)
+        art = book_data.get("telemetry_diagnostics", {}).get(active_fault, book_data["artifacts"])
         a1, a2, a3, a4 = st.columns(4)
         a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{art[0][1]}</small></div>", unsafe_allow_html=True)
         a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{art[1][1]}</small></div>", unsafe_allow_html=True)
@@ -1287,6 +1309,11 @@ elif "Tier 3" in view:
             ''', unsafe_allow_html=True)
         c_col1, c_col2 = st.columns(2)
 
+        selected_check_indexes = (
+            set(range((blockers.index(selected_blocker) - 1) * 2, (blockers.index(selected_blocker) - 1) * 2 + 2))
+            if selected_blocker != blockers[0]
+            else set()
+        )
         check_states = []
         for i, check_spec in enumerate(checks_raw):
             col_target = c_col1 if i % 2 == 0 else c_col2
@@ -1299,19 +1326,7 @@ elif "Tier 3" in view:
             else:
                 item_id = f"ITEM-{item_number:02d}"
                 chk_label = f"Check #{item_number}: {check_spec}"
-            is_ercot_polling_check = (
-                book == "ERCOT BESS / storage operations"
-                and selected_blocker == "IEEE 2800 Telemetry Polling Lag"
-                and i in (4, 5)
-            )
-            if is_ercot_polling_check:
-                if i == 4:
-                    st.markdown('''
-                    <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
-                        <strong style="color: var(--amber);">⚠️ ACTIVE TELEMETRY FAULT</strong><br>
-                        Polling latency exceeds 4.0s; synthetic test packet required to verify.
-                    </div>
-                    ''', unsafe_allow_html=True)
+            if i in selected_check_indexes:
                 chk_label = f"🟠 {chk_label}"
             if i == critical_idx:
                 chk_label = f"🔴 **{chk_label}** — *(🚨 CRITICAL PATH BLOCKER)*"
@@ -1330,6 +1345,18 @@ elif "Tier 3" in view:
             check_states.append(v)
 
         completed_count = sum(check_states)
+        if selected_check_indexes:
+            active_fault_note = (
+                "Polling latency exceeds 4.0s; synthetic test packet required to verify."
+                if active_fault == "IEEE 2800 Telemetry Polling Lag"
+                else f"{active_fault} is active; complete the linked remediation before verifying these checks."
+            )
+            st.markdown(f'''
+            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
+                <strong style="color: var(--amber);">⚠️ ACTIVE FAULT: {selected_blocker}</strong><br>
+                {active_fault_note}
+            </div>
+            ''', unsafe_allow_html=True)
         st.divider()
     
     def signoff_and_settle():
