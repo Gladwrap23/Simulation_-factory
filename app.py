@@ -1313,6 +1313,11 @@ elif "Tier 3" in view:
             if selected_blocker != blockers[0]
             else set()
         )
+        checks_complete = all(
+            st.session_state.get(f"sop_chk_{book_index}_{index}", False)
+            for index in range(8)
+        )
+        show_active_fault = bool(selected_check_indexes) and not checks_complete and not remediation_dispatched
         chk_states = []
         for i, check_spec in enumerate(checks_raw):
             col_target = c_col1 if i % 2 == 0 else c_col2
@@ -1325,7 +1330,7 @@ elif "Tier 3" in view:
             else:
                 item_id = f"ITEM-{item_number:02d}"
                 chk_label = f"Check #{item_number}: {check_spec}"
-            if i in selected_check_indexes:
+            if show_active_fault and i in selected_check_indexes:
                 chk_label = f"🟠 {chk_label}"
             if i == critical_idx:
                 chk_label = f"🔴 **{chk_label}** — *(🚨 CRITICAL PATH BLOCKER)*"
@@ -1344,7 +1349,7 @@ elif "Tier 3" in view:
             chk_states.append(v)
 
         completed_count = sum(1 for checked in chk_states if checked)
-        if selected_check_indexes:
+        if show_active_fault:
             active_fault_note = (
                 "Polling latency exceeds 4.0s; synthetic test packet required to verify."
                 if active_fault == "IEEE 2800 Telemetry Polling Lag"
@@ -1360,6 +1365,8 @@ elif "Tier 3" in view:
     
     def signoff_and_settle():
         engine.finalize_tier3_submission(work_order_id)
+        engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
+        st.session_state[f"blocker_{work_order_id}"] = "None (Nominal Telemetry)"
         engine.record_ledger_entry(
             book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
             "STAGE_1_FRONTLINE_SIGN_OFF" if active_phase == 1 else "TIER_3_FRONTLINE_SIGN_OFF",
