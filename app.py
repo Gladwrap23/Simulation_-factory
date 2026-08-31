@@ -1313,7 +1313,7 @@ elif "Tier 3" in view:
             if selected_blocker != blockers[0]
             else set()
         )
-        check_states = []
+        chk_states = []
         for i, check_spec in enumerate(checks_raw):
             col_target = c_col1 if i % 2 == 0 else c_col2
             k = f"sop_chk_{book_index}_{i}"
@@ -1341,12 +1341,9 @@ elif "Tier 3" in view:
                     notes=f"{item_id} ({db_col}) set to {int(v)}.",
                 )
                 st.rerun()
-            check_states.append(v)
+            chk_states.append(v)
 
-        completed_count = sum(
-            1 for index in range(8)
-            if st.session_state.get(f"sop_chk_{book_index}_{index}", False)
-        )
+        completed_count = sum(1 for checked in chk_states if checked)
         if selected_check_indexes:
             active_fault_note = (
                 "Polling latency exceeds 4.0s; synthetic test packet required to verify."
@@ -1385,8 +1382,8 @@ elif "Tier 3" in view:
         st.session_state['sop_checklist'] = [False] * 8
         st.session_state['pipeline_step_1'] = "PENDING"
         st.session_state['pipeline_step_2'] = "QUEUED"
-        st.session_state['pipeline_step_3'] = "PENDING"
-        st.session_state['pipeline_step_4'] = "PENDING"
+        st.session_state['pipeline_step_3'] = "COMPLETED"
+        st.session_state['pipeline_step_4'] = "READY"
         st.session_state['chairman_override_active'] = False
         st.session_state['override_active'] = False
         st.session_state['safe_harbor_active'] = False
@@ -1415,6 +1412,7 @@ elif "Tier 3" in view:
 
     if is_directed:
         if completed_count == 8:
+            st.success("✅ 8/8 checks complete. All physical artifacts verified and attached.")
             t3_sp, t3_act = st.columns([1.5, 1])
             with t3_act:
                 st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
