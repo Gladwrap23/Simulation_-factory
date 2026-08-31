@@ -100,6 +100,33 @@ DATA_MATRIX = {
         "region": "West Texas — Permian Substation POI 345kV",
         "bottleneck": "PSCAD Inverter EMT Validation & 4-sec ICCP Telemetry Lag",
         "drift_metrics": {"sla_drift": "+2.5 Days", "telemetry_drift": "+8.4s (Lagging)", "cost_drift": "+$183k Carry"},
+        "blocker_tags": ["None", "Inverter Firmware v2.41 DNP3 Drop", "PSCAD EMT Simulation Drift", "IEEE 2800 Telemetry Polling Lag", "ERCOT IA § 4.2 Part 2 COD Hold"],
+        "telemetry_diagnostics": {
+            "Inverter Firmware v2.41 DNP3 Drop": [
+                ("ICCP 4-sec Telemetry", "Heartbeat: DROPPED / Firmware v2.41 DNP3 loss detected"),
+                ("PSCAD EMT Model", "Inverter response: Awaiting clean DNP3 packet trace"),
+                ("IEEE 2800 Test Packet", "Ride-through: Blocked by telemetry heartbeat loss"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: Held pending packet recovery"),
+            ],
+            "PSCAD EMT Simulation Drift": [
+                ("ICCP 4-sec Telemetry", "Heartbeat: 04.0s / Receiving"),
+                ("PSCAD EMT Model", "Inverter response: DRIFT DETECTED / Model revalidation required"),
+                ("IEEE 2800 Test Packet", "Ride-through: Pending corrected EMT simulation"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: Held pending model validation"),
+            ],
+            "IEEE 2800 Telemetry Polling Lag": [
+                ("ICCP 4-sec Telemetry", "Polling interval: EXCEEDED / IEEE 2800 telemetry lag"),
+                ("PSCAD EMT Model", "Inverter response: Model valid / Awaiting polling compliance"),
+                ("IEEE 2800 Test Packet", "Ride-through: Pending compliant 4-second poll trace"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: Held pending IEEE 2800 evidence"),
+            ],
+            "ERCOT IA § 4.2 Part 2 COD Hold": [
+                ("ICCP 4-sec Telemetry", "Heartbeat: Verified / ERCOT review hold remains"),
+                ("PSCAD EMT Model", "Inverter response: Verified / Technical gate cleared"),
+                ("IEEE 2800 Test Packet", "Ride-through: Verified / Packet ready for filing"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: ERCOT IA § 4.2 HOLD"),
+            ],
+        },
         "regime": "UPSTREAM DEPENDENCY BLOCK",
         "regime_detail": "High-voltage crews idle ($220k/wk). Blocked by inverter firmware DNP3 telemetry lag and ERCOT review queue, not field headcount.",
         "recommended_surge": 0,
@@ -140,6 +167,7 @@ DATA_MATRIX = {
         "region": "Northern Hub 01 — Auckland Clinical Claims Queue",
         "bottleneck": "Manual Medical Paper Verification & Sequential Delegation Review",
         "drift_metrics": {"sla_drift": "+4.2 Days", "telemetry_drift": "Queue Lag +420", "cost_drift": "+$140k Dwell"},
+        "blocker_tags": ["None", "Clinical File Missing", "Third-Party Medical Delay", "Delegation Bottleneck", "Ministerial Waiver Hold"],
         "regime": "UPSTREAM DEPENDENCY BLOCK",
         "regime_detail": "Assessor capacity adequate; blocked by sequential physical paper routing between Northern Hub and Wellington.",
         "recommended_surge": 0,
@@ -1193,7 +1221,8 @@ elif "Tier 3" in view:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
     else:
         sop_data = engine.get_or_create_sop_state(work_order_id, book)
-        blockers = ["None", "Clinical File Missing", "Third-Party Medical Delay", "Delegation Bottleneck", "Legal/Waiver Hold"]
+        default_blocker_tags = ["None", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
+        blockers = book_data.get("blocker_tags", default_blocker_tags)
         current_blocker = sop_data["active_blocker"]
         blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
         selected_blocker = st.selectbox(
@@ -1216,7 +1245,7 @@ elif "Tier 3" in view:
         st.subheader(f"Physical Test Criteria ({book})")
         st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
         st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
-        art = book_data["artifacts"]
+        art = book_data.get("telemetry_diagnostics", {}).get(selected_blocker, book_data["artifacts"])
         a1, a2, a3, a4 = st.columns(4)
         a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{art[0][1]}</small></div>", unsafe_allow_html=True)
         a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{art[1][1]}</small></div>", unsafe_allow_html=True)
