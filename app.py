@@ -6,6 +6,21 @@ import engine
 import numpy as np
 import streamlit as st
 
+
+def force_scroll_to_top():
+    st.components.v1.html(
+        """
+        <script>
+            var mainContainer = window.parent.document.querySelector('section.main');
+            if (mainContainer) {
+                mainContainer.scrollTo({top: 0, behavior: 'instant'});
+            }
+        </script>
+        """,
+        height=0,
+    )
+
+
 st.set_page_config(
     page_title="Factory Command Post | Autonomous Capital Defense",
     page_icon="⚡",
@@ -746,6 +761,8 @@ view = st.sidebar.radio("Command view", [
     "4️⃣ Forensic Audit Ledger"
 ], key="active_view")
 
+force_scroll_to_top()
+
 st.sidebar.markdown("---")
 
 # Chairman Directorate Override is available only for active Stage 1 execution.
@@ -1031,6 +1048,7 @@ if "Tier 3" not in view:
 
 # ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
 if "Tier 1" in view:
+    force_scroll_to_top()
     sop_data = sop_state
     is_blocked = has_active_capital_friction
 
@@ -1092,6 +1110,7 @@ if "Tier 1" in view:
 
 # ----------------- TIER 2: GENERAL MANAGEMENT -----------------
 elif "Tier 2" in view:
+    force_scroll_to_top()
     roster_config = GM_DIRECTIVE_ROSTER.get(book, {
         "command_post_title": "General Managers Command Post",
         "cadence_chair": f"{critical_lead or 'General Management'} Oversight",
@@ -1234,6 +1253,7 @@ elif "Tier 2" in view:
 
 # ----------------- TIER 3: SITE OPERATIONS -----------------
 elif "Tier 3" in view:
+    force_scroll_to_top()
     st.components.v1.html(
         "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
         height=0,
@@ -1453,6 +1473,7 @@ elif "Tier 3" in view:
 
 # ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
 elif "Ledger" in view:
+    force_scroll_to_top()
     st.header("Immutable Governance & Forensic Audit Ledger")
     st.write("Cryptographically verifiable chain of custody across all 12 operating books.")
 
