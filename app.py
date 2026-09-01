@@ -1277,6 +1277,62 @@ elif "Tier 3" in view:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
     else:
         sop_data = engine.get_or_create_sop_state(work_order_id, book)
+
+        def signoff_and_settle():
+            engine.finalize_tier3_submission(work_order_id)
+            engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
+            st.session_state[f"blocker_{work_order_id}"] = "None (Nominal Telemetry)"
+            engine.record_ledger_entry(
+                book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                "STAGE_1_FRONTLINE_SIGN_OFF" if active_phase == 1 else "TIER_3_FRONTLINE_SIGN_OFF",
+                work_order_id, detection_time,
+            )
+            st.session_state['cleared_books'][book] = True
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            entry_hash = hashlib.sha256(f"{book}{timestamp}CLEARED".encode()).hexdigest()[:16]
+            st.session_state['ledger'].append({
+                "Timestamp": timestamp,
+                "Operating Book": book,
+                "Action": "Frontline SOP Sign-off & Interconnection Cleared",
+                "Capital Recovered": f"${base_burn:,.0f} / wk",
+                "Client Preserved (90%)": f"${base_burn*0.9:,.0f}",
+                "Phoenix Fee (10%)": f"${base_burn*0.1:,.0f}",
+                "Cryptographic Hash": entry_hash
+            })
+            append_forensic_entry(book, "Tier 3 SOP Sign-off", datetime.now(timezone.utc))
+            st.session_state['active_phase'][book] = 2
+            st.session_state['sop_checklist'] = [False] * 8
+            st.session_state['pipeline_step_1'] = "PENDING"
+            st.session_state['pipeline_step_2'] = "QUEUED"
+            st.session_state['pipeline_step_3'] = "COMPLETED"
+            st.session_state['pipeline_step_4'] = "READY"
+            st.session_state['chairman_override_active'] = False
+            st.session_state['override_active'] = False
+            st.session_state['safe_harbor_active'] = False
+            st.session_state['quorum_votes'] = [False, False, False, False]
+            st.session_state['board_quorum'][book] = False
+            st.session_state[f"inspected_stage_{book}"] = 2
+            for i in range(8):
+                st.session_state[f"chk2_{book}_{i}"] = False
+                st.session_state[f"sop_chk_{book_index}_{i}"] = False
+            for committee in ['ops', 'afic', 'risk', 'tech']:
+                st.session_state[f"comm_{book}_{committee}"] = False
+            st.session_state['phase_2_authorized'][book] = False
+            st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
+            st.session_state['command_view'] = '4️⃣ Forensic Audit Ledger'
+
+        def transmit_forensic_blocker_docket():
+            engine.set_sop_blocker(work_order_id, "Forensic blocker docket transmitted")
+            engine.record_ledger_entry(
+                book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                "FORENSIC_BLOCKER_DOCKET_TRANSMITTED", work_order_id, detection_time,
+                blocker="Forensic blocker docket transmitted",
+            )
+            st.session_state['escalation_transmitted'] = True
+            st.session_state['board_escalation'][book] = True
+            append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
+            st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
+
         default_blocker_tags = ["None (Nominal Telemetry)", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
         raw_blocker_tags = book_data.get("blocker_tags", default_blocker_tags)
         if raw_blocker_tags[0] == "None":
@@ -1381,7 +1437,7 @@ elif "Tier 3" in view:
             if is_locked:
                 st.session_state[key] = False
                 col_target.checkbox(
-                    f"🔒 [BLOCKED] Check #{i + 1}: {book_data['checklist'][i]}",
+                    f"Check #{i + 1}: {book_data['checklist'][i]} 🔒 [TELEMETRY HOLD]",
                     value=False,
                     disabled=True,
                     key=key,
@@ -1398,66 +1454,10 @@ elif "Tier 3" in view:
         if completed_count == 8 and len(locked_set) == 0:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
             if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}"):
-                st.session_state['pipeline_step_3'] = "COMPLETED"
-                st.session_state['pipeline_step_4'] = "READY"
-                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
+                signoff_and_settle()
                 st.rerun()
 
         st.divider()
-    
-    def signoff_and_settle():
-        engine.finalize_tier3_submission(work_order_id)
-        engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
-        st.session_state[f"blocker_{work_order_id}"] = "None (Nominal Telemetry)"
-        engine.record_ledger_entry(
-            book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
-            "STAGE_1_FRONTLINE_SIGN_OFF" if active_phase == 1 else "TIER_3_FRONTLINE_SIGN_OFF",
-            work_order_id, detection_time,
-        )
-        st.session_state['cleared_books'][book] = True
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        entry_hash = hashlib.sha256(f"{book}{timestamp}CLEARED".encode()).hexdigest()[:16]
-        st.session_state['ledger'].append({
-            "Timestamp": timestamp,
-            "Operating Book": book,
-            "Action": "Frontline SOP Sign-off & Interconnection Cleared",
-            "Capital Recovered": f"${base_burn:,.0f} / wk",
-            "Client Preserved (90%)": f"${base_burn*0.9:,.0f}",
-            "Phoenix Fee (10%)": f"${base_burn*0.1:,.0f}",
-            "Cryptographic Hash": entry_hash
-        })
-        append_forensic_entry(book, "Tier 3 SOP Sign-off", datetime.now(timezone.utc))
-        st.session_state['active_phase'][book] = 2
-        st.session_state['sop_checklist'] = [False] * 8
-        st.session_state['pipeline_step_1'] = "PENDING"
-        st.session_state['pipeline_step_2'] = "QUEUED"
-        st.session_state['pipeline_step_3'] = "COMPLETED"
-        st.session_state['pipeline_step_4'] = "READY"
-        st.session_state['chairman_override_active'] = False
-        st.session_state['override_active'] = False
-        st.session_state['safe_harbor_active'] = False
-        st.session_state['quorum_votes'] = [False, False, False, False]
-        st.session_state['board_quorum'][book] = False
-        st.session_state[f"inspected_stage_{book}"] = 2
-        for i in range(8):
-            st.session_state[f"chk2_{book}_{i}"] = False
-            st.session_state[f"sop_chk_{book_index}_{i}"] = False
-        for committee in ['ops', 'afic', 'risk', 'tech']:
-            st.session_state[f"comm_{book}_{committee}"] = False
-        st.session_state['phase_2_authorized'][book] = False
-        st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
-
-    def transmit_forensic_blocker_docket():
-        engine.set_sop_blocker(work_order_id, "Forensic blocker docket transmitted")
-        engine.record_ledger_entry(
-            book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
-            "FORENSIC_BLOCKER_DOCKET_TRANSMITTED", work_order_id, detection_time,
-            blocker="Forensic blocker docket transmitted",
-        )
-        st.session_state['escalation_transmitted'] = True
-        st.session_state['board_escalation'][book] = True
-        append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
-        st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
 
     if is_directed:
         selected_book = book
