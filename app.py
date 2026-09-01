@@ -1280,16 +1280,19 @@ elif "Tier 3" in view:
             or st.session_state['surgical_spend_authorized'].get(book, False)
         )
 
-        selected_tag = selected_blocker
-        locked_indices = []
-        if selected_tag.startswith("[Checks #"):
-            match = re.search(r"\[Checks #(\d+)-#(\d+)\]", selected_tag)
-            if match:
-                start = int(match.group(1)) - 1
-                end = int(match.group(2)) - 1
-                locked_indices = list(range(start, end + 1))
+        locked_set = set()
+        blocked_pairs = {
+            "[Checks #1-#2]": {0, 1},
+            "[Checks #3-#4]": {2, 3},
+            "[Checks #5-#6]": {4, 5},
+            "[Checks #7-#8]": {6, 7},
+        }
+        for tag_text, lock_pair in blocked_pairs.items():
+            if tag_text in selected_blocker:
+                locked_set = lock_pair
+                break
         if remediation_dispatched:
-            locked_indices = []
+            locked_set = set()
 
         st.subheader(f"Physical Test Criteria ({book})")
         st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
@@ -1309,61 +1312,52 @@ elif "Tier 3" in view:
             checks_raw = st.session_state["checklist_labels"]
             critical_idx = book_data.get("critical_check_idx")
 
-        if remediation_dispatched:
+        if locked_set:
+            st.markdown(f'''
+            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
+                <strong style="color: var(--amber);">⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_set) + 1} and #{max(locked_set) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.</strong>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
             st.markdown(f'''
             <div class="radar-card-cleared">
-                <span class="badge badge-success">✅ SURGICAL WORK ORDER ACTIVE</span><br><br>
-                <strong>{book_data.get('surgical_remediation_summary', 'Specialized remediation directive active on site.')} Frontline verification unlocked.</strong>
+                <span class="badge badge-success">✅ SURGICAL WORK ORDER ACTIVE: Field rig operational. Frontline verification unlocked.</span>
             </div>
             ''', unsafe_allow_html=True)
 
         st.markdown("### Frontline Verification Checklist — Stage 1")
         col_left, col_right = st.columns(2)
 
-        chk_states = []
         selected_book = book
-        for i, check_spec in enumerate(checks_raw[:8]):
+        for i in range(8):
             col_target = col_left if i % 2 == 0 else col_right
-            is_locked = i in locked_indices
-            label = f"Check #{i + 1}: {check_spec}"
+            is_locked = i in locked_set
+            label = f"Check #{i + 1}: {book_data['checklist'][i]}"
             key = f"sop_chk_{selected_book}_{i}"
             if is_locked:
-                if key not in st.session_state:
-                    st.session_state[key] = False
-                value = col_target.checkbox(
-                    f"🔒 [LOCKED BY TELEMETRY FAULT] {label}",
+                st.session_state[key] = False
+                col_target.checkbox(
+                    f"🔒 [BLOCKED] Check #{i + 1}: {book_data['checklist'][i]}",
                     value=False,
-                    key=key,
                     disabled=True,
+                    key=key,
                 )
-                chk_states.append(False)
             else:
-                value = col_target.checkbox(label, key=key)
-                chk_states.append(bool(value))
+                col_target.checkbox(label, disabled=False, key=key)
 
-        completed_count = sum(1 for checked in chk_states if checked)
-        if locked_indices and not remediation_dispatched:
-            warning_pair = f"Checks {locked_indices[0] + 1} and {locked_indices[1] + 1}"
-            st.warning(f"⚠️ Fault active: {warning_pair} are locked. Dispatch GM Surgical Directive to clear.")
+        completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
+        if locked_set:
+            st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_set) + 1} and #{max(locked_set) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
         elif completed_count < 8:
             st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
-        if completed_count == 8:
+
+        if completed_count == 8 and len(locked_set) == 0:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
             if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}"):
                 st.session_state['pipeline_step_3'] = "COMPLETED"
                 st.session_state['pipeline_step_4'] = "READY"
                 st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
                 st.rerun()
-
-        if selected_blocker != blockers[0] and completed_count < 8 and not remediation_dispatched:
-            held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1 if selected_blocker in blockers and selected_blocker != blockers[0] else 1
-            held_pair_end = held_pair_start + 1
-            st.markdown(f'''
-            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
-                <strong style="color: var(--amber);">⚠️ ACTIVE FAULT: {selected_blocker}</strong><br>
-                Held check pair: Check #{held_pair_start} / Check #{held_pair_end}. Complete the linked remediation before verifying these records.
-            </div>
-            ''', unsafe_allow_html=True)
 
         st.divider()
     
