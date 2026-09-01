@@ -1353,13 +1353,6 @@ elif "Tier 3" in view:
         completed_count = sum(1 for checked in chk_states if checked)
         if completed_count < 8:
             st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
-        elif completed_count == 8:
-            st.success("✅ 8/8 checks verified. All physical artifacts attached.")
-            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", type="primary"):
-                st.session_state['pipeline_step_3'] = "COMPLETED"
-                st.session_state['pipeline_step_4'] = "READY"
-                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
-                st.rerun()
 
         if selected_blocker != blockers[0] and completed_count < 8 and not remediation_dispatched:
             held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1
@@ -1471,6 +1464,18 @@ elif "Tier 3" in view:
             st.info("Remediation is active on site. The Authorized Lead Inspector must manually verify each frontline SOP check.")
         else:
             st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
+
+        if completed_count == 8:
+            st.success("✅ 8/8 checks verified. All physical artifacts attached.")
+            if st.button(
+                "⚡ Submit Frontline SOP Sign-off & Settle",
+                type="primary",
+                key=f"submit_settle_btn_{selected_book}_{st.session_state.get('active_phase', 1)}",
+            ):
+                st.session_state['pipeline_step_3'] = "COMPLETED"
+                st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
+                st.rerun()
 
 # ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
 elif "Ledger" in view:
