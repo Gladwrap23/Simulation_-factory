@@ -548,6 +548,7 @@ for key, default in [
     ('surgical_spend_authorized', {}), ('surgical_purchase_orders', {}),
     ('detection_time', {}), ('override_logged', {}),
     ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
+    ('current_tier', 1),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0),
     ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False),
@@ -561,8 +562,18 @@ for key, default in [
         st.session_state[key] = default
 
 # Navigation Callbacks
+TIER_VIEWS = {
+    1: "1️⃣ Tier 1 | Chairman Directorate",
+    2: "2️⃣ Tier 2 | General Management",
+    3: "3️⃣ Tier 3 | Site Operations",
+    4: "4️⃣ Forensic Audit Ledger",
+}
+VIEW_TO_TIER = {view_name: tier_num for tier_num, view_name in TIER_VIEWS.items()}
+
+
 def nav_to(target_view):
     st.session_state['active_view'] = target_view
+    st.session_state['current_tier'] = VIEW_TO_TIER.get(target_view, st.session_state.get('current_tier', 1))
 
 def trigger_sync():
     st.session_state['last_sync'] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -586,6 +597,7 @@ def reset_book(book_name):
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
     st.session_state['override_logged'][book_name] = False
     st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
+    st.session_state['current_tier'] = 1
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
         st.session_state[f"chk2_{book_name}_{i}"] = False
@@ -771,6 +783,9 @@ sync_c2.button("⚠️ Reset Book", on_click=reset_book, args=(book,))
 st.sidebar.caption(f"Last Audited Sync: `{st.session_state['last_sync']}`")
 
 st.sidebar.markdown("---")
+
+# Sync the navigation intent into the widget-bound key before the radio is instantiated.
+st.session_state['active_view'] = TIER_VIEWS[st.session_state['current_tier']]
 
 view = st.sidebar.radio("Command view", [
     "1️⃣ Tier 1 | Chairman Directorate",
@@ -1320,6 +1335,7 @@ elif "Tier 3" in view:
             st.session_state['phase_2_authorized'][book] = False
             st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
             st.session_state['command_view'] = '4️⃣ Forensic Audit Ledger'
+            st.session_state['current_tier'] = 4
 
         def transmit_forensic_blocker_docket():
             engine.set_sop_blocker(work_order_id, "Forensic blocker docket transmitted")
@@ -1332,6 +1348,7 @@ elif "Tier 3" in view:
             st.session_state['board_escalation'][book] = True
             append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
             st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
+            st.session_state['current_tier'] = 1
 
         default_blocker_tags = ["None (Nominal Telemetry)", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
         raw_blocker_tags = book_data.get("blocker_tags", default_blocker_tags)
@@ -1352,6 +1369,16 @@ elif "Tier 3" in view:
         }
         selected_book = book
         default_blocker = "None (Nominal Telemetry)"
+
+        # Auto-resolve the blocker before the selectbox widget renders once verification is complete.
+        prior_completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
+        remediation_dispatched = (
+            st.session_state['pipeline_step_2'] == "DISPATCHED"
+            or st.session_state['surgical_spend_authorized'].get(book, False)
+        )
+        if prior_completed_count == 8 or remediation_dispatched:
+            st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
+
         if f"blocker_tag_{selected_book}" not in st.session_state:
             st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
         selected_blocker = st.selectbox(
@@ -1375,12 +1402,6 @@ elif "Tier 3" in view:
             )
             st.rerun()
 
-        remediation_dispatched = (
-            st.session_state['pipeline_step_2'] == "DISPATCHED"
-            or st.session_state['surgical_spend_authorized'].get(book, False)
-        )
-
-        selected_blocker = st.session_state.get(f"blocker_tag_{selected_book}", "None")
         locked_indices = []
         if "Checks #1-#2" in selected_blocker or ("1" in selected_blocker and "2" in selected_blocker and "None" not in selected_blocker):
             locked_indices = [0, 1]
@@ -1455,13 +1476,11 @@ elif "Tier 3" in view:
 
         if completed_count == 8 and len(locked_indices) == 0:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
-            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_trigger_{selected_book}", type="primary"):
+            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}", type="primary"):
                 st.session_state['pipeline_step_3'] = "COMPLETED"
                 st.session_state['pipeline_step_4'] = "READY"
-                # Sync whichever key controls the tier navigation radio (actual key is 'active_view')
-                for k in ['active_view', 'command_view', 'nav_view', 'active_tier']:
-                    if k in st.session_state:
-                        st.session_state[k] = "4️⃣ Forensic Audit Ledger"
+                st.session_state['selected_tier_idx'] = 3  # 0-indexed for Tier 4
+                st.session_state['current_tier'] = 4
                 st.rerun()
 
         st.divider()
