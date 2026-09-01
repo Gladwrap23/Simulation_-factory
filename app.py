@@ -5,19 +5,37 @@ from datetime import datetime, timezone
 import engine
 import numpy as np
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 def force_scroll_to_top():
-    st.components.v1.html(
+    components.html(
         """
         <script>
-            var mainContainer = window.parent.document.querySelector('section.main');
-            if (mainContainer) {
-                mainContainer.scrollTo({top: 0, behavior: 'instant'});
+        (function() {
+            try {
+                var targets = [
+                    window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                    window.parent.document.querySelector('[data-testid="stMain"]'),
+                    window.parent.document.querySelector('section.main'),
+                    window.parent.document.documentElement,
+                    window.parent.document.body
+                ];
+                targets.forEach(function(el) {
+                    if (el) {
+                        el.scrollTop = 0;
+                        el.scrollTo({top: 0, left: 0, behavior: 'instant'});
+                    }
+                });
+                window.parent.scrollTo(0, 0);
+            } catch (e) {
+                console.warn("Scroll reset:", e);
             }
+        })();
         </script>
         """,
         height=0,
+        width=0
     )
 
 
@@ -1254,10 +1272,6 @@ elif "Tier 2" in view:
 # ----------------- TIER 3: SITE OPERATIONS -----------------
 elif "Tier 3" in view:
     force_scroll_to_top()
-    st.components.v1.html(
-        "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
-        height=0,
-    )
     st.header(f"Site Operations Hub / {book}")
     if not is_directed:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
