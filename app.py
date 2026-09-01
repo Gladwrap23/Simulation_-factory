@@ -1280,6 +1280,17 @@ elif "Tier 3" in view:
             or st.session_state['surgical_spend_authorized'].get(book, False)
         )
 
+        selected_tag = selected_blocker
+        locked_indices = []
+        if selected_tag.startswith("[Checks #"):
+            match = re.search(r"\[Checks #(\d+)-#(\d+)\]", selected_tag)
+            if match:
+                start = int(match.group(1)) - 1
+                end = int(match.group(2)) - 1
+                locked_indices = list(range(start, end + 1))
+        if remediation_dispatched:
+            locked_indices = []
+
         st.subheader(f"Physical Test Criteria ({book})")
         st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
         st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
@@ -1309,53 +1320,43 @@ elif "Tier 3" in view:
         st.markdown("### Frontline Verification Checklist — Stage 1")
         col_left, col_right = st.columns(2)
 
-        selected_check_indexes = (
-            set(range((blockers.index(selected_blocker) - 1) * 2, (blockers.index(selected_blocker) - 1) * 2 + 2))
-            if selected_blocker != blockers[0]
-            else set()
-        )
-        checks_complete = all(
-            st.session_state.get(f"sop_chk_{book}_{index}", False)
-            for index in range(8)
-        )
-        show_active_fault = bool(selected_check_indexes) and not checks_complete and not remediation_dispatched
         chk_states = []
+        selected_book = book
         for i, check_spec in enumerate(checks_raw[:8]):
             col_target = col_left if i % 2 == 0 else col_right
-            selected_book = book
-            k = f"sop_chk_{selected_book}_{i}"
-            db_col = f"check_{i + 1}"
-            item_number = i + 1
-            if active_phase == 2:
-                chk_label = f"Frontline SOP Check #{item_number}: [{check_spec}]"
-                item_id = f"PHASE-2-ITEM-{item_number:02d}"
-            else:
-                item_id = f"ITEM-{item_number:02d}"
-                chk_label = f"Check #{item_number}: {check_spec}"
-            if show_active_fault and i in selected_check_indexes:
-                chk_label = f"🟠 {chk_label}"
-            if i == critical_idx:
-                chk_label = f"🔴 **{chk_label}** — *(🚨 CRITICAL PATH BLOCKER)*"
-            persisted_value = bool(sop_data[db_col])
-            if k not in st.session_state:
-                st.session_state[k] = persisted_value
-            v = col_target.checkbox(chk_label, key=k)
-            if v != persisted_value:
-                engine.update_sop_check(work_order_id, db_col, int(v))
-                engine.record_ledger_entry(
-                    book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
-                    "SOP_CHECK_UPDATED", work_order_id, detection_time,
-                    notes=f"{item_id} ({db_col}) set to {int(v)}.",
+            is_locked = i in locked_indices
+            label = f"Check #{i + 1}: {check_spec}"
+            key = f"sop_chk_{selected_book}_{i}"
+            if is_locked:
+                if key not in st.session_state:
+                    st.session_state[key] = False
+                value = col_target.checkbox(
+                    f"🔒 [LOCKED BY TELEMETRY FAULT] {label}",
+                    value=False,
+                    key=key,
+                    disabled=True,
                 )
-                st.rerun()
-            chk_states.append(v)
+                chk_states.append(False)
+            else:
+                value = col_target.checkbox(label, key=key)
+                chk_states.append(bool(value))
 
         completed_count = sum(1 for checked in chk_states if checked)
-        if completed_count < 8:
+        if locked_indices and not remediation_dispatched:
+            warning_pair = f"Checks {locked_indices[0] + 1} and {locked_indices[1] + 1}"
+            st.warning(f"⚠️ Fault active: {warning_pair} are locked. Dispatch GM Surgical Directive to clear.")
+        elif completed_count < 8:
             st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
+        if completed_count == 8:
+            st.success("✅ 8/8 checks complete. All physical artifacts verified.")
+            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}"):
+                st.session_state['pipeline_step_3'] = "COMPLETED"
+                st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
+                st.rerun()
 
         if selected_blocker != blockers[0] and completed_count < 8 and not remediation_dispatched:
-            held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1
+            held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1 if selected_blocker in blockers and selected_blocker != blockers[0] else 1
             held_pair_end = held_pair_start + 1
             st.markdown(f'''
             <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
@@ -1426,26 +1427,6 @@ elif "Tier 3" in view:
             f"sop_chk_{book_index}_{critical_idx}", False
         )
 
-        if completed_count < 8:
-            st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
-        else:
-            st.success("✅ 8/8 checks verified. All physical artifacts attached.")
-            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", type="primary"):
-                st.session_state['pipeline_step_3'] = "COMPLETED"
-                st.session_state['pipeline_step_4'] = "READY"
-                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
-                st.rerun()
-
-        if selected_blocker != blockers[0] and completed_count < 8 and not remediation_dispatched:
-            held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1
-            held_pair_end = held_pair_start + 1
-            st.markdown(f'''
-            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
-                <strong style="color: var(--amber);">⚠️ ACTIVE FAULT: {selected_blocker}</strong><br>
-                Held check pair: Check #{held_pair_start} / Check #{held_pair_end}. Complete the linked remediation before verifying these records.
-            </div>
-            ''', unsafe_allow_html=True)
-
         if critical_item_unchecked and not remediation_dispatched:
             blocker_diagnostic = book_data["blocker_diagnostic"]
             st.markdown(f'''
@@ -1464,18 +1445,6 @@ elif "Tier 3" in view:
             st.info("Remediation is active on site. The Authorized Lead Inspector must manually verify each frontline SOP check.")
         else:
             st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
-
-        if completed_count == 8:
-            st.success("✅ 8/8 checks verified. All physical artifacts attached.")
-            if st.button(
-                "⚡ Submit Frontline SOP Sign-off & Settle",
-                type="primary",
-                key=f"submit_settle_btn_{selected_book}_{st.session_state.get('active_phase', 1)}",
-            ):
-                st.session_state['pipeline_step_3'] = "COMPLETED"
-                st.session_state['pipeline_step_4'] = "READY"
-                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
-                st.rerun()
 
 # ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
 elif "Ledger" in view:
