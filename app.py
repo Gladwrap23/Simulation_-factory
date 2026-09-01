@@ -1376,7 +1376,23 @@ elif "Tier 3" in view:
             st.session_state['pipeline_step_2'] == "DISPATCHED"
             or st.session_state['surgical_spend_authorized'].get(book, False)
         )
-        if prior_completed_count == 8 or remediation_dispatched:
+        # Auto-clear the active blocker as soon as its paired checks are both verified.
+        blocker_pair_checks = {
+            "[Checks #1-#2]": (0, 1),
+            "[Checks #3-#4]": (2, 3),
+            "[Checks #5-#6]": (4, 5),
+            "[Checks #7-#8]": (6, 7),
+        }
+        prior_selected_blocker = st.session_state.get(f"blocker_tag_{selected_book}", default_blocker)
+        pair_auto_cleared = False
+        for tag_prefix, (idx_a, idx_b) in blocker_pair_checks.items():
+            if tag_prefix in prior_selected_blocker:
+                pair_auto_cleared = (
+                    st.session_state.get(f"sop_chk_{selected_book}_{idx_a}", False)
+                    and st.session_state.get(f"sop_chk_{selected_book}_{idx_b}", False)
+                )
+                break
+        if prior_completed_count == 8 or remediation_dispatched or pair_auto_cleared:
             st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
 
         if f"blocker_tag_{selected_book}" not in st.session_state:
