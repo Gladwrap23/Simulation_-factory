@@ -1234,6 +1234,10 @@ elif "Tier 2" in view:
 
 # ----------------- TIER 3: SITE OPERATIONS -----------------
 elif "Tier 3" in view:
+    st.components.v1.html(
+        "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
+        height=0,
+    )
     st.header(f"Site Operations Hub / {book}")
     if not is_directed:
         st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
@@ -1256,12 +1260,19 @@ elif "Tier 3" in view:
             .replace("COD Attestation Hold", "COD Hold")
             for display_tag, raw_tag in zip(blockers[1:], raw_blocker_tags[1:])
         }
+        selected_book = book
+        default_blocker = "None (Nominal Telemetry)"
+        if f"blocker_tag_{selected_book}" not in st.session_state:
+            st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
+        selected_blocker = st.selectbox(
+            "Operational Blocker Tag (Real-time Telemetry)",
+            blockers,
+            index=0,
+            key=f"blocker_tag_{selected_book}",
+        )
+        st.session_state[f"blocker_tag_{selected_book}"] = selected_blocker
         current_blocker = sop_data["active_blocker"]
         blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
-        selected_blocker = st.selectbox(
-            "Operational Blocker Tag (Real-time Telemetry)", blockers, index=blocker_index,
-            key=f"blocker_{work_order_id}",
-        )
         if selected_blocker != current_blocker:
             engine.set_sop_blocker(work_order_id, selected_blocker)
             selected_check_indexes = range((blockers.index(selected_blocker) - 1) * 2, (blockers.index(selected_blocker) - 1) * 2 + 2)
