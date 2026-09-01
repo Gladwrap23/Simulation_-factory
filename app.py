@@ -1380,14 +1380,15 @@ elif "Tier 3" in view:
             or st.session_state['surgical_spend_authorized'].get(book, False)
         )
 
+        selected_blocker = st.session_state.get(f"blocker_tag_{selected_book}", "None")
         locked_indices = []
-        if "1" in selected_blocker and "2" in selected_blocker:
+        if "Checks #1-#2" in selected_blocker or ("1" in selected_blocker and "2" in selected_blocker and "None" not in selected_blocker):
             locked_indices = [0, 1]
-        elif "3" in selected_blocker and "4" in selected_blocker:
+        elif "Checks #3-#4" in selected_blocker or ("3" in selected_blocker and "4" in selected_blocker):
             locked_indices = [2, 3]
-        elif "5" in selected_blocker and "6" in selected_blocker:
+        elif "Checks #5-#6" in selected_blocker or ("5" in selected_blocker and "6" in selected_blocker):
             locked_indices = [4, 5]
-        elif "7" in selected_blocker and "8" in selected_blocker:
+        elif "Checks #7-#8" in selected_blocker or ("7" in selected_blocker and "8" in selected_blocker):
             locked_indices = [6, 7]
         if remediation_dispatched:
             locked_indices = []
@@ -1424,23 +1425,27 @@ elif "Tier 3" in view:
             ''', unsafe_allow_html=True)
 
         st.markdown("### Frontline Verification Checklist — Stage 1")
-        col_left, col_right = st.columns(2)
+        col1, col2 = st.columns(2)
 
         selected_book = book
         sop_items = book_data['checklist']
+        base_labels = [
+            f"Check #{i + 1}: {sop_items[i]}" + (" (🚨 CRITICAL PATH BLOCKER)" if i == critical_idx else "")
+            for i in range(8)
+        ]
         for i in range(8):
-            col_target = col_left if i % 2 == 0 else col_right
+            col_target = col1 if i % 2 == 0 else col2
             key = f"sop_chk_{selected_book}_{i}"
             if i in locked_indices:
                 st.session_state[key] = False
                 col_target.checkbox(
-                    f"🔒 [LOCKED BY TELEMETRY] {sop_items[i]}",
+                    f"🔒 [LOCKED BY FAULT] {base_labels[i]}",
                     value=False,
                     disabled=True,
                     key=key,
                 )
             else:
-                col_target.checkbox(f"✅ {sop_items[i]}", key=key)
+                col_target.checkbox(base_labels[i], key=key)
 
         completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
         if locked_indices:
@@ -1448,12 +1453,15 @@ elif "Tier 3" in view:
         elif completed_count < 8:
             st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
 
-        if completed_count == 8 and not locked_indices:
+        if completed_count == 8 and len(locked_indices) == 0:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
             if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_trigger_{selected_book}", type="primary"):
                 st.session_state['pipeline_step_3'] = "COMPLETED"
                 st.session_state['pipeline_step_4'] = "READY"
-                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
+                # Sync whichever key controls the tier navigation radio (actual key is 'active_view')
+                for k in ['active_view', 'command_view', 'nav_view', 'active_tier']:
+                    if k in st.session_state:
+                        st.session_state[k] = "4️⃣ Forensic Audit Ledger"
                 st.rerun()
 
         st.divider()
