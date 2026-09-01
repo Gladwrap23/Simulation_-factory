@@ -1304,7 +1304,6 @@ elif "Tier 3" in view:
             index=0,
             key=f"blocker_tag_{selected_book}",
         )
-        st.session_state[f"blocker_tag_{selected_book}"] = selected_blocker
         current_blocker = sop_data["active_blocker"]
         blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
         if selected_blocker != current_blocker:
