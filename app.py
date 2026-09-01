@@ -1291,7 +1291,6 @@ elif "Tier 3" in view:
         a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{art[2][1]}</small></div>", unsafe_allow_html=True)
         a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{art[3][1]}</small></div>", unsafe_allow_html=True)
 
-        st.subheader("Phase 2 Secondary Gate Verification Checklist" if active_phase == 2 else f"Stage 1: Frontline Verification Checklist - Work Order {work_order_id}")
         if active_phase == 2:
             checks_raw = st.session_state["checklist_labels"]
             critical_idx = phase_2.get("critical_check_idx")
@@ -1306,7 +1305,9 @@ elif "Tier 3" in view:
                 <strong>{book_data.get('surgical_remediation_summary', 'Specialized remediation directive active on site.')} Frontline verification unlocked.</strong>
             </div>
             ''', unsafe_allow_html=True)
-        c_col1, c_col2 = st.columns(2)
+
+        st.markdown("### Frontline Verification Checklist — Stage 1")
+        col_left, col_right = st.columns(2)
 
         selected_check_indexes = (
             set(range((blockers.index(selected_blocker) - 1) * 2, (blockers.index(selected_blocker) - 1) * 2 + 2))
@@ -1314,14 +1315,15 @@ elif "Tier 3" in view:
             else set()
         )
         checks_complete = all(
-            st.session_state.get(f"sop_chk_{book_index}_{index}", False)
+            st.session_state.get(f"sop_chk_{book}_{index}", False)
             for index in range(8)
         )
         show_active_fault = bool(selected_check_indexes) and not checks_complete and not remediation_dispatched
         chk_states = []
-        for i, check_spec in enumerate(checks_raw):
-            col_target = c_col1 if i % 2 == 0 else c_col2
-            k = f"sop_chk_{book_index}_{i}"
+        for i, check_spec in enumerate(checks_raw[:8]):
+            col_target = col_left if i % 2 == 0 else col_right
+            selected_book = book
+            k = f"sop_chk_{selected_book}_{i}"
             db_col = f"check_{i + 1}"
             item_number = i + 1
             if active_phase == 2:
@@ -1349,18 +1351,26 @@ elif "Tier 3" in view:
             chk_states.append(v)
 
         completed_count = sum(1 for checked in chk_states if checked)
-        if show_active_fault:
-            active_fault_note = (
-                "Polling latency exceeds 4.0s; synthetic test packet required to verify."
-                if active_fault == "IEEE 2800 Telemetry Polling Lag"
-                else f"{active_fault} is active; complete the linked remediation before verifying these checks."
-            )
+        if completed_count < 8:
+            st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
+        elif completed_count == 8:
+            st.success("✅ 8/8 checks verified. All physical artifacts attached.")
+            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", type="primary"):
+                st.session_state['pipeline_step_3'] = "COMPLETED"
+                st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
+                st.rerun()
+
+        if selected_blocker != blockers[0] and completed_count < 8 and not remediation_dispatched:
+            held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1
+            held_pair_end = held_pair_start + 1
             st.markdown(f'''
             <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
                 <strong style="color: var(--amber);">⚠️ ACTIVE FAULT: {selected_blocker}</strong><br>
-                {active_fault_note}
+                Held check pair: Check #{held_pair_start} / Check #{held_pair_end}. Complete the linked remediation before verifying these records.
             </div>
             ''', unsafe_allow_html=True)
+
         st.divider()
     
     def signoff_and_settle():
@@ -1418,41 +1428,49 @@ elif "Tier 3" in view:
         st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
 
     if is_directed:
-        if completed_count == 8:
-            st.success("✅ 8/8 checks complete. All physical artifacts verified and attached.")
-            t3_sp, t3_act = st.columns([1.5, 1])
-            with t3_act:
-                st.button("⚡ Submit Frontline SOP Sign-off & Settle", on_click=signoff_and_settle, type="primary")
-            st.button(
-                "➡️ Proceed to Tier 4: Forensic Audit Ledger & Settlement",
-                on_click=nav_to,
-                args=('4️⃣ Forensic Audit Ledger',),
-                type="primary",
-                use_container_width=True,
-            )
+        selected_book = book
+        critical_item_unchecked = critical_idx is not None and not st.session_state.get(
+            f"sop_chk_{book_index}_{critical_idx}", False
+        )
+
+        if completed_count < 8:
+            st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
         else:
-            st.warning(f"⚠️ {completed_count}/8 checks verified. The Lead Inspector must manually verify and attach all 8 physical records.")
-            critical_item_unchecked = critical_idx is not None and not st.session_state.get(
-                f"sop_chk_{book_index}_{critical_idx}", False
-            )
-            if critical_item_unchecked and not remediation_dispatched:
-                blocker_diagnostic = book_data["blocker_diagnostic"]
-                st.markdown(f'''
-                <div class="radar-card">
-                    <span class="badge badge-danger">🚨 FRONTLINE BOTTLENECK FORENSIC DIAGNOSIS</span><br><br>
-                    <strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><br>
-                    <strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><br>
-                    <strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><br>
-                    <strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}
-                </div>
-                ''', unsafe_allow_html=True)
-                esc_sp, esc_btn = st.columns([1.5, 1])
-                with esc_btn:
-                    st.button("⚡ Transmit Forensic Blocker Docket to Tier 2 (GM) & Tier 1 (Chairman)", on_click=transmit_forensic_blocker_docket, type="primary")
-            elif critical_item_unchecked:
-                st.info("Remediation is active on site. The Authorized Lead Inspector must manually verify each frontline SOP check.")
-            else:
-                st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
+            st.success("✅ 8/8 checks verified. All physical artifacts attached.")
+            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", type="primary"):
+                st.session_state['pipeline_step_3'] = "COMPLETED"
+                st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
+                st.rerun()
+
+        if selected_blocker != blockers[0] and completed_count < 8 and not remediation_dispatched:
+            held_pair_start = (blockers.index(selected_blocker) - 1) * 2 + 1
+            held_pair_end = held_pair_start + 1
+            st.markdown(f'''
+            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
+                <strong style="color: var(--amber);">⚠️ ACTIVE FAULT: {selected_blocker}</strong><br>
+                Held check pair: Check #{held_pair_start} / Check #{held_pair_end}. Complete the linked remediation before verifying these records.
+            </div>
+            ''', unsafe_allow_html=True)
+
+        if critical_item_unchecked and not remediation_dispatched:
+            blocker_diagnostic = book_data["blocker_diagnostic"]
+            st.markdown(f'''
+            <div class="radar-card">
+                <span class="badge badge-danger">🚨 FRONTLINE BOTTLENECK FORENSIC DIAGNOSIS</span><br><br>
+                <strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><br>
+                <strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><br>
+                <strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><br>
+                <strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}
+            </div>
+            ''', unsafe_allow_html=True)
+            esc_sp, esc_btn = st.columns([1.5, 1])
+            with esc_btn:
+                st.button("⚡ Transmit Forensic Blocker Docket to Tier 2 (GM) & Tier 1 (Chairman)", on_click=transmit_forensic_blocker_docket, type="primary")
+        elif critical_item_unchecked:
+            st.info("Remediation is active on site. The Authorized Lead Inspector must manually verify each frontline SOP check.")
+        else:
+            st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
 
 # ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
 elif "Ledger" in view:
