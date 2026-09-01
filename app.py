@@ -1380,19 +1380,17 @@ elif "Tier 3" in view:
             or st.session_state['surgical_spend_authorized'].get(book, False)
         )
 
-        locked_set = set()
-        blocked_pairs = {
-            "[Checks #1-#2]": {0, 1},
-            "[Checks #3-#4]": {2, 3},
-            "[Checks #5-#6]": {4, 5},
-            "[Checks #7-#8]": {6, 7},
-        }
-        for tag_text, lock_pair in blocked_pairs.items():
-            if tag_text in selected_blocker:
-                locked_set = lock_pair
-                break
+        locked_indices = []
+        if "1" in selected_blocker and "2" in selected_blocker:
+            locked_indices = [0, 1]
+        elif "3" in selected_blocker and "4" in selected_blocker:
+            locked_indices = [2, 3]
+        elif "5" in selected_blocker and "6" in selected_blocker:
+            locked_indices = [4, 5]
+        elif "7" in selected_blocker and "8" in selected_blocker:
+            locked_indices = [6, 7]
         if remediation_dispatched:
-            locked_set = set()
+            locked_indices = []
 
         st.subheader(f"Physical Test Criteria ({book})")
         st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
@@ -1412,10 +1410,10 @@ elif "Tier 3" in view:
             checks_raw = st.session_state["checklist_labels"]
             critical_idx = book_data.get("critical_check_idx")
 
-        if locked_set:
+        if locked_indices:
             st.markdown(f'''
             <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
-                <strong style="color: var(--amber);">⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_set) + 1} and #{max(locked_set) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.</strong>
+                <strong style="color: var(--amber);">⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.</strong>
             </div>
             ''', unsafe_allow_html=True)
         else:
@@ -1429,32 +1427,33 @@ elif "Tier 3" in view:
         col_left, col_right = st.columns(2)
 
         selected_book = book
+        sop_items = book_data['checklist']
         for i in range(8):
             col_target = col_left if i % 2 == 0 else col_right
-            is_locked = i in locked_set
-            label = f"Check #{i + 1}: {book_data['checklist'][i]}"
             key = f"sop_chk_{selected_book}_{i}"
-            if is_locked:
+            if i in locked_indices:
                 st.session_state[key] = False
                 col_target.checkbox(
-                    f"Check #{i + 1}: {book_data['checklist'][i]} 🔒 [TELEMETRY HOLD]",
+                    f"🔒 [LOCKED BY TELEMETRY] {sop_items[i]}",
                     value=False,
                     disabled=True,
                     key=key,
                 )
             else:
-                col_target.checkbox(label, disabled=False, key=key)
+                col_target.checkbox(f"✅ {sop_items[i]}", key=key)
 
         completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
-        if locked_set:
-            st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_set) + 1} and #{max(locked_set) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
+        if locked_indices:
+            st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
         elif completed_count < 8:
             st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
 
-        if completed_count == 8 and len(locked_set) == 0:
+        if completed_count == 8 and not locked_indices:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
-            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}"):
-                signoff_and_settle()
+            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_trigger_{selected_book}", type="primary"):
+                st.session_state['pipeline_step_3'] = "COMPLETED"
+                st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['command_view'] = "4️⃣ Forensic Audit Ledger"
                 st.rerun()
 
         st.divider()
