@@ -1432,7 +1432,8 @@ elif "Tier 3" in view:
 
         st.subheader(f"Physical Test Criteria ({book})")
         st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
-        st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
+        if prior_completed_count == 0 and selected_blocker == default_blocker:
+            st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
         active_fault = blocker_faults.get(selected_blocker)
         art = book_data.get("telemetry_diagnostics", {}).get(active_fault, book_data["artifacts"])
         a1, a2, a3, a4 = st.columns(4)
@@ -1497,6 +1498,32 @@ elif "Tier 3" in view:
                 st.session_state['pipeline_step_4'] = "READY"
                 st.session_state['selected_tier_idx'] = 3  # 0-indexed for Tier 4
                 st.session_state['current_tier'] = 4
+                st.rerun()
+
+        with st.expander("🛑 Lead Inspector Field Interventions & Stop-Work", expanded=False):
+            step_back_reason = st.text_input(
+                "Reason for Step-Back / Attestation Abort",
+                placeholder="e.g., Inverter phase jitter detected during DNP3 injection; model drift unresolved.",
+                key=f"step_back_reason_{selected_book}",
+            )
+            if st.button("🚨 Execute Emergency Step-Back & Log to Ledger", type="secondary", key=f"step_back_btn_{selected_book}"):
+                for i in range(8):
+                    st.session_state[f"sop_chk_{selected_book}_{i}"] = False
+
+                audit_entry = {
+                    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "sector": selected_book,
+                    "tier": "Tier 3 Site Operations",
+                    "action": "EMERGENCY STEP-BACK TRIGGERED",
+                    "details": step_back_reason or "Lead certifier aborted sign-off. Telemetry re-tripped.",
+                    "status": "CIRCUIT BREAKER ACTIVE",
+                }
+                if "audit_ledger" not in st.session_state:
+                    st.session_state["audit_ledger"] = []
+                st.session_state["audit_ledger"].append(audit_entry)
+
+                st.session_state['pipeline_step_3'] = "BLOCKED"
+                st.warning("⚠️ Work order halted. Emergency step-back permanently recorded in Tier 4 Ledger.")
                 st.rerun()
 
         st.divider()
@@ -1572,5 +1599,12 @@ elif "Ledger" in view:
         st.dataframe(audit_rows, use_container_width=True)
     else:
         st.info("No persisted audit events recorded yet in audit_ledger.db.")
+
+    st.subheader("Emergency Step-Back & Field Intervention Ledger")
+    step_back_rows = sorted(st.session_state.get("audit_ledger", []), key=lambda entry: entry["timestamp"])
+    if step_back_rows:
+        st.dataframe(step_back_rows, use_container_width=True)
+    else:
+        st.info("No emergency step-back events recorded in this session.")
 
 st.caption(f"Factory Command Post | Autonomous Capital Defense Control Plane | Audited Sync: {st.session_state['last_sync']}")
