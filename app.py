@@ -913,12 +913,26 @@ if "Tier 1" in view:
         {"name": "GM 3", "title": "General Manager - Domain 3"},
     ]
     gm_domains = [
-        {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5], "stage_label": "Grid Telemetry"},
-        {"manager": gm_roster[1], "check_indices": [2, 3], "stage_label": "Substation Rigs"},
-        {"manager": gm_roster[2], "check_indices": [6, 7], "stage_label": "Regulatory Filing"},
+        {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5], "stage_label": "Grid Telemetry", "sla_seconds": 45 * 60},
+        {"manager": gm_roster[1], "check_indices": [2, 3], "stage_label": "Substation Rigs", "sla_seconds": 3.0 * 3600},
+        {"manager": gm_roster[2], "check_indices": [6, 7], "stage_label": "Regulatory Filing", "sla_seconds": 90 * 60},
     ]
-    for domain in gm_domains:
+    idle_carry_rate_per_sec = book_data['base_burn'] / 604800.0
+    for domain_idx, domain in enumerate(gm_domains):
         domain["done"] = all(st.session_state.get(f"sop_chk_{book}_{i}", False) for i in domain["check_indices"])
+        sla_key = f"domain_sla_start_{book}_{domain_idx}"
+        if domain["done"]:
+            st.session_state.pop(sla_key, None)
+            domain["status"] = "CLEARED"
+            domain["elapsed_seconds"] = 0.0
+        else:
+            if sla_key not in st.session_state:
+                st.session_state[sla_key] = datetime.now(timezone.utc)
+            elapsed_seconds = (datetime.now(timezone.utc) - st.session_state[sla_key]).total_seconds()
+            domain["elapsed_seconds"] = elapsed_seconds
+            domain["status"] = "BREACHED" if elapsed_seconds > domain["sla_seconds"] else "ON SCHEDULE"
+            domain["idle_carry"] = idle_carry_rate_per_sec * elapsed_seconds
+    breached_domains = [d for d in gm_domains if d.get("status") == "BREACHED"]
 
     if sop_readiness == 8 or st.session_state['pipeline_step_3'] == "COMPLETED":
         narrative = POST_RESOLUTION_NARRATIVES.get(book, {})
@@ -970,6 +984,24 @@ if "Tier 1" in view:
             <small>Consensus impossible at GM level. Invoke Chairman Directorate Statutory Override Console below to exercise DGCL § 141 Safe-Harbor authority.</small>
         </div>
         ''', unsafe_allow_html=True)
+    elif breached_domains:
+        breach_lines = "<br>".join(
+            f"{d['manager']['name']} ({d['stage_label']}): held {d['elapsed_seconds'] / 60.0:.0f} min "
+            f"(SLA {d['sla_seconds'] / 60.0:.0f} min) — idle carry ${d['idle_carry']:,.0f}"
+            for d in breached_domains
+        )
+        total_breach_carry = sum(d['idle_carry'] for d in breached_domains)
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+            <strong style="color: #FF4B4B;">🚨 CRITICAL PATH STALL: GOVERNANCE DRIFT DETECTED</strong><br><br>
+            <strong>⚠️ PACING BOTTLENECK (SLA BREACHED):</strong><br>
+            <small>{breach_lines}</small><br><br>
+            <strong>⏱️ REAL-TIME DOLLAR IMPACT:</strong><br>
+            <small>Accrued idle carry: ${total_breach_carry:,.0f}.</small><br><br>
+            <strong>🛡️ DIRECTORATE DIRECTIVE:</strong><br>
+            <small>Statutory Safe-Harbor Intervention Required. Use Chairman Directorate Override Console below.</small>
+        </div>
+        ''', unsafe_allow_html=True)
     else:
         open_domain = next((d for d in gm_domains if not d["done"]), gm_domains[0])
         open_indices = open_domain["check_indices"]
@@ -979,13 +1011,14 @@ if "Tier 1" in view:
         <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
             <strong style="color: #FF4B4B;">🚨 CRITICAL PIPELINE STALL DETECTED — DRIFTING GROUND TRUTH</strong><br><br>
             <strong>⚠️ IDENTIFIED BOTTLENECK:</strong><br>
-            <small>{open_domain['manager']['name']}: {open_domain['stage_label']} certification incomplete (Checks #{min(open_indices) + 1}-#{max(open_indices) + 1} open).</small><br><br>
+            <small>{open_domain['manager']['name']}: {open_domain['stage_label']} certification incomplete (Checks #{min(open_indices) + 1}-#{max(open_indices) + 1} open) — ON SCHEDULE ({open_domain['elapsed_seconds'] / 60.0:.0f} of {open_domain['sla_seconds'] / 60.0:.0f} min SLA).</small><br><br>
             <strong>⏱️ UNACCOUNTED GOVERNANCE DRIFT:</strong><br>
             <small>{idle_hours:.1f} hours since last audited pulse — live idle standby burn accruing at ${idle_burn_accrued:,.0f}.</small><br><br>
             <strong>🛡️ FIDUCIARY DIRECTIVE:</strong><br>
             <small>Board Notice: Management pipeline report does not match SCADA telemetry. Exercise directorate audit authority or deploy synthetic telemetry pre-clearance.</small>
         </div>
         ''', unsafe_allow_html=True)
+
 
     stage_cols = st.columns(3)
     for stage_col, domain in zip(stage_cols, gm_domains):
@@ -1024,6 +1057,8 @@ if "Tier 1" in view:
                 st.session_state[f"sop_chk_{book}_{i}"] = True
             st.session_state[f"sop_readiness_{book}"] = 8
             st.session_state[f"blocker_tag_{book}"] = "None (Nominal Telemetry)"
+            for domain_idx in range(len(gm_domains)):
+                st.session_state.pop(f"domain_sla_start_{book}_{domain_idx}", None)
             engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
             engine.record_ledger_entry(
                 book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
