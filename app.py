@@ -1444,10 +1444,6 @@ elif "Tier 3" in view:
         if remediation_dispatched:
             locked_indices = []
 
-        st.subheader(f"Physical Test Criteria ({book})")
-        st.caption("Certifying Authority: Authorized Lead Inspector / Domain Supervisor")
-        if prior_completed_count == 0 and selected_blocker == default_blocker:
-            st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
         active_fault = blocker_faults.get(selected_blocker)
         art = book_data.get("telemetry_diagnostics", {}).get(active_fault, book_data["artifacts"])
         pair_done_by_index = [pair_1_done, pair_2_done, pair_3_done, pair_4_done]
@@ -1460,11 +1456,6 @@ elif "Tier 3" in view:
                 card_statuses.append("🚨 ACTIVE FAULT / HELD")
             else:
                 card_statuses.append("Nominal / Standby")
-        a1, a2, a3, a4 = st.columns(4)
-        a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{card_statuses[0]}</small></div>", unsafe_allow_html=True)
-        a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{card_statuses[1]}</small></div>", unsafe_allow_html=True)
-        a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{card_statuses[2]}</small></div>", unsafe_allow_html=True)
-        a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{card_statuses[3]}</small></div>", unsafe_allow_html=True)
 
         if active_phase == 2:
             checks_raw = st.session_state["checklist_labels"]
@@ -1502,9 +1493,9 @@ elif "Tier 3" in view:
             {"name": "GM 3", "title": "General Manager - Domain 3", "domain": "Checks #7-#8"},
         ]
         gm_domains = [
-            {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5]},
-            {"manager": gm_roster[1], "check_indices": [2, 3]},
-            {"manager": gm_roster[2], "check_indices": [6, 7]},
+            {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5], "art_indices": [0, 2]},
+            {"manager": gm_roster[1], "check_indices": [2, 3], "art_indices": [1]},
+            {"manager": gm_roster[2], "check_indices": [6, 7], "art_indices": [3]},
         ]
 
         for domain in gm_domains:
@@ -1513,9 +1504,9 @@ elif "Tier 3" in view:
             domain_done = all(st.session_state.get(f"sop_chk_{selected_book}_{i}", False) for i in check_indices)
             domain_locked = any(i in locked_indices for i in check_indices)
             if domain_done:
-                gm_badge = "<span class='badge badge-success'>✅ CLEARED & AUDITED</span>"
+                gm_badge = "<span class='badge badge-success'>✅ VERIFIED & AUDITED</span>"
             elif domain_locked:
-                gm_badge = "<span class='badge badge-danger'>🚨 ACTIVE FAULT / HELD</span>"
+                gm_badge = "<span class='badge badge-danger'>🚨 FAULT ACTIVE</span>"
             else:
                 gm_badge = "<span class='badge badge-pending'>🟡 PENDING VERIFICATION</span>"
             st.markdown(f'''
@@ -1525,6 +1516,14 @@ elif "Tier 3" in view:
                 {gm_badge}
             </div>
             ''', unsafe_allow_html=True)
+
+            telemetry_cols = st.columns(len(domain["art_indices"]))
+            for tile_col, art_idx in zip(telemetry_cols, domain["art_indices"]):
+                tile_col.markdown(
+                    f"<div class='card'><strong>{art[art_idx][0]}</strong><br><small>{card_statuses[art_idx]}</small></div>",
+                    unsafe_allow_html=True,
+                )
+
             domain_cols = st.columns(len(check_indices))
             for col_target, i in zip(domain_cols, check_indices):
                 key = f"sop_chk_{selected_book}_{i}"
@@ -1542,8 +1541,7 @@ elif "Tier 3" in view:
         completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
         if locked_indices:
             st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
-        elif completed_count < 8:
-            st.info(f"📋 {completed_count}/8 checks verified. All 8 physical records required for sign-off.")
+        st.info(f"📋 {completed_count}/8 checks verified across 3 GM domains.")
 
         if completed_count == 8 and len(locked_indices) == 0:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
