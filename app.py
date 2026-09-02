@@ -1397,9 +1397,25 @@ elif "Tier 3" in view:
 
         if f"blocker_tag_{selected_book}" not in st.session_state:
             st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
+
+        # Prune blocker options once their paired checks are both certified.
+        pair_1_done = st.session_state.get(f"sop_chk_{selected_book}_0", False) and st.session_state.get(f"sop_chk_{selected_book}_1", False)
+        pair_2_done = st.session_state.get(f"sop_chk_{selected_book}_2", False) and st.session_state.get(f"sop_chk_{selected_book}_3", False)
+        pair_3_done = st.session_state.get(f"sop_chk_{selected_book}_4", False) and st.session_state.get(f"sop_chk_{selected_book}_5", False)
+        pair_4_done = st.session_state.get(f"sop_chk_{selected_book}_6", False) and st.session_state.get(f"sop_chk_{selected_book}_7", False)
+        pair_done_by_prefix = {
+            "[Checks #1-#2]": pair_1_done,
+            "[Checks #3-#4]": pair_2_done,
+            "[Checks #5-#6]": pair_3_done,
+            "[Checks #7-#8]": pair_4_done,
+        }
+        available_blockers = [blockers[0]] + [
+            tag for tag in blockers[1:]
+            if not any(tag.startswith(prefix) and done for prefix, done in pair_done_by_prefix.items())
+        ]
         selected_blocker = st.selectbox(
             "Operational Blocker Tag (Real-time Telemetry)",
-            blockers,
+            options=available_blockers,
             index=0,
             key=f"blocker_tag_{selected_book}",
         )
@@ -1436,11 +1452,21 @@ elif "Tier 3" in view:
             st.info("Physical validation and manual attestation of all 8 artifact items are required before frontline sign-off.")
         active_fault = blocker_faults.get(selected_blocker)
         art = book_data.get("telemetry_diagnostics", {}).get(active_fault, book_data["artifacts"])
+        pair_done_by_index = [pair_1_done, pair_2_done, pair_3_done, pair_4_done]
+        pair_indices = [(0, 1), (2, 3), (4, 5), (6, 7)]
+        card_statuses = []
+        for pair_done, (idx_a, idx_b) in zip(pair_done_by_index, pair_indices):
+            if pair_done:
+                card_statuses.append("✅ CLEARED | Heartbeat: 04.0s / Locked to Ledger")
+            elif idx_a in locked_indices or idx_b in locked_indices:
+                card_statuses.append("🚨 ACTIVE FAULT / HELD")
+            else:
+                card_statuses.append("Nominal / Standby")
         a1, a2, a3, a4 = st.columns(4)
-        a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{art[0][1]}</small></div>", unsafe_allow_html=True)
-        a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{art[1][1]}</small></div>", unsafe_allow_html=True)
-        a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{art[2][1]}</small></div>", unsafe_allow_html=True)
-        a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{art[3][1]}</small></div>", unsafe_allow_html=True)
+        a1.markdown(f"<div class='card'><strong>{art[0][0]}</strong><br><small>{card_statuses[0]}</small></div>", unsafe_allow_html=True)
+        a2.markdown(f"<div class='card'><strong>{art[1][0]}</strong><br><small>{card_statuses[1]}</small></div>", unsafe_allow_html=True)
+        a3.markdown(f"<div class='card'><strong>{art[2][0]}</strong><br><small>{card_statuses[2]}</small></div>", unsafe_allow_html=True)
+        a4.markdown(f"<div class='card'><strong>{art[3][0]}</strong><br><small>{card_statuses[3]}</small></div>", unsafe_allow_html=True)
 
         if active_phase == 2:
             checks_raw = st.session_state["checklist_labels"]
