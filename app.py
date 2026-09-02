@@ -814,19 +814,10 @@ master_surge = st.session_state['master_surge']
 stage_key = f"inspected_stage_{book}"
 is_stage_1_execution = "Tier 1" in view and st.session_state.get(stage_key, active_phase) == 1
 
-if is_stage_1_execution:
-    override_val = st.session_state.get('override_active', False) or st.session_state.get('safe_harbor_active', False)
-    override = st.sidebar.toggle("Chairman Directorate Override", value=override_val, key="manual_override_toggle")
-    st.session_state['override_active'] = override
-
-    if st.session_state['auto_override_triggered'] and override:
-        st.sidebar.markdown(f'''
-        <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
-        ''', unsafe_allow_html=True)
-
-    if override:
-        master_surge = st.sidebar.slider("Master Surge Cap Override (%)", 0, 100, st.session_state['master_surge'], step=5)
-        st.session_state['master_surge'] = master_surge
+if is_stage_1_execution and st.session_state['auto_override_triggered'] and override:
+    st.sidebar.markdown(f'''
+    <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
+    ''', unsafe_allow_html=True)
 
 if is_stage_1_execution and override and not st.session_state['override_logged'].get(book, False):
     append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
@@ -843,7 +834,7 @@ is_quorum = (quorum_count == 4) or override
 if is_stage_1_execution:
     st.session_state['board_quorum'][book] = is_quorum
 
-# Operating Pipeline Sequence Widget
+# Pipeline state used across tiers for gating and capital-friction checks
 is_cleared = st.session_state['cleared_books'].get(book, False)
 is_directed = st.session_state['directive_issued'].get(book, False)
 sop_state = engine.get_or_create_sop_state(work_order_id, book)
@@ -863,57 +854,6 @@ gm_dispatch_complete = (
     or st.session_state['surgical_spend_authorized'].get(book, False)
 )
 agent_attestation_ready = gm_dispatch_complete and frontline_checks_complete
-
-pipeline_step1_sub = f"Sub-Committee Gate ({book_data.get('critical_lead') or 'Full Board'} Oversight)"
-pipeline_step2_sub = book_data.get("gm_action_title", "Dispatch Engineering Directive")
-pipeline_step3_sub = book_data.get("site_action_title", "8-Point SOP Checklist Verification")
-pipeline_step4_sub = f"Preserve ${book_data.get('preservation_amt', '549k')} Balance Sheet"
-pipeline_statuses = (
-    {
-        1: st.session_state['pipeline_step_1'],
-        2: st.session_state['pipeline_step_2'],
-        3: st.session_state['pipeline_step_3'],
-        4: st.session_state['pipeline_step_4'],
-    }
-    if active_phase == 2
-    else {
-        1: 'AUTHORIZED' if is_quorum else 'PENDING',
-        2: 'DISPATCHED' if is_directed else 'PENDING',
-        3: 'VERIFIED' if is_cleared else 'IN PROGRESS',
-        4: 'COMMITTED' if is_cleared else 'PENDING',
-    }
-)
-
-if "Tier 3" not in view:
-    st.sidebar.markdown(f'''
-    <div class="pipeline-card">
-    <strong style="color: var(--teal); font-size: 0.85rem;">OPERATING PIPELINE SEQUENCE</strong><br><br>
-    <div style="margin-bottom:8px;">
-        <div style="display:flex; justify-content:space-between;">
-            <span>1. Apex Board</span> <span class="badge {'badge-success' if pipeline_statuses[1] == 'AUTHORIZED' else 'badge-pending'}">{pipeline_statuses[1]}</span>
-        </div>
-        <small style="color: var(--text-muted);">{pipeline_step1_sub}</small>
-    </div>
-    <div style="margin-bottom:8px;">
-        <div style="display:flex; justify-content:space-between;">
-            <span>2. GM Directive</span> <span class="badge {'badge-success' if pipeline_statuses[2] == 'DISPATCHED' else 'badge-pending'}">{pipeline_statuses[2]}</span>
-        </div>
-        <small style="color: var(--text-muted);">{pipeline_step2_sub}</small>
-    </div>
-    <div style="margin-bottom:8px;">
-        <div style="display:flex; justify-content:space-between;">
-            <span>3. Site Operations</span> <span class="badge {'badge-success' if pipeline_statuses[3] == 'VERIFIED' else 'badge-pending'}">{pipeline_statuses[3]}</span>
-        </div>
-        <small style="color: var(--text-muted);">{pipeline_step3_sub}</small>
-    </div>
-    <div>
-        <div style="display:flex; justify-content:space-between;">
-            <span>4. Audit Settlement</span> <span class="badge {'badge-success' if pipeline_statuses[4] == 'COMMITTED' else 'badge-pending'}">{pipeline_statuses[4]}</span>
-        </div>
-        <small style="color: var(--text-muted);">{pipeline_step4_sub}</small>
-    </div>
-    </div>
-    ''', unsafe_allow_html=True)
 
 # Financial Computations
 base_burn = book_data["base_burn"]
