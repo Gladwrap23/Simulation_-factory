@@ -12,7 +12,7 @@ def force_scroll_to_top():
     components.html(
         """
         <script>
-        (function() {
+        function snapToTop() {
             try {
                 var targets = [
                     window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
@@ -22,16 +22,14 @@ def force_scroll_to_top():
                     window.parent.document.body
                 ];
                 targets.forEach(function(el) {
-                    if (el) {
-                        el.scrollTop = 0;
-                        el.scrollTo({top: 0, left: 0, behavior: 'instant'});
-                    }
+                    if (el) { el.scrollTop = 0; }
                 });
                 window.parent.scrollTo(0, 0);
-            } catch (e) {
-                console.warn("Scroll reset:", e);
-            }
-        })();
+            } catch(e) {}
+        }
+        // Execute immediately and once after DOM layout settles
+        snapToTop();
+        setTimeout(snapToTop, 60);
         </script>
         """,
         height=0,
@@ -1489,7 +1487,7 @@ elif "Tier 3" in view:
             ''', unsafe_allow_html=True)
 
         st.markdown("### Frontline Verification Checklist — Stage 1")
-        col1, col2 = st.columns(2)
+        st.caption("Cascading sign-off is organized by the Tier 2 General Manager accountable for each domain.")
 
         selected_book = book
         sop_items = book_data['checklist']
@@ -1497,19 +1495,49 @@ elif "Tier 3" in view:
             f"Check #{i + 1}: {sop_items[i]}" + (" (🚨 CRITICAL PATH BLOCKER)" if i == critical_idx else "")
             for i in range(8)
         ]
-        for i in range(8):
-            col_target = col1 if i % 2 == 0 else col2
-            key = f"sop_chk_{selected_book}_{i}"
-            if i in locked_indices:
-                st.session_state[key] = False
-                col_target.checkbox(
-                    f"🔒 [LOCKED BY FAULT] {base_labels[i]}",
-                    value=False,
-                    disabled=True,
-                    key=key,
-                )
+
+        gm_roster = GM_DIRECTIVE_ROSTER.get(book, {}).get("assigned_managers") or [
+            {"name": "GM 1", "title": "General Manager - Domain 1", "domain": "Checks #1-#2 & #5-#6"},
+            {"name": "GM 2", "title": "General Manager - Domain 2", "domain": "Checks #3-#4"},
+            {"name": "GM 3", "title": "General Manager - Domain 3", "domain": "Checks #7-#8"},
+        ]
+        gm_domains = [
+            {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5]},
+            {"manager": gm_roster[1], "check_indices": [2, 3]},
+            {"manager": gm_roster[2], "check_indices": [6, 7]},
+        ]
+
+        for domain in gm_domains:
+            manager = domain["manager"]
+            check_indices = domain["check_indices"]
+            domain_done = all(st.session_state.get(f"sop_chk_{selected_book}_{i}", False) for i in check_indices)
+            domain_locked = any(i in locked_indices for i in check_indices)
+            if domain_done:
+                gm_badge = "<span class='badge badge-success'>✅ CLEARED & AUDITED</span>"
+            elif domain_locked:
+                gm_badge = "<span class='badge badge-danger'>🚨 ACTIVE FAULT / HELD</span>"
             else:
-                col_target.checkbox(base_labels[i], key=key)
+                gm_badge = "<span class='badge badge-pending'>🟡 PENDING VERIFICATION</span>"
+            st.markdown(f'''
+            <div class="card">
+                <strong style="color: var(--teal);">{manager['name']}</strong> — <small>{manager['title']}</small><br>
+                <small style="color: var(--text-muted);">Domain: {manager['domain']}</small><br><br>
+                {gm_badge}
+            </div>
+            ''', unsafe_allow_html=True)
+            domain_cols = st.columns(len(check_indices))
+            for col_target, i in zip(domain_cols, check_indices):
+                key = f"sop_chk_{selected_book}_{i}"
+                if i in locked_indices:
+                    st.session_state[key] = False
+                    col_target.checkbox(
+                        f"🔒 [LOCKED BY FAULT] {base_labels[i]}",
+                        value=False,
+                        disabled=True,
+                        key=key,
+                    )
+                else:
+                    col_target.checkbox(base_labels[i], key=key)
 
         completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
         if locked_indices:
