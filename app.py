@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime, timezone
 import engine
 import numpy as np
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -1650,7 +1651,33 @@ elif "Ledger" in view:
             """
         ).fetchall()
     if forensic_rows:
-        st.dataframe([dict(row) for row in forensic_rows], use_container_width=True)
+        forensic_dicts = [dict(row) for row in forensic_rows]
+        total_hesitation_burn = sum(row.get("hesitation_cost") or 0 for row in forensic_dicts)
+        max_governance_lag = max(row.get("governance_lag_sec") or 0 for row in forensic_dicts)
+        spot_c1, spot_c2 = st.columns(2)
+        spot_c1.metric("🔥 Total Hesitation Burn", f"${total_hesitation_burn:,.2f}")
+        spot_c2.metric("⏱️ Max Governance Lag", f"{max_governance_lag:.1f}s")
+
+        title_shorthand = {
+            "Operations General Manager / Dispatch Controller": "Ops GM / Dispatch",
+            "General Manager - Grid Interconnection & Telemetry": "Grid GM (Vance)",
+            "Authorized Lead Inspector / Specialized Adjudicator": "Lead Certifier",
+        }
+        forensic_df = pd.DataFrame(forensic_dicts)
+        forensic_df["official_title"] = forensic_df["official_title"].replace(title_shorthand)
+        forensic_df = forensic_df[["hesitation_cost", "governance_lag_sec", "action_type", "official_title", "sha256_hash"]]
+        st.dataframe(
+            forensic_df,
+            column_config={
+                "hesitation_cost": st.column_config.NumberColumn("🔥 Hesitation Cost", format="$%.2f", width="medium"),
+                "governance_lag_sec": st.column_config.NumberColumn("⏱️ Lag", format="%.1fs", width="small"),
+                "action_type": st.column_config.TextColumn("Directive Action", width="medium"),
+                "official_title": st.column_config.TextColumn("Sign-off Authority", width="medium"),
+                "sha256_hash": st.column_config.TextColumn("Hash Seal", width="small"),
+            },
+            use_container_width=True,
+            hide_index=True,
+        )
     else:
         st.info("No persistent forensic ledger entries have been recorded yet.")
 
