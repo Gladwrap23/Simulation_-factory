@@ -949,42 +949,85 @@ if "Tier 3" not in view:
     m5.metric("SOP Readiness", sop_badge, "Field Gate")
 
 sop_readiness = st.session_state.get(f"sop_readiness_{book}", 0)
-if "Tier 1" in view and (sop_readiness == 8 or st.session_state['pipeline_step_3'] == "COMPLETED"):
-    narrative = POST_RESOLUTION_NARRATIVES.get(book, {})
-    blocker_diagnostic = book_data.get("blocker_diagnostic", {})
-    what_was_done = narrative.get(
-        "what_was_done",
-        f"Frontline team executed the remediation on site: {blocker_diagnostic.get('gm_remediation_request', 'Corrective action deployed and independently verified.')}",
-    )
-    next_directive = narrative.get(
-        "next_directive",
-        f"File the {blocker_diagnostic.get('missing_artifact_name', 'required certification')} with the governing authority to close the compliance loop and release final settlement.",
-    )
-    matching_ledger_entries = [
-        row for row in st.session_state.get('ledger', [])
-        if (row.get('Book') or row.get('Operating Book')) == book
+if "Tier 1" in view:
+    gm_roster = GM_DIRECTIVE_ROSTER.get(book, {}).get("assigned_managers") or [
+        {"name": "GM 1", "title": "General Manager - Domain 1"},
+        {"name": "GM 2", "title": "General Manager - Domain 2"},
+        {"name": "GM 3", "title": "General Manager - Domain 3"},
     ]
-    crypto_hash = None
-    if matching_ledger_entries:
-        last_entry = matching_ledger_entries[-1]
-        crypto_hash = last_entry.get('Cryptographic Hash') or last_entry.get('SHA-256 Signature')
-    crypto_seal_display = f"Verified SHA-256 Ledger Entry ({crypto_hash[:12]}…)" if crypto_hash else "Verified SHA-256 Ledger Entry"
-    holding_burn_arrested = f"${book_data['base_burn']:,.0f} / week"
-    st.markdown(f'''
-    <div class="card" style="border: 2px solid #00FFA3; background: rgba(0,255,163,0.05);">
-        <strong style="color: #00FFA3;">🟢 ACTIVE REMEDIATION CONFIRMED — BOTTLENECK CURED & AUDITED</strong><br><br>
-        <strong>🛠️ WHAT WAS DONE (Forensic Root Cause & Execution):</strong><br>
-        <small>{what_was_done}</small><br><br>
-        <strong>🛡️ CAPITAL DEFENDED & VELOCITY RECOVERY:</strong><br>
-        <small>
-            Holding Burn Arrested: {holding_burn_arrested}<br>
-            Governance Latency Gain: Reduced from peak lag to nominal (&lt;20s)<br>
-            Cryptographic Seal: {crypto_seal_display}
-        </small><br><br>
-        <strong>🎯 PRESCRIPTIVE DIRECTIVE (WHAT NEEDS TO BE DONE NEXT):</strong><br>
-        <small>{next_directive}</small>
-    </div>
-    ''', unsafe_allow_html=True)
+    gm_domains = [
+        {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5], "stage_label": "Grid Telemetry"},
+        {"manager": gm_roster[1], "check_indices": [2, 3], "stage_label": "Substation Rigs"},
+        {"manager": gm_roster[2], "check_indices": [6, 7], "stage_label": "Regulatory Filing"},
+    ]
+    for domain in gm_domains:
+        domain["done"] = all(st.session_state.get(f"sop_chk_{book}_{i}", False) for i in domain["check_indices"])
+
+    if sop_readiness == 8 or st.session_state['pipeline_step_3'] == "COMPLETED":
+        narrative = POST_RESOLUTION_NARRATIVES.get(book, {})
+        blocker_diagnostic = book_data.get("blocker_diagnostic", {})
+        what_was_done = narrative.get(
+            "what_was_done",
+            f"Frontline team executed the remediation on site: {blocker_diagnostic.get('gm_remediation_request', 'Corrective action deployed and independently verified.')}",
+        )
+        next_directive = narrative.get(
+            "next_directive",
+            f"File the {blocker_diagnostic.get('missing_artifact_name', 'required certification')} with the governing authority to close the compliance loop and release final settlement.",
+        )
+        matching_ledger_entries = [
+            row for row in st.session_state.get('ledger', [])
+            if (row.get('Book') or row.get('Operating Book')) == book
+        ]
+        crypto_hash = None
+        if matching_ledger_entries:
+            last_entry = matching_ledger_entries[-1]
+            crypto_hash = last_entry.get('Cryptographic Hash') or last_entry.get('SHA-256 Signature')
+        crypto_seal_display = f"Verified SHA-256 Ledger Entry ({crypto_hash[:12]}…)" if crypto_hash else "Verified SHA-256 Ledger Entry"
+        holding_burn_arrested = f"${book_data['base_burn']:,.0f} / week"
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #00FFA3; background: rgba(0,255,163,0.05);">
+            <strong style="color: #00FFA3;">🟢 ACTIVE REMEDIATION CONFIRMED — BOTTLENECK CURED & AUDITED</strong><br><br>
+            <strong>🛠️ WHAT WAS DONE (Forensic Root Cause & Execution):</strong><br>
+            <small>{what_was_done}</small><br><br>
+            <strong>🛡️ CAPITAL DEFENDED & VELOCITY RECOVERY:</strong><br>
+            <small>
+                Holding Burn Arrested: {holding_burn_arrested}<br>
+                Governance Latency Gain: Reduced from peak lag to nominal (&lt;20s)<br>
+                Cryptographic Seal: {crypto_seal_display}
+            </small><br><br>
+            <strong>🎯 PRESCRIPTIVE DIRECTIVE (WHAT NEEDS TO BE DONE NEXT):</strong><br>
+            <small>{next_directive}</small>
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        open_domain = next((d for d in gm_domains if not d["done"]), gm_domains[0])
+        open_indices = open_domain["check_indices"]
+        idle_hours = hesitation_seconds / 3600.0
+        idle_burn_accrued = (book_data['base_burn'] / 168.0) * idle_hours
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+            <strong style="color: #FF4B4B;">🚨 CRITICAL PIPELINE STALL DETECTED — DRIFTING GROUND TRUTH</strong><br><br>
+            <strong>⚠️ IDENTIFIED BOTTLENECK:</strong><br>
+            <small>{open_domain['manager']['name']}: {open_domain['stage_label']} certification incomplete (Checks #{min(open_indices) + 1}-#{max(open_indices) + 1} open).</small><br><br>
+            <strong>⏱️ UNACCOUNTED GOVERNANCE DRIFT:</strong><br>
+            <small>{idle_hours:.1f} hours since last audited pulse — live idle standby burn accruing at ${idle_burn_accrued:,.0f}.</small><br><br>
+            <strong>🛡️ FIDUCIARY DIRECTIVE:</strong><br>
+            <small>Board Notice: Management pipeline report does not match SCADA telemetry. Exercise directorate audit authority or deploy synthetic telemetry pre-clearance.</small>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    stage_cols = st.columns(3)
+    for stage_col, domain in zip(stage_cols, gm_domains):
+        if domain["done"]:
+            stage_col.markdown(
+                f"<div class='card'><strong>{domain['stage_label']}</strong><br><span class='badge badge-success'>✅ Cleared</span></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            stage_col.markdown(
+                f"<div class='card'><strong>{domain['stage_label']}</strong><br><span class='badge badge-danger'>🚨 Stalled — BLOCKED BY GM LATENCY</span></div>",
+                unsafe_allow_html=True,
+            )
 
 
 # Regional Bottleneck Blueprint & Live Drift Radar
