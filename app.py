@@ -460,6 +460,15 @@ BLOCKER_DIAGNOSTICS = {
 for book_name, blocker_diagnostic in BLOCKER_DIAGNOSTICS.items():
     DATA_MATRIX[book_name]["blocker_diagnostic"] = blocker_diagnostic
 
+# Post-resolution narratives for the Tier 1 "bottleneck cured" diagnostic strip.
+POST_RESOLUTION_NARRATIVES = {
+    "ERCOT BESS / storage operations": {
+        "what_was_done": "Marcus Vance deployed the Synthetic Telemetry Injection Rig to clear the Inverter Firmware v2.41 DNP3 packet drop, restoring the 4-second ICCP heartbeat and clean PSCAD EMT validation.",
+        "next_directive": "David Chen must file the 24-hour ERCOT IA § 4.2 Part 2 COD waiver attestation to formally close the interconnection queue and release final settlement.",
+    },
+}
+
+
 DATA_MATRIX["ERCOT BESS / storage operations"]["critical_lead"] = "CTO"
 DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
     "bottleneck": "Phase 2: 100-Hour Continuous C-Rate Thermal Run & Cell Balancing",
@@ -938,6 +947,45 @@ if "Tier 3" not in view:
     m3.metric("Client Realization", client_realization, "90% target" if not is_cleared else "Preserved")
     m4.metric("Phoenix Fee", phoenix_fee, "10% accrual" if not is_cleared else "Earned")
     m5.metric("SOP Readiness", sop_badge, "Field Gate")
+
+sop_readiness = st.session_state.get(f"sop_readiness_{book}", 0)
+if "Tier 1" in view and (sop_readiness == 8 or st.session_state['pipeline_step_3'] == "COMPLETED"):
+    narrative = POST_RESOLUTION_NARRATIVES.get(book, {})
+    blocker_diagnostic = book_data.get("blocker_diagnostic", {})
+    what_was_done = narrative.get(
+        "what_was_done",
+        f"Frontline team executed the remediation on site: {blocker_diagnostic.get('gm_remediation_request', 'Corrective action deployed and independently verified.')}",
+    )
+    next_directive = narrative.get(
+        "next_directive",
+        f"File the {blocker_diagnostic.get('missing_artifact_name', 'required certification')} with the governing authority to close the compliance loop and release final settlement.",
+    )
+    matching_ledger_entries = [
+        row for row in st.session_state.get('ledger', [])
+        if (row.get('Book') or row.get('Operating Book')) == book
+    ]
+    crypto_hash = None
+    if matching_ledger_entries:
+        last_entry = matching_ledger_entries[-1]
+        crypto_hash = last_entry.get('Cryptographic Hash') or last_entry.get('SHA-256 Signature')
+    crypto_seal_display = f"Verified SHA-256 Ledger Entry ({crypto_hash[:12]}…)" if crypto_hash else "Verified SHA-256 Ledger Entry"
+    holding_burn_arrested = f"${book_data['base_burn']:,.0f} / week"
+    st.markdown(f'''
+    <div class="card" style="border: 2px solid #00FFA3; background: rgba(0,255,163,0.05);">
+        <strong style="color: #00FFA3;">🟢 ACTIVE REMEDIATION CONFIRMED — BOTTLENECK CURED & AUDITED</strong><br><br>
+        <strong>🛠️ WHAT WAS DONE (Forensic Root Cause & Execution):</strong><br>
+        <small>{what_was_done}</small><br><br>
+        <strong>🛡️ CAPITAL DEFENDED & VELOCITY RECOVERY:</strong><br>
+        <small>
+            Holding Burn Arrested: {holding_burn_arrested}<br>
+            Governance Latency Gain: Reduced from peak lag to nominal (&lt;20s)<br>
+            Cryptographic Seal: {crypto_seal_display}
+        </small><br><br>
+        <strong>🎯 PRESCRIPTIVE DIRECTIVE (WHAT NEEDS TO BE DONE NEXT):</strong><br>
+        <small>{next_directive}</small>
+    </div>
+    ''', unsafe_allow_html=True)
+
 
 # Regional Bottleneck Blueprint & Live Drift Radar
 phase_context = phase_2 if active_phase == 2 else book_data
