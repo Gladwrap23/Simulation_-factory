@@ -1677,10 +1677,18 @@ elif "Ledger" in view:
     ]
     if sealed_entries:
         st.success("✅ AUDIT TRAIL COMPLETE")
-        if st.button("✅ AUDIT TRAIL COMPLETE — RETURN TO DIRECTORATE", type="primary", use_container_width=True):
+
+        def nav_to_tier_1():
             st.session_state['selected_tier_idx'] = 0
             st.session_state['current_tier'] = 1
             st.session_state['active_view'] = TIER_VIEWS[1]
-            st.rerun()
+
+        st.button(
+            "✅ AUDIT TRAIL COMPLETE — RETURN TO DIRECTORATE",
+            on_click=nav_to_tier_1,
+            type="primary",
+            use_container_width=True,
+            key="btn_return_directorate",
+        )
 
 st.caption(f"Factory Command Post | Autonomous Capital Defense Control Plane | Audited Sync: {st.session_state['last_sync']}")
