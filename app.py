@@ -572,6 +572,7 @@ for key, default in [
     ('pipeline_step_3', 'PENDING'), ('pipeline_step_4', 'PENDING'),
     ('chairman_override_active', False), ('quorum_votes', [False, False, False, False]),
     ('capital_circuit_breaker', 'ARMED'), ('contractor_billing_frozen', {}),
+    ('checklist_db', {}),
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
@@ -589,6 +590,28 @@ VIEW_TO_TIER = {view_name: tier_num for tier_num, view_name in TIER_VIEWS.items(
 def nav_to(target_view):
     st.session_state['nav_tier_selection'] = target_view
     st.session_state['current_tier'] = VIEW_TO_TIER.get(target_view, st.session_state.get('current_tier', 1))
+
+
+# Persistent, view-independent checklist store: st.session_state["checklist_db"][book][1..8] -> bool.
+def get_check(book_name, check_num):
+    return st.session_state["checklist_db"].get(book_name, {}).get(check_num, False)
+
+
+def set_check(book_name, check_num, value):
+    st.session_state["checklist_db"].setdefault(book_name, {i: False for i in range(1, 9)})[check_num] = bool(value)
+    # Keep any already-instantiated Tier 3 checkbox widget in sync with the persistent store.
+    st.session_state[f"chk_widget_{book_name}_{check_num}"] = bool(value)
+
+
+def update_check(b_id, c_id):
+    st.session_state["checklist_db"][b_id][c_id] = st.session_state[f"chk_widget_{b_id}_{c_id}"]
+
+
+def get_sop_readiness(book_name):
+    if book_name not in st.session_state["checklist_db"]:
+        st.session_state["checklist_db"][book_name] = {i: False for i in range(1, 9)}
+    return sum(1 for v in st.session_state["checklist_db"][book_name].values() if v)
+
 
 def trigger_sync():
     st.session_state['last_sync'] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -613,11 +636,11 @@ def reset_book(book_name):
     st.session_state['override_logged'][book_name] = False
     st.session_state['nav_tier_selection'] = '1️⃣ Tier 1 | Chairman Directorate'
     st.session_state['current_tier'] = 1
+    st.session_state["checklist_db"][book_name] = {i: False for i in range(1, 9)}
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
         st.session_state[f"chk2_{book_name}_{i}"] = False
-        book_index = list(DATA_MATRIX).index(book_name)
-        st.session_state[f"sop_chk_{book_index}_{i}"] = False
+        st.session_state.pop(f"chk_widget_{book_name}_{i + 1}", None)
     for c in ['ops', 'afic', 'risk', 'tech']:
         st.session_state[f"comm_{book_name}_{c}"] = False
 
@@ -746,6 +769,8 @@ st.sidebar.caption("Autonomous Capital Defense Control Plane")
 
 book = st.sidebar.selectbox("Operating book (Top 12 Sectors)", list(DATA_MATRIX.keys()), key="book_select")
 book_data = DATA_MATRIX[book]
+if book not in st.session_state["checklist_db"]:
+    st.session_state["checklist_db"][book] = {i: False for i in range(1, 9)}
 
 if 'active_phase' not in st.session_state:
     st.session_state['active_phase'] = {}
@@ -774,14 +799,11 @@ if (
 ):
     checklist_labels = phase_2["checks"] if active_phase == 2 else book_data["checks"]
     persisted_checklist = engine.get_or_create_sop_state(work_order_id, book)
-    book_index = list(DATA_MATRIX).index(book)
     st.session_state['current_book'] = book
     st.session_state['current_checklist_phase'] = active_phase
     st.session_state['checklist_labels'] = checklist_labels
     for index in range(len(checklist_labels)):
-        st.session_state[f"sop_chk_{book_index}_{index}"] = bool(
-            persisted_checklist[f"check_{index + 1}"]
-        )
+        set_check(book, index + 1, persisted_checklist[f"check_{index + 1}"])
 
 sla_seconds_map = {"COO": 86400, "AFIC": 86400, "CLO": 259200, "CTO": 14400}
 sla_seconds = sla_seconds_map.get(critical_lead, 86400)
@@ -853,9 +875,8 @@ has_active_capital_friction = (
 tier_1_nominal = not has_active_capital_friction or weekly_burn == 0 or not active_phase
 frontline_checklist = phase_2["checks"] if active_phase == 2 else [item["action"] for item in FRONTLINE_CHECKLIST_SPEC]
 frontline_check_count = len(frontline_checklist)
-book_index = list(DATA_MATRIX).index(book)
 frontline_checks_complete = all(
-    st.session_state.get(f"sop_chk_{book_index}_{index}", False)
+    get_check(book, index + 1)
     for index in range(frontline_check_count)
 )
 gm_dispatch_complete = (
@@ -887,7 +908,7 @@ else:
     burn_sub = f"⚠️ {active_surge}% Surge Active (${surge_dollars:,.0f})" if active_surge > 0 else "Active Carrying Drag"
     client_realization = f"${base_burn * 0.9:,.0f}"
     phoenix_fee = f"${base_burn * 0.1:,.0f}"
-    sop_badge = f"{st.session_state.get(f'sop_readiness_{book}', 0)} / 8"
+    sop_badge = f"{get_sop_readiness(book)} / 8"
 
 if "Tier 3" not in view:
     # Top Metric Cards Bar
@@ -898,15 +919,14 @@ if "Tier 3" not in view:
     m4.metric("Phoenix Fee", phoenix_fee, "10% accrual" if not is_cleared else "Earned")
     m5.metric("SOP Readiness", sop_badge, "Field Gate")
 
-sop_readiness = st.session_state.get(f"sop_readiness_{book}", 0)
+sop_readiness = get_sop_readiness(book)
 if "Tier 1" in view:
     with st.expander("🧪 Scenario Test Harness (Demo Controls)", expanded=False):
         if st.button("Load Scenario 2: Contractual Deadlock (ERCOT IA § 4.2 COD Attestation)", key=f"load_deadlock_{book}"):
-            for i in range(6):
-                st.session_state[f"sop_chk_{book}_{i}"] = True
-            st.session_state[f"sop_chk_{book}_6"] = False
-            st.session_state[f"sop_chk_{book}_7"] = False
-            st.session_state[f"sop_readiness_{book}"] = 6
+            for i in range(1, 7):
+                set_check(book, i, True)
+            set_check(book, 7, False)
+            set_check(book, 8, False)
             st.session_state['pipeline_step_3'] = "IN PROGRESS"
             st.rerun()
 
@@ -922,7 +942,7 @@ if "Tier 1" in view:
     ]
     idle_carry_rate_per_sec = book_data['base_burn'] / 604800.0
     for domain_idx, domain in enumerate(gm_domains):
-        domain["done"] = all(st.session_state.get(f"sop_chk_{book}_{i}", False) for i in domain["check_indices"])
+        domain["done"] = all(get_check(book, i + 1) for i in domain["check_indices"])
         sla_key = f"domain_sla_start_{book}_{domain_idx}"
         if domain["done"]:
             st.session_state.pop(sla_key, None)
@@ -1007,14 +1027,19 @@ if "Tier 1" in view:
         ''', unsafe_allow_html=True)
     else:
         open_domain = next((d for d in gm_domains if not d["done"]), gm_domains[0])
-        open_indices = open_domain["check_indices"]
+        open_check_labels = []
+        for idx in open_domain["check_indices"]:
+            if not get_check(book, idx + 1):
+                short_label = book_data['checklist'][idx].replace(" verified", "").replace(" attached", "")
+                open_check_labels.append(f"Check #{idx + 1} ({short_label}) OPEN")
+        open_checks_display = "; ".join(open_check_labels) if open_check_labels else "No specific check flagged"
         idle_hours = hesitation_seconds / 3600.0
         idle_burn_accrued = (book_data['base_burn'] / 168.0) * idle_hours
         st.markdown(f'''
         <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
             <strong style="color: #FF4B4B;">🚨 CRITICAL PIPELINE STALL DETECTED — DRIFTING GROUND TRUTH</strong><br><br>
             <strong>⚠️ IDENTIFIED BOTTLENECK:</strong><br>
-            <small>{open_domain['manager']['name']}: {open_domain['stage_label']} certification incomplete (Checks #{min(open_indices) + 1}-#{max(open_indices) + 1} open) — ON SCHEDULE ({open_domain['elapsed_seconds'] / 60.0:.0f} of {open_domain['sla_seconds'] / 60.0:.0f} min SLA).</small><br><br>
+            <small>{open_domain['manager']['name']}: {open_domain['stage_label']} — {open_checks_display} — ON SCHEDULE ({open_domain['elapsed_seconds'] / 60.0:.0f} of {open_domain['sla_seconds'] / 60.0:.0f} min SLA).</small><br><br>
             <strong>⏱️ UNACCOUNTED GOVERNANCE DRIFT:</strong><br>
             <small>{idle_hours:.1f} hours since last audited pulse — live idle standby burn accruing at ${idle_burn_accrued:,.0f}.</small><br><br>
             <strong>🛡️ FIDUCIARY DIRECTIVE:</strong><br>
@@ -1056,9 +1081,8 @@ if "Tier 1" in view:
     console_col_1, console_col_2 = st.columns(2)
     with console_col_1:
         if st.button("🚨 UNILATERAL GATE CLEARANCE (FORCE COD ATTESTATION)", type="primary", use_container_width=True, key=f"gate_clearance_{book}"):
-            for i in range(8):
-                st.session_state[f"sop_chk_{book}_{i}"] = True
-            st.session_state[f"sop_readiness_{book}"] = 8
+            for i in range(1, 9):
+                set_check(book, i, True)
             st.session_state[f"blocker_tag_{book}"] = "None (Nominal Telemetry)"
             for domain_idx in range(len(gm_domains)):
                 st.session_state.pop(f"domain_sla_start_{book}_{domain_idx}", None)
@@ -1444,7 +1468,7 @@ elif "Tier 3" in view:
             st.session_state[f"inspected_stage_{book}"] = 2
             for i in range(8):
                 st.session_state[f"chk2_{book}_{i}"] = False
-                st.session_state[f"sop_chk_{book_index}_{i}"] = False
+            st.session_state["checklist_db"][book] = {i: False for i in range(1, 9)}
             for committee in ['ops', 'afic', 'risk', 'tech']:
                 st.session_state[f"comm_{book}_{committee}"] = False
             st.session_state['phase_2_authorized'][book] = False
@@ -1486,7 +1510,7 @@ elif "Tier 3" in view:
         default_blocker = "None (Nominal Telemetry)"
 
         # Auto-resolve the blocker before the selectbox widget renders once verification is complete.
-        prior_completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
+        prior_completed_count = sum(1 for i in range(1, 9) if get_check(selected_book, i))
         remediation_dispatched = (
             st.session_state['pipeline_step_2'] == "DISPATCHED"
             or st.session_state['surgical_spend_authorized'].get(book, False)
@@ -1503,8 +1527,8 @@ elif "Tier 3" in view:
         for tag_prefix, (idx_a, idx_b) in blocker_pair_checks.items():
             if tag_prefix in prior_selected_blocker:
                 pair_auto_cleared = (
-                    st.session_state.get(f"sop_chk_{selected_book}_{idx_a}", False)
-                    and st.session_state.get(f"sop_chk_{selected_book}_{idx_b}", False)
+                    get_check(selected_book, idx_a + 1)
+                    and get_check(selected_book, idx_b + 1)
                 )
                 break
         if prior_completed_count == 8 or remediation_dispatched or pair_auto_cleared:
@@ -1514,10 +1538,10 @@ elif "Tier 3" in view:
             st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
 
         # Prune blocker options once their paired checks are both certified.
-        pair_1_done = st.session_state.get(f"sop_chk_{selected_book}_0", False) and st.session_state.get(f"sop_chk_{selected_book}_1", False)
-        pair_2_done = st.session_state.get(f"sop_chk_{selected_book}_2", False) and st.session_state.get(f"sop_chk_{selected_book}_3", False)
-        pair_3_done = st.session_state.get(f"sop_chk_{selected_book}_4", False) and st.session_state.get(f"sop_chk_{selected_book}_5", False)
-        pair_4_done = st.session_state.get(f"sop_chk_{selected_book}_6", False) and st.session_state.get(f"sop_chk_{selected_book}_7", False)
+        pair_1_done = get_check(selected_book, 1) and get_check(selected_book, 2)
+        pair_2_done = get_check(selected_book, 3) and get_check(selected_book, 4)
+        pair_3_done = get_check(selected_book, 5) and get_check(selected_book, 6)
+        pair_4_done = get_check(selected_book, 7) and get_check(selected_book, 8)
         pair_done_by_prefix = {
             "[Checks #1-#2]": pair_1_done,
             "[Checks #3-#4]": pair_2_done,
@@ -1541,7 +1565,7 @@ elif "Tier 3" in view:
             if selected_blocker != blockers[0]:
                 for check_index in selected_check_indexes:
                     engine.update_sop_check(work_order_id, f"check_{check_index + 1}", 0)
-                    st.session_state[f"sop_chk_{book_index}_{check_index}"] = False
+                    set_check(book, check_index + 1, False)
             engine.record_ledger_entry(
                 book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
                 "BLOCKER_TAG_UPDATED", work_order_id, detection_time, blocker=selected_blocker,
@@ -1617,7 +1641,7 @@ elif "Tier 3" in view:
         for domain in gm_domains:
             manager = domain["manager"]
             check_indices = domain["check_indices"]
-            domain_done = all(st.session_state.get(f"sop_chk_{selected_book}_{i}", False) for i in check_indices)
+            domain_done = all(get_check(selected_book, i + 1) for i in check_indices)
             domain_locked = any(i in locked_indices for i in check_indices)
             if domain_done:
                 gm_badge = "<span class='badge badge-success'>✅ VERIFIED & AUDITED</span>"
@@ -1642,20 +1666,26 @@ elif "Tier 3" in view:
 
             domain_cols = st.columns(len(check_indices))
             for col_target, i in zip(domain_cols, check_indices):
-                key = f"sop_chk_{selected_book}_{i}"
+                check_num = i + 1
+                widget_key = f"chk_widget_{selected_book}_{check_num}"
                 if i in locked_indices:
-                    st.session_state[key] = False
+                    set_check(selected_book, check_num, False)
                     col_target.checkbox(
                         f"🔒 [LOCKED BY FAULT] {base_labels[i]}",
                         value=False,
                         disabled=True,
-                        key=key,
+                        key=widget_key,
                     )
                 else:
-                    col_target.checkbox(base_labels[i], key=key)
+                    col_target.checkbox(
+                        base_labels[i],
+                        value=get_check(selected_book, check_num),
+                        key=widget_key,
+                        on_change=update_check,
+                        args=(selected_book, check_num),
+                    )
 
-        completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
-        st.session_state[f"sop_readiness_{selected_book}"] = completed_count
+        completed_count = sum(1 for i in range(1, 9) if get_check(selected_book, i))
         if locked_indices:
             st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
         st.info(f"📋 {completed_count}/8 checks verified across 3 GM domains.")
@@ -1688,8 +1718,8 @@ elif "Tier 3" in view:
                 key=f"step_back_reason_{selected_book}",
             )
             if st.button("🚨 Execute Emergency Step-Back & Log to Ledger", type="secondary", key=f"step_back_btn_{selected_book}"):
-                for i in range(8):
-                    st.session_state[f"sop_chk_{selected_book}_{i}"] = False
+                for i in range(1, 9):
+                    set_check(selected_book, i, False)
 
                 audit_entry = {
                     "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -1711,9 +1741,7 @@ elif "Tier 3" in view:
 
     if is_directed:
         selected_book = book
-        critical_item_unchecked = critical_idx is not None and not st.session_state.get(
-            f"sop_chk_{book_index}_{critical_idx}", False
-        )
+        critical_item_unchecked = critical_idx is not None and not get_check(book, critical_idx + 1)
 
         if critical_item_unchecked and not remediation_dispatched:
             blocker_diagnostic = book_data["blocker_diagnostic"]
