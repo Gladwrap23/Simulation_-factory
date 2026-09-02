@@ -62,6 +62,12 @@ st.markdown('''
     }
     .stApp { background-color: var(--bg-base); color: var(--text-main); }
     section[data-testid="stSidebar"] { background-color: var(--bg-panel); border-right: 1px solid var(--line); }
+
+    /* Compact, top-anchored spacing between header and content on mobile/iPad viewports */
+    @media (max-width: 1024px) {
+        div[data-testid="stAppViewContainer"] .block-container { padding-top: 1rem !important; }
+        h1, h2, h3 { margin-top: 0.25rem !important; margin-bottom: 0.5rem !important; }
+    }
     
     /* Top Metrics Styling */
     div[data-testid="stMetric"] { 
@@ -1454,12 +1460,11 @@ elif "Tier 3" in view:
             tag for tag in blockers[1:]
             if not any(tag.startswith(prefix) and done for prefix, done in pair_done_by_prefix.items())
         ]
-        selected_blocker = st.selectbox(
-            "Operational Blocker Tag (Real-time Telemetry)",
-            options=available_blockers,
-            index=0,
-            key=f"blocker_tag_{selected_book}",
-        )
+        # Blocker tag is driven entirely by automatic pair-clearing; no manual selectbox is exposed here.
+        selected_blocker = st.session_state.get(f"blocker_tag_{selected_book}", default_blocker)
+        if selected_blocker not in available_blockers:
+            selected_blocker = available_blockers[0]
+            st.session_state[f"blocker_tag_{selected_book}"] = selected_blocker
         current_blocker = sop_data["active_blocker"]
         blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
         if selected_blocker != current_blocker:
