@@ -897,6 +897,16 @@ if "Tier 3" not in view:
 
 sop_readiness = st.session_state.get(f"sop_readiness_{book}", 0)
 if "Tier 1" in view:
+    with st.expander("🧪 Scenario Test Harness (Demo Controls)", expanded=False):
+        if st.button("Load Scenario 2: Contractual Deadlock (ERCOT IA § 4.2 COD Attestation)", key=f"load_deadlock_{book}"):
+            for i in range(6):
+                st.session_state[f"sop_chk_{book}_{i}"] = True
+            st.session_state[f"sop_chk_{book}_6"] = False
+            st.session_state[f"sop_chk_{book}_7"] = False
+            st.session_state[f"sop_readiness_{book}"] = 6
+            st.session_state['pipeline_step_3'] = "IN PROGRESS"
+            st.rerun()
+
     gm_roster = GM_DIRECTIVE_ROSTER.get(book, {}).get("assigned_managers") or [
         {"name": "GM 1", "title": "General Manager - Domain 1"},
         {"name": "GM 2", "title": "General Manager - Domain 2"},
@@ -946,6 +956,20 @@ if "Tier 1" in view:
             <small>{next_directive}</small>
         </div>
         ''', unsafe_allow_html=True)
+    elif sop_readiness == 6:
+        idle_burn_per_week = book_data['base_burn']
+        idle_burn_per_sec = idle_burn_per_week / 604800.0
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+            <strong style="color: #FF4B4B;">🚨 EXECUTIVE DEADLOCK: ERCOT IA § 4.2 PART 2 COD ATTESTATION</strong><br><br>
+            <strong>⚠️ CONFLICT:</strong><br>
+            <small>Elena Rostova (Warranty forfeiture risk) vs. David Chen (Regulatory filing exposure).</small><br><br>
+            <strong>⏱️ IDLE CONTRACTOR CARRY:</strong><br>
+            <small>Accruing at ${idle_burn_per_week:,.0f}/week (${idle_burn_per_sec:.2f}/sec).</small><br><br>
+            <strong>🛡️ DIRECTORATE DIRECTIVE:</strong><br>
+            <small>Consensus impossible at GM level. Invoke Chairman Directorate Statutory Override Console below to exercise DGCL § 141 Safe-Harbor authority.</small>
+        </div>
+        ''', unsafe_allow_html=True)
     else:
         open_domain = next((d for d in gm_domains if not d["done"]), gm_domains[0])
         open_indices = open_domain["check_indices"]
@@ -982,10 +1006,16 @@ if "Tier 1" in view:
         <small style="color: var(--text-muted);">Statutory Safe-Harbor Intervention (DGCL Caremark Compliance &amp; Emergency Capital Protection)</small>
     </div>
     ''', unsafe_allow_html=True)
+    override_rationale_key = f"override_rationale_{book}"
+    if override_rationale_key not in st.session_state:
+        st.session_state[override_rationale_key] = (
+            "Board-authorized unilateral indemnification of EPC inverter warranty; filing expedited provisional ERCOT IA § 4.2 waiver."
+            if sop_readiness == 6 else ""
+        )
     override_rationale = st.text_input(
         "Fiduciary Justification / Counsel Filing Rationale",
         placeholder="e.g., Unilateral waiver of provisional telemetry; invoking 24-hr expedited ERCOT § 4.2 filing to arrest $610k/wk burn.",
-        key=f"override_rationale_{book}",
+        key=override_rationale_key,
     )
     console_col_1, console_col_2 = st.columns(2)
     with console_col_1:
@@ -997,7 +1027,7 @@ if "Tier 1" in view:
             engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
             engine.record_ledger_entry(
                 book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
-                "CHAIRMAN_UNILATERAL_OVERRIDE", work_order_id, detection_time,
+                "CHAIRMAN_STATUTORY_SAFEHARBOR_OVERRIDE", work_order_id, detection_time,
                 notes=override_rationale or "Unilateral gate clearance executed without stated rationale.",
             )
             st.session_state['pipeline_step_3'] = "COMPLETED"
