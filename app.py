@@ -564,7 +564,8 @@ for key, default in [
     ('current_book', None), ('current_checklist_phase', None), ('checklist_labels', []),
     ('pipeline_step_1', 'PENDING'), ('pipeline_step_2', 'PENDING'),
     ('pipeline_step_3', 'PENDING'), ('pipeline_step_4', 'PENDING'),
-    ('chairman_override_active', False), ('quorum_votes', [False, False, False, False])
+    ('chairman_override_active', False), ('quorum_votes', [False, False, False, False]),
+    ('capital_circuit_breaker', 'ARMED'), ('contractor_billing_frozen', {}),
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
@@ -1029,6 +1030,48 @@ if "Tier 1" in view:
                 unsafe_allow_html=True,
             )
 
+    st.markdown(f'''
+    <div class="card" style="border: 2px solid #F5A623; background: #161b22; box-shadow: 0 0 18px rgba(245,166,35,0.25);">
+        <strong style="color: #F5A623;">⚡ CHAIRMAN DIRECTORATE STATUTORY OVERRIDE CONSOLE</strong><br>
+        <small style="color: var(--text-muted);">Statutory Safe-Harbor Intervention (DGCL Caremark Compliance &amp; Emergency Capital Protection)</small>
+    </div>
+    ''', unsafe_allow_html=True)
+    override_rationale = st.text_input(
+        "Fiduciary Justification / Counsel Filing Rationale",
+        placeholder="e.g., Unilateral waiver of provisional telemetry; invoking 24-hr expedited ERCOT § 4.2 filing to arrest $610k/wk burn.",
+        key=f"override_rationale_{book}",
+    )
+    console_col_1, console_col_2 = st.columns(2)
+    with console_col_1:
+        if st.button("🚨 UNILATERAL GATE CLEARANCE (FORCE COD ATTESTATION)", type="primary", use_container_width=True, key=f"gate_clearance_{book}"):
+            for i in range(8):
+                st.session_state[f"sop_chk_{book}_{i}"] = True
+            st.session_state[f"sop_readiness_{book}"] = 8
+            st.session_state[f"blocker_tag_{book}"] = "None (Nominal Telemetry)"
+            engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
+            engine.record_ledger_entry(
+                book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
+                "CHAIRMAN_UNILATERAL_OVERRIDE", work_order_id, detection_time,
+                notes=override_rationale or "Unilateral gate clearance executed without stated rationale.",
+            )
+            st.session_state['pipeline_step_3'] = "COMPLETED"
+            st.session_state['pipeline_step_4'] = "READY"
+            st.success("Unilateral gate clearance sealed to the forensic ledger.")
+            st.rerun()
+    with console_col_2:
+        if st.button("🛑 EMERGENCY HOLD / CONTRACTOR STANDBY SUSPENSION", use_container_width=True, key=f"standby_freeze_{book}"):
+            st.session_state['capital_circuit_breaker'] = "TRIPPED"
+            st.session_state['contractor_billing_frozen'][book] = True
+            st.session_state['master_surge'] = 0
+            st.session_state['master_surge_cap'] = 0
+            engine.record_ledger_entry(
+                book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
+                "CHAIRMAN_STANDBY_FREEZE", work_order_id, detection_time,
+                notes=override_rationale or "Emergency standby freeze executed without stated rationale.",
+            )
+            st.warning("Capital defense circuit breaker tripped. Contractor carry billing frozen and sealed to the ledger.")
+            st.rerun()
+
 
 # Regional Bottleneck Blueprint & Live Drift Radar
 phase_context = phase_2 if active_phase == 2 else book_data
@@ -1038,8 +1081,8 @@ current_regime_detail = phase_context.get('regime_detail', book_data['regime_det
 current_circuit_breaker = phase_context.get('circuit_breaker', book_data['circuit_breaker'])
 phase_banner_title = "PHASE 2 SECONDARY BOTTLENECK & FORENSIC BLUEPRINT" if active_phase == 2 else "REGIONAL BOTTLENECK & FORENSIC BLUEPRINT"
 
-# Interactive 3-Stage Bottleneck Inspector — exposes role-specific intelligence in Tier 1 and Tier 3.
-if "Tier 1" in view or ("Tier 3" in view and is_directed):
+# Interactive 3-Stage Bottleneck Inspector — deprecated in Tier 1 in favor of the dual-state diagnostic banner; retained for Tier 3 field intelligence.
+if "Tier 3" in view and is_directed:
     stage_key = f"inspected_stage_{book}"
     st.session_state.setdefault(stage_key, active_phase)
 
@@ -1094,50 +1137,19 @@ if "Tier 1" in view or ("Tier 3" in view and is_directed):
         current_circuit_breaker = "LOCKED: Submit the final Tier 3 Phase 2 SOP checklist and Board audit sign-off to trigger terminal settlement release."
         phase_banner_title = "STAGE 3 · COMMERCIAL GATE FORENSIC BLUEPRINT"
 
-    if "Tier 1" in view:
-        stage_intelligence = {
-            1: {
-                "risk": f"{book_data['bottleneck']}. {book_data['regime_detail']}",
-                "loss": base_burn,
-                "oversight": book_data['agents']['CLO']['memo'],
-                "action": f"{book_data['circuit_breaker']} Pre-draft the governing waiver and queue the targeted capital authorization only after the technical gate is validated.",
-            },
-            2: {
-                "risk": f"{phase_2['bottleneck']}. {phase_2['regime_detail']}",
-                "loss": base_burn,
-                "oversight": f"DGCL duty-of-care exposure rises if the Board does not document review of the Phase 2 {phase_2['target_director']} remediation path.",
-                "action": f"Pre-clear a conditional {phase_2['target_director']} capital approval and preserve the Board record for the secondary gate cure.",
-            },
-            3: {
-                "risk": f"Terminal settlement remains blocked until the final {stage3_title} packet is complete and ratified.",
-                "loss": base_burn,
-                "oversight": "DGCL fiduciary exposure arises from releasing commercial proceeds before documented completion of the required control packets.",
-                "action": "Pre-draft conditional release resolutions and retain settlement authority pending verified Phase 1 and Phase 2 artifacts.",
-            },
-        }[inspected_stage]
-        st.markdown(f'''
-        <div class="agent-card">
-            <span class="badge badge-agent">🤖 CHAIRMAN'S FIDUCIARY AGENT BRIEFING | STAGE {inspected_stage}</span><br><br>
-            <strong>Stage Risk &amp; Technical Root Cause:</strong> {stage_intelligence['risk']}<br><br>
-            <strong>Projected Holding Loss ($/wk):</strong> ${stage_intelligence['loss']:,.0f} if this stage stalls upon activation.<br><br>
-            <strong>Statutory Oversight Vulnerability (DGCL / Fiduciary exposure):</strong> {stage_intelligence['oversight']}<br><br>
-            <strong>Recommended Pre-emptive Board Action:</strong> {stage_intelligence['action']}
-        </div>
-        ''', unsafe_allow_html=True)
-    else:
-        stage_checks = book_data['checks'] if inspected_stage == 1 else phase_2['checks'] if inspected_stage == 2 else [artifact[0] for artifact in book_data['artifacts']]
-        stage_artifacts = book_data['artifacts'] if inspected_stage != 2 else [(check, "Required Phase 2 verification") for check in phase_2['checks']]
-        telemetry_threshold = book_data['drift_metrics']['telemetry_drift'] if inspected_stage == 1 else "Phase 2 verification packet complete" if inspected_stage == 2 else "All control artifacts verified before terminal release"
-        safety_interlock = book_data['agents']['CTO']['memo'] if inspected_stage == 1 else phase_2['recommended_resolution'] if inspected_stage == 2 else f"Maintain terminal release lock until {stage3_title} verification is complete."
-        st.markdown(f'''
-        <div class="agent-card" style="border-color: var(--teal);">
-            <span class="badge badge-active">🛠️ ENGINEERING FIELD COPILOT | STAGE {inspected_stage}</span><br><br>
-            <strong>Raw Telemetry Threshold:</strong> {telemetry_threshold}<br><br>
-            <strong>Required Tooling:</strong> {', '.join(artifact[0] for artifact in stage_artifacts[:4])}<br><br>
-            <strong>Physical Safety Interlocks:</strong> {safety_interlock}<br><br>
-            <strong>Frontline Verification Checklist:</strong> {'; '.join(stage_checks)}
-        </div>
-        ''', unsafe_allow_html=True)
+    stage_checks = book_data['checks'] if inspected_stage == 1 else phase_2['checks'] if inspected_stage == 2 else [artifact[0] for artifact in book_data['artifacts']]
+    stage_artifacts = book_data['artifacts'] if inspected_stage != 2 else [(check, "Required Phase 2 verification") for check in phase_2['checks']]
+    telemetry_threshold = book_data['drift_metrics']['telemetry_drift'] if inspected_stage == 1 else "Phase 2 verification packet complete" if inspected_stage == 2 else "All control artifacts verified before terminal release"
+    safety_interlock = book_data['agents']['CTO']['memo'] if inspected_stage == 1 else phase_2['recommended_resolution'] if inspected_stage == 2 else f"Maintain terminal release lock until {stage3_title} verification is complete."
+    st.markdown(f'''
+    <div class="agent-card" style="border-color: var(--teal);">
+        <span class="badge badge-active">🛠️ ENGINEERING FIELD COPILOT | STAGE {inspected_stage}</span><br><br>
+        <strong>Raw Telemetry Threshold:</strong> {telemetry_threshold}<br><br>
+        <strong>Required Tooling:</strong> {', '.join(artifact[0] for artifact in stage_artifacts[:4])}<br><br>
+        <strong>Physical Safety Interlocks:</strong> {safety_interlock}<br><br>
+        <strong>Frontline Verification Checklist:</strong> {'; '.join(stage_checks)}
+    </div>
+    ''', unsafe_allow_html=True)
 
 if "Tier 3" not in view:
     st.markdown(f'''
