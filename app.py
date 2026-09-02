@@ -561,7 +561,7 @@ for key, default in [
     ('board_escalation', {}), ('board_quorum', {}), ('active_phase', {}), ('phase_2_authorized', {}),
     ('surgical_spend_authorized', {}), ('surgical_purchase_orders', {}),
     ('detection_time', {}), ('override_logged', {}),
-    ('active_view', '1️⃣ Tier 1 | Chairman Directorate'),
+    ('nav_tier_selection', '1️⃣ Tier 1 | Chairman Directorate'),
     ('current_tier', 1),
     ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
     ('override_active', False), ('master_surge', 0),
@@ -587,7 +587,7 @@ VIEW_TO_TIER = {view_name: tier_num for tier_num, view_name in TIER_VIEWS.items(
 
 
 def nav_to(target_view):
-    st.session_state['active_view'] = target_view
+    st.session_state['nav_tier_selection'] = target_view
     st.session_state['current_tier'] = VIEW_TO_TIER.get(target_view, st.session_state.get('current_tier', 1))
 
 def trigger_sync():
@@ -611,7 +611,7 @@ def reset_book(book_name):
     st.session_state['surgical_purchase_orders'][book_name] = []
     st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
     st.session_state['override_logged'][book_name] = False
-    st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
+    st.session_state['nav_tier_selection'] = '1️⃣ Tier 1 | Chairman Directorate'
     st.session_state['current_tier'] = 1
     for i in range(8):
         st.session_state[f"chk_{book_name}_{i}"] = False
@@ -799,15 +799,18 @@ st.sidebar.caption(f"Last Audited Sync: `{st.session_state['last_sync']}`")
 
 st.sidebar.markdown("---")
 
-# Sync the navigation intent into the widget-bound key before the radio is instantiated.
-st.session_state['active_view'] = TIER_VIEWS[st.session_state['current_tier']]
-
-view = st.sidebar.radio("Command view", [
+TIER_OPTIONS = [
     "1️⃣ Tier 1 | Chairman Directorate",
     "2️⃣ Tier 2 | General Management",
     "3️⃣ Tier 3 | Site Operations",
-    "4️⃣ Forensic Audit Ledger"
-], key="active_view")
+    "4️⃣ Forensic Audit Ledger",
+]
+if "nav_tier_selection" not in st.session_state:
+    st.session_state["nav_tier_selection"] = TIER_OPTIONS[0]
+
+# The radio is the single source of truth for navigation; it is never force-synced from current_tier.
+view = st.sidebar.radio("Command view", options=TIER_OPTIONS, key="nav_tier_selection")
+st.session_state['current_tier'] = VIEW_TO_TIER.get(view, st.session_state.get('current_tier', 1))
 
 force_scroll_to_top()
 
@@ -1445,7 +1448,7 @@ elif "Tier 3" in view:
             for committee in ['ops', 'afic', 'risk', 'tech']:
                 st.session_state[f"comm_{book}_{committee}"] = False
             st.session_state['phase_2_authorized'][book] = False
-            st.session_state['active_view'] = '4️⃣ Forensic Audit Ledger'
+            st.session_state['nav_tier_selection'] = '4️⃣ Forensic Audit Ledger'
             st.session_state['command_view'] = '4️⃣ Forensic Audit Ledger'
             st.session_state['current_tier'] = 4
 
@@ -1459,7 +1462,7 @@ elif "Tier 3" in view:
             st.session_state['escalation_transmitted'] = True
             st.session_state['board_escalation'][book] = True
             append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
-            st.session_state['active_view'] = '1️⃣ Tier 1 | Chairman Directorate'
+            st.session_state['nav_tier_selection'] = '1️⃣ Tier 1 | Chairman Directorate'
             st.session_state['current_tier'] = 1
 
         default_blocker_tags = ["None (Nominal Telemetry)", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
@@ -1821,7 +1824,7 @@ elif "Ledger" in view:
         def nav_to_tier_1():
             st.session_state['selected_tier_idx'] = 0
             st.session_state['current_tier'] = 1
-            st.session_state['active_view'] = TIER_VIEWS[1]
+            st.session_state['nav_tier_selection'] = TIER_VIEWS[1]
 
         st.button(
             "✅ AUDIT TRAIL COMPLETE — RETURN TO DIRECTORATE",
