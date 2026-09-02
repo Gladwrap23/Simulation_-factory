@@ -927,8 +927,7 @@ else:
     burn_sub = f"⚠️ {active_surge}% Surge Active (${surge_dollars:,.0f})" if active_surge > 0 else "Active Carrying Drag"
     client_realization = f"${base_burn * 0.9:,.0f}"
     phoenix_fee = f"${base_burn * 0.1:,.0f}"
-    completed_checks = sum([st.session_state.get(f"chk_{book}_{i}", False) for i in range(8)])
-    sop_badge = f"{completed_checks} / 8"
+    sop_badge = f"{st.session_state.get(f'sop_readiness_{book}', 0)} / 8"
 
 if "Tier 3" not in view:
     # Top Metric Cards Bar
@@ -1539,6 +1538,7 @@ elif "Tier 3" in view:
                     col_target.checkbox(base_labels[i], key=key)
 
         completed_count = sum(1 for i in range(8) if st.session_state.get(f"sop_chk_{selected_book}_{i}", False))
+        st.session_state[f"sop_readiness_{selected_book}"] = completed_count
         if locked_indices:
             st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
         st.info(f"📋 {completed_count}/8 checks verified across 3 GM domains.")
@@ -1546,8 +1546,20 @@ elif "Tier 3" in view:
         if completed_count == 8 and len(locked_indices) == 0:
             st.success("✅ 8/8 checks complete. All physical artifacts verified.")
             if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}", type="primary"):
+                if "audit_ledger" not in st.session_state:
+                    st.session_state["audit_ledger"] = []
+                st.session_state["audit_ledger"].append({
+                    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "sector": selected_book,
+                    "tier": "Tier 3 Site Operations",
+                    "action": "FRONTLINE SOP CERTIFICATION SEALED",
+                    "inspector": "Authorized Lead Inspector / Domain Supervisor",
+                    "status": "VERIFIED (8/8 ARTIFACTS ATTACHED)",
+                    "circuit_breaker": "DISENGAGED",
+                })
                 st.session_state['pipeline_step_3'] = "COMPLETED"
                 st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['capital_circuit_breaker'] = "CLEARED"
                 st.session_state['selected_tier_idx'] = 3  # 0-indexed for Tier 4
                 st.session_state['current_tier'] = 4
                 st.rerun()
@@ -1658,5 +1670,17 @@ elif "Ledger" in view:
         st.dataframe(step_back_rows, use_container_width=True)
     else:
         st.info("No emergency step-back events recorded in this session.")
+
+    sealed_entries = [
+        entry for entry in st.session_state.get("audit_ledger", [])
+        if entry.get("action") == "FRONTLINE SOP CERTIFICATION SEALED" and entry.get("sector") == book
+    ]
+    if sealed_entries:
+        st.success("✅ AUDIT TRAIL COMPLETE")
+        if st.button("✅ AUDIT TRAIL COMPLETE — RETURN TO DIRECTORATE", type="primary", use_container_width=True):
+            st.session_state['selected_tier_idx'] = 0
+            st.session_state['current_tier'] = 1
+            st.session_state['active_view'] = TIER_VIEWS[1]
+            st.rerun()
 
 st.caption(f"Factory Command Post | Autonomous Capital Defense Control Plane | Audited Sync: {st.session_state['last_sync']}")
