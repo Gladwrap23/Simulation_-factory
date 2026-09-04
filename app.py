@@ -573,9 +573,71 @@ for key, default in [
     ('chairman_override_active', False), ('quorum_votes', [False, False, False, False]),
     ('capital_circuit_breaker', 'ARMED'), ('contractor_billing_frozen', {}),
     ('checklist_db', {}),
+    ('interlock_state', {
+        "operating_book": "ERCOT BESS / storage operations",
+        "total_exposure": 88_500_000,
+        "idle_burn_rate_hr": 123.00,
+        "pipeline_status": "HELD_FOR_VERIFICATION",
+        "vectors": {
+            "material": {"status": "FAIL", "telemetry_id": "MODBUS_40012", "detail": "Rack 4 breaker open"},
+            "labor": {"status": "PASS", "cert_id": "IBEW_MASTER_8841", "detail": "Witnessed by R. Vance"},
+            "design": {"status": "PASS", "spec_rev": "ERCOT_REV_D", "detail": "Handshake parameters valid"},
+            "admin": {"status": "HELD", "assignee": "David Chen", "detail": "Pending physical breaker fix"},
+        },
+        "dispute_ledger": [
+            {
+                "id": "STOP-2026-0904-01",
+                "tier_origin": 3,
+                "source_entity": "Inverter Bank 4B (Modbus 40012)",
+                "declared_by": "Site Ops (Check #8 marked complete)",
+                "contested_by": "SCADA Daemon (Telemetry registers 0V open)",
+                "contention": "Technician reported mechanical closure; electrical contact did not verify.",
+                "status": "ESCALATED_TO_DIRECTORATE",
+                "timestamp_utc": "2026-09-04T09:00:14Z",
+            }
+        ],
+    }),
 ]:
     if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
         st.session_state[key] = default
+
+
+def init_pipeline_state(force_reset=False):
+    if "pipeline" not in st.session_state or force_reset:
+        st.session_state.pipeline = {
+            "operating_book": "ERCOT BESS / Storage Operations",
+            "total_exposure": 88_500_000,
+            "idle_burn_rate_hr": 0.00,
+            "burn_start_utc": datetime.now(timezone.utc).isoformat(),
+            "status": "NOMINAL",
+            "vectors": {
+                "material": {
+                    "status": "PENDING",
+                    "telemetry_source": "SCADA_STANDBY",
+                    "detail": "Pre-commissioning; awaiting site energization.",
+                },
+                "labor": {
+                    "status": "PASS",
+                    "telemetry_source": "BADGE_RFID_8841",
+                    "detail": "Certified crew logged on site.",
+                },
+                "design": {
+                    "status": "PASS",
+                    "telemetry_source": "ERCOT_REVD",
+                    "detail": "Interconnect configuration verified.",
+                },
+                "administrative": {
+                    "status": "PENDING",
+                    "telemetry_source": "FIDUCIARY_QUEUE",
+                    "detail": "Awaiting frontline SOP completion.",
+                },
+            },
+            "active_stoppage": None,
+            "audit_ledger": [],
+        }
+
+
+init_pipeline_state()
 
 # Navigation Callbacks
 TIER_VIEWS = {
@@ -613,6 +675,92 @@ def get_sop_readiness(book_name):
     return sum(1 for v in st.session_state["checklist_db"][book_name].values() if v)
 
 
+def log_pipeline_audit_event(action, actor, rationale):
+    timestamp = datetime.now(timezone.utc).isoformat()
+    raw_payload = f"{timestamp}|{actor}|{action}|{rationale}"
+    digest = hashlib.sha256(raw_payload.encode()).hexdigest()
+    st.session_state["pipeline"]["audit_ledger"].append({
+        "timestamp": timestamp,
+        "actor": actor,
+        "action": action,
+        "rationale": rationale,
+        "sha256": digest,
+    })
+
+
+def render_pipeline_diagnostic_strip():
+    vectors = st.session_state["pipeline"]["vectors"]
+    st.markdown("### Forensic Ground Truth Vectors")
+    columns = st.columns(4)
+
+    def status_badge(status):
+        return "PASS" if status == "PASS" else "FAIL" if status == "FAIL" else "HELD"
+
+    vector_labels = [
+        ("Material Integrity", "material"),
+        ("Labor / Badging", "labor"),
+        ("Design / Spec Rev", "design"),
+        ("Fiduciary / Admin", "administrative"),
+    ]
+    for column, (label, vector_name) in zip(columns, vector_labels):
+        vector = vectors[vector_name]
+        column.metric(label, status_badge(vector["status"]), vector["telemetry_source"])
+        column.caption(vector["detail"])
+
+
+def render_pipeline_console():
+    pipeline = st.session_state["pipeline"]
+    stoppage = pipeline["active_stoppage"]
+
+    render_pipeline_diagnostic_strip()
+    st.divider()
+    if pipeline["status"] == "CIRCUIT_BREAKER_HALT" and stoppage:
+        st.error(f"MANDATORY GOVERNANCE CIRCUIT BREAKER TRIPPED: {stoppage['id']}")
+        detail_col, metric_col = st.columns([2, 1])
+        with detail_col:
+            st.markdown(f"**Originating Source:** `{stoppage['source_device']}` ({stoppage['tier_origin']})")
+            st.markdown(f"**Contention:** {stoppage['dispute_summary']}")
+            st.markdown(f"**Field Claim:** {stoppage['field_claim']}")
+            st.markdown(f"**Machine Ground Truth:** `{stoppage['machine_ground_truth']}`")
+            st.warning(f"**Fiduciary Impact:** {stoppage['fiduciary_risk']}")
+        with metric_col:
+            st.metric("Idle Holding Burn", f"${pipeline['idle_burn_rate_hr']:.2f}/hr", "Fiduciary Protection Carry")
+            st.info("Status: Filing timer suspended. Personal officer liability insulated.")
+
+        st.markdown("#### Directorate Executive Determination")
+        action_col, certify_col = st.columns(2)
+        with action_col:
+            if st.button("Order Targeted Field Remediation (Tier 3)", use_container_width=True, key="pipeline_remediation"):
+                log_pipeline_audit_event(
+                    "DIRECT_FIELD_REMEDIATION",
+                    "Chairman Directorate",
+                    f"SCADA mismatch on {stoppage['source_device']}. Dispatched work order to verify auxiliary relay.",
+                )
+                st.session_state["pipeline"]["active_stoppage"]["field_claim"] = "Tier 3 remediation dispatched"
+                st.rerun()
+        with certify_col:
+            can_certify = pipeline["vectors"]["material"]["status"] == "PASS"
+            if st.button(
+                "Certify Regulatory Filing (Statutory Telemetry Release)",
+                disabled=not can_certify,
+                help="Locked: Material SCADA discrepancy must be resolved before filing can legally proceed.",
+                use_container_width=True,
+                key="pipeline_certify",
+            ):
+                pipeline["status"] = "CERTIFIED"
+                pipeline["vectors"]["administrative"]["status"] = "PASS"
+                log_pipeline_audit_event(
+                    "STATUTORY_DIRECTORATE_OVERRIDE",
+                    "Chairman Directorate",
+                    "All physical SCADA vectors verified. Human administrative hold bypassed on immutable telemetry proof.",
+                )
+                st.rerun()
+    elif pipeline["status"] == "CERTIFIED":
+        st.success("PIPELINE CLEARED: Commercial Operation Date (COD) certified and fully compliant with ERCOT.")
+        if pipeline["audit_ledger"]:
+            st.json(pipeline["audit_ledger"][-1])
+
+
 def trigger_sync():
     st.session_state['last_sync'] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     st.toast("Forensic State Sync Completed across all 12 Books & Agents", icon="🔄")
@@ -643,6 +791,7 @@ def reset_book(book_name):
         st.session_state.pop(f"chk_widget_{book_name}_{i + 1}", None)
     for c in ['ops', 'afic', 'risk', 'tech']:
         st.session_state[f"comm_{book_name}_{c}"] = False
+    init_pipeline_state(force_reset=True)
 
 
 def get_phase_context(book_name):
@@ -921,6 +1070,9 @@ if "Tier 3" not in view:
 
 sop_readiness = get_sop_readiness(book)
 if "Tier 1" in view:
+    if book == "ERCOT BESS / storage operations":
+        render_pipeline_console()
+
     with st.expander("🧪 Scenario Test Harness (Demo Controls)", expanded=False):
         if st.button("Load Scenario 2: Contractual Deadlock (ERCOT IA § 4.2 COD Attestation)", key=f"load_deadlock_{book}"):
             for i in range(1, 7):
@@ -1454,6 +1606,10 @@ elif "Tier 3" in view:
                 "Cryptographic Hash": entry_hash
             })
             append_forensic_entry(book, "Tier 3 SOP Sign-off", datetime.now(timezone.utc))
+            if "pipeline" in st.session_state:
+                st.session_state.pipeline["vectors"]["material"]["status"] = "PASS"
+                st.session_state.pipeline["vectors"]["material"]["detail"] = "Breaker 4B auxiliary contact verified CLOSED via physical inspection."
+                st.session_state.pipeline["status"] = "RUNNING"
             st.session_state['active_phase'][book] = 2
             st.session_state['sop_checklist'] = [False] * 8
             st.session_state['pipeline_step_1'] = "PENDING"
@@ -1676,6 +1832,8 @@ elif "Tier 3" in view:
                         disabled=True,
                         key=widget_key,
                     )
+                    if check_num == 8:
+                        st.warning('Check #8 locked: Site Remediation must be cleared in Tier 3 first.')
                 else:
                     col_target.checkbox(
                         base_labels[i],

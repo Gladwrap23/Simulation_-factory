@@ -9,7 +9,7 @@ SECTORS = {
             {"label": "Annual Velocity Drift Cost", "value": "$2.556 Billion", "basis": "Annual Scheme Underwriting Gap"},
             {"label": "Actionable Controllable Loss", "value": "$1.209 Billion", "basis": "Preventable Administrative Drag (65%)"}
         ],
-        "active_directive": {
+        "active_directive": {p
             "title": "Mandate Standardized Case Triage & Direct Telemetry Ingestion",
             "completion_pct": 74,
             "compliant_units": "18 of 24 Regional Health Hubs",
