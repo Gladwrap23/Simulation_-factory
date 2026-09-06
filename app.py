@@ -688,7 +688,7 @@ def log_pipeline_audit_event(action, actor, rationale):
     })
 
 
-def render_pipeline_diagnostic_strip():
+def render_diagnostic_strip():
     vectors = st.session_state["pipeline"]["vectors"]
     st.markdown("### Forensic Ground Truth Vectors")
     columns = st.columns(4)
@@ -712,7 +712,7 @@ def render_pipeline_console():
     pipeline = st.session_state["pipeline"]
     stoppage = pipeline["active_stoppage"]
 
-    render_pipeline_diagnostic_strip()
+    render_diagnostic_strip()
     st.divider()
     if pipeline["status"] == "CIRCUIT_BREAKER_HALT" and stoppage:
         st.error(f"MANDATORY GOVERNANCE CIRCUIT BREAKER TRIPPED: {stoppage['id']}")
@@ -1059,7 +1059,7 @@ else:
     phoenix_fee = f"${base_burn * 0.1:,.0f}"
     sop_badge = f"{get_sop_readiness(book)} / 8"
 
-if "Tier 3" not in view:
+if "Tier 3" not in view and "Ledger" not in view:
     # Top Metric Cards Bar
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Total Exposure", book_data["exposure"], "Board Limit")
@@ -1178,26 +1178,29 @@ if "Tier 1" in view:
         </div>
         ''', unsafe_allow_html=True)
     else:
-        open_domain = next((d for d in gm_domains if not d["done"]), gm_domains[0])
-        open_check_labels = []
-        for idx in open_domain["check_indices"]:
-            if not get_check(book, idx + 1):
-                short_label = book_data['checklist'][idx].replace(" verified", "").replace(" attached", "")
-                open_check_labels.append(f"Check #{idx + 1} ({short_label}) OPEN")
-        open_checks_display = "; ".join(open_check_labels) if open_check_labels else "No specific check flagged"
-        idle_hours = hesitation_seconds / 3600.0
-        idle_burn_accrued = (book_data['base_burn'] / 168.0) * idle_hours
-        st.markdown(f'''
-        <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
-            <strong style="color: #FF4B4B;">🚨 CRITICAL PIPELINE STALL DETECTED — DRIFTING GROUND TRUTH</strong><br><br>
-            <strong>⚠️ IDENTIFIED BOTTLENECK:</strong><br>
-            <small>{open_domain['manager']['name']}: {open_domain['stage_label']} — {open_checks_display} — ON SCHEDULE ({open_domain['elapsed_seconds'] / 60.0:.0f} of {open_domain['sla_seconds'] / 60.0:.0f} min SLA).</small><br><br>
-            <strong>⏱️ UNACCOUNTED GOVERNANCE DRIFT:</strong><br>
-            <small>{idle_hours:.1f} hours since last audited pulse — live idle standby burn accruing at ${idle_burn_accrued:,.0f}.</small><br><br>
-            <strong>🛡️ FIDUCIARY DIRECTIVE:</strong><br>
-            <small>Board Notice: Management pipeline report does not match SCADA telemetry. Exercise directorate audit authority or deploy synthetic telemetry pre-clearance.</small>
-        </div>
-        ''', unsafe_allow_html=True)
+        brief_col, matrix_col = st.columns(2)
+        with brief_col:
+            st.markdown('''
+            <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+                <strong style="color: #FF4B4B;">BOARD STATUTORY BRIEF</strong><br><br>
+                <strong>Fiduciary defense active:</strong><br>
+                <small>The operational hold is an active fiduciary defense protecting $88.5M from $1M/day false-filing penalties under the Business Judgment Rule.</small><br><br>
+                <strong>Active Holding Carry Cost: Fiduciary Risk Mitigation</strong><br>
+                <small>Maintain the hold until physical telemetry and the statutory filing record are reconciled.</small>
+            </div>
+            ''', unsafe_allow_html=True)
+        with matrix_col:
+            st.markdown('''
+            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.08);">
+                <strong style="color: var(--amber);">INDIVIDUAL MANAGEMENT ACTION MATRIX</strong><br><br>
+                <strong>Marcus Vance</strong><br>
+                <small>SCADA/ICCP ingestion: validate the telemetry packet and reconcile the live interlock state.</small><br><br>
+                <strong>David Chen</strong><br>
+                <small>Attestation seal pending SCADA: hold the statutory seal until telemetry evidence is verified.</small><br><br>
+                <strong>Site Operations</strong><br>
+                <small>Physical latch verification: inspect and certify the breaker auxiliary contact closure.</small>
+            </div>
+            ''', unsafe_allow_html=True)
 
 
     stage_cols = st.columns(3)
@@ -1209,7 +1212,7 @@ if "Tier 1" in view:
             )
         else:
             stage_col.markdown(
-                f"<div class='card'><strong>{domain['stage_label']}</strong><br><span class='badge badge-danger'>🚨 Stalled — BLOCKED BY GM LATENCY</span></div>",
+                f"<div class='card'><strong>{domain['stage_label']}</strong><br><span class='badge badge-danger'>Active Holding Carry Cost: Fiduciary Risk Mitigation</span></div>",
                 unsafe_allow_html=True,
             )
 
@@ -1853,8 +1856,10 @@ elif "Tier 3" in view:
             if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}", type="primary"):
                 if "audit_ledger" not in st.session_state:
                     st.session_state["audit_ledger"] = []
+                timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+                entry_hash = hashlib.sha256(f"{selected_book}{timestamp}CLEARED".encode()).hexdigest()[:16]
                 st.session_state["audit_ledger"].append({
-                    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "timestamp": timestamp,
                     "sector": selected_book,
                     "tier": "Tier 3 Site Operations",
                     "action": "FRONTLINE SOP CERTIFICATION SEALED",
@@ -1865,6 +1870,18 @@ elif "Tier 3" in view:
                 st.session_state['pipeline_step_3'] = "COMPLETED"
                 st.session_state['pipeline_step_4'] = "READY"
                 st.session_state['capital_circuit_breaker'] = "CLEARED"
+                if "pipeline" in st.session_state:
+                    st.session_state.pipeline["vectors"]["material"]["status"] = "PASS"
+                    st.session_state.pipeline["vectors"]["administrative"]["status"] = "PASS"
+                    log_audit_event(
+                        selected_book,
+                        detection_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                        timestamp,
+                        "Tier 3 settlement completed; routed to Tier 4 forensic audit",
+                        0.0,
+                        "Tier 4 Forensic Audit Ledger",
+                        entry_hash,
+                    )
                 st.session_state['selected_tier_idx'] = 3  # 0-indexed for Tier 4
                 st.session_state['current_tier'] = 4
                 st.rerun()
@@ -1925,6 +1942,35 @@ elif "Ledger" in view:
     force_scroll_to_top()
     st.header("Immutable Governance & Forensic Audit Ledger")
     st.write("Cryptographically verifiable chain of custody across all 12 operating books.")
+
+    pipeline = st.session_state["pipeline"]
+    render_diagnostic_strip()
+    st.subheader("Forensic Ground Truth Vector Table")
+    vector_rows = [
+        {
+            "Vector": vector_name.title(),
+            "Status": vector["status"],
+            "Telemetry Source": vector["telemetry_source"],
+            "Detail": vector["detail"],
+        }
+        for vector_name, vector in pipeline["vectors"].items()
+    ]
+    st.dataframe(vector_rows, use_container_width=True, hide_index=True)
+
+    if pipeline["status"] == "CIRCUIT_BREAKER_HALT" and pipeline["active_stoppage"]:
+        stoppage = pipeline["active_stoppage"]
+        st.markdown(f'''
+        <div class="radar-card">
+            <span class="badge badge-danger">ACTIVE STOPPAGE BLOCK</span><br><br>
+            <strong>ID:</strong> {stoppage["id"]}<br>
+            <strong>Origin:</strong> {stoppage["tier_origin"]}<br>
+            <strong>Source:</strong> <code>{stoppage["source_device"]}</code><br>
+            <strong>Field Claim:</strong> {stoppage["field_claim"]}<br>
+            <strong>Machine Ground Truth:</strong> <code>{stoppage["machine_ground_truth"]}</code><br>
+            <strong>Contention:</strong> {stoppage["dispute_summary"]}<br>
+            <strong>Fiduciary Risk:</strong> {stoppage["fiduciary_risk"]}
+        </div>
+        ''', unsafe_allow_html=True)
 
     st.markdown(f'''
     <div class="card" style="border: 2px solid var(--red); background: rgba(255,123,114,0.08);">
