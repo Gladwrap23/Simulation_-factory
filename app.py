@@ -727,33 +727,41 @@ def render_pipeline_console():
             st.metric("Idle Holding Burn", f"${pipeline['idle_burn_rate_hr']:.2f}/hr", "Fiduciary Protection Carry")
             st.info("Status: Filing timer suspended. Personal officer liability insulated.")
 
-        st.markdown("#### Directorate Executive Determination")
+        st.markdown("#### Tier 1 Directorate Executive Determination")
         action_col, certify_col = st.columns(2)
         with action_col:
-            if st.button("Order Targeted Field Remediation (Tier 3)", use_container_width=True, key="pipeline_remediation"):
+            if st.button("🔧 Order Targeted Field Remediation (Tier 3)", use_container_width=True, key="pipeline_remediation"):
+                advisory = pipeline.get("latest_counsel_advisory")
+                is_concordant = advisory and advisory.get("concordant_action") == "DIRECT_FIELD_REMEDIATION"
+                concordance_tag = "ALIGNED (AFFIRMATIVE SAFE HARBOR SEALED)" if is_concordant else "INDEPENDENT_DIRECTORATE_ACTION"
                 log_pipeline_audit_event(
                     "DIRECT_FIELD_REMEDIATION",
                     "Chairman Directorate",
-                    f"SCADA mismatch on {stoppage['source_device']}. Dispatched work order to verify auxiliary relay.",
+                    f"SCADA mismatch on {stoppage['source_device']}. Dispatched work order to verify auxiliary relay. [Concordance: {concordance_tag}]",
                 )
                 st.session_state["pipeline"]["active_stoppage"]["field_claim"] = "Tier 3 remediation dispatched"
+                st.success(f"Work order dispatched. Concordance: {concordance_tag}")
                 st.rerun()
         with certify_col:
             can_certify = pipeline["vectors"]["material"]["status"] == "PASS"
             if st.button(
-                "Certify Regulatory Filing (Statutory Telemetry Release)",
+                "⚖️ Certify Regulatory Filing (Statutory Telemetry Release)",
                 disabled=not can_certify,
                 help="Locked: Material SCADA discrepancy must be resolved before filing can legally proceed.",
                 use_container_width=True,
                 key="pipeline_certify",
             ):
+                advisory = pipeline.get("latest_counsel_advisory")
+                is_concordant = advisory and advisory.get("concordant_action") == "STATUTORY_DIRECTORATE_OVERRIDE"
+                concordance_tag = "ALIGNED (STATUTORY SAFE HARBOR SEALED)" if is_concordant else "DEVIATION_WARNING"
                 pipeline["status"] = "CERTIFIED"
                 pipeline["vectors"]["administrative"]["status"] = "PASS"
                 log_pipeline_audit_event(
                     "STATUTORY_DIRECTORATE_OVERRIDE",
                     "Chairman Directorate",
-                    "All physical SCADA vectors verified. Human administrative hold bypassed on immutable telemetry proof.",
+                    f"All physical SCADA vectors verified. Human administrative hold bypassed on immutable telemetry proof. [Concordance: {concordance_tag}]",
                 )
+                st.success(f"Regulatory filing submitted to ERCOT. Concordance: {concordance_tag}")
                 st.rerun()
     elif pipeline["status"] == "CERTIFIED":
         st.success("PIPELINE CLEARED: Commercial Operation Date (COD) certified and fully compliant with ERCOT.")
