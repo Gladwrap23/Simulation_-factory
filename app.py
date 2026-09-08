@@ -1164,7 +1164,7 @@ if "Tier 1" in view:
             <strong>⏱️ IDLE CONTRACTOR CARRY:</strong><br>
             <small>Accruing at ${idle_burn_per_week:,.0f}/week (${idle_burn_per_sec:.2f}/sec).</small><br><br>
             <strong>🛡️ DIRECTORATE DIRECTIVE:</strong><br>
-            <small>Consensus impossible at GM level. Invoke Chairman Directorate Statutory Override Console below to exercise DGCL § 141 Safe-Harbor authority.</small>
+            <small>Consensus impossible at GM level. Consult the Delaware § 141 Safe Harbor counsel advisory console below for targeted remediation and filing certification.</small>
         </div>
         ''', unsafe_allow_html=True)
     elif breached_domains:
@@ -1182,7 +1182,7 @@ if "Tier 1" in view:
             <strong>⏱️ REAL-TIME DOLLAR IMPACT:</strong><br>
             <small>Accrued idle carry: ${total_breach_carry:,.0f}.</small><br><br>
             <strong>🛡️ DIRECTORATE DIRECTIVE:</strong><br>
-            <small>Statutory Safe-Harbor Intervention Required. Use Chairman Directorate Override Console below.</small>
+            <small>Delaware § 141 Safe Harbor counsel review required. Use the advisory console below to order remediation or certify the regulatory filing.</small>
         </div>
         ''', unsafe_allow_html=True)
     else:
@@ -1226,24 +1226,24 @@ if "Tier 1" in view:
 
     st.markdown(f'''
     <div class="card" style="border: 2px solid #F5A623; background: #161b22; box-shadow: 0 0 18px rgba(245,166,35,0.25);">
-        <strong style="color: #F5A623;">⚡ CHAIRMAN DIRECTORATE STATUTORY OVERRIDE CONSOLE</strong><br>
-        <small style="color: var(--text-muted);">Statutory Safe-Harbor Intervention (DGCL Caremark Compliance &amp; Emergency Capital Protection)</small>
+        <strong style="color: #F5A623;">⚖️ DELAWARE § 141 SAFE HARBOR COUNSEL ADVISORY CONSOLE</strong><br>
+        <small style="color: var(--text-muted);">Counsel advisory for targeted field remediation and regulatory filing certification</small>
     </div>
     ''', unsafe_allow_html=True)
     override_rationale_key = f"override_rationale_{book}"
     if override_rationale_key not in st.session_state:
         st.session_state[override_rationale_key] = (
-            "Board-authorized unilateral indemnification of EPC inverter warranty; filing expedited provisional ERCOT IA § 4.2 waiver."
+            "Counsel-reviewed targeted field remediation and certification of the expedited provisional ERCOT IA § 4.2 filing."
             if sop_readiness == 6 else ""
         )
     override_rationale = st.text_input(
-        "Fiduciary Justification / Counsel Filing Rationale",
-        placeholder="e.g., Unilateral waiver of provisional telemetry; invoking 24-hr expedited ERCOT § 4.2 filing to arrest $610k/wk burn.",
+        "Counsel Advisory / Filing Rationale",
+        placeholder="e.g., Order Tier 3 remediation and certify the expedited ERCOT § 4.2 filing to arrest the holding burn.",
         key=override_rationale_key,
     )
     console_col_1, console_col_2 = st.columns(2)
     with console_col_1:
-        if st.button("🚨 UNILATERAL GATE CLEARANCE (FORCE COD ATTESTATION)", type="primary", use_container_width=True, key=f"gate_clearance_{book}"):
+        if st.button("🛠️ Order Targeted Field Remediation (Tier 3)", type="primary", use_container_width=True, key=f"field_remediation_{book}"):
             for i in range(1, 9):
                 set_check(book, i, True)
             st.session_state[f"blocker_tag_{book}"] = "None (Nominal Telemetry)"
@@ -1251,26 +1251,22 @@ if "Tier 1" in view:
                 st.session_state.pop(f"domain_sla_start_{book}_{domain_idx}", None)
             engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
             engine.record_ledger_entry(
-                book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
-                "CHAIRMAN_STATUTORY_SAFEHARBOR_OVERRIDE", work_order_id, detection_time,
-                notes=override_rationale or "Unilateral gate clearance executed without stated rationale.",
+                book, 1, "COUNSEL_ADVISORY", "Delaware § 141 Safe Harbor Counsel",
+                "DELAWARE_141_TARGETED_FIELD_REMEDIATION", work_order_id, detection_time,
+                notes=override_rationale or "Targeted Tier 3 field remediation ordered without stated rationale.",
             )
             st.session_state['pipeline_step_3'] = "COMPLETED"
             st.session_state['pipeline_step_4'] = "READY"
-            st.success("Unilateral gate clearance sealed to the forensic ledger.")
+            st.success("Targeted Tier 3 field remediation ordered and sealed to the forensic ledger.")
             st.rerun()
     with console_col_2:
-        if st.button("🛑 EMERGENCY HOLD / CONTRACTOR STANDBY SUSPENSION", use_container_width=True, key=f"standby_freeze_{book}"):
-            st.session_state['capital_circuit_breaker'] = "TRIPPED"
-            st.session_state['contractor_billing_frozen'][book] = True
-            st.session_state['master_surge'] = 0
-            st.session_state['master_surge_cap'] = 0
+        if st.button("📄 Certify Regulatory Filing", use_container_width=True, key=f"certify_filing_{book}"):
             engine.record_ledger_entry(
-                book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
-                "CHAIRMAN_STANDBY_FREEZE", work_order_id, detection_time,
-                notes=override_rationale or "Emergency standby freeze executed without stated rationale.",
+                book, 1, "COUNSEL_ADVISORY", "Delaware § 141 Safe Harbor Counsel",
+                "DELAWARE_141_REGULATORY_FILING_CERTIFICATION", work_order_id, detection_time,
+                notes=override_rationale or "Regulatory filing certification issued without stated rationale.",
             )
-            st.warning("Capital defense circuit breaker tripped. Contractor carry billing frozen and sealed to the ledger.")
+            st.success("Regulatory filing certification sealed to the forensic ledger.")
             st.rerun()
 
 
