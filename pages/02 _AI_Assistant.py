@@ -161,43 +161,38 @@ with st.sidebar:
     st.markdown("**AVAILABLE CONTEXT**")
     st.markdown("Exposure ledger\n\nHolding loss register\n\nFrontline sign-off chain")
 
-selected_book = st.session_state.get("selected_book", "ERCOT BESS / storage operations")
-book_context = get_book_context()
-st.markdown('<div class="eyebrow">EXECUTIVE SYNTHESIS / LIVE SESSION CONTEXT</div>', unsafe_allow_html=True)
-st.title("Command intelligence, on demand.")
-st.caption(f"A conversational assistant grounded in the active balance sheet and operational audit state for {selected_book}.")
+st.title("Command Intelligence | Executive Advisory")
 
-exposure_col, burn_col, signoff_col = st.columns(3)
-with exposure_col:
-    st.markdown(f'<div class="context-card"><div class="context-label">ACTIVE BALANCE SHEET EXPOSURE</div><div class="context-value">{book_context["exposure"]}</div><div class="context-label">{escape(selected_book)}</div></div>', unsafe_allow_html=True)
-with burn_col:
-    cleared_books = st.session_state.get("cleared_books", {})
-    resolved = cleared_books.get(selected_book, st.session_state.get("burn_resolved", st.session_state.get("cleared", False)))
-    burn_value = "$0 / wk" if resolved else f"${book_context['burn']:,.0f} / wk"
-    burn_note = "RESOLVED" if resolved else "ACTIVE HOLDING LOSS"
-    st.markdown(f'<div class="context-card"><div class="context-label">WEEKLY HOLDING LOSS</div><div class="context-value">{burn_value}</div><div class="context-label">{burn_note}</div></div>', unsafe_allow_html=True)
-with signoff_col:
-    audit_records, legacy_records = get_signoffs(selected_book)
-    st.markdown(f'<div class="context-card"><div class="context-label">AUDIT LEDGER SIGN-OFFS</div><div class="context-value">{len(audit_records) + len(legacy_records)}</div><div class="context-label">Cryptographically recorded events</div></div>', unsafe_allow_html=True)
+if "incident_store" in st.session_state and "active_incident_id" in st.session_state:
+    active_incident = st.session_state.incident_store[
+        st.session_state.active_incident_id
+    ]
+    director = active_incident["cognizant_director"]
 
-st.divider()
-st.subheader("Conversational Briefing")
-for message in st.session_state["assistant_messages"]:
-    role_label = "You" if message["role"] == "user" else "Factory AI"
-    role_class = "user" if message["role"] == "user" else ""
     st.markdown(
-        f'<div class="assistant-card {role_class}"><div class="assistant-label">{role_label}</div>{escape(message["content"])}</div>',
-        unsafe_allow_html=True,
+        f"**Active Operational Channel:** `{st.session_state.active_incident_id}: "
+        f"{active_incident['title']}`"
     )
+    st.caption(
+        f"Briefing Officer assigned to: **{director['name']}** - *{director['role']}*"
+    )
+    st.divider()
 
-prompt = st.chat_input("Ask about exposure, holding losses, or audit sign-offs")
-if prompt:
-    st.session_state["assistant_messages"].append({"role": "user", "content": prompt})
-    st.session_state["assistant_messages"].append({"role": "assistant", "content": answer_question(prompt)})
-    st.rerun()
+    col1, col2 = st.columns(2)
+    if col1.button("Analyze Holding Carry vs LD Penalty", key="analyze_holding_carry"):
+        st.chat_message("assistant").write(
+            f"At the current carry rate of ${active_incident['burn_rate_sec']:.2f}/sec "
+            f"(${active_incident['burn_rate_sec'] * 604800:,.0f}/wk), holding the site until "
+            "next Thursday incurs $1.22M in idle contractor burn. If liquidated damages "
+            "kick in at Day 10, total exposure increases by $45,000/day."
+        )
 
-st.divider()
-st.caption(
-    f"Session context refreshed {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} | "
-    "Directional scenario intelligence; verify decisions against the authoritative ledger."
-)
+    if col2.button("Review Elena vs. David Fiduciary Boundaries", key="review_fiduciary_boundaries"):
+        st.chat_message("assistant").write(
+            "Elena Rostova's refusal to sign without the IEEE packet is protected by standard "
+            "duty of care. David Chen cannot submit the COD filing unilaterally without exposing "
+            "the firm to regulatory false-filing penalties. Resolution requires a Tier 1 board-level "
+            "indemnity carve-out."
+        )
+else:
+    st.info("Nominal: Open the Incident Command Post to initialize telemetry.")

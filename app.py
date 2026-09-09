@@ -150,6 +150,72 @@ with tier1_col2:
             incident["cognizant_director"]["status"] = "DIRECTORATE CONCURRENCE GRANTED"
             st.rerun()
 
+with st.expander(
+    f"Command Intelligence Briefing | {incident['cognizant_director']['name']}",
+    expanded=False,
+):
+    st.markdown(
+        f"*Domain Context Injected: {incident['cognizant_director']['role']} | "
+        f"Current Burn: ${incident['burn_rate_sec']:.2f}/sec*"
+    )
+    intel_query = st.selectbox(
+        "Select Directorate Assessment Prompt:",
+        [
+            "Assess OEM Warranty Forfeiture ($1.2M) vs. ERCOT Queue Drop Risk",
+            "Draft Binding Directorate Indemnification Waiver for Elena Rostova",
+            "Synthesize IEEE 2800 Test Packet Gaps for Board Minutes",
+        ],
+        key=f"intel_query_{st.session_state.active_incident_id}",
+    )
+    intelligence_key = f"intelligence_result_{st.session_state.active_incident_id}"
+
+    if st.button(
+        "Run Command Intelligence Synthesis",
+        key=f"run_intelligence_{st.session_state.active_incident_id}",
+        use_container_width=True,
+    ):
+        st.session_state[intelligence_key] = intel_query
+
+    generated_query = st.session_state.get(intelligence_key)
+    if generated_query == "Assess OEM Warranty Forfeiture ($1.2M) vs. ERCOT Queue Drop Risk":
+        st.info(
+            "**Executive Trade-Off Synthesis:**\n"
+            "- **Regulatory Risk (David Chen):** Queue position cancellation triggers immediate $4.5M interconnection study forfeiture and a 14-month COD delay.\n"
+            "- **Asset Integrity Risk (Elena Rostova):** Energizing without IEEE 2800 verified logs risks OEM voiding warranty on the $1.2M high-voltage transformer.\n"
+            "- **Financial Crossover:** Idle contractor carry ($610k/wk) exceeds the total unhedged equipment risk in exactly **13.8 days**.\n"
+            "- **Director Recommendation:** Concur with Conditional Indemnity Carve-Out. Absorbing equipment warranty at directorate level saves ~$2.4M in idle burn and queue penalties."
+        )
+    elif generated_query == "Draft Binding Directorate Indemnification Waiver for Elena Rostova":
+        st.code(
+            "DIRECTORATE INDEMNITY RESOLUTION (ERCOT IA Section 4.2)\n"
+            "Pursuant to delegated authority under the Grid Risk & Technical Integrity Committee:\n"
+            "1. Elena Rostova (GM - Field Operations) is granted full fiduciary and operational indemnification against manufacturer warranty forfeiture arising from energization prior to final IEEE 2800 packet completion.\n"
+            "2. Direct David Chen (GM - Regulatory) to execute and transmit Part 2 COD Attestation forthwith.\n"
+            "3. Contingency reserve of $1,200,000 is allocated to Asset Defense Escrow.",
+            language="text",
+        )
+    elif generated_query:
+        st.info(
+            "**Board Minute Addendum:**\n"
+            "Telemetry verification completed on 5 of 6 gates (ICCP 4-sec, EMT PSCAD cleared). "
+            "Check #6 (IEEE 2800 packet transmission) is functionally complete on site but withheld "
+            "due to administrative sign-off protocols. Operational risk is deemed administrative, not electrical."
+        )
+
+    if generated_query:
+        if st.button(
+            "Stamp Assessment to Tier 4 Forensic Ledger",
+            key=f"stamp_intelligence_{st.session_state.active_incident_id}",
+        ):
+            timestamp = datetime.datetime.utcnow().strftime("%H:%M:%S UTC")
+            director = incident["cognizant_director"]
+            incident["audit_log"].append(
+                f"[{timestamp}] COMMAND INTELLIGENCE: Generated & concurred by "
+                f"{director['name']} ({director['role']}) - Query: {generated_query}"
+            )
+            st.success("Stamped to Forensic Audit Ledger.")
+            st.rerun()
+
 st.subheader("Tier 2 | General Management Workspaces")
 if incident["gms"]:
     gm_names = list(incident["gms"])
