@@ -1,0 +1,2073 @@
+import hashlib
+import re
+import sqlite3
+from datetime import datetime, timezone
+import engine
+import numpy as np
+import pandas as pd
+import streamlit as st
+import streamlit.components.v1 as components
+
+
+def force_scroll_to_top():
+    components.html(
+        """
+        <script>
+        function snapToTop() {
+            try {
+                var targets = [
+                    window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                    window.parent.document.querySelector('[data-testid="stMain"]'),
+                    window.parent.document.querySelector('section.main'),
+                    window.parent.document.documentElement,
+                    window.parent.document.body
+                ];
+                targets.forEach(function(el) {
+                    if (el) { el.scrollTop = 0; }
+                });
+                window.parent.scrollTo(0, 0);
+            } catch(e) {}
+        }
+        // Execute immediately and once after DOM layout settles
+        snapToTop();
+        setTimeout(snapToTop, 60);
+        </script>
+        """,
+        height=0,
+        width=0
+    )
+
+
+st.set_page_config(
+    page_title="Factory Command Post | Autonomous Capital Defense",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom High-Contrast Cockpit CSS with Touch-Optimized Targets
+st.markdown('''
+<style>
+    :root {
+        --bg-base: #0d1117;
+        --bg-panel: #161b22;
+        --line: #30363d;
+        --teal: #00E5FF;
+        --green: #3fb950;
+        --red: #ff7b72;
+        --amber: #d29922;
+        --purple: #bc8cff;
+        --text-main: #f0f6fc;
+        --text-muted: #8b949e;
+    }
+    .stApp { background-color: var(--bg-base); color: var(--text-main); }
+    section[data-testid="stSidebar"] { background-color: var(--bg-panel); border-right: 1px solid var(--line); }
+
+    /* Compact, top-anchored spacing between header and content on mobile/iPad viewports */
+    @media (max-width: 1024px) {
+        div[data-testid="stAppViewContainer"] .block-container { padding-top: 1rem !important; }
+        h1, h2, h3 { margin-top: 0.25rem !important; margin-bottom: 0.5rem !important; }
+    }
+    
+    /* Top Metrics Styling */
+    div[data-testid="stMetric"] { 
+        background-color: var(--bg-panel); 
+        border: 1px solid var(--line); 
+        border-top: 3px solid var(--teal); 
+        border-radius: 8px; 
+        padding: 12px; 
+    }
+    div[data-testid="stMetricValue"] { 
+        color: var(--teal) !important; 
+        font-family: monospace; 
+        font-size: 1.25rem !important;
+        overflow: visible !important;
+        white-space: normal !important;
+    }
+    
+    /* Mobile / iPad Touch Optimization */
+    .stButton > button { 
+        min-height: 52px !important; 
+        font-size: 1.05rem !important; 
+        font-weight: 600 !important; 
+        border-radius: 8px !important;
+        width: 100% !important;
+    }
+    div[role="radiogroup"] > label { 
+        min-height: 48px !important; 
+        display: flex !important; 
+        align-items: center !important; 
+        font-size: 1.05rem !important;
+        padding: 6px 12px !important;
+        margin-bottom: 4px !important;
+        border-radius: 6px !important;
+    }
+    .stSelectbox, .stNumberInput { font-size: 1.05rem !important; }
+    
+    /* Cards & Banners */
+    .card { background-color: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+    .agent-card { background: rgba(22, 27, 34, 0.95); border: 1px solid var(--purple); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+    .blueprint-card { background: rgba(22, 27, 34, 0.85); border: 1px solid #ff7b72; border-radius: 8px; padding: 16px; margin: 12px 0 20px 0; }
+    .forecast-card { background: rgba(22, 27, 34, 0.85); border: 1px solid var(--amber); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .critical-forecast-card { background: rgba(255, 77, 79, 0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 0 0 1px rgba(255,77,79,0.35), 0 0 20px rgba(255,77,79,0.7); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
+    @keyframes pulseCritical {
+        0% { box-shadow: 0 0 0 1px rgba(255,77,79,0.2), 0 0 12px rgba(255,77,79,0.35); }
+        100% { box-shadow: 0 0 0 1px rgba(255,77,79,0.7), 0 0 24px rgba(255,77,79,0.9); }
+    }
+    .critical-agent-card { border: 2px solid rgba(255, 122, 78, 0.95) !important; background: rgba(210,153,34,0.12) !important; box-shadow: 0 0 18px rgba(255,77,79,0.5); }
+    .secondary-agent-card { opacity: 0.5; }
+    .pipeline-card { background-color: #0b0e14; border: 1px solid var(--teal); border-radius: 8px; padding: 12px; margin-top: 14px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-family: monospace; font-weight: bold; }
+    .badge-active { background: rgba(0,229,255,0.15); color: var(--teal); border: 1px solid var(--teal); }
+    .badge-pending { background: rgba(210,153,34,0.15); color: var(--amber); border: 1px solid var(--amber); }
+    .badge-success { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid var(--green); }
+    .badge-danger { background: rgba(255,123,114,0.15); color: var(--red); border: 1px solid var(--red); }
+    .badge-agent { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid var(--purple); }
+    .badge-safe-harbor { background: rgba(88,166,255,0.15); color: #58a6ff; border: 1px solid #58a6ff; }
+
+    /* Frontline Blocker Radar & Critical Checklist Item */
+    .radar-card { background: rgba(255, 77, 79, 0.08); border: 2px solid #ff4d4f; border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: 0 0 0 1px rgba(255,77,79,0.35), 0 0 20px rgba(255,77,79,0.7); animation: pulseCritical 1.6s ease-in-out infinite alternate; }
+    .radar-card-cleared { background: rgba(63,185,80,0.08); border: 2px solid var(--green); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+</style>
+''', unsafe_allow_html=True)
+
+# Master Data Matrix: Complete 12 Industrial & Public Infrastructure Books
+DATA_MATRIX = {
+    "ERCOT BESS / storage operations": {
+        "exposure": "$88.5M", "base_burn": 610000,
+        "region": "West Texas — Permian Substation POI 345kV",
+        "bottleneck": "PSCAD Inverter EMT Validation & 4-sec ICCP Telemetry Lag",
+        "drift_metrics": {"sla_drift": "+2.5 Days", "telemetry_drift": "+8.4s (Lagging)", "cost_drift": "+$183k Carry"},
+        "blocker_tags": ["None (Nominal Telemetry)", "[Checks #1-#2] ICCP / Inverter Firmware v2.41 DNP3 Drop", "[Checks #3-#4] PSCAD EMT Simulation Drift", "[Checks #5-#6] IEEE 2800 Telemetry Polling Lag", "[Checks #7-#8] ERCOT IA § 4.2 Part 2 COD Attestation Hold"],
+        "telemetry_diagnostics": {
+            "Inverter Firmware v2.41 DNP3 Drop": [
+                ("ICCP 4-sec Telemetry", "Heartbeat: DROPPED / Firmware v2.41 DNP3 loss detected"),
+                ("PSCAD EMT Model", "Inverter response: Awaiting clean DNP3 packet trace"),
+                ("IEEE 2800 Test Packet", "Ride-through: Blocked by telemetry heartbeat loss"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: Held pending packet recovery"),
+            ],
+            "PSCAD EMT Simulation Drift": [
+                ("ICCP 4-sec Telemetry", "Heartbeat: 04.0s / Receiving"),
+                ("PSCAD EMT Model", "Inverter response: DRIFT DETECTED / Model revalidation required"),
+                ("IEEE 2800 Test Packet", "Ride-through: Pending corrected EMT simulation"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: Held pending model validation"),
+            ],
+            "IEEE 2800 Telemetry Polling Lag": [
+                ("ICCP 4-sec Telemetry", "Polling interval: EXCEEDED / IEEE 2800 telemetry lag"),
+                ("PSCAD EMT Model", "Inverter response: Model valid / Awaiting polling compliance"),
+                ("IEEE 2800 Test Packet", "Ride-through: Pending compliant 4-second poll trace"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: Held pending IEEE 2800 evidence"),
+            ],
+            "ERCOT IA § 4.2 Part 2 COD Hold": [
+                ("ICCP 4-sec Telemetry", "Heartbeat: Verified / ERCOT review hold remains"),
+                ("PSCAD EMT Model", "Inverter response: Verified / Technical gate cleared"),
+                ("IEEE 2800 Test Packet", "Ride-through: Verified / Packet ready for filing"),
+                ("Part 2 COD Attestation", "Commercial ops declaration: ERCOT IA § 4.2 HOLD"),
+            ],
+        },
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "High-voltage crews idle ($220k/wk). Blocked by inverter firmware DNP3 telemetry lag and ERCOT review queue, not field headcount.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Surge funding will subsidize idle contractor carry. Inject synthetic telemetry packet to clear gate.",
+        "agents": {
+            "COO": {"status": "STANDBY DETECTED", "memo": "Field contractor headcount 100% mobilized but idle at POI. Zero additional labor spend recommended until telemetry clears."},
+            "AFIC": {"status": "CARRYING DRAG", "memo": "Holding burn: $610k/wk. 30-day projected terminal impairment: $2.44M if uncorrected."},
+            "CLO": {"status": "STATUTORY NOTICE", "memo": "ERCOT IA Section 4.2 allows filing an expedited 24-hr Provisional Part 2 COD Waiver packet."},
+            "CTO": {"status": "PARAMETER MISMATCH", "memo": "Inverter firmware 2.41 dropping DNP3 heartbeat packets. Synthetic packet injection rig can clear IEEE 2800 in 4 hours."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("ICCP 4-sec Telemetry", "Heartbeat: 04.0s / Verified"), ("PSCAD EMT Model", "Inverter: BESS-01 / Verified"), ("IEEE 2800 Test Packet", "Ride-through: Verified"), ("Part 2 COD Attestation", "Commercial ops declaration / Assembled")],
+        "checks": ["ICCP telemetry evidence verified", "ICCP telemetry record attached", "PSCAD EMT model evidence verified", "PSCAD EMT model record attached", "IEEE 2800 test packet verified", "IEEE 2800 test record attached", "COD attestation evidence verified", "COD attestation record attached"],
+        "critical_check_idx": 7
+    },
+    "Grid Infrastructure / PJM Cluster": {
+        "exposure": "$142.0M", "base_burn": 940000,
+        "region": "Mid-Atlantic — 500kV Substation Transmission Intertie",
+        "bottleneck": "ASTM D877 Dielectric Testing & Schedule 12 Facility Study Review",
+        "drift_metrics": {"sla_drift": "+3.8 Days", "telemetry_drift": "Nominal", "cost_drift": "+$320k Carry"},
+        "regime": "CAPACITY DEFICIT",
+        "regime_detail": "Regional transformer oil testing lab backlog. True capacity deficit in certified high-voltage testing personnel.",
+        "recommended_surge": 35,
+        "circuit_breaker": "UNLOCKED: Surge funding approved to fly in 3rd-party certified ASTM testing engineers.",
+        "agents": {
+            "COO": {"status": "LABOR SHORTAGE", "memo": "Regional transformer oil labs at 3-week backlog. Emergency surge to mobilize mobile dielectric testing lab required."},
+            "AFIC": {"status": "HIGH WACC DRAG", "memo": "$940k/wk carrying burn across $142M asset. $120k surge yields immediate 90% capital preservation ($846k/wk)."},
+            "CLO": {"status": "SCHEDULE 12 RISK", "memo": "PJM tariff clause triggers daily standby demurrage starting Day 14. Statutory cure notice ready."},
+            "CTO": {"status": "PERIMETER SECURE", "memo": "NERC CIP-005 Electronic Security Perimeter validated and pre-energization interlock telemetry certified."}
+        },
+        "critical_lead": "COO",
+        "artifacts": [("ASTM D877 Dielectric Log", "Breakdown Voltage: >35kV / Verified"), ("Schedule 12 Agreement", "Facility Study Review: Complete"), ("NERC CIP-005 Perimeter", "Electronic Perimeter: Certified"), ("HV Energization Sign-off", "Safety Protocol: Assembled")],
+        "checks": ["Dielectric log evidence verified", "Dielectric log record attached", "Schedule 12 agreement verified", "Schedule 12 record attached", "NERC CIP perimeter verified", "NERC CIP perimeter record attached", "HV energization sign-off verified", "HV energization record attached"],
+        "critical_check_idx": 0
+    },
+    "ACC NZ Scheme / Claims Review": {
+        "exposure": "$210.0M", "base_burn": 480000,
+        "region": "Northern Hub 01 — Auckland Clinical Claims Queue",
+        "bottleneck": "Manual Medical Paper Verification & Sequential Delegation Review",
+        "drift_metrics": {"sla_drift": "+4.2 Days", "telemetry_drift": "Queue Lag +420", "cost_drift": "+$140k Dwell"},
+        "blocker_tags": ["None", "Clinical File Missing", "Third-Party Medical Delay", "Delegation Bottleneck", "Ministerial Waiver Hold"],
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "Assessor capacity adequate; blocked by sequential physical paper routing between Northern Hub and Wellington.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Overtime will not resolve paper queue bottlenecks. Deploy digital triage triage workflow.",
+        "agents": {
+            "COO": {"status": "QUEUE SATURATION", "memo": "68% of delay caused by sequential paper routing. Deploying digital ACC45 intake eliminates queue dwell."},
+            "AFIC": {"status": "EXTENDED DWELL", "memo": "Weekly dwell expense $480k. Triaging complex claims digitally collapses weekly carrying cost by $380k."},
+            "CLO": {"status": "DELEGATION COMPLIANCE", "memo": "Crown Ministerial Delegation Schedule allows automated digital fast-track triage under ACC45 statutory framework."},
+            "CTO": {"status": "INTAKE AUTOMATION", "memo": "Digital ACC45 triage gateway configured; ready for immediate deployment to replace paper routing."}
+        },
+        "critical_lead": "CLO",
+        "artifacts": [("ACC45 Lodgement Log", "Digital Intake: Verified"), ("Clinical Triage Matrix", "Complex Claim Review: Cleared"), ("Vocational Assessment", "Independence Evaluation: Certified"), ("Crown Delegation Cert", "Statutory Sign-off: Assembled")],
+        "checks": ["ACC45 intake evidence verified", "ACC45 intake record attached", "Clinical triage evidence verified", "Clinical triage record attached", "Vocational evaluation verified", "Vocational evaluation record attached", "Crown delegation evidence verified", "Crown delegation record attached"],
+        "critical_check_idx": 6
+    },
+    "Port Logistics / Container Flow": {
+        "exposure": "$64.0M", "base_burn": 320000,
+        "region": "MetroPort — Quay Crane Terminal Node 04",
+        "bottleneck": "EDIFACT BAPLIE 2.2 Deserialization Mismatch & Stevedore Demurrage",
+        "drift_metrics": {"sla_drift": "+1.8 Days", "telemetry_drift": "Berth Lag +6 hrs", "cost_drift": "+$95k Demurrage"},
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "Stevedore crane crews standing by. Blocked by container stowage EDI deserialization mismatch with Port Authority TOS.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Stevedore overtime unnecessary. Correct TOS EDI schema parser to release container flow.",
+        "agents": {
+            "COO": {"status": "CRANE IDLE", "memo": "Quay cranes 03 and 04 standing down due to manifest parse errors. Twin-lift load cell safety systems fully calibrated."},
+            "AFIC": {"status": "VESSEL DEMURRAGE", "memo": "Vessel dwell penalties compounding at $45k/day. Total weekly holding drag: $320k."},
+            "CLO": {"status": "CUSTOMS CLEARANCE", "memo": "Customs electronic holds cleared; sole remaining blocker is EDIFACT BAPLIE data schema certification."},
+            "CTO": {"status": "SCHEMA PATCH READY", "memo": "BAPLIE 2.2 parser translation mapping hotfix prepared; restores automated crane sequence planning instantly."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("BAPLIE 2.2 EDI Log", "Container Manifest: Verified"), ("TOS Berth Sequence", "Berth Allocation Plan: Active"), ("Crane Load Cell Cert", "Calibration: Approved"), ("Quay Release Authority", "Port Authority Gate: Assembled")],
+        "checks": ["BAPLIE manifest verified", "BAPLIE manifest attached", "TOS sequence plan verified", "TOS sequence plan attached", "Load cell calibration verified", "Load cell calibration attached", "Quay release authority verified", "Quay release authority attached"],
+        "critical_check_idx": 1
+    },
+    "Hyperscale Data Center / Power Intertie": {
+        "exposure": "$310.0M", "base_burn": 1450000,
+        "region": "Northern Virginia — 200MW Substation Primary Feeder",
+        "bottleneck": "Medium-Voltage Gas-Insulated Switchgear (GIS) SF6 Gas Leak Attestation",
+        "drift_metrics": {"sla_drift": "+5.0 Days", "telemetry_drift": "Pressure Delta -0.4 bar", "cost_drift": "+$580k WACC"},
+        "regime": "CAPACITY DEFICIT",
+        "regime_detail": "Certified high-voltage GIS pressure technicians unavailable locally. Server racks energized on diesel backup at $210k/day.",
+        "recommended_surge": 40,
+        "circuit_breaker": "UNLOCKED: Surge funding approved for emergency OEM field service flight teams.",
+        "agents": {
+            "COO": {"status": "SPECIALIST DEFICIT", "memo": "Certified OEM GIS switchgear technicians require emergency mobilization from Zurich headquarters."},
+            "AFIC": {"status": "DIESEL BURN", "memo": "Backup diesel generation costing $210k/day + $1.45M weekly WACC drag. Rapid grid energization critical."},
+            "CLO": {"status": "EPA COMPLIANCE", "memo": "EPA Section 608 attestation required for SF6 gas handling before closing breaker onto utility feeder."},
+            "CTO": {"status": "TELEMETRY READY", "memo": "Substation RTU fiber loop and backup power transfer switch logic validated."}
+        },
+        "critical_lead": "COO",
+        "artifacts": [("SF6 Pressure Attestation", "Gas Density: Nominal / Sealed"), ("GIS Dielectric Cert", "HV Pressure Test: Passed"), ("EPA 608 Environmental Sign-off", "Emissions Compliance: Certified"), ("Utility Intertie Release", "Breaker Sync: Assembled")],
+        "checks": ["SF6 density log verified", "SF6 density record attached", "GIS dielectric cert verified", "GIS dielectric cert attached", "EPA compliance verified", "EPA compliance attached", "Breaker sync verified", "Breaker sync attached"],
+        "critical_check_idx": 1
+    },
+    "Offshore Wind / North Sea Subsea HVDC": {
+        "exposure": "$520.0M", "base_burn": 2100000,
+        "region": "Dogger Bank — 1.2GW Offshore Converter Platform POI",
+        "bottleneck": "Subsea HVDC Cable Fiber-Optic DTS Temperature Anomaly & Joint Cert",
+        "drift_metrics": {"sla_drift": "+6.2 Days", "telemetry_drift": "DTS Loop +4.1°C", "cost_drift": "+$890k Demurrage"},
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "Cable-laying vessel costing $180k/day on weather standby. Blocked by optical time-domain reflectometer (OTDR) calibration mismatch.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Vessel demurrage is software-blocked. Recalibrate DTS optical threshold before ordering re-pull.",
+        "agents": {
+            "COO": {"status": "VESSEL STANDBY", "memo": "DP2 installation vessel idle at offshore coordinates. Sensor threshold recalibration needed, not subsea re-lay."},
+            "AFIC": {"status": "MASSIVE DEMURRAGE", "memo": "Platform carrying drag: $2.1M/week. Total exposure $520M. Fast OTDR recalibration saves $1.89M."},
+            "CLO": {"status": "MARITIME PERMIT", "memo": "UK Crown Estate seabed lease work window expires in 11 days. Regulatory extension drafted."},
+            "CTO": {"status": "DTS CALIBRATION", "memo": "Subsea fiber distributed temperature sensing (DTS) optical splice recalibration script ready."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("OTDR Optical Splice Log", "Reflectometry: 0.02dB / Verified"), ("HVDC Joint Pressure Attestation", "Hydrostatic Seal: Passed"), ("Crown Estate Seabed Cert", "Work Permit: Active"), ("Platform COD Protocol", "Energization: Assembled")],
+        "checks": ["OTDR splice log verified", "OTDR splice log attached", "Joint pressure cert verified", "Joint pressure cert attached", "Seabed permit verified", "Seabed permit attached", "Platform COD verified", "Platform COD attached"],
+        "critical_check_idx": 1
+    },
+    "Semiconductor Fab / Cleanroom Commissioning": {
+        "exposure": "$440.0M", "base_burn": 1850000,
+        "region": "Phoenix East — 3nm Lithography Bay Node 02",
+        "bottleneck": "ISO Class 1 Airborne Particle Count Spikes & Ultra-Pure Water TOC Drift",
+        "drift_metrics": {"sla_drift": "+3.1 Days", "telemetry_drift": "TOC +12 ppb Drift", "cost_drift": "+$620k Carry"},
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "EUV tool installation engineers idle on site. Blocked by sensor baseline drift in UPW TOC analyzer.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Cleanroom trades are fully staffed. Recalibrate TOC analyzer sensor baseline.",
+        "agents": {
+            "COO": {"status": "TRADES ON STANDBY", "memo": "ASML EUV installation specialists waiting on bay air cert. Physical particle scrubbing complete."},
+            "AFIC": {"status": "DEPRECIATION DRAG", "memo": "Fab facility depreciation and carrying cost: $1.85M/wk. Quick sensor zero-point fix unblocks $396k/wk fee."},
+            "CLO": {"status": "CHIPS ACT AUDIT", "memo": "Federal grant milestone compliance verification protocol ready for submission upon cleanroom sign-off."},
+            "CTO": {"status": "ANALYZER RECAL", "memo": "Ultra-Pure Water TOC sensor zero-point baseline firmware recalibration code compiled."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("ISO Class 1 Particle Log", "0.1μm Count: <10 / Verified"), ("UPW TOC Analysis", "Total Organic Carbon: <0.5ppb"), ("Cleanroom Pressure Cert", "Positive Pressure: 45Pa"), ("EUV Bay Handover", "Tool Delivery Clearance: Ready")],
+        "checks": ["Particle log evidence verified", "Particle log record attached", "UPW TOC log verified", "UPW TOC log record attached", "Pressure cert verified", "Pressure cert attached", "Bay handover verified", "Bay handover attached"],
+        "critical_check_idx": 3
+    },
+    "Critical Minerals / Lithium Refining Facility": {
+        "exposure": "$175.0M", "base_burn": 720000,
+        "region": "Pilbara — Battery-Grade Hydroxide Calcination Train 01",
+        "bottleneck": "Rotary Kiln Refractory Temperature Gradient & Environmental Water Discharge",
+        "drift_metrics": {"sla_drift": "+4.0 Days", "telemetry_drift": "Kiln Delta +35°C", "cost_drift": "+$240k Carry"},
+        "regime": "CAPACITY DEFICIT",
+        "regime_detail": "Refractory brick masons and pyrometallurgical specialists unavailable in remote zone.",
+        "recommended_surge": 30,
+        "circuit_breaker": "UNLOCKED: Surge budget approved to air-charter specialized kiln refractory repair crew.",
+        "agents": {
+            "COO": {"status": "CREW DEFICIT", "memo": "Kiln refractory hot-spot requires certified rotary kiln refractory masons via FIFO charter."},
+            "AFIC": {"status": "OEM OFFTAKE RISK", "memo": "$720k/wk burn. OEM battery offtake agreement delivery penalty window triggers in 14 days."},
+            "CLO": {"status": "EPA DISCHARGE PERMIT", "memo": "Western Australia DWER discharge license conditions verified and water treatment logs cleared."},
+            "CTO": {"status": "PYROMETRY TELEMETRY", "memo": "Thermal imaging pyrometry array operational and ready for post-repair kiln light-up."}
+        },
+        "critical_lead": "COO",
+        "artifacts": [("Kiln Thermal Attestation", "Temperature Gradient: Nominal"), ("Refractory Masonry Cert", "High-Alumina Brick: Certified"), ("DWER Environmental Permit", "Water Discharge: Approved"), ("Calcination Commissioning", "First Spodumene Feed: Ready")],
+        "checks": ["Kiln thermal log verified", "Kiln thermal log attached", "Masonry cert verified", "Masonry cert attached", "DWER permit verified", "DWER permit attached", "Calcination log verified", "Calcination log attached"],
+        "critical_check_idx": 2
+    },
+    "Rail Freight & Intermodal Corridor": {
+        "exposure": "$95.0M", "base_burn": 390000,
+        "region": "Chicago Intermodal — Automated Switching Yard Track 12",
+        "bottleneck": "Positive Train Control (PTC) Interlocking Transponder Sync Failure",
+        "drift_metrics": {"sla_drift": "+2.0 Days", "telemetry_drift": "PTC Sync -140ms", "cost_drift": "+$110k Delay"},
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "Locomotives and manifest trains held on siding. Blocked by wayside interface unit (WIU) encryption key sync.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Train crews standing by. Re-push WIU cryptographic security certificate to wayside units.",
+        "agents": {
+            "COO": {"status": "YARD GRIDLOCK", "memo": "Classification track blocked. Dispatch crews waiting on wayside clear signal; mechanicals ready."},
+            "AFIC": {"status": "CARRIER PENALTIES", "memo": "Class 1 railroad dwell penalties: $390k/week. Encryption cert push resolves blockage immediately."},
+            "CLO": {"status": "FRA MANDATE", "memo": "Federal Railroad Administration 49 CFR Part 236 safety compliance sign-off prepared."},
+            "CTO": {"status": "PTC KEY ROTATION", "memo": "Wayside Interface Unit PKI encryption certificate re-push payload ready for transmission."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("PTC Transponder Telemetry", "Sync Heartbeat: <10ms / Verified"), ("Wayside PKI Security Cert", "Encryption Key: Active"), ("FRA Part 236 Attestation", "Safety Appliance: Certified"), ("Yard Dispatch Release", "Interlocking Sequence: Active")],
+        "checks": ["PTC telemetry verified", "PTC telemetry attached", "PKI security cert verified", "PKI security cert attached", "FRA attestation verified", "FRA attestation attached", "Yard release verified", "Yard release attached"],
+        "critical_check_idx": 3
+    },
+    "Defense Manufacturing / Naval Shipyard": {
+        "exposure": "$680.0M", "base_burn": 2800000,
+        "region": "Groton — Submarine Drydock Hull Section Hydrostatic Pressure Gate",
+        "bottleneck": "HY-80 High-Yield Steel Ultrasonic NDT Weld Defect Verification",
+        "drift_metrics": {"sla_drift": "+7.5 Days", "telemetry_drift": "NDT Queue +18 Welds", "cost_drift": "+$1.1M Labor Drag"},
+        "regime": "CAPACITY DEFICIT",
+        "regime_detail": "Shortage of Level III Ultrasonic NDT certified radiographers with active security clearances.",
+        "recommended_surge": 50,
+        "circuit_breaker": "UNLOCKED: Surge authorized for cleared Level III NDT radiographers from secondary naval facility.",
+        "agents": {
+            "COO": {"status": "CLEARANCE BOTTLENECK", "memo": "Hull assembly blocked. Emergency travel surge for Top Secret-cleared Level III NDT radiographers approved."},
+            "AFIC": {"status": "DRYDOCK CARRY", "memo": "Drydock occupancy carrying cost: $2.8M/week. Total capital recovery potential: $2.52M client retention."},
+            "CLO": {"status": "NAVSEA COMPLIANCE", "memo": "NAVSEA Technical Publication 248 welding attestation and MIL-STD compliance packet assembled."},
+            "CTO": {"status": "PHASED ARRAY DATA", "memo": "Phased Array Ultrasonic Testing (PAUT) digital radiography imaging database operational."}
+        },
+        "critical_lead": "COO",
+        "artifacts": [("PAUT NDT Weld Map", "Volumetric Scan: 100% / Passed"), ("Level III Radiographer Cert", "NAVSEA Qualified: Verified"), ("NAVSEA 248 Compliance", "Hull Integrity: Approved"), ("Drydock Flooding Authority", "Submersion Gate: Assembled")],
+        "checks": ["NDT weld map verified", "NDT weld map attached", "Radiographer cert verified", "Radiographer cert attached", "NAVSEA attestation verified", "NAVSEA attestation attached", "Flooding authority verified", "Flooding authority attached"],
+        "critical_check_idx": 2
+    },
+    "Municipal Water & Desalination Plant": {
+        "exposure": "$115.0M", "base_burn": 450000,
+        "region": "Carlsbad — 50MGD Seawater Reverse Osmosis Train 04",
+        "bottleneck": "Polyamide RO Membrane Silt Density Index (SDI) & Boron Rejection Cert",
+        "drift_metrics": {"sla_drift": "+3.4 Days", "telemetry_drift": "SDI Index 4.8 (High)", "cost_drift": "+$135k Chemical"},
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "Plant operators waiting on coagulant dosing algorithm calibration from chemical dosing vendor.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Membrane flush crews ready. Update chemical feed dosing profile in SCADA system.",
+        "agents": {
+            "COO": {"status": "MEMBRANES IDLE", "memo": "High-pressure pump trains in recirc mode. Coagulant dosing software fix will bring SDI under 3.0."},
+            "AFIC": {"status": "CHEMICAL BLEED", "memo": "Holding drag: $450k/week in idle power and pretreatment chemicals. Rapid gate clear preserves $405k."},
+            "CLO": {"status": "POTABLE WATER STD", "memo": "Title 22 California Drinking Water Standards compliance testing certification ready."},
+            "CTO": {"status": "SCADA DOSING PROFILE", "memo": "PLC chemical feed PID loop tuning parameter payload ready for deployment."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("SDI Membrane Permeate Log", "SDI15: 2.8 / Passed"), ("Boron Rejection Analysis", "Boron: <0.5mg/L / Verified"), ("Title 22 Potable Water Cert", "Health Standard: Approved"), ("Municipal Distribution Gate", "Water Delivery Release: Active")],
+        "checks": ["SDI permeate log verified", "SDI permeate log attached", "Boron analysis verified", "Boron analysis attached", "Title 22 cert verified", "Title 22 cert attached", "Distribution gate verified", "Distribution gate attached"],
+        "critical_check_idx": 1
+    },
+    "Commercial Aviation / Fleet AOG Turnaround": {
+        "exposure": "$160.0M", "base_burn": 850000,
+        "region": "Dallas MRO Hub — Widebody CFM LEAP-1B Engine Mount Replacement",
+        "bottleneck": "FAA Form 8130-3 Dual-Release Airworthiness Tag Missing Serial Match",
+        "drift_metrics": {"sla_drift": "+2.2 Days", "telemetry_drift": "Gate Hold +48 hrs", "cost_drift": "+$340k AOG"},
+        "regime": "UPSTREAM DEPENDENCY BLOCK",
+        "regime_detail": "A&P mechanics on floor with tools in hand. Aircraft on Ground (AOG) due to digital certificate serial mismatch.",
+        "recommended_surge": 0,
+        "circuit_breaker": "LOCKED: Mechanics are standing by. OEM digital signature API re-transmission clears tail release.",
+        "agents": {
+            "COO": {"status": "MECHANICS IDLE", "memo": "Airframe mechanics complete; aircraft cannot be signed into service without dual-release airworthiness tag."},
+            "AFIC": {"status": "AOG BLEED", "memo": "AOG revenue loss + leased engine carry: $850k/week ($121k/day). Direct 90% client recovery: $765k."},
+            "CLO": {"status": "FAA 14 CFR 43.9", "memo": "FAA airworthiness conformity and maintenance log entry ready for Chief Inspector release."},
+            "CTO": {"status": "SPEC2000 API PATCH", "memo": "ATA Spec 2000 digital certificate XML exchange gateway re-push configured and ready."}
+        },
+        "critical_lead": "CTO",
+        "artifacts": [("FAA 8130-3 Airworthiness Tag", "Dual Release: Verified"), ("Spec 2000 Digital Trace", "Engine Mount Serial: Matched"), ("Chief Inspector Release", "Airworthiness: Signed"), ("Flight Operations Handover", "Tail In-Service: Ready")],
+        "checks": ["FAA 8130-3 evidence verified", "FAA 8130-3 record attached", "Spec 2000 trace verified", "Spec 2000 trace attached", "Inspector release verified", "Inspector release attached", "Flight ops handover verified", "Flight ops handover attached"],
+        "critical_check_idx": 3
+    }
+}
+
+DEFAULT_SURGICAL_BUDGET = {
+    "blunt_spend_warning": "🛑 Blunt Spend Trap: Adding 14 electrician headcounts costs $220,000/wk but cannot resolve firmware communication errors.",
+    "surgical_line_items": [
+        {"item": "Inverter OEM Senior Firmware Specialist (On-Site)", "cost": 15000, "vendor": "PowerGrid Dynamics"},
+        {"item": "Synthetic DNP3 Packet Injection Test Rig Lease (48-hr)", "cost": 20000, "vendor": "Substation Systems Corp"},
+    ],
+    "total_surgical_cost": 35000,
+    "capital_efficiency_ratio": "15.7x Value Preserved vs. Surgical Spend",
+}
+
+SURGICAL_REMEDIATION_SUMMARIES = {
+    "ERCOT BESS / storage operations": "Inverter OEM Specialist and Synthetic DNP3 Packet Injection Rig active on site.",
+    "Grid Infrastructure / PJM Cluster": "Mobile ASTM dielectric testing laboratory and certified high-voltage engineers active at the intertie.",
+    "ACC NZ Scheme / Claims Review": "Crown Delegation Statutory Review Panel convened; specialized triage adjudicators active on site.",
+    "Port Logistics / Container Flow": "BAPLIE 2.2 parser translation team and Port Authority schema-certification specialists active at the terminal.",
+    "Hyperscale Data Center / Power Intertie": "OEM GIS field-service flight team active on site for SF6 remediation and pressure attestation.",
+    "Offshore Wind / North Sea Subsea HVDC": "DTS optical recalibration specialists active with the offshore OTDR verification crew.",
+    "Semiconductor Fab / Cleanroom Commissioning": "UPW TOC analyzer firmware specialists and cleanroom recertification team active on site.",
+    "Critical Minerals / Lithium Refining Facility": "FIFO rotary-kiln refractory masons and pyrometry test team active at the calcination train.",
+    "Rail Freight & Intermodal Corridor": "WIU cryptographic certificate team and supervised PTC interlocking retest crew active in the yard.",
+    "Defense Manufacturing / Naval Shipyard": "Top Secret-cleared Level III NDT radiographer and PAUT disposition team active at the drydock.",
+    "Municipal Water & Desalination Plant": "PLC chemical-feed tuning specialists and Title 22 confirmation sampling team active at the plant.",
+    "Commercial Aviation / Fleet AOG Turnaround": "OEM digital-signature API specialist and Chief Inspector priority review team active at the MRO hub.",
+}
+
+for book_name, book_data in DATA_MATRIX.items():
+    book_data.setdefault("critical_lead", None)
+    book_data.setdefault("critical_check_idx", None)
+    book_data.setdefault("checklist", book_data["checks"])
+    book_data.setdefault("surgical_remediation_summary", SURGICAL_REMEDIATION_SUMMARIES[book_name])
+    book_data.setdefault("surgical_budget", {
+        **DEFAULT_SURGICAL_BUDGET,
+        "surgical_line_items": [item.copy() for item in DEFAULT_SURGICAL_BUDGET["surgical_line_items"]],
+    })
+    book_data.setdefault("phase_2", {
+        "bottleneck": "Phase 2: Secondary Recovery Queue Awaiting Director Approval",
+        "target_director": "CTO",
+        "focus": "Systems Revalidation",
+        "failure_mode": "Secondary queue gate remains unresolved after Phase 1 release.",
+        "recommended_resolution": "Stage the follow-on technical remediation and route the issue to the designated executive director for approval.",
+        "regime": "SECONDARY QUEUE HOLD",
+        "regime_detail": "Sensing layer detected a phase-two process gate beyond initial commissioning. The site team has cleared the first wave but a second dependency remains in the queue.",
+        "checks": ["Secondary queue gate evidence verified", "Secondary queue gate record attached", "Director-approved remediation deployed", "Systems revalidation test passed", "Field engineer secondary sign-off verified", "Field engineer secondary sign-off attached", "Secondary compliance attestation verified", "Secondary compliance attestation attached"],
+    })
+
+BLOCKER_DIAGNOSTICS = {
+    "ERCOT BESS / storage operations": {"technical_root_cause": "Inverter firmware v2.41 drops DNP3 heartbeat telemetry packets during the 4-second polling cycle.", "missing_artifact_name": "Signed Part 2 COD Commercial Operation Attestation and 4-hour clean packet trace.", "standby_impact": "High-voltage switchgear crew idle at the Permian POI; $220,000/week idle carry.", "gm_remediation_request": "Authorize dispatch of the Synthetic Packet Injection Rig or file the expedited 24-hour Provisional Part 2 COD Waiver under ERCOT IA Section 4.2."},
+    "Grid Infrastructure / PJM Cluster": {"technical_root_cause": "ASTM D877 dielectric validation is stalled in the regional transformer-oil laboratory backlog.", "missing_artifact_name": "Certified ASTM D877 dielectric breakdown log and executed Schedule 12 Facility Study Review.", "standby_impact": "Energization contractor pool remains idle at the 500kV intertie; daily standby demurrage begins on Day 14.", "gm_remediation_request": "Authorize emergency mobilization of a mobile ASTM testing laboratory with third-party certified high-voltage engineers."},
+    "ACC NZ Scheme / Claims Review": {"technical_root_cause": "Sequential physical-paper routing between Northern Hub and Wellington is holding the statutory delegation chain.", "missing_artifact_name": "Executed Crown delegation certificate and digitally lodged ACC45 evidence record.", "standby_impact": "Clinical assessors are idle behind the paper queue; claims dwell is carrying $480,000/week.", "gm_remediation_request": "Authorize the digital ACC45 fast-track triage workflow and obtain the delegated ministerial approval for complex cases."},
+    "Port Logistics / Container Flow": {"technical_root_cause": "The Port Authority TOS rejects the EDIFACT BAPLIE 2.2 stowage manifest because of a deserialization schema mismatch.", "missing_artifact_name": "Certified BAPLIE translation trace and Port Authority quay release authority.", "standby_impact": "Quay cranes 03 and 04 and stevedore crews are standing down; vessel demurrage is $45,000/day.", "gm_remediation_request": "Authorize deployment of the BAPLIE 2.2 parser translation hotfix and obtain Port Authority schema certification."},
+    "Hyperscale Data Center / Power Intertie": {"technical_root_cause": "GIS SF6 pressure validation cannot close because no certified OEM technician is available to attest the gas-leak remediation.", "missing_artifact_name": "Signed SF6 pressure attestation and EPA Section 608 environmental handling sign-off.", "standby_impact": "Server racks remain on diesel backup at $210,000/day while the primary feeder crew awaits breaker close.", "gm_remediation_request": "Authorize an emergency OEM GIS field-service flight team to complete the pressure test and issue the SF6 attestation."},
+    "Offshore Wind / North Sea Subsea HVDC": {"technical_root_cause": "The subsea DTS optical splice calibration is misreading the temperature threshold during OTDR verification.", "missing_artifact_name": "Calibrated OTDR optical splice log and signed HVDC joint pressure attestation.", "standby_impact": "The DP2 cable-laying vessel is weather-standby offshore at $180,000/day.", "gm_remediation_request": "Authorize remote deployment of the DTS optical recalibration script and retain the vessel through the verification retest."},
+    "Semiconductor Fab / Cleanroom Commissioning": {"technical_root_cause": "The ultra-pure-water TOC analyzer has a zero-point sensor baseline drift, invalidating cleanroom release evidence.", "missing_artifact_name": "Signed UPW TOC calibration trace and ISO Class 1 cleanroom handover record.", "standby_impact": "ASML EUV installation specialists are idle in Phoenix East while the 3nm bay remains uncertified.", "gm_remediation_request": "Authorize immediate TOC analyzer firmware recalibration and an expedited cleanroom recertification run."},
+    "Critical Minerals / Lithium Refining Facility": {"technical_root_cause": "A rotary-kiln refractory hot spot exceeds the allowed thermal gradient and requires certified masonry repair.", "missing_artifact_name": "Post-repair kiln thermal attestation and certified refractory masonry record.", "standby_impact": "Calcination commissioning is held in Pilbara with FIFO maintenance crews awaiting a safe light-up window.", "gm_remediation_request": "Authorize a FIFO air charter for certified rotary-kiln refractory masons and release the post-repair pyrometry test."},
+    "Rail Freight & Intermodal Corridor": {"technical_root_cause": "Wayside Interface Unit encryption keys are out of sync, preventing Positive Train Control interlocking confirmation.", "missing_artifact_name": "Reissued Wayside PKI security certificate and PTC transponder synchronization trace.", "standby_impact": "Locomotives and manifest trains are held on siding at Chicago Intermodal, carrying $390,000/week in dwell penalties.", "gm_remediation_request": "Authorize the WIU cryptographic certificate re-push and a supervised PTC interlocking retest."},
+    "Defense Manufacturing / Naval Shipyard": {"technical_root_cause": "HY-80 weld disposition is waiting on a Top Secret-cleared Level III ultrasonic NDT radiographer.", "missing_artifact_name": "NAVSEA-qualified Level III radiographer certificate and signed PAUT weld-map disposition.", "standby_impact": "Drydock hull assembly is held with $2.8 million/week occupancy carry.", "gm_remediation_request": "Authorize emergency travel for a cleared Level III NDT radiographer from the secondary naval facility."},
+    "Municipal Water & Desalination Plant": {"technical_root_cause": "The SCADA chemical-feed PID profile is overdosing coagulant, leaving the membrane SDI above the potable-water release threshold.", "missing_artifact_name": "Verified SDI permeate log and signed boron rejection analysis.", "standby_impact": "High-pressure pump trains remain in recirculation while pretreatment chemicals and idle power carry $450,000/week.", "gm_remediation_request": "Authorize deployment of the PLC chemical-feed tuning payload and an accelerated Title 22 confirmation sample."},
+    "Commercial Aviation / Fleet AOG Turnaround": {"technical_root_cause": "The ATA Spec 2000 gateway cannot match the FAA Form 8130-3 dual-release serial to the replacement engine mount.", "missing_artifact_name": "Matched FAA Form 8130-3 dual-release tag and signed Spec 2000 digital trace.", "standby_impact": "A&P mechanics and the widebody aircraft remain AOG at Dallas MRO; revenue and lease carry is $850,000/week.", "gm_remediation_request": "Authorize an OEM digital-signature API retransmission and Chief Inspector priority review for tail release."},
+}
+
+for book_name, blocker_diagnostic in BLOCKER_DIAGNOSTICS.items():
+    DATA_MATRIX[book_name]["blocker_diagnostic"] = blocker_diagnostic
+
+# Post-resolution narratives for the Tier 1 "bottleneck cured" diagnostic strip.
+POST_RESOLUTION_NARRATIVES = {
+    "ERCOT BESS / storage operations": {
+        "what_was_done": "Marcus Vance deployed the Synthetic Telemetry Injection Rig to clear the Inverter Firmware v2.41 DNP3 packet drop, restoring the 4-second ICCP heartbeat and clean PSCAD EMT validation.",
+        "next_directive": "David Chen must file the 24-hour ERCOT IA § 4.2 Part 2 COD waiver attestation to formally close the interconnection queue and release final settlement.",
+    },
+}
+
+
+DATA_MATRIX["ERCOT BESS / storage operations"]["critical_lead"] = "CTO"
+DATA_MATRIX["ERCOT BESS / storage operations"]["phase_2"] = {
+    "bottleneck": "Phase 2: 100-Hour Continuous C-Rate Thermal Run & Cell Balancing",
+    "target_director": "CTO",
+    "focus": "Thermal Firmware Patch",
+    "failure_mode": "Thermal drift continues after Phase 1 release, leaving the battery in a continuous C-rate balancing loop.",
+    "recommended_resolution": "Deploy the thermal firmware patch and re-run continuous balancing under the 100-hour validation window.",
+    "regime": "SECONDARY QUEUE HOLD",
+    "regime_detail": "Phase 1 telemetry locks are cleared, but cell balancing still fails under sustained C-rate stress and must be corrected before final release.",
+    "checks": ["Pyrometry thermal sensor array calibrated", "Continuous C-rate load cell stable at 345kV", "Coolant flow delta within +/- 1.5 deg C bounds", "Cell balancing active equalization verified", "Thermal runaway mitigation circuit verified", "Inverter thermal log attached", "SCADA pyrometry stream attached", "100-Hour continuous run certificate attached"],
+    "critical_check_idx": 7,
+}
+DATA_MATRIX["ERCOT BESS / storage operations"]["phase2_burn"] = "183k"
+DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["critical_lead"] = "COO"
+DATA_MATRIX["Grid Infrastructure / PJM Cluster"]["phase_2"] = {
+    "bottleneck": "Phase 2: Substation Interlock Logic & Relay Trip Calibration",
+    "target_director": "COO",
+    "focus": "Protection Crew Mobilization",
+    "failure_mode": "Relay trip calibration remains misaligned after the initial energization gate and is creating a protection logic hold.",
+    "recommended_resolution": "Mobilize the protection crew and complete interlock logic calibration before re-entering the dispatch sequence.",
+    "regime": "SECONDARY QUEUE HOLD",
+    "regime_detail": "The transmission study is resolved, but the live relay logic remains out of calibration and can short-circuit the next commissioning stage.",
+    "checks": ["Protection crew mobilized on site", "Relay trip calibration evidence verified", "Relay trip calibration record attached", "Interlock logic sequence validated", "SCADA dispatch handshake confirmed", "Backup protection scheme armed", "Live relay test log evidence verified", "Live relay test log record attached"],
+}
+DATA_MATRIX["ACC NZ Scheme / Claims Review"]["critical_lead"] = "CLO"
+DATA_MATRIX["ACC NZ Scheme / Claims Review"]["phase_2"] = {
+    "bottleneck": "Phase 2: Complex Vocational Rehabilitation Delegation Gate",
+    "target_director": "CLO",
+    "focus": "Ministerial Waiver",
+    "failure_mode": "Complex vocational rehabilitation approvals are still caught behind a ministerial delegation gate after intake triage is complete.",
+    "recommended_resolution": "Secure the delegated ministerial waiver and release the complex case review workflow to the next action queue.",
+    "regime": "SECONDARY QUEUE HOLD",
+    "regime_detail": "The digital triage lane is active, but high-complexity vocational cases remain pending ministerial delegation and cannot advance without legal approval.",
+    "checks": ["Ministerial waiver request filed", "Ministerial waiver evidence verified", "Ministerial waiver record attached", "Complex case review reassigned", "Vocational rehabilitation plan updated", "Independent medical review scheduled", "Delegated authority sign-off verified", "Delegated authority sign-off attached"],
+}
+DATA_MATRIX["Critical Minerals / Lithium Refining Facility"]["critical_lead"] = "COO"
+DATA_MATRIX["Defense Manufacturing / Naval Shipyard"]["critical_lead"] = "COO"
+DATA_MATRIX["Commercial Aviation / Fleet AOG Turnaround"]["critical_lead"] = "CTO"
+
+FRONTLINE_CHECKLIST_SPEC = [
+    {"id": "ITEM-01", "num": 1, "db_col": "check_1", "title": "Frontline SOP Check #1", "action": "Ministerial waiver request filed"},
+    {"id": "ITEM-02", "num": 2, "db_col": "check_2", "title": "Frontline SOP Check #2", "action": "Ministerial waiver evidence verified"},
+    {"id": "ITEM-03", "num": 3, "db_col": "check_3", "title": "Frontline SOP Check #3", "action": "Ministerial waiver record attached"},
+    {"id": "ITEM-04", "num": 4, "db_col": "check_4", "title": "Frontline SOP Check #4", "action": "Complex case review reassigned"},
+    {"id": "ITEM-05", "num": 5, "db_col": "check_5", "title": "Frontline SOP Check #5", "action": "Vocational rehabilitation plan updated"},
+    {"id": "ITEM-06", "num": 6, "db_col": "check_6", "title": "Frontline SOP Check #6", "action": "Independent medical review scheduled"},
+    {"id": "ITEM-07", "num": 7, "db_col": "check_7", "title": "Frontline SOP Check #7", "action": "Delegated authority sign-off verified"},
+    {"id": "ITEM-08", "num": 8, "db_col": "check_8", "title": "Frontline SOP Check #8", "action": "Delegated authority sign-off attached"},
+]
+
+GM_DIRECTIVE_ROSTER = {
+    "ERCOT BESS / storage operations": {
+        "command_post_title": "General Managers Command Post",
+        "cadence_chair": "CTO Oversight / Grid Systems Lead",
+        "assigned_managers": [
+            {
+                "name": "Marcus Vance",
+                "title": "General Manager - Grid Interconnection & Telemetry",
+                "domain": "Inverter Firmware & IEEE 2800 Compliance",
+                "action_item": "Deploy synthetic telemetry injection rig to clear DNP3 packet drop.",
+                "actor_id": "GM_MARCUS_VANCE",
+            },
+            {
+                "name": "Elena Rostova",
+                "title": "General Manager - Field Operations & Contractor Mobilization",
+                "domain": "High-Voltage Crews & Permian Substation",
+                "action_item": "Hold high-voltage contractor standby; authorize surge funding freeze.",
+                "actor_id": "GM_ELENA_ROSTOVA",
+            },
+            {
+                "name": "David Chen",
+                "title": "General Manager - Regulatory & Market Operations",
+                "domain": "ERCOT Protocol & Queue Adjudication",
+                "action_item": "Submit bypass attestation to ERCOT review queue once telemetry packet clears.",
+                "actor_id": "GM_DAVID_CHEN",
+            },
+        ],
+    },
+}
+
+# Defensive Session State Initialization
+for key, default in [
+    ('ledger', []), ('cleared_books', {}), ('directive_issued', {}),
+    ('board_escalation', {}), ('board_quorum', {}), ('active_phase', {}), ('phase_2_authorized', {}),
+    ('surgical_spend_authorized', {}), ('surgical_purchase_orders', {}),
+    ('detection_time', {}), ('override_logged', {}),
+    ('nav_tier_selection', '1️⃣ Tier 1 | Chairman Directorate'),
+    ('current_tier', 1),
+    ('last_sync', datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")),
+    ('override_active', False), ('master_surge', 0),
+    ('auto_override_triggered', False), ('master_surge_cap', 0), ('safe_harbor_active', False),
+    ('escalation_transmitted', False), ('sop_checklist', [False] * 8),
+    ('current_book', None), ('current_checklist_phase', None), ('checklist_labels', []),
+    ('pipeline_step_1', 'PENDING'), ('pipeline_step_2', 'PENDING'),
+    ('pipeline_step_3', 'PENDING'), ('pipeline_step_4', 'PENDING'),
+    ('chairman_override_active', False), ('quorum_votes', [False, False, False, False]),
+    ('capital_circuit_breaker', 'ARMED'), ('contractor_billing_frozen', {}),
+    ('checklist_db', {}),
+    ('interlock_state', {
+        "operating_book": "ERCOT BESS / storage operations",
+        "total_exposure": 88_500_000,
+        "idle_burn_rate_hr": 123.00,
+        "pipeline_status": "HELD_FOR_VERIFICATION",
+        "vectors": {
+            "material": {"status": "FAIL", "telemetry_id": "MODBUS_40012", "detail": "Rack 4 breaker open"},
+            "labor": {"status": "PASS", "cert_id": "IBEW_MASTER_8841", "detail": "Witnessed by R. Vance"},
+            "design": {"status": "PASS", "spec_rev": "ERCOT_REV_D", "detail": "Handshake parameters valid"},
+            "admin": {"status": "HELD", "assignee": "David Chen", "detail": "Pending physical breaker fix"},
+        },
+        "dispute_ledger": [
+            {
+                "id": "STOP-2026-0904-01",
+                "tier_origin": 3,
+                "source_entity": "Inverter Bank 4B (Modbus 40012)",
+                "declared_by": "Site Ops (Check #8 marked complete)",
+                "contested_by": "SCADA Daemon (Telemetry registers 0V open)",
+                "contention": "Technician reported mechanical closure; electrical contact did not verify.",
+                "status": "ESCALATED_TO_DIRECTORATE",
+                "timestamp_utc": "2026-09-04T09:00:14Z",
+            }
+        ],
+    }),
+]:
+    if key not in st.session_state or (isinstance(default, dict) and not isinstance(st.session_state[key], dict)) or (isinstance(default, list) and not isinstance(st.session_state[key], list)):
+        st.session_state[key] = default
+
+
+def init_pipeline_state(force_reset=False):
+    if "pipeline" not in st.session_state or force_reset:
+        st.session_state.pipeline = {
+            "operating_book": "ERCOT BESS / Storage Operations",
+            "total_exposure": 88_500_000,
+            "idle_burn_rate_hr": 0.00,
+            "burn_start_utc": datetime.now(timezone.utc).isoformat(),
+            "status": "NOMINAL",
+            "vectors": {
+                "material": {
+                    "status": "PENDING",
+                    "telemetry_source": "SCADA_STANDBY",
+                    "detail": "Pre-commissioning; awaiting site energization.",
+                },
+                "labor": {
+                    "status": "PASS",
+                    "telemetry_source": "BADGE_RFID_8841",
+                    "detail": "Certified crew logged on site.",
+                },
+                "design": {
+                    "status": "PASS",
+                    "telemetry_source": "ERCOT_REVD",
+                    "detail": "Interconnect configuration verified.",
+                },
+                "administrative": {
+                    "status": "PENDING",
+                    "telemetry_source": "FIDUCIARY_QUEUE",
+                    "detail": "Awaiting frontline SOP completion.",
+                },
+            },
+            "active_stoppage": None,
+            "audit_ledger": [],
+        }
+
+
+init_pipeline_state()
+
+# Navigation Callbacks
+TIER_VIEWS = {
+    1: "1️⃣ Tier 1 | Chairman Directorate",
+    2: "2️⃣ Tier 2 | General Management",
+    3: "3️⃣ Tier 3 | Site Operations",
+    4: "4️⃣ Forensic Audit Ledger",
+}
+VIEW_TO_TIER = {view_name: tier_num for tier_num, view_name in TIER_VIEWS.items()}
+
+
+def nav_to(target_view):
+    st.session_state['nav_tier_selection'] = target_view
+    st.session_state['current_tier'] = VIEW_TO_TIER.get(target_view, st.session_state.get('current_tier', 1))
+
+
+# Persistent, view-independent checklist store: st.session_state["checklist_db"][book][1..8] -> bool.
+def get_check(book_name, check_num):
+    return st.session_state["checklist_db"].get(book_name, {}).get(check_num, False)
+
+
+def set_check(book_name, check_num, value):
+    st.session_state["checklist_db"].setdefault(book_name, {i: False for i in range(1, 9)})[check_num] = bool(value)
+    # Keep any already-instantiated Tier 3 checkbox widget in sync with the persistent store.
+    st.session_state[f"chk_widget_{book_name}_{check_num}"] = bool(value)
+
+
+def update_check(b_id, c_id):
+    st.session_state["checklist_db"][b_id][c_id] = st.session_state[f"chk_widget_{b_id}_{c_id}"]
+
+
+def get_sop_readiness(book_name):
+    if book_name not in st.session_state["checklist_db"]:
+        st.session_state["checklist_db"][book_name] = {i: False for i in range(1, 9)}
+    return sum(1 for v in st.session_state["checklist_db"][book_name].values() if v)
+
+
+def log_pipeline_audit_event(action, actor, rationale):
+    timestamp = datetime.now(timezone.utc).isoformat()
+    raw_payload = f"{timestamp}|{actor}|{action}|{rationale}"
+    digest = hashlib.sha256(raw_payload.encode()).hexdigest()
+    st.session_state["pipeline"]["audit_ledger"].append({
+        "timestamp": timestamp,
+        "actor": actor,
+        "action": action,
+        "rationale": rationale,
+        "sha256": digest,
+    })
+
+
+def render_diagnostic_strip():
+    vectors = st.session_state["pipeline"]["vectors"]
+    st.markdown("### Forensic Ground Truth Vectors")
+    columns = st.columns(4)
+
+    def status_badge(status):
+        return "PASS" if status == "PASS" else "FAIL" if status == "FAIL" else "HELD"
+
+    vector_labels = [
+        ("Material Integrity", "material"),
+        ("Labor / Badging", "labor"),
+        ("Design / Spec Rev", "design"),
+        ("Fiduciary / Admin", "administrative"),
+    ]
+    for column, (label, vector_name) in zip(columns, vector_labels):
+        vector = vectors[vector_name]
+        column.metric(label, status_badge(vector["status"]), vector["telemetry_source"])
+        column.caption(vector["detail"])
+
+
+def render_pipeline_console():
+    pipeline = st.session_state["pipeline"]
+    stoppage = pipeline["active_stoppage"]
+
+    render_diagnostic_strip()
+    st.divider()
+    if pipeline["status"] == "CIRCUIT_BREAKER_HALT" and stoppage:
+        st.error(f"MANDATORY GOVERNANCE CIRCUIT BREAKER TRIPPED: {stoppage['id']}")
+        detail_col, metric_col = st.columns([2, 1])
+        with detail_col:
+            st.markdown(f"**Originating Source:** `{stoppage['source_device']}` ({stoppage['tier_origin']})")
+            st.markdown(f"**Contention:** {stoppage['dispute_summary']}")
+            st.markdown(f"**Field Claim:** {stoppage['field_claim']}")
+            st.markdown(f"**Machine Ground Truth:** `{stoppage['machine_ground_truth']}`")
+            st.warning(f"**Fiduciary Impact:** {stoppage['fiduciary_risk']}")
+        with metric_col:
+            st.metric("Idle Holding Burn", f"${pipeline['idle_burn_rate_hr']:.2f}/hr", "Fiduciary Protection Carry")
+            st.info("Status: Filing timer suspended. Personal officer liability insulated.")
+
+        st.markdown("#### Tier 1 Directorate Executive Determination")
+        action_col, certify_col = st.columns(2)
+        with action_col:
+            if st.button("🔧 Order Targeted Field Remediation (Tier 3)", use_container_width=True, key="pipeline_remediation"):
+                advisory = pipeline.get("latest_counsel_advisory")
+                is_concordant = advisory and advisory.get("concordant_action") == "DIRECT_FIELD_REMEDIATION"
+                concordance_tag = "ALIGNED (AFFIRMATIVE SAFE HARBOR SEALED)" if is_concordant else "INDEPENDENT_DIRECTORATE_ACTION"
+                log_pipeline_audit_event(
+                    "DIRECT_FIELD_REMEDIATION",
+                    "Chairman Directorate",
+                    f"SCADA mismatch on {stoppage['source_device']}. Dispatched work order to verify auxiliary relay. [Concordance: {concordance_tag}]",
+                )
+                st.session_state["pipeline"]["active_stoppage"]["field_claim"] = "Tier 3 remediation dispatched"
+                st.success(f"Work order dispatched. Concordance: {concordance_tag}")
+                st.rerun()
+        with certify_col:
+            can_certify = pipeline["vectors"]["material"]["status"] == "PASS"
+            if st.button(
+                "⚖️ Certify Regulatory Filing (Statutory Telemetry Release)",
+                disabled=not can_certify,
+                help="Locked: Material SCADA discrepancy must be resolved before filing can legally proceed.",
+                use_container_width=True,
+                key="pipeline_certify",
+            ):
+                advisory = pipeline.get("latest_counsel_advisory")
+                is_concordant = advisory and advisory.get("concordant_action") == "STATUTORY_DIRECTORATE_OVERRIDE"
+                concordance_tag = "ALIGNED (STATUTORY SAFE HARBOR SEALED)" if is_concordant else "DEVIATION_WARNING"
+                pipeline["status"] = "CERTIFIED"
+                pipeline["vectors"]["administrative"]["status"] = "PASS"
+                log_pipeline_audit_event(
+                    "STATUTORY_DIRECTORATE_OVERRIDE",
+                    "Chairman Directorate",
+                    f"All physical SCADA vectors verified. Human administrative hold bypassed on immutable telemetry proof. [Concordance: {concordance_tag}]",
+                )
+                st.success(f"Regulatory filing submitted to ERCOT. Concordance: {concordance_tag}")
+                st.rerun()
+    elif pipeline["status"] == "CERTIFIED":
+        st.success("PIPELINE CLEARED: Commercial Operation Date (COD) certified and fully compliant with ERCOT.")
+        if pipeline["audit_ledger"]:
+            st.json(pipeline["audit_ledger"][-1])
+
+
+def trigger_sync():
+    st.session_state['last_sync'] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    st.toast("Forensic State Sync Completed across all 12 Books & Agents", icon="🔄")
+
+def reset_book(book_name):
+    st.session_state['cleared_books'][book_name] = False
+    st.session_state['directive_issued'][book_name] = False
+    st.session_state['board_escalation'][book_name] = False
+    st.session_state['board_quorum'][book_name] = False
+    st.session_state['override_active'] = False
+    st.session_state['master_surge'] = 0
+    st.session_state['auto_override_triggered'] = False
+    st.session_state['master_surge_cap'] = 0
+    st.session_state['safe_harbor_active'] = False
+    st.session_state['escalation_transmitted'] = False
+    st.session_state['active_phase'][book_name] = 1
+    st.session_state['phase_2_authorized'][book_name] = False
+    st.session_state['surgical_spend_authorized'][book_name] = False
+    st.session_state['surgical_purchase_orders'][book_name] = []
+    st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
+    st.session_state['override_logged'][book_name] = False
+    st.session_state['nav_tier_selection'] = '1️⃣ Tier 1 | Chairman Directorate'
+    st.session_state['current_tier'] = 1
+    st.session_state["checklist_db"][book_name] = {i: False for i in range(1, 9)}
+    for i in range(8):
+        st.session_state[f"chk_{book_name}_{i}"] = False
+        st.session_state[f"chk2_{book_name}_{i}"] = False
+        st.session_state.pop(f"chk_widget_{book_name}_{i + 1}", None)
+    for c in ['ops', 'afic', 'risk', 'tech']:
+        st.session_state[f"comm_{book_name}_{c}"] = False
+    init_pipeline_state(force_reset=True)
+
+
+def get_phase_context(book_name):
+    active_phase = st.session_state['active_phase'].get(book_name, 1)
+    phase_2 = DATA_MATRIX[book_name].get('phase_2', {
+        'bottleneck': 'Phase 2: Secondary Recovery Queue Awaiting Director Approval',
+        'target_director': 'CTO',
+        'focus': 'Systems Revalidation',
+        'failure_mode': 'Secondary queue gate remains unresolved after Phase 1 release.',
+        'recommended_resolution': 'Deploy the follow-on technical remediation and route approval to the designated executive director.',
+        'regime': 'SECONDARY QUEUE HOLD',
+        'regime_detail': 'The site team has cleared Phase 1 but a second dependency remains pending executive approval.',
+        'checks': ['Secondary queue gate evidence verified', 'Secondary queue gate record attached', 'Director-approved remediation deployed', 'Systems revalidation test passed', 'Field engineer secondary sign-off verified', 'Field engineer secondary sign-off attached', 'Secondary compliance attestation verified', 'Secondary compliance attestation attached'],
+    })
+    return active_phase, phase_2
+
+
+AUDIT_DB_PATH = "audit_ledger.db"
+LEGAL_PRIVILEGE_TAG = "PRIVILEGED — STATUTORY RISK MANAGEMENT WORK PRODUCT"
+
+
+def init_db():
+    conn = sqlite3.connect(AUDIT_DB_PATH)
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS audit_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            book TEXT,
+            t0_detection TEXT,
+            t1_resolution TEXT,
+            governance_lag TEXT,
+            hesitation_cost REAL,
+            authority TEXT,
+            sha256_hash TEXT,
+            legal_privilege_tag TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
+def log_audit_event(book, t0_detection, t1_resolution, governance_lag, hesitation_cost, authority, sha256_hash, legal_privilege_tag=LEGAL_PRIVILEGE_TAG):
+    conn = sqlite3.connect(AUDIT_DB_PATH)
+    conn.execute(
+        "INSERT INTO audit_ledger (timestamp, book, t0_detection, t1_resolution, governance_lag, hesitation_cost, authority, sha256_hash, legal_privilege_tag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            book, t0_detection, t1_resolution, governance_lag, hesitation_cost, authority, sha256_hash, legal_privilege_tag
+        )
+    )
+    conn.commit()
+    conn.close()
+
+
+def fetch_audit_events():
+    conn = sqlite3.connect(AUDIT_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute("SELECT * FROM audit_ledger ORDER BY id DESC").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+init_db()
+engine.init_db()
+
+
+def append_forensic_entry(book_name, authority, resolution_time=None):
+    detection_time = st.session_state['detection_time'].get(book_name)
+    if detection_time is None:
+        detection_time = datetime.now(timezone.utc)
+        st.session_state['detection_time'][book_name] = detection_time
+    if resolution_time is None:
+        resolution_time = datetime.now(timezone.utc)
+
+    gov_lag = resolution_time - detection_time
+    lag_seconds = max(gov_lag.total_seconds(), 0)
+    hesitation_cost = (DATA_MATRIX[book_name]['base_burn'] / (7 * 86400)) * lag_seconds
+
+    forensic_entry = {
+        "Book": book_name,
+        "T0 Agent Detection": detection_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "T1 Action Resolved": resolution_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "Governance Lag": f"{lag_seconds:.0f} seconds",
+        "Hesitation Cost ($)": f"${hesitation_cost:,.2f}",
+        "Authorizing Authority": authority,
+    }
+    signature_payload = "|".join([
+        forensic_entry["Book"],
+        forensic_entry["T0 Agent Detection"],
+        forensic_entry["T1 Action Resolved"],
+        forensic_entry["Governance Lag"],
+        forensic_entry["Hesitation Cost ($)"],
+        forensic_entry["Authorizing Authority"],
+    ])
+    forensic_entry["SHA-256 Signature"] = hashlib.sha256(signature_payload.encode()).hexdigest()
+    st.session_state['ledger'].append(forensic_entry)
+    log_audit_event(
+        book=book_name,
+        t0_detection=forensic_entry["T0 Agent Detection"],
+        t1_resolution=forensic_entry["T1 Action Resolved"],
+        governance_lag=forensic_entry["Governance Lag"],
+        hesitation_cost=hesitation_cost,
+        authority=authority,
+        sha256_hash=forensic_entry["SHA-256 Signature"],
+    )
+    st.session_state['detection_time'][book_name] = datetime.now(timezone.utc)
+
+
+def parse_cost_drift_dollars(cost_drift_str):
+    match = re.search(r'\$([\d.]+)([kM]?)', cost_drift_str)
+    if not match:
+        return 0.0
+    value, suffix = match.groups()
+    value = float(value)
+    if suffix == 'k':
+        value *= 1_000
+    elif suffix == 'M':
+        value *= 1_000_000
+    return value
+
+# Sidebar Controls
+st.sidebar.title("FACTORY COMMAND POST")
+st.sidebar.caption("Autonomous Capital Defense Control Plane")
+
+book = st.sidebar.selectbox("Operating book (Top 12 Sectors)", list(DATA_MATRIX.keys()), key="book_select")
+book_data = DATA_MATRIX[book]
+if book not in st.session_state["checklist_db"]:
+    st.session_state["checklist_db"][book] = {i: False for i in range(1, 9)}
+
+if 'active_phase' not in st.session_state:
+    st.session_state['active_phase'] = {}
+if 'phase_2_authorized' not in st.session_state:
+    st.session_state['phase_2_authorized'] = {}
+st.session_state['active_phase'].setdefault(book, 1)
+st.session_state['phase_2_authorized'].setdefault(book, False)
+active_phase, phase_2 = get_phase_context(book)
+
+# Mathematical Algorithmic Override: fiduciary-ratio / hesitation-lag safe-harbor trigger
+critical_lead = book_data.get('critical_lead')
+is_critical = critical_lead is not None
+weekly_burn = book_data['base_burn']
+terminal_loss = (weekly_burn / 7.0) * 90
+fiduciary_ratio = terminal_loss / (weekly_burn * 0.10)
+
+if st.session_state['detection_time'].get(book) is None:
+    st.session_state['detection_time'][book] = datetime.now(timezone.utc)
+detection_time = st.session_state['detection_time'][book]
+hesitation_seconds = max((datetime.now(timezone.utc) - detection_time).total_seconds(), 0)
+work_order_id = f"WO-{hashlib.sha256(book.encode()).hexdigest()[:12].upper()}"
+
+if (
+    st.session_state['current_book'] != book
+    or st.session_state['current_checklist_phase'] != active_phase
+):
+    checklist_labels = phase_2["checks"] if active_phase == 2 else book_data["checks"]
+    persisted_checklist = engine.get_or_create_sop_state(work_order_id, book)
+    st.session_state['current_book'] = book
+    st.session_state['current_checklist_phase'] = active_phase
+    st.session_state['checklist_labels'] = checklist_labels
+    for index in range(len(checklist_labels)):
+        set_check(book, index + 1, persisted_checklist[f"check_{index + 1}"])
+
+sla_seconds_map = {"COO": 86400, "AFIC": 86400, "CLO": 259200, "CTO": 14400}
+sla_seconds = sla_seconds_map.get(critical_lead, 86400)
+cost_drift_dollars = parse_cost_drift_dollars(book_data['drift_metrics']['cost_drift'])
+
+st.session_state['auto_override_triggered'] = False
+if not st.session_state['cleared_books'].get(book, False) and (hesitation_seconds > sla_seconds or (is_critical and fiduciary_ratio > 10.0)):
+    st.session_state['auto_override_triggered'] = True
+    st.session_state['master_surge_cap'] = min(50, int(cost_drift_dollars / 5000))
+
+sync_c1, sync_c2 = st.sidebar.columns(2)
+sync_c1.button("🔄 Sync State", on_click=trigger_sync)
+sync_c2.button("⚠️ Reset Book", on_click=reset_book, args=(book,))
+st.sidebar.caption(f"Last Audited Sync: `{st.session_state['last_sync']}`")
+
+st.sidebar.markdown("---")
+
+TIER_OPTIONS = [
+    "1️⃣ Tier 1 | Chairman Directorate",
+    "2️⃣ Tier 2 | General Management",
+    "3️⃣ Tier 3 | Site Operations",
+    "4️⃣ Forensic Audit Ledger",
+]
+if "nav_tier_selection" not in st.session_state:
+    st.session_state["nav_tier_selection"] = TIER_OPTIONS[0]
+
+# The radio is the single source of truth for navigation; it is never force-synced from current_tier.
+view = st.sidebar.radio("Command view", options=TIER_OPTIONS, key="nav_tier_selection")
+st.session_state['current_tier'] = VIEW_TO_TIER.get(view, st.session_state.get('current_tier', 1))
+
+force_scroll_to_top()
+
+st.sidebar.markdown("---")
+
+# Chairman Directorate Override is available only for active Stage 1 execution.
+override = st.session_state['override_active'] or st.session_state.get('safe_harbor_active', False)
+master_surge = st.session_state['master_surge']
+
+stage_key = f"inspected_stage_{book}"
+is_stage_1_execution = "Tier 1" in view and st.session_state.get(stage_key, active_phase) == 1
+
+if is_stage_1_execution and st.session_state['auto_override_triggered'] and override:
+    st.sidebar.markdown(f'''
+    <span class="badge badge-safe-harbor">🛡️ ALGORITHMIC SAFE-HARBOR OVERRIDE (Fiduciary Ratio: {fiduciary_ratio:.1f}x | Auto-Authorized)</span>
+    ''', unsafe_allow_html=True)
+
+if is_stage_1_execution and override and not st.session_state['override_logged'].get(book, False):
+    append_forensic_entry(book, "Chairman Directorate Override", datetime.now(timezone.utc))
+    engine.record_ledger_entry(
+        book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
+        "CHAIRMAN_STATUTORY_SAFEHARBOR_OVERRIDE", work_order_id, detection_time,
+    )
+    st.session_state['override_logged'][book] = True
+elif is_stage_1_execution and not override:
+    st.session_state['override_logged'][book] = False
+
+quorum_count = sum([st.session_state.get(f"comm_{book}_{c}", False) for c in ['ops', 'afic', 'risk', 'tech']])
+is_quorum = (quorum_count == 4) or override
+if is_stage_1_execution:
+    st.session_state['board_quorum'][book] = is_quorum
+
+# Pipeline state used across tiers for gating and capital-friction checks
+is_cleared = st.session_state['cleared_books'].get(book, False)
+is_directed = st.session_state['directive_issued'].get(book, False)
+sop_state = engine.get_or_create_sop_state(work_order_id, book)
+has_active_capital_friction = (
+    sop_state["active_blocker"] not in ("None", "None (Nominal Telemetry)") or not sop_state["check_8"]
+) and not sop_state["is_submitted"]
+tier_1_nominal = not has_active_capital_friction or weekly_burn == 0 or not active_phase
+frontline_checklist = phase_2["checks"] if active_phase == 2 else [item["action"] for item in FRONTLINE_CHECKLIST_SPEC]
+frontline_check_count = len(frontline_checklist)
+frontline_checks_complete = all(
+    get_check(book, index + 1)
+    for index in range(frontline_check_count)
+)
+gm_dispatch_complete = (
+    st.session_state['pipeline_step_2'] == "DISPATCHED"
+    or st.session_state['surgical_spend_authorized'].get(book, False)
+)
+agent_attestation_ready = gm_dispatch_complete and frontline_checks_complete
+
+# Financial Computations
+base_burn = book_data["base_burn"]
+active_surge = master_surge if override else (book_data["recommended_surge"] if is_quorum else 0)
+
+if active_phase == 2:
+    burn_display = f"${book_data.get('phase2_burn', '183k')} / wk"
+    burn_sub = "Active Carry Defense"
+    client_realization = f"${base_burn * 0.9:,.0f}"
+    phoenix_fee = f"${base_burn * 0.1:,.0f}"
+    sop_badge = "0 / 8"
+elif is_cleared:
+    burn_display = "$0 / wk"
+    burn_sub = "✅ Cleared & Resolved"
+    client_realization = f"${base_burn * 0.9:,.0f}"
+    phoenix_fee = f"${base_burn * 0.1:,.0f}"
+    sop_badge = "8 / 8"
+else:
+    surge_dollars = base_burn * (active_surge / 100.0)
+    net_burn = base_burn - surge_dollars
+    burn_display = f"${net_burn:,.0f} / wk"
+    burn_sub = f"⚠️ {active_surge}% Surge Active (${surge_dollars:,.0f})" if active_surge > 0 else "Active Carrying Drag"
+    client_realization = f"${base_burn * 0.9:,.0f}"
+    phoenix_fee = f"${base_burn * 0.1:,.0f}"
+    sop_badge = f"{get_sop_readiness(book)} / 8"
+
+if "Tier 3" not in view and "Ledger" not in view:
+    # Top Metric Cards Bar
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Total Exposure", book_data["exposure"], "Board Limit")
+    m2.metric("Holding Burn", burn_display, burn_sub)
+    m3.metric("Client Realization", client_realization, "90% target" if not is_cleared else "Preserved")
+    m4.metric("Phoenix Fee", phoenix_fee, "10% accrual" if not is_cleared else "Earned")
+    m5.metric("SOP Readiness", sop_badge, "Field Gate")
+
+sop_readiness = get_sop_readiness(book)
+if "Tier 1" in view:
+    if book == "ERCOT BESS / storage operations":
+        render_pipeline_console()
+
+    with st.expander("🧪 Scenario Test Harness (Demo Controls)", expanded=False):
+        if st.button("Load Scenario 2: Contractual Deadlock (ERCOT IA § 4.2 COD Attestation)", key=f"load_deadlock_{book}"):
+            for i in range(1, 7):
+                set_check(book, i, True)
+            set_check(book, 7, False)
+            set_check(book, 8, False)
+            st.session_state['pipeline_step_3'] = "IN PROGRESS"
+            st.rerun()
+
+    gm_roster = GM_DIRECTIVE_ROSTER.get(book, {}).get("assigned_managers") or [
+        {"name": "GM 1", "title": "General Manager - Domain 1"},
+        {"name": "GM 2", "title": "General Manager - Domain 2"},
+        {"name": "GM 3", "title": "General Manager - Domain 3"},
+    ]
+    gm_domains = [
+        {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5], "stage_label": "Grid Telemetry", "sla_seconds": 45 * 60},
+        {"manager": gm_roster[1], "check_indices": [2, 3], "stage_label": "Substation Rigs", "sla_seconds": 3.0 * 3600},
+        {"manager": gm_roster[2], "check_indices": [6, 7], "stage_label": "Regulatory Filing", "sla_seconds": 90 * 60},
+    ]
+    idle_carry_rate_per_sec = book_data['base_burn'] / 604800.0
+    for domain_idx, domain in enumerate(gm_domains):
+        domain["done"] = all(get_check(book, i + 1) for i in domain["check_indices"])
+        sla_key = f"domain_sla_start_{book}_{domain_idx}"
+        if domain["done"]:
+            st.session_state.pop(sla_key, None)
+            domain["status"] = "CLEARED"
+            domain["elapsed_seconds"] = 0.0
+        else:
+            if sla_key not in st.session_state:
+                st.session_state[sla_key] = datetime.now(timezone.utc)
+            elapsed_seconds = (datetime.now(timezone.utc) - st.session_state[sla_key]).total_seconds()
+            domain["elapsed_seconds"] = elapsed_seconds
+            domain["status"] = "BREACHED" if elapsed_seconds > domain["sla_seconds"] else "ON SCHEDULE"
+            domain["idle_carry"] = idle_carry_rate_per_sec * elapsed_seconds
+    breached_domains = [d for d in gm_domains if d.get("status") == "BREACHED"]
+
+    if sop_readiness == 8 or st.session_state['pipeline_step_3'] == "COMPLETED":
+        narrative = POST_RESOLUTION_NARRATIVES.get(book, {})
+        blocker_diagnostic = book_data.get("blocker_diagnostic", {})
+        what_was_done = narrative.get(
+            "what_was_done",
+            f"Frontline team executed the remediation on site: {blocker_diagnostic.get('gm_remediation_request', 'Corrective action deployed and independently verified.')}",
+        )
+        next_directive = narrative.get(
+            "next_directive",
+            f"File the {blocker_diagnostic.get('missing_artifact_name', 'required certification')} with the governing authority to close the compliance loop and release final settlement.",
+        )
+        matching_ledger_entries = [
+            row for row in st.session_state.get('ledger', [])
+            if (row.get('Book') or row.get('Operating Book')) == book
+        ]
+        crypto_hash = None
+        if matching_ledger_entries:
+            last_entry = matching_ledger_entries[-1]
+            crypto_hash = last_entry.get('Cryptographic Hash') or last_entry.get('SHA-256 Signature')
+        crypto_seal_display = f"Verified SHA-256 Ledger Entry ({crypto_hash[:12]}…)" if crypto_hash else "Verified SHA-256 Ledger Entry"
+        holding_burn_arrested = f"${book_data['base_burn']:,.0f} / week"
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #00FFA3; background: rgba(0,255,163,0.05);">
+            <strong style="color: #00FFA3;">🟢 ACTIVE REMEDIATION CONFIRMED — BOTTLENECK CURED & AUDITED</strong><br><br>
+            <strong>🛠️ WHAT WAS DONE (Forensic Root Cause & Execution):</strong><br>
+            <small>{what_was_done}</small><br><br>
+            <strong>🛡️ CAPITAL DEFENDED & VELOCITY RECOVERY:</strong><br>
+            <small>
+                Holding Burn Arrested: {holding_burn_arrested}<br>
+                Governance Latency Gain: Reduced from peak lag to nominal (&lt;20s)<br>
+                Cryptographic Seal: {crypto_seal_display}
+            </small><br><br>
+            <strong>🎯 PRESCRIPTIVE DIRECTIVE (WHAT NEEDS TO BE DONE NEXT):</strong><br>
+            <small>{next_directive}</small>
+        </div>
+        ''', unsafe_allow_html=True)
+    elif sop_readiness == 6:
+        idle_burn_per_week = book_data['base_burn']
+        idle_burn_per_sec = idle_burn_per_week / 604800.0
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+            <strong style="color: #FF4B4B;">🚨 EXECUTIVE DEADLOCK: ERCOT IA § 4.2 PART 2 COD ATTESTATION</strong><br><br>
+            <strong>⚠️ CONFLICT:</strong><br>
+            <small>Elena Rostova (Warranty forfeiture risk) vs. David Chen (Regulatory filing exposure).</small><br><br>
+            <strong>⏱️ IDLE CONTRACTOR CARRY:</strong><br>
+            <small>Accruing at ${idle_burn_per_week:,.0f}/week (${idle_burn_per_sec:.2f}/sec).</small><br><br>
+            <strong>🛡️ DIRECTORATE DIRECTIVE:</strong><br>
+            <small>Consensus impossible at GM level. Consult the Delaware § 141 Safe Harbor counsel advisory console below for targeted remediation and filing certification.</small>
+        </div>
+        ''', unsafe_allow_html=True)
+    elif breached_domains:
+        breach_lines = "<br>".join(
+            f"{d['manager']['name']} ({d['stage_label']}): held {d['elapsed_seconds'] / 60.0:.0f} min "
+            f"(SLA {d['sla_seconds'] / 60.0:.0f} min) — idle carry ${d['idle_carry']:,.0f}"
+            for d in breached_domains
+        )
+        total_breach_carry = sum(d['idle_carry'] for d in breached_domains)
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+            <strong style="color: #FF4B4B;">🚨 CRITICAL PATH STALL: GOVERNANCE DRIFT DETECTED</strong><br><br>
+            <strong>⚠️ PACING BOTTLENECK (SLA BREACHED):</strong><br>
+            <small>{breach_lines}</small><br><br>
+            <strong>⏱️ REAL-TIME DOLLAR IMPACT:</strong><br>
+            <small>Accrued idle carry: ${total_breach_carry:,.0f}.</small><br><br>
+            <strong>🛡️ DIRECTORATE DIRECTIVE:</strong><br>
+            <small>Delaware § 141 Safe Harbor counsel review required. Use the advisory console below to order remediation or certify the regulatory filing.</small>
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        brief_col, matrix_col = st.columns(2)
+        with brief_col:
+            st.markdown('''
+            <div class="card" style="border: 2px solid #FF4B4B; background: rgba(255,75,75,0.08);">
+                <strong style="color: #FF4B4B;">BOARD STATUTORY BRIEF</strong><br><br>
+                <strong>Fiduciary defense active:</strong><br>
+                <small>The operational hold is an active fiduciary defense protecting $88.5M from $1M/day false-filing penalties under the Business Judgment Rule.</small><br><br>
+                <strong>Active Holding Carry Cost: Fiduciary Risk Mitigation</strong><br>
+                <small>Maintain the hold until physical telemetry and the statutory filing record are reconciled.</small>
+            </div>
+            ''', unsafe_allow_html=True)
+        with matrix_col:
+            st.markdown('''
+            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.08);">
+                <strong style="color: var(--amber);">INDIVIDUAL MANAGEMENT ACTION MATRIX</strong><br><br>
+                <strong>Marcus Vance</strong><br>
+                <small>SCADA/ICCP ingestion: validate the telemetry packet and reconcile the live interlock state.</small><br><br>
+                <strong>David Chen</strong><br>
+                <small>Attestation seal pending SCADA: hold the statutory seal until telemetry evidence is verified.</small><br><br>
+                <strong>Site Operations</strong><br>
+                <small>Physical latch verification: inspect and certify the breaker auxiliary contact closure.</small>
+            </div>
+            ''', unsafe_allow_html=True)
+
+
+    stage_cols = st.columns(3)
+    for stage_col, domain in zip(stage_cols, gm_domains):
+        if domain["done"]:
+            stage_col.markdown(
+                f"<div class='card'><strong>{domain['stage_label']}</strong><br><span class='badge badge-success'>✅ Cleared</span></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            stage_col.markdown(
+                f"<div class='card'><strong>{domain['stage_label']}</strong><br><span class='badge badge-danger'>Active Holding Carry Cost: Fiduciary Risk Mitigation</span></div>",
+                unsafe_allow_html=True,
+            )
+
+    st.markdown(f'''
+    <div class="card" style="border: 2px solid #F5A623; background: #161b22; box-shadow: 0 0 18px rgba(245,166,35,0.25);">
+        <strong style="color: #F5A623;">⚖️ DELAWARE § 141 SAFE HARBOR COUNSEL ADVISORY CONSOLE</strong><br>
+        <small style="color: var(--text-muted);">Counsel advisory for targeted field remediation and regulatory filing certification</small>
+    </div>
+    ''', unsafe_allow_html=True)
+    override_rationale_key = f"override_rationale_{book}"
+    if override_rationale_key not in st.session_state:
+        st.session_state[override_rationale_key] = (
+            "Counsel-reviewed targeted field remediation and certification of the expedited provisional ERCOT IA § 4.2 filing."
+            if sop_readiness == 6 else ""
+        )
+    override_rationale = st.text_input(
+        "Counsel Advisory / Filing Rationale",
+        placeholder="e.g., Order Tier 3 remediation and certify the expedited ERCOT § 4.2 filing to arrest the holding burn.",
+        key=override_rationale_key,
+    )
+    console_col_1, console_col_2 = st.columns(2)
+    with console_col_1:
+        if st.button("🛠️ Order Targeted Field Remediation (Tier 3)", type="primary", use_container_width=True, key=f"field_remediation_{book}"):
+            for i in range(1, 9):
+                set_check(book, i, True)
+            st.session_state[f"blocker_tag_{book}"] = "None (Nominal Telemetry)"
+            for domain_idx in range(len(gm_domains)):
+                st.session_state.pop(f"domain_sla_start_{book}_{domain_idx}", None)
+            engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
+            engine.record_ledger_entry(
+                book, 1, "COUNSEL_ADVISORY", "Delaware § 141 Safe Harbor Counsel",
+                "DELAWARE_141_TARGETED_FIELD_REMEDIATION", work_order_id, detection_time,
+                notes=override_rationale or "Targeted Tier 3 field remediation ordered without stated rationale.",
+            )
+            st.session_state['pipeline_step_3'] = "COMPLETED"
+            st.session_state['pipeline_step_4'] = "READY"
+            st.success("Targeted Tier 3 field remediation ordered and sealed to the forensic ledger.")
+            st.rerun()
+    with console_col_2:
+        if st.button("📄 Certify Regulatory Filing", use_container_width=True, key=f"certify_filing_{book}"):
+            engine.record_ledger_entry(
+                book, 1, "COUNSEL_ADVISORY", "Delaware § 141 Safe Harbor Counsel",
+                "DELAWARE_141_REGULATORY_FILING_CERTIFICATION", work_order_id, detection_time,
+                notes=override_rationale or "Regulatory filing certification issued without stated rationale.",
+            )
+            st.success("Regulatory filing certification sealed to the forensic ledger.")
+            st.rerun()
+
+
+# Regional Bottleneck Blueprint & Live Drift Radar
+phase_context = phase_2 if active_phase == 2 else book_data
+current_bottleneck = phase_context.get('bottleneck', book_data['bottleneck'])
+current_regime = phase_context.get('regime', book_data['regime'])
+current_regime_detail = phase_context.get('regime_detail', book_data['regime_detail'])
+current_circuit_breaker = phase_context.get('circuit_breaker', book_data['circuit_breaker'])
+phase_banner_title = "PHASE 2 SECONDARY BOTTLENECK & FORENSIC BLUEPRINT" if active_phase == 2 else "REGIONAL BOTTLENECK & FORENSIC BLUEPRINT"
+
+# Interactive 3-Stage Bottleneck Inspector — deprecated in Tier 1 in favor of the dual-state diagnostic banner; retained for Tier 3 field intelligence.
+if "Tier 3" in view and is_directed:
+    stage_key = f"inspected_stage_{book}"
+    st.session_state.setdefault(stage_key, active_phase)
+
+    def set_inspected_stage(stage_num):
+        st.session_state[stage_key] = stage_num
+
+    stage3_title = "Part 2 COD Attestation" if book == "ERCOT BESS / storage operations" else f"{book_data['artifacts'][-1][0]} Commercial Release"
+    stage_pills = (
+        {
+            1: ("Stage 1: ✅ PSCAD/DNP3 Telemetry (CLEARED & AUDITED)", "Phase 1 technical gate settled"),
+            2: ("Stage 2: 🚨 ACTIVE BLOCKER (100-Hr Thermal Run & Balancing)", phase_2['bottleneck']),
+            3: ("Stage 3: 🔒 Commercial Gate (Part 2 COD Attestation)", stage3_title),
+        }
+        if book == "ERCOT BESS / storage operations" and active_phase == 2
+        else {
+            1: ("Stage 1: Active Blocker", book_data['bottleneck']),
+            2: ("Stage 2: Secondary Queue", phase_2['bottleneck']),
+            3: ("Stage 3: Commercial Gate", stage3_title),
+        }
+    )
+    st.subheader("🔍 Interactive 3-Stage Bottleneck Inspector")
+    p1, p2, p3 = st.columns(3)
+    for col, stage_num in zip((p1, p2, p3), (1, 2, 3)):
+        title, subtitle = stage_pills[stage_num]
+        is_selected = st.session_state[stage_key] == stage_num
+        col.button(
+            f"{'🔴 ' if is_selected else ''}{title}\n{subtitle}",
+            key=f"stage_pill_{book}_{stage_num}",
+            on_click=set_inspected_stage,
+            args=(stage_num,),
+            type="primary" if is_selected else "secondary",
+            use_container_width=True
+        )
+
+    inspected_stage = st.session_state[stage_key]
+    if inspected_stage == 1:
+        current_bottleneck = book_data['bottleneck']
+        current_regime = book_data['regime']
+        current_regime_detail = book_data['regime_detail']
+        current_circuit_breaker = book_data['circuit_breaker']
+        phase_banner_title = "STAGE 1 · ACTIVE BLOCKER FORENSIC BLUEPRINT"
+    elif inspected_stage == 2:
+        current_bottleneck = phase_2['bottleneck']
+        current_regime = phase_2['regime']
+        current_regime_detail = phase_2['regime_detail']
+        current_circuit_breaker = phase_2['recommended_resolution']
+        phase_banner_title = "STAGE 2 · SECONDARY QUEUE FORENSIC BLUEPRINT"
+    else:
+        current_bottleneck = f"Terminal COD & Offtake Gate — {stage3_title} Pending Final Settlement"
+        current_regime = "TERMINAL SETTLEMENT GATE"
+        current_regime_detail = "Commercial operations date and offtake agreement release require both Phase 1 and Phase 2 verification packets fully executed and Board-ratified before funds are released."
+        current_circuit_breaker = "LOCKED: Submit the final Tier 3 Phase 2 SOP checklist and Board audit sign-off to trigger terminal settlement release."
+        phase_banner_title = "STAGE 3 · COMMERCIAL GATE FORENSIC BLUEPRINT"
+
+    stage_checks = book_data['checks'] if inspected_stage == 1 else phase_2['checks'] if inspected_stage == 2 else [artifact[0] for artifact in book_data['artifacts']]
+    stage_artifacts = book_data['artifacts'] if inspected_stage != 2 else [(check, "Required Phase 2 verification") for check in phase_2['checks']]
+    telemetry_threshold = book_data['drift_metrics']['telemetry_drift'] if inspected_stage == 1 else "Phase 2 verification packet complete" if inspected_stage == 2 else "All control artifacts verified before terminal release"
+    safety_interlock = book_data['agents']['CTO']['memo'] if inspected_stage == 1 else phase_2['recommended_resolution'] if inspected_stage == 2 else f"Maintain terminal release lock until {stage3_title} verification is complete."
+    st.markdown(f'''
+    <div class="agent-card" style="border-color: var(--teal);">
+        <span class="badge badge-active">🛠️ ENGINEERING FIELD COPILOT | STAGE {inspected_stage}</span><br><br>
+        <strong>Raw Telemetry Threshold:</strong> {telemetry_threshold}<br><br>
+        <strong>Required Tooling:</strong> {', '.join(artifact[0] for artifact in stage_artifacts[:4])}<br><br>
+        <strong>Physical Safety Interlocks:</strong> {safety_interlock}<br><br>
+        <strong>Frontline Verification Checklist:</strong> {'; '.join(stage_checks)}
+    </div>
+    ''', unsafe_allow_html=True)
+
+if "Tier 3" not in view:
+    st.markdown(f'''
+    <div class="blueprint-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:0.8rem; font-family:monospace; color:#ff7b72; font-weight:bold; letter-spacing:1px;">{phase_banner_title}</span>
+        <span class="badge {'badge-danger' if 'DEPENDENCY' in current_regime or 'QUEUE' in current_regime else 'badge-active'}">REGIME: {current_regime}</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap: 14px;">
+        <div>
+            <span class="badge badge-active">ACTIVE NODE</span><br>
+            <strong>{book_data['region']}</strong><br><br>
+            <small style="color:var(--text-muted);">
+                SLA Drift: <strong>{book_data['drift_metrics']['sla_drift']}</strong><br>
+                Telemetry: <strong>{book_data['drift_metrics']['telemetry_drift']}</strong><br>
+                Cost Drift: <strong>{book_data['drift_metrics']['cost_drift']}</strong>
+            </small>
+        </div>
+        <div>
+            <strong style="color: #ff7b72;">{current_bottleneck}</strong><br>
+            <small>{current_regime_detail}</small>
+        </div>
+        <div>
+            <span class="badge badge-agent">CAPITAL DEFENSE CIRCUIT BREAKER</span><br>
+            <small><em>{current_circuit_breaker}</em></small>
+        </div>
+    </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+# ----------------- TIER 1: CHAIRMAN DIRECTORATE -----------------
+if "Tier 1" in view:
+    force_scroll_to_top()
+    sop_data = sop_state
+    is_blocked = has_active_capital_friction
+
+    st.header("Chairman Command Post")
+    if is_blocked:
+        st.error(f"""
+        ### CRITICAL PATH STALL DETECTED
+        **Active Blocker:** {sop_data["active_blocker"]}<br>
+        **Holding Burn Rate:** ${base_burn:,.0f} / week<br>
+        **Site Impact:** {sum(sop_data[f"check_{index}"] for index in range(1, 9))}/8 SOP checks cleared. Work order is held at the frontline gate.
+        """)
+    else:
+        st.success("### PIPELINE OPERATIONAL - NO CAPITAL FRICTION DETECTED")
+
+    st.divider()
+    st.subheader("Executive Action Required")
+    summary_column, action_column = st.columns([2, 1])
+    with summary_column:
+        st.markdown(f"""
+        **Operational Diagnosis:**<br>
+        {book_data['bottleneck']}
+
+        **Fiduciary Recommendation:**<br>
+        Execute the Chairman Statutory Safe-Harbor to authorize the targeted GM remediation, unblock {book_data['exposure']} in capital, and stop the ${base_burn:,.0f}/wk holding burn.
+        """)
+    with action_column:
+        if is_blocked:
+            if st.button("EXECUTE STATUTORY OVERRIDE", type="primary", use_container_width=True):
+                engine.finalize_tier3_submission(work_order_id)
+                engine.record_ledger_entry(
+                    book, 1, "CHAIRMAN_EXEC", "Authorized Board Chair / Statutory Delegate",
+                    "CHAIRMAN_STATUTORY_SAFEHARBOR_OVERRIDE", work_order_id, detection_time,
+                )
+                st.session_state['safe_harbor_active'] = True
+                st.session_state['override_active'] = True
+                st.session_state['board_quorum'][book] = True
+                st.session_state['cleared_books'][book] = True
+                st.session_state['pipeline_step_3'] = "VERIFIED"
+                st.session_state['pipeline_step_4'] = "COMMITTED"
+                st.balloons()
+                st.success("Override executed. Pipeline cleared and logged to the forensic ledger.")
+                st.rerun()
+        else:
+            st.info("No executive intervention required at this time.")
+
+    if is_quorum or tier_1_nominal:
+        st.markdown('''
+        <div class="card" style="border: 2px solid var(--green); background: rgba(63,185,80,0.08);">
+            <strong style="color: var(--green);">✅ GOVERNANCE STATE: NOMINAL / AUTHORIZED</strong>
+        </div>
+        ''', unsafe_allow_html=True)
+        st.button(
+            "➡️ Proceed to Tier 2: General Management Directives",
+            on_click=nav_to,
+            args=('2️⃣ Tier 2 | General Management',),
+            type="primary",
+            use_container_width=True,
+        )
+
+# ----------------- TIER 2: GENERAL MANAGEMENT -----------------
+elif "Tier 2" in view:
+    force_scroll_to_top()
+    roster_config = GM_DIRECTIVE_ROSTER.get(book, {
+        "command_post_title": "General Managers Command Post",
+        "cadence_chair": f"{critical_lead or 'General Management'} Oversight",
+        "assigned_managers": [],
+    })
+    st.header(f"📋 {roster_config['command_post_title']}")
+    st.caption(f"Active Oversight: {roster_config['cadence_chair']} | Operating Book: {book}")
+
+    if active_phase == 2:
+        target_director = phase_2['target_director']
+        st.markdown(f'''
+        <div class="card" style="border-left: 4px solid var(--amber);">
+            <strong>ℹ️ GM ADVISORY:</strong> Sensing layer detected Phase 2 gate requirement. Staged pending {target_director} approval.
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    if not (is_quorum or tier_1_nominal):
+        st.error("🔒 **TIER 2 LOCKED:** Board Quorum has not been authorized in Tier 1. Return to Chairman Directorate to establish quorum.")
+    else:
+        directive = phase_2['recommended_resolution'] if active_phase == 2 else book_data['circuit_breaker']
+        technical_instruction = phase_2['failure_mode'] if active_phase == 2 else book_data['agents']['CTO']['memo']
+        release_target = (
+            f"[{FRONTLINE_CHECKLIST_SPEC[book_data['critical_check_idx']]['id']}] "
+            f"{FRONTLINE_CHECKLIST_SPEC[book_data['critical_check_idx']]['title']}: "
+            f"[{FRONTLINE_CHECKLIST_SPEC[book_data['critical_check_idx']]['action']}]"
+            if active_phase != 2
+            else f"Frontline SOP Check #{book_data['critical_check_idx'] + 1}: "
+            f"[{phase_2['checks'][book_data['critical_check_idx']]}]"
+        )
+        vendor_sla_hours = max(1, int(sla_seconds / 3600))
+        hourly_carry = base_burn / 168
+        st.markdown(f'''
+        <div class="card" style="border-left: 4px solid var(--teal);">
+            <span class="badge badge-active">ACTIVE ENGINEERING DIRECTIVE</span><br><br>
+            <strong>Work Order:</strong> {directive}<br>
+            <strong>Technical Execution:</strong> {technical_instruction}<br>
+            <strong>Frontline Release Target:</strong> {release_target}
+        </div>
+        ''', unsafe_allow_html=True)
+
+        assigned_managers = roster_config["assigned_managers"]
+        if assigned_managers:
+            st.subheader("Lead GM Assignments")
+            manager_columns = st.columns(len(assigned_managers))
+            for manager_column, manager in zip(manager_columns, assigned_managers):
+                manager_column.markdown(f'''
+                <div class="card" style="min-height: 170px;">
+                    <strong style="color: var(--teal);">{manager['name']}</strong><br>
+                    <small style="color: var(--text-muted);">{manager['title']}</small><br><br>
+                    <small><strong>Domain:</strong> {manager['domain']}</small><br><br>
+                    <small style="color: var(--green);"><strong>Directive:</strong> {manager['action_item']}</small>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            st.subheader("Operational Triage & Intervention Controls")
+            action_col_1, action_col_2 = st.columns(2)
+            with action_col_1:
+                if st.button("Authorize Synthetic Telemetry Rig Deployment", type="primary", use_container_width=True):
+                    marcus = assigned_managers[0]
+                    engine.record_ledger_entry(
+                        book, 2, marcus["actor_id"], marcus["title"], "DEPLOY_SYNTHETIC_TELEMETRY",
+                        work_order_id, detection_time,
+                        notes="Synthetic packet rig deployed to bypass inverter firmware DNP3 drop.",
+                    )
+                    st.success("Directive action authorized by Marcus Vance and recorded in the forensic ledger.")
+            with action_col_2:
+                if st.button("Enforce Standby Rate on Permian Crews", use_container_width=True):
+                    elena = assigned_managers[1]
+                    engine.record_ledger_entry(
+                        book, 2, elena["actor_id"], elena["title"], "FREEZE_SURGE_FUNDING",
+                        work_order_id, detection_time,
+                        notes="Surge funding capped; idle crew rate set to statutory standby limit.",
+                    )
+                    st.warning("Crew standby rate frozen and recorded in the forensic ledger.")
+
+        st.subheader("Vendor & Contractor Mobilization Status")
+        v1, v2, v3 = st.columns(3)
+        v1.markdown(f"<div class='card'><span class='badge badge-active'>FIELD CONTRACTOR POOL</span><br>Standby headcount: 12<br><small>Mobilized for {book_data['artifacts'][0][0]} execution.</small></div>", unsafe_allow_html=True)
+        v2.markdown(f"<div class='card'><span class='badge badge-pending'>STANDBY CARRY</span><br>${hourly_carry:,.0f} / hour<br><small>Active contractor and test-equipment carry.</small></div>", unsafe_allow_html=True)
+        v3.markdown(f"<div class='card'><span class='badge badge-active'>VENDOR SLA COUNTDOWN</span><br>{vendor_sla_hours} hours<br><small>Required response window for {critical_lead} escalation.</small></div>", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        def dispatch_directive():
+            st.session_state['directive_issued'][book] = True
+            st.session_state['pipeline_step_2'] = "DISPATCHED"
+            st.session_state['surgical_spend_authorized'][book] = True
+            engine.record_ledger_entry(
+                book, 2, "GM_DISPATCH", "Operations General Manager / Dispatch Controller",
+                "DISPATCH_INTERVENTION", work_order_id, detection_time,
+                notes="Surgical work order authorized and dispatched to site operations.",
+            )
+            st.session_state['surgical_purchase_orders'][book] = [
+                {
+                    "po_number": f"PO-{book[:4].upper().replace(' ', '')}-{index + 1:02d}",
+                    "vendor": line_item["vendor"],
+                    "cost": line_item["cost"],
+                }
+                for index, line_item in enumerate(book_data["surgical_budget"]["surgical_line_items"])
+            ]
+            
+        surgical_budget = book_data["surgical_budget"]
+        surgical_rows = "".join(
+            f"<tr><td>{line_item['item']}</td><td>{line_item['vendor']}</td><td>${line_item['cost']:,.0f}</td></tr>"
+            for line_item in surgical_budget["surgical_line_items"]
+        )
+        st.markdown(f'''
+        <div class="card" style="border: 2px solid var(--teal); background: #0b0e14;">
+            <span class="badge badge-active">🛠️ REVERSE-ENGINEERED SURGICAL SPEND ALLOCATION</span><br><br>
+            <div style="background: rgba(210,153,34,0.12); border-left: 4px solid var(--amber); color: var(--text-muted); padding: 10px; margin-bottom: 12px;">
+                {surgical_budget['blunt_spend_warning']}
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                <thead><tr style="color:var(--teal); text-align:left;"><th style="padding:6px; border-bottom:1px solid var(--line);">Item</th><th style="padding:6px; border-bottom:1px solid var(--line);">Vendor</th><th style="padding:6px; border-bottom:1px solid var(--line);">Cost</th></tr></thead>
+                <tbody>{surgical_rows}</tbody>
+            </table>
+            <div style="display:flex; justify-content:space-between; gap:12px; margin-top:14px; font-family:monospace;">
+                <strong style="color:var(--red);">Blunt Weekly Carry: $220k/wk</strong>
+                <strong style="color:var(--green);">Total Surgical Cure: ${surgical_budget['total_surgical_cost']:,.0f}</strong>
+            </div>
+            <small style="color:var(--text-muted);">{surgical_budget['capital_efficiency_ratio']}</small>
+        </div>
+        ''', unsafe_allow_html=True)
+        t2_sp, t2_btn = st.columns([1.5, 1])
+        with t2_btn:
+            st.button(
+                f"⚡ Authorize Ring-Fenced Surgical Spend (${surgical_budget['total_surgical_cost']:,.0f}) & Dispatch Work Order",
+                on_click=dispatch_directive,
+                type="primary"
+            )
+
+        if is_directed:
+            st.button(
+                "➡️ Proceed to Tier 3: Frontline Site Operations",
+                on_click=nav_to,
+                args=('3️⃣ Tier 3 | Site Operations',),
+                type="primary",
+                use_container_width=True,
+            )
+
+# ----------------- TIER 3: SITE OPERATIONS -----------------
+elif "Tier 3" in view:
+    force_scroll_to_top()
+    st.header(f"Site Operations Hub / {book}")
+    if not is_directed:
+        st.warning("🔒 Frontline readiness is locked pending a binding operational directive from Tier 2.")
+    else:
+        sop_data = engine.get_or_create_sop_state(work_order_id, book)
+
+        def signoff_and_settle():
+            engine.finalize_tier3_submission(work_order_id)
+            engine.set_sop_blocker(work_order_id, "None (Nominal Telemetry)")
+            st.session_state[f"blocker_{work_order_id}"] = "None (Nominal Telemetry)"
+            engine.record_ledger_entry(
+                book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                "STAGE_1_FRONTLINE_SIGN_OFF" if active_phase == 1 else "TIER_3_FRONTLINE_SIGN_OFF",
+                work_order_id, detection_time,
+            )
+            st.session_state['cleared_books'][book] = True
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+            entry_hash = hashlib.sha256(f"{book}{timestamp}CLEARED".encode()).hexdigest()[:16]
+            st.session_state['ledger'].append({
+                "Timestamp": timestamp,
+                "Operating Book": book,
+                "Action": "Frontline SOP Sign-off & Interconnection Cleared",
+                "Capital Recovered": f"${base_burn:,.0f} / wk",
+                "Client Preserved (90%)": f"${base_burn*0.9:,.0f}",
+                "Phoenix Fee (10%)": f"${base_burn*0.1:,.0f}",
+                "Cryptographic Hash": entry_hash
+            })
+            append_forensic_entry(book, "Tier 3 SOP Sign-off", datetime.now(timezone.utc))
+            if "pipeline" in st.session_state:
+                st.session_state.pipeline["vectors"]["material"]["status"] = "PASS"
+                st.session_state.pipeline["vectors"]["material"]["detail"] = "Breaker 4B auxiliary contact verified CLOSED via physical inspection."
+                st.session_state.pipeline["status"] = "RUNNING"
+            st.session_state['active_phase'][book] = 2
+            st.session_state['sop_checklist'] = [False] * 8
+            st.session_state['pipeline_step_1'] = "PENDING"
+            st.session_state['pipeline_step_2'] = "QUEUED"
+            st.session_state['pipeline_step_3'] = "COMPLETED"
+            st.session_state['pipeline_step_4'] = "READY"
+            st.session_state['chairman_override_active'] = False
+            st.session_state['override_active'] = False
+            st.session_state['safe_harbor_active'] = False
+            st.session_state['quorum_votes'] = [False, False, False, False]
+            st.session_state['board_quorum'][book] = False
+            st.session_state[f"inspected_stage_{book}"] = 2
+            for i in range(8):
+                st.session_state[f"chk2_{book}_{i}"] = False
+            st.session_state["checklist_db"][book] = {i: False for i in range(1, 9)}
+            for committee in ['ops', 'afic', 'risk', 'tech']:
+                st.session_state[f"comm_{book}_{committee}"] = False
+            st.session_state['phase_2_authorized'][book] = False
+            st.session_state['nav_tier_selection'] = '4️⃣ Forensic Audit Ledger'
+            st.session_state['command_view'] = '4️⃣ Forensic Audit Ledger'
+            st.session_state['current_tier'] = 4
+
+        def transmit_forensic_blocker_docket():
+            engine.set_sop_blocker(work_order_id, "Forensic blocker docket transmitted")
+            engine.record_ledger_entry(
+                book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                "FORENSIC_BLOCKER_DOCKET_TRANSMITTED", work_order_id, detection_time,
+                blocker="Forensic blocker docket transmitted",
+            )
+            st.session_state['escalation_transmitted'] = True
+            st.session_state['board_escalation'][book] = True
+            append_forensic_entry(book, "Tier 3 Forensic Blocker Docket Transmitted to Tier 2 GM and Tier 1 Chairman", datetime.now(timezone.utc))
+            st.session_state['nav_tier_selection'] = '1️⃣ Tier 1 | Chairman Directorate'
+            st.session_state['current_tier'] = 1
+
+        default_blocker_tags = ["None (Nominal Telemetry)", "Telemetry Packet Timeout", "Component Spec Mismatch", "Vendor Delivery Hold", "Regulatory Sign-Off Gate"]
+        raw_blocker_tags = book_data.get("blocker_tags", default_blocker_tags)
+        if raw_blocker_tags[0] == "None":
+            raw_blocker_tags = ["None (Nominal Telemetry)", *raw_blocker_tags[1:]]
+        blockers = [
+            raw_blocker_tags[0],
+            *[
+                tag if tag.startswith("[Checks #") else f"[Checks #{index * 2 - 1}-#{index * 2}] {tag}"
+                for index, tag in enumerate(raw_blocker_tags[1:], start=1)
+            ],
+        ]
+        blocker_faults = {
+            display_tag: re.sub(r"^\[Checks #\d+-#\d+\]\s*", "", raw_tag)
+            .removeprefix("ICCP / ")
+            .replace("COD Attestation Hold", "COD Hold")
+            for display_tag, raw_tag in zip(blockers[1:], raw_blocker_tags[1:])
+        }
+        selected_book = book
+        default_blocker = "None (Nominal Telemetry)"
+
+        # Auto-resolve the blocker before the selectbox widget renders once verification is complete.
+        prior_completed_count = sum(1 for i in range(1, 9) if get_check(selected_book, i))
+        remediation_dispatched = (
+            st.session_state['pipeline_step_2'] == "DISPATCHED"
+            or st.session_state['surgical_spend_authorized'].get(book, False)
+        )
+        # Auto-clear the active blocker as soon as its paired checks are both verified.
+        blocker_pair_checks = {
+            "[Checks #1-#2]": (0, 1),
+            "[Checks #3-#4]": (2, 3),
+            "[Checks #5-#6]": (4, 5),
+            "[Checks #7-#8]": (6, 7),
+        }
+        prior_selected_blocker = st.session_state.get(f"blocker_tag_{selected_book}", default_blocker)
+        pair_auto_cleared = False
+        for tag_prefix, (idx_a, idx_b) in blocker_pair_checks.items():
+            if tag_prefix in prior_selected_blocker:
+                pair_auto_cleared = (
+                    get_check(selected_book, idx_a + 1)
+                    and get_check(selected_book, idx_b + 1)
+                )
+                break
+        if prior_completed_count == 8 or remediation_dispatched or pair_auto_cleared:
+            st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
+
+        if f"blocker_tag_{selected_book}" not in st.session_state:
+            st.session_state[f"blocker_tag_{selected_book}"] = default_blocker
+
+        # Prune blocker options once their paired checks are both certified.
+        pair_1_done = get_check(selected_book, 1) and get_check(selected_book, 2)
+        pair_2_done = get_check(selected_book, 3) and get_check(selected_book, 4)
+        pair_3_done = get_check(selected_book, 5) and get_check(selected_book, 6)
+        pair_4_done = get_check(selected_book, 7) and get_check(selected_book, 8)
+        pair_done_by_prefix = {
+            "[Checks #1-#2]": pair_1_done,
+            "[Checks #3-#4]": pair_2_done,
+            "[Checks #5-#6]": pair_3_done,
+            "[Checks #7-#8]": pair_4_done,
+        }
+        available_blockers = [blockers[0]] + [
+            tag for tag in blockers[1:]
+            if not any(tag.startswith(prefix) and done for prefix, done in pair_done_by_prefix.items())
+        ]
+        # Blocker tag is driven entirely by automatic pair-clearing; no manual selectbox is exposed here.
+        selected_blocker = st.session_state.get(f"blocker_tag_{selected_book}", default_blocker)
+        if selected_blocker not in available_blockers:
+            selected_blocker = available_blockers[0]
+            st.session_state[f"blocker_tag_{selected_book}"] = selected_blocker
+        current_blocker = sop_data["active_blocker"]
+        blocker_index = blockers.index(current_blocker) if current_blocker in blockers else 0
+        if selected_blocker != current_blocker:
+            engine.set_sop_blocker(work_order_id, selected_blocker)
+            selected_check_indexes = range((blockers.index(selected_blocker) - 1) * 2, (blockers.index(selected_blocker) - 1) * 2 + 2)
+            if selected_blocker != blockers[0]:
+                for check_index in selected_check_indexes:
+                    engine.update_sop_check(work_order_id, f"check_{check_index + 1}", 0)
+                    set_check(book, check_index + 1, False)
+            engine.record_ledger_entry(
+                book, 3, "OPERATOR_01", "Authorized Lead Inspector / Specialized Adjudicator",
+                "BLOCKER_TAG_UPDATED", work_order_id, detection_time, blocker=selected_blocker,
+            )
+            st.rerun()
+
+        locked_indices = []
+        if "Checks #1-#2" in selected_blocker or ("1" in selected_blocker and "2" in selected_blocker and "None" not in selected_blocker):
+            locked_indices = [0, 1]
+        elif "Checks #3-#4" in selected_blocker or ("3" in selected_blocker and "4" in selected_blocker):
+            locked_indices = [2, 3]
+        elif "Checks #5-#6" in selected_blocker or ("5" in selected_blocker and "6" in selected_blocker):
+            locked_indices = [4, 5]
+        elif "Checks #7-#8" in selected_blocker or ("7" in selected_blocker and "8" in selected_blocker):
+            locked_indices = [6, 7]
+        if remediation_dispatched:
+            locked_indices = []
+
+        active_fault = blocker_faults.get(selected_blocker)
+        art = book_data.get("telemetry_diagnostics", {}).get(active_fault, book_data["artifacts"])
+        pair_done_by_index = [pair_1_done, pair_2_done, pair_3_done, pair_4_done]
+        pair_indices = [(0, 1), (2, 3), (4, 5), (6, 7)]
+        card_statuses = []
+        for pair_done, (idx_a, idx_b) in zip(pair_done_by_index, pair_indices):
+            if pair_done:
+                card_statuses.append("✅ CLEARED | Heartbeat: 04.0s / Locked to Ledger")
+            elif idx_a in locked_indices or idx_b in locked_indices:
+                card_statuses.append("🚨 ACTIVE FAULT / HELD")
+            else:
+                card_statuses.append("Nominal / Standby")
+
+        if active_phase == 2:
+            checks_raw = st.session_state["checklist_labels"]
+            critical_idx = phase_2.get("critical_check_idx")
+        else:
+            checks_raw = st.session_state["checklist_labels"]
+            critical_idx = book_data.get("critical_check_idx")
+
+        if locked_indices:
+            st.markdown(f'''
+            <div class="card" style="border: 2px solid var(--amber); background: rgba(210,153,34,0.12);">
+                <strong style="color: var(--amber);">⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.</strong>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
+            st.markdown(f'''
+            <div class="radar-card-cleared">
+                <span class="badge badge-success">✅ SURGICAL WORK ORDER ACTIVE: Field rig operational. Frontline verification unlocked.</span>
+            </div>
+            ''', unsafe_allow_html=True)
+
+        st.markdown("### Frontline Verification Checklist — Stage 1")
+        st.caption("Cascading sign-off is organized by the Tier 2 General Manager accountable for each domain.")
+
+        selected_book = book
+        sop_items = book_data['checklist']
+        base_labels = [
+            f"Check #{i + 1}: {sop_items[i]}" + (" (🚨 CRITICAL PATH BLOCKER)" if i == critical_idx else "")
+            for i in range(8)
+        ]
+
+        gm_roster = GM_DIRECTIVE_ROSTER.get(book, {}).get("assigned_managers") or [
+            {"name": "GM 1", "title": "General Manager - Domain 1", "domain": "Checks #1-#2 & #5-#6"},
+            {"name": "GM 2", "title": "General Manager - Domain 2", "domain": "Checks #3-#4"},
+            {"name": "GM 3", "title": "General Manager - Domain 3", "domain": "Checks #7-#8"},
+        ]
+        gm_domains = [
+            {"manager": gm_roster[0], "check_indices": [0, 1, 4, 5], "art_indices": [0, 2]},
+            {"manager": gm_roster[1], "check_indices": [2, 3], "art_indices": [1]},
+            {"manager": gm_roster[2], "check_indices": [6, 7], "art_indices": [3]},
+        ]
+
+        for domain in gm_domains:
+            manager = domain["manager"]
+            check_indices = domain["check_indices"]
+            domain_done = all(get_check(selected_book, i + 1) for i in check_indices)
+            domain_locked = any(i in locked_indices for i in check_indices)
+            if domain_done:
+                gm_badge = "<span class='badge badge-success'>✅ VERIFIED & AUDITED</span>"
+            elif domain_locked:
+                gm_badge = "<span class='badge badge-danger'>🚨 FAULT ACTIVE</span>"
+            else:
+                gm_badge = "<span class='badge badge-pending'>🟡 PENDING VERIFICATION</span>"
+            st.markdown(f'''
+            <div class="card">
+                <strong style="color: var(--teal);">{manager['name']}</strong> — <small>{manager['title']}</small><br>
+                <small style="color: var(--text-muted);">Domain: {manager['domain']}</small><br><br>
+                {gm_badge}
+            </div>
+            ''', unsafe_allow_html=True)
+
+            telemetry_cols = st.columns(len(domain["art_indices"]))
+            for tile_col, art_idx in zip(telemetry_cols, domain["art_indices"]):
+                tile_col.markdown(
+                    f"<div class='card'><strong>{art[art_idx][0]}</strong><br><small>{card_statuses[art_idx]}</small></div>",
+                    unsafe_allow_html=True,
+                )
+
+            domain_cols = st.columns(len(check_indices))
+            for col_target, i in zip(domain_cols, check_indices):
+                check_num = i + 1
+                widget_key = f"chk_widget_{selected_book}_{check_num}"
+                if i in locked_indices:
+                    set_check(selected_book, check_num, False)
+                    col_target.checkbox(
+                        f"🔒 [LOCKED BY FAULT] {base_labels[i]}",
+                        value=False,
+                        disabled=True,
+                        key=widget_key,
+                    )
+                    if check_num == 8:
+                        st.warning('Check #8 locked: Site Remediation must be cleared in Tier 3 first.')
+                else:
+                    col_target.checkbox(
+                        base_labels[i],
+                        value=get_check(selected_book, check_num),
+                        key=widget_key,
+                        on_change=update_check,
+                        args=(selected_book, check_num),
+                    )
+
+        completed_count = sum(1 for i in range(1, 9) if get_check(selected_book, i))
+        if locked_indices:
+            st.warning(f"⚠️ ACTIVE TELEMETRY BLOCKER: Checks #{min(locked_indices) + 1} and #{max(locked_indices) + 1} are physically blocked. Frontline lead cannot certify these artifacts until telemetry stabilizes.")
+        st.info(f"📋 {completed_count}/8 checks verified across 3 GM domains.")
+
+        if completed_count == 8 and len(locked_indices) == 0:
+            st.success("✅ 8/8 checks complete. All physical artifacts verified.")
+            if st.button("⚡ Submit Frontline SOP Sign-off & Settle", key=f"settle_btn_{selected_book}", type="primary"):
+                if "audit_ledger" not in st.session_state:
+                    st.session_state["audit_ledger"] = []
+                timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+                entry_hash = hashlib.sha256(f"{selected_book}{timestamp}CLEARED".encode()).hexdigest()[:16]
+                st.session_state["audit_ledger"].append({
+                    "timestamp": timestamp,
+                    "sector": selected_book,
+                    "tier": "Tier 3 Site Operations",
+                    "action": "FRONTLINE SOP CERTIFICATION SEALED",
+                    "inspector": "Authorized Lead Inspector / Domain Supervisor",
+                    "status": "VERIFIED (8/8 ARTIFACTS ATTACHED)",
+                    "circuit_breaker": "DISENGAGED",
+                })
+                st.session_state['pipeline_step_3'] = "COMPLETED"
+                st.session_state['pipeline_step_4'] = "READY"
+                st.session_state['capital_circuit_breaker'] = "CLEARED"
+                if "pipeline" in st.session_state:
+                    st.session_state.pipeline["vectors"]["material"]["status"] = "PASS"
+                    st.session_state.pipeline["vectors"]["administrative"]["status"] = "PASS"
+                    log_audit_event(
+                        selected_book,
+                        detection_time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                        timestamp,
+                        "Tier 3 settlement completed; routed to Tier 4 forensic audit",
+                        0.0,
+                        "Tier 4 Forensic Audit Ledger",
+                        entry_hash,
+                    )
+                st.session_state['selected_tier_idx'] = 3  # 0-indexed for Tier 4
+                st.session_state['current_tier'] = 4
+                st.rerun()
+
+        with st.expander("🛑 Lead Inspector Field Interventions & Stop-Work", expanded=False):
+            step_back_reason = st.text_input(
+                "Reason for Step-Back / Attestation Abort",
+                placeholder="e.g., Inverter phase jitter detected during DNP3 injection; model drift unresolved.",
+                key=f"step_back_reason_{selected_book}",
+            )
+            if st.button("🚨 Execute Emergency Step-Back & Log to Ledger", type="secondary", key=f"step_back_btn_{selected_book}"):
+                for i in range(1, 9):
+                    set_check(selected_book, i, False)
+
+                audit_entry = {
+                    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "sector": selected_book,
+                    "tier": "Tier 3 Site Operations",
+                    "action": "EMERGENCY STEP-BACK TRIGGERED",
+                    "details": step_back_reason or "Lead certifier aborted sign-off. Telemetry re-tripped.",
+                    "status": "CIRCUIT BREAKER ACTIVE",
+                }
+                if "audit_ledger" not in st.session_state:
+                    st.session_state["audit_ledger"] = []
+                st.session_state["audit_ledger"].append(audit_entry)
+
+                st.session_state['pipeline_step_3'] = "BLOCKED"
+                st.warning("⚠️ Work order halted. Emergency step-back permanently recorded in Tier 4 Ledger.")
+                st.rerun()
+
+        st.divider()
+
+    if is_directed:
+        selected_book = book
+        critical_item_unchecked = critical_idx is not None and not get_check(book, critical_idx + 1)
+
+        if critical_item_unchecked and not remediation_dispatched:
+            blocker_diagnostic = book_data["blocker_diagnostic"]
+            st.markdown(f'''
+            <div class="radar-card">
+                <span class="badge badge-danger">🚨 FRONTLINE BOTTLENECK FORENSIC DIAGNOSIS</span><br><br>
+                <strong>Technical Root Cause:</strong> {blocker_diagnostic["technical_root_cause"]}<br><br>
+                <strong>Missing Artifact:</strong> {blocker_diagnostic["missing_artifact_name"]}<br><br>
+                <strong>Standby Field Impact:</strong> {blocker_diagnostic["standby_impact"]}<br><br>
+                <strong>GM Remediation Required:</strong> {blocker_diagnostic["gm_remediation_request"]}
+            </div>
+            ''', unsafe_allow_html=True)
+            esc_sp, esc_btn = st.columns([1.5, 1])
+            with esc_btn:
+                st.button("⚡ Transmit Forensic Blocker Docket to Tier 2 (GM) & Tier 1 (Chairman)", on_click=transmit_forensic_blocker_docket, type="primary")
+        elif critical_item_unchecked:
+            st.info("Remediation is active on site. The Authorized Lead Inspector must manually verify each frontline SOP check.")
+        else:
+            st.info("The critical-path item is verified. Complete the remaining checklist items to submit frontline sign-off.")
+
+# ----------------- TIER 4: FORENSIC AUDIT LEDGER -----------------
+elif "Ledger" in view:
+    force_scroll_to_top()
+    st.header("Immutable Governance & Forensic Audit Ledger")
+    st.write("Cryptographically verifiable chain of custody across all 12 operating books.")
+
+    pipeline = st.session_state["pipeline"]
+    render_diagnostic_strip()
+    st.subheader("Forensic Ground Truth Vector Table")
+    vector_rows = [
+        {
+            "Vector": vector_name.title(),
+            "Status": vector["status"],
+            "Telemetry Source": vector["telemetry_source"],
+            "Detail": vector["detail"],
+        }
+        for vector_name, vector in pipeline["vectors"].items()
+    ]
+    st.dataframe(vector_rows, use_container_width=True, hide_index=True)
+
+    if pipeline["status"] == "CIRCUIT_BREAKER_HALT" and pipeline["active_stoppage"]:
+        stoppage = pipeline["active_stoppage"]
+        st.markdown(f'''
+        <div class="radar-card">
+            <span class="badge badge-danger">ACTIVE STOPPAGE BLOCK</span><br><br>
+            <strong>ID:</strong> {stoppage["id"]}<br>
+            <strong>Origin:</strong> {stoppage["tier_origin"]}<br>
+            <strong>Source:</strong> <code>{stoppage["source_device"]}</code><br>
+            <strong>Field Claim:</strong> {stoppage["field_claim"]}<br>
+            <strong>Machine Ground Truth:</strong> <code>{stoppage["machine_ground_truth"]}</code><br>
+            <strong>Contention:</strong> {stoppage["dispute_summary"]}<br>
+            <strong>Fiduciary Risk:</strong> {stoppage["fiduciary_risk"]}
+        </div>
+        ''', unsafe_allow_html=True)
+
+    st.markdown(f'''
+    <div class="card" style="border: 2px solid var(--red); background: rgba(255,123,114,0.08);">
+        🔒 <strong>CONFIDENTIAL FIDUCIARY WORK PRODUCT</strong> — PROTECTED BY STATUTORY RISK MANAGEMENT PRIVILEGE (DO NOT DISCLOSE WITHOUT GENERAL COUNSEL AUTHORIZATION).
+    </div>
+    ''', unsafe_allow_html=True)
+
+    st.subheader("Session Forensic Ledger")
+    ledger_rows = [
+        row for row in st.session_state['ledger']
+        if str(row.get("Book") or row.get("Operating Book") or "").strip() not in ("", "None")
+    ]
+    if ledger_rows:
+        st.dataframe(ledger_rows, use_container_width=True)
+    else:
+        st.info("No frontline sign-offs recorded in this session. Complete Tier 3 SOP verification to generate an entry.")
+
+    st.subheader("Persistent Cryptographic Ledger (SQLite Engine)")
+    with engine.get_db() as conn:
+        forensic_rows = conn.execute(
+            """
+            SELECT entry_id, operating_book, tier_level, official_title, action_type,
+                   governance_lag_sec, hesitation_cost, blocker_category, sha256_hash
+            FROM forensic_ledger
+            ORDER BY entry_id DESC
+            """
+        ).fetchall()
+    if forensic_rows:
+        forensic_dicts = [dict(row) for row in forensic_rows]
+        total_hesitation_burn = sum(row.get("hesitation_cost") or 0 for row in forensic_dicts)
+        max_governance_lag = max(row.get("governance_lag_sec") or 0 for row in forensic_dicts)
+        spot_c1, spot_c2 = st.columns(2)
+        spot_c1.metric("🔥 Total Hesitation Burn", f"${total_hesitation_burn:,.2f}")
+        spot_c2.metric("⏱️ Max Governance Lag", f"{max_governance_lag:.1f}s")
+
+        title_shorthand = {
+            "Operations General Manager / Dispatch Controller": "Ops GM / Dispatch",
+            "General Manager - Grid Interconnection & Telemetry": "Grid GM (Vance)",
+            "Authorized Lead Inspector / Specialized Adjudicator": "Lead Certifier",
+        }
+        forensic_df = pd.DataFrame(forensic_dicts)
+        forensic_df["official_title"] = forensic_df["official_title"].replace(title_shorthand)
+        forensic_df = forensic_df[["hesitation_cost", "governance_lag_sec", "action_type", "official_title", "sha256_hash"]]
+        st.dataframe(
+            forensic_df,
+            column_config={
+                "hesitation_cost": st.column_config.NumberColumn("🔥 Hesitation Cost", format="$%.2f", width="medium"),
+                "governance_lag_sec": st.column_config.NumberColumn("⏱️ Lag", format="%.1fs", width="small"),
+                "action_type": st.column_config.TextColumn("Directive Action", width="medium"),
+                "official_title": st.column_config.TextColumn("Sign-off Authority", width="medium"),
+                "sha256_hash": st.column_config.TextColumn("Hash Seal", width="small"),
+            },
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("No persistent forensic ledger entries have been recorded yet.")
+
+    st.subheader("Persistent Audit Ledger (SQLite — Survives Server Reboots)")
+    audit_rows = [
+        row for row in fetch_audit_events()
+        if str(row.get("book") or "").strip() not in ("", "None")
+    ]
+    if audit_rows:
+        st.dataframe(audit_rows, use_container_width=True)
+    else:
+        st.info("No persisted audit events recorded yet in audit_ledger.db.")
+
+    st.subheader("Emergency Step-Back & Field Intervention Ledger")
+    step_back_rows = sorted(st.session_state.get("audit_ledger", []), key=lambda entry: entry["timestamp"])
+    if step_back_rows:
+        st.dataframe(step_back_rows, use_container_width=True)
+    else:
+        st.info("No emergency step-back events recorded in this session.")
+
+    sealed_entries = [
+        entry for entry in st.session_state.get("audit_ledger", [])
+        if entry.get("action") == "FRONTLINE SOP CERTIFICATION SEALED" and entry.get("sector") == book
+    ]
+    if sealed_entries:
+        st.success("✅ AUDIT TRAIL COMPLETE")
+
+        def nav_to_tier_1():
+            st.session_state['selected_tier_idx'] = 0
+            st.session_state['current_tier'] = 1
+            st.session_state['nav_tier_selection'] = TIER_VIEWS[1]
+
+        st.button(
+            "✅ AUDIT TRAIL COMPLETE — RETURN TO DIRECTORATE",
+            on_click=nav_to_tier_1,
+            type="primary",
+            use_container_width=True,
+            key="btn_return_directorate",
+        )
+
+st.caption(f"Factory Command Post | Autonomous Capital Defense Control Plane | Audited Sync: {st.session_state['last_sync']}")
