@@ -216,6 +216,48 @@ with st.expander(
             st.success("Stamped to Forensic Audit Ledger.")
             st.rerun()
 
+with st.container():
+    st.markdown("### Chairman Command Interrogation")
+    user_query = st.text_input(
+        "Ask Command Intelligence about this deadlock, GM stances, or financial exposure:",
+        placeholder="e.g., What happens to queue priority if we delay filing by 48 hours?",
+        key=f"chairman_query_{st.session_state.active_incident_id}",
+    )
+
+    if user_query:
+        with st.chat_message("assistant"):
+            st.write(
+                f"**Executive Synthesis for Chairman:** Evaluating '{user_query}' "
+                f"against current burn (${incident['burn_rate_sec']:.2f}/sec) and "
+                "Elena Rostova's warranty objection..."
+            )
+            st.info(
+                "Queue priority remains intact for 48 hours. However, delaying beyond "
+                "that threshold forfeits the ERCOT interconnect window and triggers an "
+                "immediate $4.5M restudy penalty. Recommendation: Issue the Tier 1 "
+                "indemnification carve-out now."
+            )
+
+    st.markdown("### Direct Chairman Override")
+    override_note = st.text_area(
+        "Executive Directive / Redline Modifications:",
+        placeholder="Enter binding instructions to Elena Rostova and David Chen...",
+        key=f"override_note_{st.session_state.active_incident_id}",
+    )
+    if st.button(
+        "Issue Binding Chairman Directive & Lock Ledger",
+        key=f"chairman_directive_{st.session_state.active_incident_id}",
+    ):
+        timestamp = datetime.datetime.utcnow().strftime("%H:%M:%S UTC")
+        incident["status"] = "RESOLVED"
+        incident["burn_rate_sec"] = 0.0
+        incident["audit_log"].append(
+            f"[{timestamp}] UNILATERAL CHAIRMAN DIRECTIVE: {override_note} - "
+            "All GM branches ordered to comply."
+        )
+        st.success("Chairman directive enforced. Holding burn halted to $0/wk.")
+        st.rerun()
+
 st.subheader("Tier 2 | General Management Workspaces")
 if incident["gms"]:
     gm_names = list(incident["gms"])
