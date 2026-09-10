@@ -40,6 +40,9 @@ CLIENT_REALIZATION_TARGET = 549_000
 PHOENIX_ADVISORY_FEE = 61_000
 CARRY_BURN_PER_SEC = 1.01
 SITE_LOCATION = "Wharton 345kV Substation / Inverter Yard"
+WORK_ORDER_ID = "WO-BESS-345KV-09"
+LOTO_STATUS = "LOTO ACTIVE: BUS GROUNDED"
+TELEMETRY_HEARTBEAT = "SCADA PING: 24ms | IEEE 2800 NORMAL"
 
 GM_DOMAINS = {
     "Marcus Vance": {
@@ -319,8 +322,8 @@ if "technician_handle" not in st.session_state:
     st.session_state["technician_handle"] = "T3-FIELD-LEAD / H. Alvarez"
 if "field_evidence" not in st.session_state:
     st.session_state["field_evidence"] = {}
-if "active_view" not in st.session_state:
-    st.session_state["active_view"] = NAV_OPTIONS[0]
+if "nav_selection" not in st.session_state:
+    st.session_state["nav_selection"] = NAV_OPTIONS[0]
 if "ledger_ready" not in st.session_state:
     try:
         ledger_store.init_db()
@@ -467,9 +470,7 @@ def fetch_ledger_chain(book: str | None = None, limit: int = 1000) -> list:
 
 
 def route_to(view: str) -> None:
-    """Programmatic navigation: drop the nav widget key so the radio re-seeds from active_view."""
-    st.session_state["active_view"] = view
-    st.session_state.pop("nav_radio", None)
+    st.session_state["nav_selection"] = view
     st.rerun()
 
 
@@ -946,11 +947,9 @@ def field_diagnostic(query: str) -> str:
 
 
 def render_tier_3(incident: dict, selected_book: str) -> None:
-    """Frontline tactical command post: field diagnostics, escalation beacon, attested SOP execution."""
+    """Frontline tactical command post: no macro financials — work order, safety, telemetry, gates only."""
     book_state = ensure_checklist(selected_book)
     readiness = readiness_count(selected_book)
-    frozen = st.session_state["standby_frozen"].get(selected_book, False)
-    burn_rate = 0.0 if frozen else CARRY_BURN_PER_SEC
     blocker = active_field_block(selected_book)
 
     st.markdown(
@@ -959,15 +958,18 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
     )
     st.markdown(
         f"<div class='field-banner'>"
-        f"<div><span class='field-label'>Active Site</span>"
-        f"<span class='field-value'>{SITE_LOCATION}</span></div>"
-        f"<div><span class='field-label'>Standby Burn Rate</span>"
-        f"<span class='field-value'>${burn_rate * 3600:,.0f}/hr idle crew · ${burn_rate:.2f}/sec</span></div>"
-        f"<div><span class='field-label'>SOP Readiness</span>"
-        f"<span class='field-value'>{readiness} / 8 verified</span></div>"
+        f"<div><span class='field-label'>Active Work Order</span>"
+        f"<span class='field-value'>{WORK_ORDER_ID}</span></div>"
+        f"<div><span class='field-label'>Field Safety / Isolation</span>"
+        f"<span class='field-value'>{LOTO_STATUS}</span></div>"
+        f"<div><span class='field-label'>Site Telemetry Heartbeat</span>"
+        f"<span class='field-value'>{TELEMETRY_HEARTBEAT}</span></div>"
+        f"<div><span class='field-label'>SOP Execution Progress</span>"
+        f"<span class='field-value'>{readiness} / {len(SOP_CHECKS)} Frontline Gates Cleared</span></div>"
         "</div>",
         unsafe_allow_html=True,
     )
+    st.caption(f"Active site: {SITE_LOCATION}")
     st.progress(readiness / len(SOP_CHECKS), text=f"SOP readiness {readiness} / {len(SOP_CHECKS)} verified")
 
     technician = st.text_input(
@@ -1006,8 +1008,7 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
     else:
         st.markdown(
             "<div class='beacon-box'>🚨 FIELD BLOCKER BEACON — raise a stall to General Management "
-            "and the Directorate rather than holding crews idle at "
-            f"${burn_rate * 3600:,.0f}/hr.</div>",
+            "and the Directorate rather than holding crews idle at the panel.</div>",
             unsafe_allow_html=True,
         )
 
@@ -1160,7 +1161,7 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
     )
 
 
-def render_tier_2_overview(incident: dict, selected_book: str) -> None:
+def render_tier_2(incident: dict, selected_book: str) -> None:
     st.subheader("Tier 2 | General Management Overview")
     blocker = active_field_block(selected_book)
     if blocker:
@@ -1591,23 +1592,18 @@ for incident_id, incident_data in st.session_state.incident_store.items():
         st.rerun()
 
 st.sidebar.divider()
-nav_choice = st.sidebar.radio(
-    "Command view",
-    NAV_OPTIONS,
-    index=NAV_OPTIONS.index(st.session_state["active_view"]),
-    key="nav_radio",
-)
-if nav_choice != st.session_state["active_view"]:
-    st.session_state["active_view"] = nav_choice
-    st.rerun()
-active_view = st.session_state["active_view"]
+selected_view = st.sidebar.radio("Command view", NAV_OPTIONS, key="nav_selection")
 
 incident = st.session_state.incident_store[st.session_state.active_incident_id]
 elapsed_seconds = (datetime.datetime.now() - incident["start_time"]).total_seconds()
 accumulated_burn = elapsed_seconds * incident["burn_rate_sec"] if incident["status"] != "RESOLVED" else 0.0
 
-if active_view in ROUTE_TO_GM:
-    render_gm_docket(incident, st.session_state["selected_book"], ROUTE_TO_GM[active_view])
+if selected_view in ROUTE_TO_GM:
+    render_gm_docket(incident, st.session_state["selected_book"], ROUTE_TO_GM[selected_view])
+    st.stop()
+
+if selected_view == NAV_OPTIONS[5]:
+    render_tier_3(incident, st.session_state["selected_book"])
     st.stop()
 
 col1, col2, col3, col4 = st.columns(4)
@@ -1629,15 +1625,11 @@ col4.metric(
 st.divider()
 st.header(f"{incident['priority']}: {incident['title']}")
 
-if active_view == VIEW_TIER_2:
-    render_tier_2_overview(incident, st.session_state["selected_book"])
+if selected_view == NAV_OPTIONS[1]:
+    render_tier_2(incident, st.session_state["selected_book"])
     st.stop()
 
-if active_view == VIEW_TIER_3:
-    render_tier_3(incident, st.session_state["selected_book"])
-    st.stop()
-
-if active_view == VIEW_TIER_4:
+if selected_view == NAV_OPTIONS[6]:
     render_tier_4(incident, st.session_state["selected_book"])
     render_remedial_engine(incident)
     st.stop()
