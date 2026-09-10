@@ -476,6 +476,39 @@ def set_route(target_view: str, inspected_gm: str | None = None) -> None:
         st.session_state["inspected_gm"] = inspected_gm
 
 
+def render_view_header(title: str, incident: dict, css_class: str = "command-header") -> None:
+    """Dominant view title above a consistent active-incident sub-header."""
+    st.markdown(f'<div class="{css_class}">{title}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="view-subtitle">🚨 ACTIVE INCIDENT: {incident["priority"]} — {incident["title"]}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_incident_metric_strip(incident: dict, selected_book: str) -> None:
+    elapsed = (datetime.datetime.now() - incident["start_time"]).total_seconds()
+    sunk = elapsed * incident["burn_rate_sec"] if incident["status"] != "RESOLVED" else 0.0
+    strip = st.columns(4)
+    strip[0].metric("Incident Status", incident["status"], delta=incident["priority"])
+    strip[1].metric(
+        "Active Holding Burn",
+        f"${incident['burn_rate_sec'] * 604800:,.0f} / wk"
+        if incident["status"] != "RESOLVED"
+        else "$0 / wk",
+        f"${incident['burn_rate_sec']:.2f}/sec",
+        delta_color="inverse",
+    )
+    strip[2].metric(
+        "Sunk Accrual (Since Lock)", f"${sunk:,.0f}", incident["schedule_drift"], delta_color="inverse"
+    )
+    strip[3].metric(
+        "Operational Readiness",
+        f"{readiness_count(selected_book)} / 8 Frontline SOP",
+        "GOV DEADLOCKED" if incident["status"] == "DEADLOCKED" else "CLEARED",
+        delta_color="inverse" if incident["status"] == "DEADLOCKED" else "normal",
+    )
+
+
 def _kpi_card(label: str, value: str, basis: str, accent: str) -> str:
     return (
         f"<div style='background:#0B0F19;border:1px solid {accent};border-left:6px solid {accent};"
@@ -597,19 +630,30 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
     )
     accent = "#00FFA3" if not open_checks else ("#FF4B4B" if elapsed > gm_meta["sla_seconds"] else "#F5A623")
 
-    st.button(
-        "← Return to Chairman Directorate",
-        key="btn_return_tier1",
-        on_click=set_route,
-        args=(VIEW_TIER_1,),
+    breadcrumb_col, directorate_col = st.columns([3, 1])
+    with breadcrumb_col:
+        st.button(
+            "← Return to Tier 2 | Executive Management Overview",
+            key="btn_return_tier2",
+            on_click=set_route,
+            args=(VIEW_TIER_2,),
+        )
+    with directorate_col:
+        st.button(
+            "🏛️ Directorate Command",
+            key="btn_return_tier1",
+            on_click=set_route,
+            args=(VIEW_TIER_1,),
+        )
+
+    render_view_header(
+        f"🔒 DOMAIN DOCKET LOCKED: {gm_name} — {gm_meta['role']}", incident, "docket-header"
     )
 
     st.markdown(
         f"<div style='border:2px solid {accent};border-radius:10px;padding:18px 22px;"
         "background:#0B0F19;'>"
-        f"<div style='color:#FFFFFF;font-size:1.5rem;font-weight:900;'>🔒 DOMAIN DOCKET LOCKED: "
-        f"{gm_name} — {gm_meta['role']}</div>"
-        f"<div style='color:{accent};font-size:0.92rem;font-weight:700;margin-top:6px;'>"
+        f"<div style='color:{accent};font-size:0.92rem;font-weight:700;'>"
         f"Mandate: {gm_meta['domain']} | SLA Target: {gm_meta['sla_label']} | "
         f"Accrued Carry: ${domain_burn:,.0f}</div>"
         f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:8px;'><b>Domain Authority:</b> "
@@ -847,7 +891,8 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
 
 def render_tier_4(incident: dict, selected_book: str) -> None:
     """Master forensic ledger: every block from every tier, newest first, hashes and payloads visible."""
-    st.subheader("📜 Tier 4 | Master Forensic Ledger")
+    render_view_header("📜 Tier 4 | Master Forensic Ledger", incident)
+    render_incident_metric_strip(incident, selected_book)
     chain = fetch_ledger_chain()
     if not chain:
         st.info("No SQLite ledger blocks recorded yet.")
@@ -960,6 +1005,10 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
 
     st.markdown(
         "<div class='command-header'>⚡ Tier 3 | Site Operations Tactical Command Post</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="view-subtitle">🚨 ACTIVE INCIDENT: {incident["priority"]} — {incident["title"]}</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -1168,7 +1217,8 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
 
 
 def render_tier_2(incident: dict, selected_book: str) -> None:
-    st.subheader("Tier 2 | General Management Overview")
+    render_view_header("📋 Tier 2 | Executive Management Overview", incident)
+    render_incident_metric_strip(incident, selected_book)
     blocker = active_field_block(selected_book)
     if blocker:
         remaining = (blocker["deadline"] - datetime.datetime.utcnow()).total_seconds()
@@ -1285,7 +1335,7 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
     elapsed = (datetime.datetime.now() - incident["start_time"]).total_seconds()
     live_carry = 0.0 if frozen else elapsed * CARRY_BURN_PER_SEC
 
-    st.subheader("Tier 1 | Chairman Directorate Command Center")
+    render_view_header("🏛️ Tier 1 | Chairman Directorate Command Center", incident)
 
     ribbon = st.columns(5)
     ribbon[0].markdown(
@@ -1545,6 +1595,24 @@ st.markdown(
         padding: 16px 20px;
         margin-bottom: 12px;
     }
+    .docket-header {
+        background: linear-gradient(90deg, #101826 0%, #0B0F19 100%);
+        border-left: 8px solid #4DA3FF;
+        border-radius: 8px;
+        color: #FFFFFF;
+        font-size: 1.6rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+    }
+    .view-subtitle {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #FF4B4B;
+        margin-bottom: 20px;
+        letter-spacing: 0.5px;
+    }
     .field-banner {
         display: flex;
         gap: 28px;
@@ -1615,25 +1683,6 @@ if selected_view in ROUTE_TO_GM:
 if selected_view == NAV_OPTIONS[5]:
     render_tier_3(incident, st.session_state["selected_book"])
     st.stop()
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Incident Status", incident["status"], delta=incident["priority"])
-col2.metric(
-    "Active Holding Burn",
-    f"${incident['burn_rate_sec'] * 604800:,.0f} / wk" if incident["status"] != "RESOLVED" else "$0 / wk",
-    f"${incident['burn_rate_sec']:.2f}/sec",
-    delta_color="inverse",
-)
-col3.metric("Sunk Accrual (Since Lock)", f"${accumulated_burn:,.0f}", incident["schedule_drift"], delta_color="inverse")
-col4.metric(
-    "Operational Readiness",
-    f"{readiness_count(st.session_state['selected_book'])} / 8 Frontline SOP",
-    "GOV DEADLOCKED" if incident["status"] == "DEADLOCKED" else "CLEARED",
-    delta_color="inverse" if incident["status"] == "DEADLOCKED" else "normal",
-)
-
-st.divider()
-st.header(f"{incident['priority']}: {incident['title']}")
 
 if selected_view == NAV_OPTIONS[1]:
     render_tier_2(incident, st.session_state["selected_book"])
