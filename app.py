@@ -72,6 +72,19 @@ GM_DOMAINS = {
             "point-map at 4-second scan tolerance, pursuant to DGCL § 141(e) reliance on expert reports."
         ),
         "ai_specialty": "IEEE 2800 / ICCP TASE.2 grid telemetry protocol counsel",
+        "frontline": {
+            "name": "Priya Raghunathan",
+            "role": "SCADA & Telemetry Field Engineer",
+            "mandate": "ERCOT Nodal Protocol § 6.5.5.2 telemetry conformance and RTU point-map integrity.",
+            "liability": "Resource-status suspension and dispatch revenue forfeiture on sustained scan drift.",
+            "telemetry": [
+                ("ICCP scan interval", "4.1 s", "DRIFT"),
+                ("RTU point-map parity", "1,842 / 1,842", "NOMINAL"),
+                ("EMT model residual", "0.6%", "NOMINAL"),
+            ],
+            "field_status": "Scan interval holding at 4.1s on the primary path; failover circuit staged for re-scan.",
+            "directive": "Execute a 30-minute dual-path re-scan and log point-map evidence to the ledger.",
+        },
         "ai_brief": (
             "Protocol read: ICCP TASE.2 scan tolerance is a performance obligation, not a safety interlock. "
             "A logged re-scan commitment with time-stamped point-map evidence satisfies ERCOT Nodal § 6.5.5.2 "
@@ -114,6 +127,19 @@ GM_DOMAINS = {
             "Asset Defense Escrow is allocated as the exclusive source of recovery."
         ),
         "ai_specialty": "EPC warranty & high-voltage equipment contract counsel",
+        "frontline": {
+            "name": "Hector Alvarez",
+            "role": "High-Voltage Commissioning Superintendent",
+            "mandate": "IEEE 2800 ride-through packet closure, grounding certification, and crew safety clearance.",
+            "liability": "OEM transformer warranty forfeiture ($1.2M) and EPC contractor claim exposure.",
+            "telemetry": [
+                ("Transformer oil temp", "58 °C", "NOMINAL"),
+                ("Grounding grid resistance", "0.42 Ω", "PENDING WITNESS"),
+                ("Ride-through packet", "7 / 9 cases", "IN TEST"),
+            ],
+            "field_status": "Crews mobilized and idle at the Permian bay awaiting written indemnity before energizing.",
+            "directive": "Hold energization until board indemnity lands, then close grounding witness test same shift.",
+        },
         "ai_brief": (
             "Contract read: OEM warranty forfeiture is a bounded $1.2M liability transferable to the "
             "directorate reserve. Continued standby carry overtakes that ceiling in roughly 13.8 days, so "
@@ -156,6 +182,19 @@ GM_DOMAINS = {
             "filed under ERCOT IA § 4.2 on the basis of board-authorized safe-harbor direction."
         ),
         "ai_specialty": "ERCOT tariff, nodal protocol & interconnection agreement counsel",
+        "frontline": {
+            "name": "Dana Whitfield",
+            "role": "Interconnection Compliance Field Liaison",
+            "mandate": "ERCOT IA § 4.2 filing-window compliance, NERC registration, and settlement enablement.",
+            "liability": "Queue cancellation, $4.5M restudy forfeiture, and 14-month COD slip.",
+            "telemetry": [
+                ("Queue position", "#14 (48 h to drop)", "AT RISK"),
+                ("Part 2 COD packet", "Drafted, unsigned", "PENDING"),
+                ("NERC registration", "Awaiting COD", "BLOCKED"),
+            ],
+            "field_status": "Filing packet staged in the ERCOT portal; submission blocked pending frontline attestations.",
+            "directive": "File provisional Part 2 COD under safe harbor the moment attestations clear.",
+        },
         "ai_brief": (
             "Tariff read: a provisional § 4.2 filing draws a curable deficiency notice and administrative "
             "penalty exposure, materially below the $4.5M restudy forfeiture and 14-month slip triggered by "
@@ -494,6 +533,7 @@ def render_gm_dossier(
 def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
     """Isolated single-page command post for one GM domain."""
     gm_meta = GM_DOMAINS[gm_name]
+    frontline = gm_meta["frontline"]
     book_state = ensure_checklist(selected_book)
     owned_checks = gm_checks(gm_name)
     open_checks = gm_open_checks(selected_book, gm_name)
@@ -521,6 +561,8 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         f"{gm_meta['domain']}</div>"
         f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:6px;'><b>Domain Authority:</b> "
         f"{gm_meta['authority']}</div>"
+        f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:6px;'><b>Paired Tier 3 Site Lead:</b> "
+        f"{frontline['name']} — {frontline['role']}</div>"
         f"<div style='color:{accent};font-size:0.95rem;font-weight:800;margin-top:10px;'>"
         f"SLA {gm_meta['sla_label']} · elapsed {elapsed/3600:,.1f} hrs · {sla_state}</div>"
         f"<div style='color:#FFFFFF;font-size:0.9rem;margin-top:6px;'>Accrued Domain Standby Burn: "
@@ -529,6 +571,20 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         "</div>",
         unsafe_allow_html=True,
     )
+
+    st.markdown("#### 🎩 Tier 2 Executive Stance")
+    stance_col, mandate_col = st.columns(2)
+    with stance_col:
+        st.warning(gm_meta["stance"])
+        st.markdown(f"**Domain Accountability:** {gm_meta['authority']}")
+    with mandate_col:
+        st.markdown(f"**Regulatory Mandate:** {frontline['mandate']}")
+        st.markdown(f"**Liability Posture:** {gm_meta['contract_risk']}")
+        st.caption(
+            f"SLA chronometer: {gm_meta['sla_label']} · elapsed {elapsed/3600:,.1f} hrs · "
+            f"overrun {max(0.0, elapsed - gm_meta['sla_seconds'])/3600:,.1f} hrs · "
+            f"carry ${domain_burn:,.0f} at ${domain_rate:.2f}/sec"
+        )
 
     st.markdown("#### 🔗 Domain Interface Handshake")
     upstream_col, downstream_col = st.columns(2)
@@ -541,7 +597,55 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         for item in gm_meta["downstream"]:
             st.markdown(f"- {item}")
 
-    st.markdown("#### ✅ Domain-Specific Checkpoints")
+    st.markdown(
+        f"#### 📡 Dedicated Direct Line — {gm_name} (Tier 2) ⇄ {frontline['name']} (Tier 3)"
+    )
+    st.caption(f"Frontline site lead: {frontline['name']} · {frontline['role']}")
+    field_col, order_col = st.columns(2)
+    with field_col:
+        field_status = st.text_area(
+            f"Field status from {frontline['name']}",
+            value=frontline["field_status"],
+            key=f"field_status_{selected_book}_{gm_name}",
+            height=110,
+        )
+    with order_col:
+        gm_directive = st.text_area(
+            f"{gm_name} operational directive",
+            value=frontline["directive"],
+            key=f"gm_directive_{selected_book}_{gm_name}",
+            height=110,
+        )
+    if st.button(
+        "⚡ Dispatch Executive Field Order",
+        key=f"dispatch_field_order_{selected_book}_{gm_name}",
+        use_container_width=True,
+    ):
+        stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        ledger_status = write_ledger_event(
+            book=selected_book,
+            action="EXECUTIVE_FIELD_ORDER",
+            rationale=(
+                f"[{stamp}] DIRECTIVE from {gm_name} to {frontline['name']} "
+                f"({frontline['role']}): {gm_directive} || FIELD STATUS: {field_status}"
+            ),
+            work_order_id=st.session_state.active_incident_id,
+            t0=incident["start_time"],
+            actor_id=gm_name,
+            title=gm_meta["role"],
+            tier=2,
+            blocker="FIELD_DISPATCH",
+        )
+        incident["audit_log"].append(
+            f"[{stamp}] EXECUTIVE_FIELD_ORDER ({gm_name} → {frontline['name']}): {gm_directive} | {ledger_status}"
+        )
+        st.success(f"Field order dispatched to {frontline['name']}. {ledger_status}")
+        st.rerun()
+
+    st.markdown(f"#### ✅ Tier 3 Active Frontline Execution — {frontline['role']}")
+    telemetry_cols = st.columns(len(frontline["telemetry"]))
+    for telemetry_col, (label, reading, badge) in zip(telemetry_cols, frontline["telemetry"]):
+        telemetry_col.metric(label, reading, badge, delta_color="off")
     for check in owned_checks:
         widget_key = f"docket_sop_{selected_book}_{check['key']}"
         st.session_state.setdefault(widget_key, bool(book_state.get(check["key"])))
@@ -556,7 +660,10 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
                 write_ledger_event(
                     book=selected_book,
                     action="CHECK_VERIFIED",
-                    rationale=f"{check['name']} verified and signed by {gm_name} ({gm_meta['role']}).",
+                    rationale=(
+                        f"{check['name']} executed by {frontline['name']} ({frontline['role']}) and "
+                        f"countersigned by {gm_name} ({gm_meta['role']})."
+                    ),
                     work_order_id=st.session_state.active_incident_id,
                     t0=incident["start_time"],
                     actor_id=gm_name,
@@ -568,7 +675,7 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
     st.caption(
         f"Domain readiness {len(owned_checks) - len(open_checks)}/{len(owned_checks)} · "
         f"heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')} · "
-        f"book readiness {readiness_count(selected_book)}/8"
+        f"book readiness {readiness_count(selected_book)}/8 (synced to Tier 1 & Tier 2)"
     )
 
     st.markdown(
@@ -705,6 +812,10 @@ def render_tier_2_overview(incident: dict, selected_book: str) -> None:
         with st.container(border=True):
             st.markdown(f"**{gm_name}** — `{gm_meta['role']}`")
             st.markdown(f"**Domain Responsibility:** {gm_meta['domain']}")
+            st.markdown(
+                f"**Paired Tier 3 Site Lead:** {gm_meta['frontline']['name']} — "
+                f"{gm_meta['frontline']['role']}"
+            )
             st.info(f"**Operational Position:** {gm_meta['stance']}")
             st.caption(
                 f"SLA {gm_meta['sla_label']} · {len(open_checks)} gate(s) withheld · "
