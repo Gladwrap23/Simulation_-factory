@@ -7,23 +7,26 @@ import streamlit as st
 import ledger_store
 
 
-VIEW_TIER_1 = "1️⃣ Tier 1 | Chairman Directorate"
-VIEW_TIER_2 = "2️⃣ Tier 2 | General Management Overview"
-VIEW_TIER_3 = "3️⃣ Tier 3 | Site Operations Checklists"
-VIEW_DOCKET_VANCE = "📂 Docket: Marcus Vance (Grid & Telemetry)"
-VIEW_DOCKET_ROSTOVA = "📂 Docket: Elena Rostova (Field Substation)"
-VIEW_DOCKET_CHEN = "📂 Docket: David Chen (Regulatory & Market Ops)"
-VIEW_TIER_4 = "4️⃣ Forensic Audit Ledger"
+VIEW_TIER_1 = "🏛️ Tier 1 | Chairman Directorate"
+VIEW_TIER_2 = "📋 Tier 2 | Executive Management Overview"
+VIEW_SEP_DOCKETS = "——— DOMAIN DOCKETS (OWNER LOCKED) ———"
+VIEW_DOCKET_VANCE = "⚡ Docket: Marcus Vance (Grid & Telemetry)"
+VIEW_DOCKET_ROSTOVA = "🔧 Docket: Elena Rostova (Field Substation)"
+VIEW_DOCKET_CHEN = "⚖️ Docket: David Chen (Regulatory & Market Ops)"
+VIEW_SEP_AUDIT = "——— MASTER AUDIT ———"
+VIEW_TIER_4 = "📜 Tier 4 | Master Forensic Ledger"
 
 COMMAND_VIEWS = [
     VIEW_TIER_1,
     VIEW_TIER_2,
-    VIEW_TIER_3,
+    VIEW_SEP_DOCKETS,
     VIEW_DOCKET_VANCE,
     VIEW_DOCKET_ROSTOVA,
     VIEW_DOCKET_CHEN,
+    VIEW_SEP_AUDIT,
     VIEW_TIER_4,
 ]
+NAV_SEPARATORS = {VIEW_SEP_DOCKETS, VIEW_SEP_AUDIT}
 
 DOCKET_ROUTES = {
     "Marcus Vance": VIEW_DOCKET_VANCE,
@@ -355,23 +358,21 @@ def identify_bottleneck(book: str, elapsed_seconds: float):
     return max(candidates, key=lambda item: item[3])
 
 
-def fetch_gm_ledger_events(book: str, gm_name: str, limit: int = 3) -> list:
+def fetch_gm_ledger_events(book: str, gm_name: str, limit: int = 200) -> list:
+    """Blocks signed by, or expressly naming, this GM — strict domain-scoped chain."""
     if not st.session_state.get("ledger_ready"):
         return []
     try:
         with ledger_store.get_db() as conn:
             rows = conn.execute(
                 """
-                SELECT actor_id, official_title, action_type, t1_resolution, hesitation_cost,
-                       blocker_notes, sha256_hash
-                FROM forensic_ledger
+                SELECT * FROM forensic_ledger
                 WHERE operating_book = ?
-                  AND (actor_id LIKE ? OR official_title LIKE ? OR blocker_notes LIKE ?
-                       OR actor_id = 'CHAIRMAN')
+                  AND (actor_id = ? OR official_title LIKE ? OR blocker_notes LIKE ?)
                 ORDER BY entry_id DESC
                 LIMIT ?
                 """,
-                (book, f"%{gm_name}%", f"%{gm_name}%", f"%{gm_name}%", limit),
+                (book, gm_name, f"%{gm_name}%", f"%{gm_name}%", limit),
             ).fetchall()
         return [dict(row) for row in rows]
     except Exception:
@@ -486,7 +487,7 @@ def render_gm_dossier(
 
     with tier4_col:
         st.markdown("**TIER 4 · FORENSIC AUDIT LEDGER**")
-        events = fetch_gm_ledger_events(selected_book, gm_name)
+        events = fetch_gm_ledger_events(selected_book, gm_name, limit=3)
         if not events:
             st.info("No chained ledger blocks recorded for this domain yet.")
         for event in events:
@@ -550,27 +551,29 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
     )
     accent = "#00FFA3" if not open_checks else ("#FF4B4B" if elapsed > gm_meta["sla_seconds"] else "#F5A623")
 
-    if st.button("← Return to Directorate Command", key=f"breadcrumb_{gm_name}"):
+    if st.button("← Return to Chairman Directorate", key=f"breadcrumb_{gm_name}"):
         route_to(VIEW_TIER_1)
 
     st.markdown(
         f"<div style='border:2px solid {accent};border-radius:10px;padding:18px 22px;"
         "background:#0B0F19;'>"
-        f"<div style='color:#FFFFFF;font-size:1.5rem;font-weight:900;'>📂 {gm_name}</div>"
-        f"<div style='color:#9AA4B2;font-size:0.9rem;margin-top:4px;'>{gm_meta['role']} · "
-        f"{gm_meta['domain']}</div>"
-        f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:6px;'><b>Domain Authority:</b> "
+        f"<div style='color:#FFFFFF;font-size:1.5rem;font-weight:900;'>🔒 DOMAIN DOCKET LOCKED: "
+        f"{gm_name} — {gm_meta['role']}</div>"
+        f"<div style='color:{accent};font-size:0.92rem;font-weight:700;margin-top:6px;'>"
+        f"Mandate: {gm_meta['domain']} | SLA Target: {gm_meta['sla_label']} | "
+        f"Accrued Carry: ${domain_burn:,.0f}</div>"
+        f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:8px;'><b>Domain Authority:</b> "
         f"{gm_meta['authority']}</div>"
         f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:6px;'><b>Paired Tier 3 Site Lead:</b> "
         f"{frontline['name']} — {frontline['role']}</div>"
         f"<div style='color:{accent};font-size:0.95rem;font-weight:800;margin-top:10px;'>"
-        f"SLA {gm_meta['sla_label']} · elapsed {elapsed/3600:,.1f} hrs · {sla_state}</div>"
-        f"<div style='color:#FFFFFF;font-size:0.9rem;margin-top:6px;'>Accrued Domain Standby Burn: "
-        f"<b>${domain_burn:,.0f}</b> at ${domain_rate:.2f}/sec"
-        f"{' · BILLING HALTED' if domain_frozen else ''}</div>"
+        f"Chronometer: elapsed {elapsed/3600:,.1f} hrs · {sla_state} · "
+        f"${domain_rate:.2f}/sec{' · BILLING HALTED' if domain_frozen else ''}</div>"
         "</div>",
         unsafe_allow_html=True,
     )
+
+    st.markdown("### Section A — Tier 2 Executive Stance & Legal Directives")
 
     st.markdown("#### 🎩 Tier 2 Executive Stance")
     stance_col, mandate_col = st.columns(2)
@@ -596,87 +599,6 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         st.markdown("**Downstream deliverables passed to the next domain**")
         for item in gm_meta["downstream"]:
             st.markdown(f"- {item}")
-
-    st.markdown(
-        f"#### 📡 Dedicated Direct Line — {gm_name} (Tier 2) ⇄ {frontline['name']} (Tier 3)"
-    )
-    st.caption(f"Frontline site lead: {frontline['name']} · {frontline['role']}")
-    field_col, order_col = st.columns(2)
-    with field_col:
-        field_status = st.text_area(
-            f"Field status from {frontline['name']}",
-            value=frontline["field_status"],
-            key=f"field_status_{selected_book}_{gm_name}",
-            height=110,
-        )
-    with order_col:
-        gm_directive = st.text_area(
-            f"{gm_name} operational directive",
-            value=frontline["directive"],
-            key=f"gm_directive_{selected_book}_{gm_name}",
-            height=110,
-        )
-    if st.button(
-        "⚡ Dispatch Executive Field Order",
-        key=f"dispatch_field_order_{selected_book}_{gm_name}",
-        use_container_width=True,
-    ):
-        stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        ledger_status = write_ledger_event(
-            book=selected_book,
-            action="EXECUTIVE_FIELD_ORDER",
-            rationale=(
-                f"[{stamp}] DIRECTIVE from {gm_name} to {frontline['name']} "
-                f"({frontline['role']}): {gm_directive} || FIELD STATUS: {field_status}"
-            ),
-            work_order_id=st.session_state.active_incident_id,
-            t0=incident["start_time"],
-            actor_id=gm_name,
-            title=gm_meta["role"],
-            tier=2,
-            blocker="FIELD_DISPATCH",
-        )
-        incident["audit_log"].append(
-            f"[{stamp}] EXECUTIVE_FIELD_ORDER ({gm_name} → {frontline['name']}): {gm_directive} | {ledger_status}"
-        )
-        st.success(f"Field order dispatched to {frontline['name']}. {ledger_status}")
-        st.rerun()
-
-    st.markdown(f"#### ✅ Tier 3 Active Frontline Execution — {frontline['role']}")
-    telemetry_cols = st.columns(len(frontline["telemetry"]))
-    for telemetry_col, (label, reading, badge) in zip(telemetry_cols, frontline["telemetry"]):
-        telemetry_col.metric(label, reading, badge, delta_color="off")
-    for check in owned_checks:
-        widget_key = f"docket_sop_{selected_book}_{check['key']}"
-        st.session_state.setdefault(widget_key, bool(book_state.get(check["key"])))
-        verified = st.checkbox(
-            f"{check['name']} — {'CLEARED' if book_state.get(check['key']) else 'PENDING'}",
-            key=widget_key,
-        )
-        if verified != bool(book_state.get(check["key"])):
-            st.session_state["checklist_db"][selected_book][check["key"]] = verified
-            st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
-            if verified:
-                write_ledger_event(
-                    book=selected_book,
-                    action="CHECK_VERIFIED",
-                    rationale=(
-                        f"{check['name']} executed by {frontline['name']} ({frontline['role']}) and "
-                        f"countersigned by {gm_name} ({gm_meta['role']})."
-                    ),
-                    work_order_id=st.session_state.active_incident_id,
-                    t0=incident["start_time"],
-                    actor_id=gm_name,
-                    title=gm_meta["role"],
-                    tier=3,
-                    blocker="SOP_GATE",
-                )
-            st.rerun()
-    st.caption(
-        f"Domain readiness {len(owned_checks) - len(open_checks)}/{len(owned_checks)} · "
-        f"heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')} · "
-        f"book readiness {readiness_count(selected_book)}/8 (synced to Tier 1 & Tier 2)"
-    )
 
     st.markdown(
         "<div style='border:2px solid #4DA3FF;border-radius:10px;padding:16px 20px;margin-top:12px;"
@@ -767,6 +689,114 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         st.success(f"Minutes sealed. SHA-256: {minute_hash}")
         st.rerun()
 
+    st.markdown(f"### Section B — Tier 3 Dedicated Frontline Operations ({frontline['role']})")
+    st.markdown(
+        f"#### 📡 Dedicated Direct Line — {gm_name} (Tier 2) ⇄ {frontline['name']} (Tier 3)"
+    )
+    st.caption(f"Frontline site lead: {frontline['name']} · {frontline['role']}")
+    field_col, order_col = st.columns(2)
+    with field_col:
+        field_status = st.text_area(
+            f"Field status from {frontline['name']}",
+            value=frontline["field_status"],
+            key=f"field_status_{selected_book}_{gm_name}",
+            height=110,
+        )
+    with order_col:
+        gm_directive = st.text_area(
+            f"{gm_name} operational directive",
+            value=frontline["directive"],
+            key=f"gm_directive_{selected_book}_{gm_name}",
+            height=110,
+        )
+    if st.button(
+        "⚡ Dispatch Executive Field Order",
+        key=f"dispatch_field_order_{selected_book}_{gm_name}",
+        use_container_width=True,
+    ):
+        stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        ledger_status = write_ledger_event(
+            book=selected_book,
+            action="EXECUTIVE_FIELD_ORDER",
+            rationale=(
+                f"[{stamp}] DIRECTIVE from {gm_name} to {frontline['name']} "
+                f"({frontline['role']}): {gm_directive} || FIELD STATUS: {field_status}"
+            ),
+            work_order_id=st.session_state.active_incident_id,
+            t0=incident["start_time"],
+            actor_id=gm_name,
+            title=gm_meta["role"],
+            tier=2,
+            blocker="FIELD_DISPATCH",
+        )
+        incident["audit_log"].append(
+            f"[{stamp}] EXECUTIVE_FIELD_ORDER ({gm_name} → {frontline['name']}): {gm_directive} | {ledger_status}"
+        )
+        st.success(f"Field order dispatched to {frontline['name']}. {ledger_status}")
+        st.rerun()
+
+    st.markdown(f"#### ✅ Tier 3 Active Frontline Execution — {frontline['role']}")
+    telemetry_cols = st.columns(len(frontline["telemetry"]))
+    for telemetry_col, (label, reading, badge) in zip(telemetry_cols, frontline["telemetry"]):
+        telemetry_col.metric(label, reading, badge, delta_color="off")
+    for check in owned_checks:
+        widget_key = f"docket_sop_{selected_book}_{check['key']}"
+        st.session_state.setdefault(widget_key, bool(book_state.get(check["key"])))
+        verified = st.checkbox(
+            f"{check['name']} — {'CLEARED' if book_state.get(check['key']) else 'PENDING'}",
+            key=widget_key,
+        )
+        if verified != bool(book_state.get(check["key"])):
+            st.session_state["checklist_db"][selected_book][check["key"]] = verified
+            st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
+            if verified:
+                write_ledger_event(
+                    book=selected_book,
+                    action="CHECK_VERIFIED",
+                    rationale=(
+                        f"{check['name']} executed by {frontline['name']} ({frontline['role']}) and "
+                        f"countersigned by {gm_name} ({gm_meta['role']})."
+                    ),
+                    work_order_id=st.session_state.active_incident_id,
+                    t0=incident["start_time"],
+                    actor_id=gm_name,
+                    title=gm_meta["role"],
+                    tier=3,
+                    blocker="SOP_GATE",
+                )
+            st.rerun()
+    st.caption(
+        f"Domain readiness {len(owned_checks) - len(open_checks)}/{len(owned_checks)} · "
+        f"heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')} · "
+        f"book readiness {readiness_count(selected_book)}/8 (synced to Tier 1 & Tier 2)"
+    )
+
+    st.markdown(f"### Section C — 📜 Forensic Ledger Trail: {gm_name}")
+    domain_chain = fetch_gm_ledger_events(selected_book, gm_name)
+    if not domain_chain:
+        st.info(f"No ledger blocks signed by {gm_name} on operating book `{selected_book}` yet.")
+    else:
+        st.dataframe(
+            [
+                {
+                    "Entry": row["entry_id"],
+                    "UTC Timestamp": row["t1_resolution"],
+                    "Event": row["action_type"],
+                    "Signed By": f"{row['actor_id']} ({row['official_title']})",
+                    "Tier": row["tier_level"],
+                    "Counsel Rationale": row["blocker_notes"] or "n/a",
+                    "SHA-256": row["sha256_hash"],
+                }
+                for row in domain_chain
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+        for row in domain_chain:
+            with st.expander(f"Block {row['entry_id']} · {row['action_type']} · {row['t1_resolution']}"):
+                st.code(json.dumps(row, indent=2, default=str), language="json")
+                st.code(f"SHA-256: {row['sha256_hash']}", language="text")
+
 
 def render_tier_4_ledger(incident: dict, selected_book: str) -> None:
     """Immutable chronological chain of all governance events for the active book."""
@@ -824,24 +854,6 @@ def render_tier_2_overview(incident: dict, selected_book: str) -> None:
             if st.button(f"Open {gm_name} docket", key=f"tier2_open_{gm_name}"):
                 st.session_state["inspected_gm"] = gm_name
                 route_to(DOCKET_ROUTES[gm_name])
-
-
-def render_tier_3_checklists(incident: dict, selected_book: str) -> None:
-    st.subheader("Tier 3 | Site Operations Checklists")
-    book_state = ensure_checklist(selected_book)
-    st.caption(
-        f"Operating book `{selected_book}` · readiness {readiness_count(selected_book)}/8 · "
-        f"heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}"
-    )
-    for gm_name in GM_DOMAINS:
-        st.markdown(f"**{gm_name} — {GM_DOMAINS[gm_name]['domain']}**")
-        for check in gm_checks(gm_name):
-            row_label, row_status = st.columns([3, 1])
-            row_label.write(check["name"])
-            if book_state.get(check["key"]):
-                row_status.success("CLEARED")
-            else:
-                row_status.error("PENDING")
 
 
 def render_remedial_engine(incident: dict) -> None:
@@ -1148,6 +1160,9 @@ nav_choice = st.sidebar.radio(
     index=COMMAND_VIEWS.index(st.session_state["command_view"]),
     key="command_view_radio",
 )
+if nav_choice in NAV_SEPARATORS:
+    st.session_state.pop("command_view_radio", None)
+    st.rerun()
 if nav_choice != st.session_state["command_view"]:
     st.session_state["command_view"] = nav_choice
     st.rerun()
@@ -1182,10 +1197,6 @@ st.header(f"{incident['priority']}: {incident['title']}")
 
 if active_view == VIEW_TIER_2:
     render_tier_2_overview(incident, st.session_state["selected_book"])
-    st.stop()
-
-if active_view == VIEW_TIER_3:
-    render_tier_3_checklists(incident, st.session_state["selected_book"])
     st.stop()
 
 if active_view == VIEW_TIER_4:
