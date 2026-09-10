@@ -469,9 +469,11 @@ def fetch_ledger_chain(book: str | None = None, limit: int = 1000) -> list:
         return []
 
 
-def route_to(view: str) -> None:
-    st.session_state["nav_selection"] = view
-    st.rerun()
+def set_route(target_view: str, inspected_gm: str | None = None) -> None:
+    """Widget callback: runs before widgets instantiate, so nav_selection can be set safely."""
+    st.session_state["nav_selection"] = target_view
+    if inspected_gm:
+        st.session_state["inspected_gm"] = inspected_gm
 
 
 def _kpi_card(label: str, value: str, basis: str, accent: str) -> str:
@@ -595,8 +597,12 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
     )
     accent = "#00FFA3" if not open_checks else ("#FF4B4B" if elapsed > gm_meta["sla_seconds"] else "#F5A623")
 
-    if st.button("← Return to Chairman Directorate", key=f"breadcrumb_{gm_name}"):
-        route_to(VIEW_TIER_1)
+    st.button(
+        "← Return to Chairman Directorate",
+        key="btn_return_tier1",
+        on_click=set_route,
+        args=(VIEW_TIER_1,),
+    )
 
     st.markdown(
         f"<div style='border:2px solid {accent};border-radius:10px;padding:18px 22px;"
@@ -1220,9 +1226,13 @@ def render_tier_2(incident: dict, selected_book: str) -> None:
                     f"DOMAIN_DIRECTIVE_ISSUED ({gm_name}): {domain_directive} | {status}"
                 )
                 st.success(status)
-            if nav_col.button("Inspect Docket", key=f"tier2_open_{gm_name}", use_container_width=True):
-                st.session_state["inspected_gm"] = gm_name
-                route_to(DOCKET_ROUTES[gm_name])
+            nav_col.button(
+                "Inspect Docket",
+                key=f"tier2_open_{gm_name}",
+                use_container_width=True,
+                on_click=set_route,
+                args=(DOCKET_ROUTES[gm_name], gm_name),
+            )
 
 
 def render_remedial_engine(incident: dict) -> None:
@@ -1364,14 +1374,14 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
             "</div>",
             unsafe_allow_html=True,
         )
-        if column.button(
+        column.button(
             f"📂 OPEN {gm_name.upper()} DOCKET",
             key=f"inspect_gm_{selected_book}_{gm_name}",
             use_container_width=True,
             type="primary" if is_inspected else "secondary",
-        ):
-            st.session_state["inspected_gm"] = gm_name
-            route_to(DOCKET_ROUTES[gm_name])
+            on_click=set_route,
+            args=(DOCKET_ROUTES[gm_name], gm_name),
+        )
 
     with st.container():
         render_gm_dossier(
