@@ -1,8 +1,36 @@
 import datetime
+import hashlib
+import json
 
 import streamlit as st
 
 import ledger_store
+
+
+VIEW_TIER_1 = "1️⃣ Tier 1 | Chairman Directorate"
+VIEW_TIER_2 = "2️⃣ Tier 2 | General Management Overview"
+VIEW_TIER_3 = "3️⃣ Tier 3 | Site Operations Checklists"
+VIEW_DOCKET_VANCE = "📂 Docket: Marcus Vance (Grid & Telemetry)"
+VIEW_DOCKET_ROSTOVA = "📂 Docket: Elena Rostova (Field Substation)"
+VIEW_DOCKET_CHEN = "📂 Docket: David Chen (Regulatory & Market Ops)"
+VIEW_TIER_4 = "4️⃣ Forensic Audit Ledger"
+
+COMMAND_VIEWS = [
+    VIEW_TIER_1,
+    VIEW_TIER_2,
+    VIEW_TIER_3,
+    VIEW_DOCKET_VANCE,
+    VIEW_DOCKET_ROSTOVA,
+    VIEW_DOCKET_CHEN,
+    VIEW_TIER_4,
+]
+
+DOCKET_ROUTES = {
+    "Marcus Vance": VIEW_DOCKET_VANCE,
+    "Elena Rostova": VIEW_DOCKET_ROSTOVA,
+    "David Chen": VIEW_DOCKET_CHEN,
+}
+ROUTE_TO_GM = {route: gm for gm, route in DOCKET_ROUTES.items()}
 
 
 TOTAL_ASSET_EXPOSURE = 88_500_000
@@ -28,6 +56,27 @@ GM_DOMAINS = {
         ),
         "escalation": "Escalate to Grid Risk & Technical Integrity Committee for a 4-hour re-scan window.",
         "suggested_query": "Can we proceed if ICCP telemetry has 4-second drift?",
+        "role": "GM - Grid Interconnection & Telemetry",
+        "authority": "Signature authority over ICCP/RTU point-maps, EMT model attestation, and TSP handshake.",
+        "upstream": [
+            "ERCOT-approved resource ID and NOIE registration packet (David Chen)",
+            "Energized substation bay with terminated fiber path (Elena Rostova)",
+        ],
+        "downstream": [
+            "Certified telemetry point-map required before Elena can complete relay coordination",
+            "Validated PSCAD EMT model required before David can file Part 2 COD attestation",
+        ],
+        "waiver_terms": (
+            "The Corporation shall indemnify and hold harmless Marcus Vance against any third-party claim, "
+            "protocol penalty, or telemetry non-conformance action arising from certification of the ICCP "
+            "point-map at 4-second scan tolerance, pursuant to DGCL § 141(e) reliance on expert reports."
+        ),
+        "ai_specialty": "IEEE 2800 / ICCP TASE.2 grid telemetry protocol counsel",
+        "ai_brief": (
+            "Protocol read: ICCP TASE.2 scan tolerance is a performance obligation, not a safety interlock. "
+            "A logged re-scan commitment with time-stamped point-map evidence satisfies ERCOT Nodal § 6.5.5.2 "
+            "good-faith compliance while the asset energizes."
+        ),
         "synthesis": (
             "4-second ICCP drift sits at the outer edge of ERCOT tolerance, not outside it. Proceeding is "
             "defensible with a logged re-scan commitment; the telemetry defect is administrative, not "
@@ -48,6 +97,28 @@ GM_DOMAINS = {
         ),
         "escalation": "Issue Directorate Indemnity Carve-Out and fund $1.2M Asset Defense Escrow.",
         "suggested_query": "What happens if we grant Elena an emergency warranty indemnification?",
+        "role": "GM - Field Operations & Contractor Mobilization",
+        "authority": "Signature authority over high-voltage energization, EPC crews, and substation safety clearance.",
+        "upstream": [
+            "Certified telemetry point-map and relay setpoints (Marcus Vance)",
+            "Executed EPC warranty position and regulatory energization window (David Chen)",
+        ],
+        "downstream": [
+            "Energization clearance required before Marcus can close live telemetry verification",
+            "IEEE 2800 packet and grounding certificate required before David files COD attestation",
+        ],
+        "waiver_terms": (
+            "The Corporation shall indemnify and hold harmless Elena Rostova, in her individual and official "
+            "capacity, against OEM warranty forfeiture, EPC contractor claims, and third-party equipment "
+            "damage claims arising from energization prior to final IEEE 2800 packet closure. A $1,200,000 "
+            "Asset Defense Escrow is allocated as the exclusive source of recovery."
+        ),
+        "ai_specialty": "EPC warranty & high-voltage equipment contract counsel",
+        "ai_brief": (
+            "Contract read: OEM warranty forfeiture is a bounded $1.2M liability transferable to the "
+            "directorate reserve. Continued standby carry overtakes that ceiling in roughly 13.8 days, so "
+            "the indemnity is the cheaper instrument."
+        ),
         "synthesis": (
             "An emergency indemnification transfers $1.2M of warranty exposure to the directorate reserve "
             "and clears the energization hold immediately. Idle carry overtakes the equipment risk in "
@@ -69,6 +140,27 @@ GM_DOMAINS = {
         ),
         "escalation": "Authorize provisional filing under statutory safe harbor with counsel attestation.",
         "suggested_query": "What is the penalty under ERCOT IA § 4.2 if we force provisional filing?",
+        "role": "GM - Regulatory & Market Operations",
+        "authority": "Signature authority over ERCOT filings, queue position, NERC registration, and settlement enablement.",
+        "upstream": [
+            "Validated PSCAD EMT model and certified point-map (Marcus Vance)",
+            "IEEE 2800 test packet and grounding/safety clearance (Elena Rostova)",
+        ],
+        "downstream": [
+            "Filed Part 2 COD attestation unlocks commercial dispatch and settlement revenue",
+            "NERC registration closes the interconnection docket and releases standby crews",
+        ],
+        "waiver_terms": (
+            "The Corporation shall indemnify and hold harmless David Chen against regulatory penalty, "
+            "deficiency assessment, or third-party claim arising from provisional Part 2 COD attestation "
+            "filed under ERCOT IA § 4.2 on the basis of board-authorized safe-harbor direction."
+        ),
+        "ai_specialty": "ERCOT tariff, nodal protocol & interconnection agreement counsel",
+        "ai_brief": (
+            "Tariff read: a provisional § 4.2 filing draws a curable deficiency notice and administrative "
+            "penalty exposure, materially below the $4.5M restudy forfeiture and 14-month slip triggered by "
+            "queue cancellation."
+        ),
         "synthesis": (
             "Provisional filing under § 4.2 carries a curable deficiency notice and potential administrative "
             "penalty, materially cheaper than queue cancellation. Filing now preserves the interconnect "
@@ -177,6 +269,10 @@ if "checklist_db" not in st.session_state:
     st.session_state["checklist_db"] = {}
 if "standby_frozen" not in st.session_state:
     st.session_state["standby_frozen"] = {}
+if "domain_frozen" not in st.session_state:
+    st.session_state["domain_frozen"] = {}
+if "command_view" not in st.session_state:
+    st.session_state["command_view"] = VIEW_TIER_1
 if "ledger_ready" not in st.session_state:
     try:
         ledger_store.init_db()
@@ -243,24 +339,55 @@ def fetch_gm_ledger_events(book: str, gm_name: str, limit: int = 3) -> list:
         return []
 
 
-def write_ledger_event(book: str, action: str, rationale: str, work_order_id: str, t0) -> str:
+def write_ledger_event(
+    book: str,
+    action: str,
+    rationale: str,
+    work_order_id: str,
+    t0,
+    actor_id: str = "CHAIRMAN",
+    title: str = "Chairman of the Board",
+    tier: int = 1,
+    blocker: str = "GOVERNANCE_DEADLOCK",
+) -> str:
     if not st.session_state.get("ledger_ready"):
         return "LEDGER OFFLINE - EVENT HELD IN SESSION CHAIN"
     try:
         ledger_store.record_ledger_entry(
             book=book,
-            tier=1,
-            actor_id="CHAIRMAN",
-            title="Chairman of the Board",
+            tier=tier,
+            actor_id=actor_id,
+            title=title,
             action=action,
             work_order_id=work_order_id,
             t0=t0,
-            blocker="GOVERNANCE_DEADLOCK",
+            blocker=blocker,
             notes=rationale,
         )
         return "COMMITTED TO SQLITE FORENSIC LEDGER (SHA-256 CHAINED)"
     except Exception as exc:
         return f"LEDGER WRITE FAILED: {exc}"
+
+
+def fetch_ledger_chain(book: str, limit: int = 200) -> list:
+    if not st.session_state.get("ledger_ready"):
+        return []
+    try:
+        with ledger_store.get_db() as conn:
+            rows = conn.execute(
+                "SELECT * FROM forensic_ledger WHERE operating_book = ? ORDER BY entry_id DESC LIMIT ?",
+                (book, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
+
+
+def route_to(view: str) -> None:
+    """Programmatic navigation: drop the nav widget key so the radio re-seeds from command_view."""
+    st.session_state["command_view"] = view
+    st.session_state.pop("command_view_radio", None)
+    st.rerun()
 
 
 def _kpi_card(label: str, value: str, basis: str, accent: str) -> str:
@@ -364,6 +491,289 @@ def render_gm_dossier(
             )
 
 
+def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
+    """Isolated single-page command post for one GM domain."""
+    gm_meta = GM_DOMAINS[gm_name]
+    book_state = ensure_checklist(selected_book)
+    owned_checks = gm_checks(gm_name)
+    open_checks = gm_open_checks(selected_book, gm_name)
+    freeze_key = f"{selected_book}|{gm_name}"
+    domain_frozen = st.session_state["domain_frozen"].get(freeze_key, False)
+
+    elapsed = (datetime.datetime.now() - incident["start_time"]).total_seconds()
+    domain_rate = CARRY_BURN_PER_SEC * (len(owned_checks) / len(SOP_CHECKS))
+    domain_burn = 0.0 if domain_frozen or not open_checks else elapsed * domain_rate
+    sla_state = (
+        "CLEARED"
+        if not open_checks
+        else ("BREACHED / ACCRUING BURN" if elapsed > gm_meta["sla_seconds"] else "ON SCHEDULE")
+    )
+    accent = "#00FFA3" if not open_checks else ("#FF4B4B" if elapsed > gm_meta["sla_seconds"] else "#F5A623")
+
+    if st.button("← Return to Directorate Command", key=f"breadcrumb_{gm_name}"):
+        route_to(VIEW_TIER_1)
+
+    st.markdown(
+        f"<div style='border:2px solid {accent};border-radius:10px;padding:18px 22px;"
+        "background:#0B0F19;'>"
+        f"<div style='color:#FFFFFF;font-size:1.5rem;font-weight:900;'>📂 {gm_name}</div>"
+        f"<div style='color:#9AA4B2;font-size:0.9rem;margin-top:4px;'>{gm_meta['role']} · "
+        f"{gm_meta['domain']}</div>"
+        f"<div style='color:#9AA4B2;font-size:0.85rem;margin-top:6px;'><b>Domain Authority:</b> "
+        f"{gm_meta['authority']}</div>"
+        f"<div style='color:{accent};font-size:0.95rem;font-weight:800;margin-top:10px;'>"
+        f"SLA {gm_meta['sla_label']} · elapsed {elapsed/3600:,.1f} hrs · {sla_state}</div>"
+        f"<div style='color:#FFFFFF;font-size:0.9rem;margin-top:6px;'>Accrued Domain Standby Burn: "
+        f"<b>${domain_burn:,.0f}</b> at ${domain_rate:.2f}/sec"
+        f"{' · BILLING HALTED' if domain_frozen else ''}</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### 🔗 Domain Interface Handshake")
+    upstream_col, downstream_col = st.columns(2)
+    with upstream_col:
+        st.markdown("**Prerequisite inputs required from peer GMs**")
+        for item in gm_meta["upstream"]:
+            st.markdown(f"- {item}")
+    with downstream_col:
+        st.markdown("**Downstream deliverables passed to the next domain**")
+        for item in gm_meta["downstream"]:
+            st.markdown(f"- {item}")
+
+    st.markdown("#### ✅ Domain-Specific Checkpoints")
+    for check in owned_checks:
+        widget_key = f"docket_sop_{selected_book}_{check['key']}"
+        st.session_state.setdefault(widget_key, bool(book_state.get(check["key"])))
+        verified = st.checkbox(
+            f"{check['name']} — {'CLEARED' if book_state.get(check['key']) else 'PENDING'}",
+            key=widget_key,
+        )
+        if verified != bool(book_state.get(check["key"])):
+            st.session_state["checklist_db"][selected_book][check["key"]] = verified
+            st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
+            if verified:
+                write_ledger_event(
+                    book=selected_book,
+                    action="CHECK_VERIFIED",
+                    rationale=f"{check['name']} verified and signed by {gm_name} ({gm_meta['role']}).",
+                    work_order_id=st.session_state.active_incident_id,
+                    t0=incident["start_time"],
+                    actor_id=gm_name,
+                    title=gm_meta["role"],
+                    tier=3,
+                    blocker="SOP_GATE",
+                )
+            st.rerun()
+    st.caption(
+        f"Domain readiness {len(owned_checks) - len(open_checks)}/{len(owned_checks)} · "
+        f"heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')} · "
+        f"book readiness {readiness_count(selected_book)}/8"
+    )
+
+    st.markdown(
+        "<div style='border:2px solid #4DA3FF;border-radius:10px;padding:16px 20px;margin-top:12px;"
+        "background:rgba(77,163,255,0.06);'>"
+        "<div style='color:#4DA3FF;font-size:1.1rem;font-weight:900;'>"
+        "🛡️ DGCL § 141 BILATERAL SAFE-HARBOR &amp; INDEMNIFICATION RESOLUTION</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    waiver_rationale = st.text_input(
+        "Indemnity Terms / Bilateral Waiver Basis",
+        value=gm_meta["waiver_terms"],
+        key=f"waiver_rationale_{selected_book}_{gm_name}",
+    )
+    if st.button(
+        "Grant Board Indemnification & Authorize Sign-Off",
+        key=f"grant_indemnity_{selected_book}_{gm_name}",
+        use_container_width=True,
+    ):
+        for check in owned_checks:
+            st.session_state["checklist_db"][selected_book][check["key"]] = True
+            st.session_state.pop(f"docket_sop_{selected_book}_{check['key']}", None)
+            st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
+        st.session_state["domain_frozen"][freeze_key] = True
+        ledger_status = write_ledger_event(
+            book=selected_book,
+            action="BILATERAL_INDEMNIFICATION_ISSUED",
+            rationale=waiver_rationale,
+            work_order_id=st.session_state.active_incident_id,
+            t0=incident["start_time"],
+            actor_id=gm_name,
+            title=gm_meta["role"],
+            tier=2,
+            blocker="INDEMNIFICATION",
+        )
+        stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        incident["audit_log"].append(
+            f"[{stamp}] BILATERAL_INDEMNIFICATION_ISSUED ({gm_name}): {waiver_rationale} | {ledger_status}"
+        )
+        st.rerun()
+
+    st.markdown("#### 🤝 Forensic Executive Meeting & AI Chamber")
+    st.caption(f"Domain counsel engaged: {gm_meta['ai_specialty']}")
+    meeting_notes = st.text_area(
+        "Executive Meeting Notes / Oral Stipulations",
+        placeholder=f"Record bilateral stipulations agreed with {gm_name}...",
+        key=f"meeting_notes_{selected_book}_{gm_name}",
+    )
+    domain_query = st.text_input(
+        f"Interrogate {gm_meta['ai_specialty']}",
+        placeholder=gm_meta["suggested_query"],
+        key=f"domain_query_{selected_book}_{gm_name}",
+    )
+    if domain_query:
+        with st.chat_message("assistant"):
+            st.write(f"**{gm_meta['ai_specialty']} — response to '{domain_query}'**")
+            st.info(
+                f"{gm_meta['ai_brief']}\n\n"
+                f"**Structural Analysis:** {gm_meta['synthesis']}\n\n"
+                f"**Burn vs. Exposure:** domain standby accrues ${domain_rate * 3600:,.0f}/hr "
+                f"(${domain_burn:,.0f} to date) against {gm_meta['contract_risk'].rstrip('.')}.\n\n"
+                f"**Directive:** {gm_meta['escalation']}"
+            )
+
+    if st.button(
+        "🔒 Stipulate & Seal Meeting Minutes to Ledger",
+        key=f"seal_minutes_{selected_book}_{gm_name}",
+        use_container_width=True,
+    ):
+        stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        minute_hash = hashlib.sha256(
+            f"{selected_book}|{gm_name}|{stamp}|{meeting_notes}".encode()
+        ).hexdigest()
+        ledger_status = write_ledger_event(
+            book=selected_book,
+            action="FORENSIC_MEETING_RECORD",
+            rationale=f"[minutes_sha256={minute_hash}] {meeting_notes}",
+            work_order_id=st.session_state.active_incident_id,
+            t0=incident["start_time"],
+            actor_id=gm_name,
+            title=gm_meta["role"],
+            tier=2,
+            blocker="EXECUTIVE_MEETING",
+        )
+        incident["audit_log"].append(
+            f"[{stamp}] FORENSIC_MEETING_RECORD ({gm_name}): sealed minutes {minute_hash[:16]}… | {ledger_status}"
+        )
+        st.success(f"Minutes sealed. SHA-256: {minute_hash}")
+        st.rerun()
+
+
+def render_tier_4_ledger(incident: dict, selected_book: str) -> None:
+    """Immutable chronological chain of all governance events for the active book."""
+    st.subheader("Tier 4 | Forensic Audit Ledger")
+    chain = fetch_ledger_chain(selected_book)
+    if not chain:
+        st.info("No SQLite ledger blocks recorded for this operating book yet.")
+    else:
+        st.dataframe(
+            [
+                {
+                    "Entry": row["entry_id"],
+                    "UTC Timestamp": row["t1_resolution"],
+                    "Event": row["action_type"],
+                    "Actor": row["actor_id"],
+                    "Title": row["official_title"],
+                    "Tier": row["tier_level"],
+                    "Lag (s)": round(row["governance_lag_sec"] or 0.0, 1),
+                    "Hesitation Cost": f"${row['hesitation_cost']:,.2f}",
+                    "SHA-256": row["sha256_hash"],
+                }
+                for row in chain
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+        for row in chain:
+            with st.expander(
+                f"Block {row['entry_id']} · {row['action_type']} · {row['t1_resolution']}"
+            ):
+                st.code(json.dumps(row, indent=2, default=str), language="json")
+                st.code(f"SHA-256: {row['sha256_hash']}", language="text")
+
+    st.markdown("### Session Chain (Incident Narrative)")
+    for log_entry in reversed(incident["audit_log"]):
+        st.code(log_entry, language="yaml")
+
+
+def render_tier_2_overview(incident: dict, selected_book: str) -> None:
+    st.subheader("Tier 2 | General Management Overview")
+    for gm_name, gm_meta in GM_DOMAINS.items():
+        open_checks = gm_open_checks(selected_book, gm_name)
+        with st.container(border=True):
+            st.markdown(f"**{gm_name}** — `{gm_meta['role']}`")
+            st.markdown(f"**Domain Responsibility:** {gm_meta['domain']}")
+            st.info(f"**Operational Position:** {gm_meta['stance']}")
+            st.caption(
+                f"SLA {gm_meta['sla_label']} · {len(open_checks)} gate(s) withheld · "
+                f"{gm_meta['contract_risk']}"
+            )
+            if st.button(f"Open {gm_name} docket", key=f"tier2_open_{gm_name}"):
+                st.session_state["inspected_gm"] = gm_name
+                route_to(DOCKET_ROUTES[gm_name])
+
+
+def render_tier_3_checklists(incident: dict, selected_book: str) -> None:
+    st.subheader("Tier 3 | Site Operations Checklists")
+    book_state = ensure_checklist(selected_book)
+    st.caption(
+        f"Operating book `{selected_book}` · readiness {readiness_count(selected_book)}/8 · "
+        f"heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}"
+    )
+    for gm_name in GM_DOMAINS:
+        st.markdown(f"**{gm_name} — {GM_DOMAINS[gm_name]['domain']}**")
+        for check in gm_checks(gm_name):
+            row_label, row_status = st.columns([3, 1])
+            row_label.write(check["name"])
+            if book_state.get(check["key"]):
+                row_status.success("CLEARED")
+            else:
+                row_status.error("PENDING")
+
+
+def render_remedial_engine(incident: dict) -> None:
+    if incident["status"] != "DEADLOCKED":
+        return
+    st.markdown("### Authorize Executive Remedial Action")
+    action_col1, action_col2, action_col3 = st.columns(3)
+    with action_col1:
+        st.markdown("**Option A: Indemnity Carve-Out**")
+        st.caption("Filing proceeds. Directorate absorbs OEM warranty forfeiture risk.")
+        if st.button("Authorize Carve-Out & File COD", key="authorize_carveout", use_container_width=True):
+            incident["status"] = "RESOLVED"
+            incident["burn_rate_sec"] = 0.0
+            incident["audit_log"].append(
+                f"[{datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}] CHAIRMAN DIRECTIVE EXECUTED: "
+                "Issued Executive Indemnification Carve-Out. Warranty exposure retained at Directorate level."
+            )
+            for gm_data in incident["gms"].values():
+                for check in gm_data["checks"]:
+                    check["status"] = "CLEARED"
+                    check["evidence"] = "Directorate Override"
+            st.rerun()
+    with action_col2:
+        st.markdown("**Option B: Dispatch Test Team**")
+        st.caption("Authorize $35k draw to rush IEEE 2800 field crew in 6 hours.")
+        if st.button("Draw Capital & Expedite", key="expedite_test_team", use_container_width=True):
+            incident["audit_log"].append(
+                f"[{datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}] EMERGENCY CAPITAL DRAW: $35,000 "
+                "drawn for expedited IEEE 2800 field crew. Expected clear in 6 hours."
+            )
+            st.rerun()
+    with action_col3:
+        st.markdown("**Option C: Stand-Down Order**")
+        st.caption("Demobilize idle high-voltage contractor crews to stop burn.")
+        if st.button("Demobilize Crews", key="demobilize_crews", use_container_width=True):
+            incident["burn_rate_sec"] = 0.0
+            incident["audit_log"].append(
+                f"[{datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}] CONTRACTOR STAND-DOWN: Permian "
+                "high-voltage crews demobilized. Carry cost halted to $0/sec pending queue outcome."
+            )
+            st.rerun()
+
+
 def render_tier_1(incident: dict, selected_book: str) -> None:
     """Chairman Directorate Command Center (fiduciary ribbon, SLA clocks, override console)."""
     book_state = ensure_checklist(selected_book)
@@ -455,13 +865,13 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
             unsafe_allow_html=True,
         )
         if column.button(
-            "🔎 INSPECTING DOMAIN" if is_inspected else "🔍 INSPECT DOMAIN",
+            f"📂 OPEN {gm_name.upper()} DOCKET",
             key=f"inspect_gm_{selected_book}_{gm_name}",
             use_container_width=True,
             type="primary" if is_inspected else "secondary",
         ):
             st.session_state["inspected_gm"] = gm_name
-            st.rerun()
+            route_to(DOCKET_ROUTES[gm_name])
 
     with st.container():
         render_gm_dossier(
@@ -620,9 +1030,25 @@ for incident_id, incident_data in st.session_state.incident_store.items():
             st.session_state.selected_gm_branch = next(iter(incident_data["gms"]))
         st.rerun()
 
+st.sidebar.divider()
+nav_choice = st.sidebar.radio(
+    "Command view",
+    COMMAND_VIEWS,
+    index=COMMAND_VIEWS.index(st.session_state["command_view"]),
+    key="command_view_radio",
+)
+if nav_choice != st.session_state["command_view"]:
+    st.session_state["command_view"] = nav_choice
+    st.rerun()
+active_view = st.session_state["command_view"]
+
 incident = st.session_state.incident_store[st.session_state.active_incident_id]
 elapsed_seconds = (datetime.datetime.now() - incident["start_time"]).total_seconds()
 accumulated_burn = elapsed_seconds * incident["burn_rate_sec"] if incident["status"] != "RESOLVED" else 0.0
+
+if active_view in ROUTE_TO_GM:
+    render_gm_docket(incident, st.session_state["selected_book"], ROUTE_TO_GM[active_view])
+    st.stop()
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Incident Status", incident["status"], delta=incident["priority"])
@@ -642,6 +1068,20 @@ col4.metric(
 
 st.divider()
 st.header(f"{incident['priority']}: {incident['title']}")
+
+if active_view == VIEW_TIER_2:
+    render_tier_2_overview(incident, st.session_state["selected_book"])
+    st.stop()
+
+if active_view == VIEW_TIER_3:
+    render_tier_3_checklists(incident, st.session_state["selected_book"])
+    st.stop()
+
+if active_view == VIEW_TIER_4:
+    render_tier_4_ledger(incident, st.session_state["selected_book"])
+    render_remedial_engine(incident)
+    st.stop()
+
 render_tier_1(incident, st.session_state["selected_book"])
 
 st.markdown(
@@ -721,73 +1161,3 @@ with st.expander(
             )
             st.success("Stamped to Forensic Audit Ledger.")
             st.rerun()
-
-st.subheader("Tier 2 | General Management Workspaces")
-if incident["gms"]:
-    gm_names = list(incident["gms"])
-    if st.session_state.selected_gm_branch not in gm_names:
-        st.session_state.selected_gm_branch = gm_names[0]
-    selected_gm = st.radio(
-        "Isolate General Manager Workstream:",
-        gm_names,
-        index=gm_names.index(st.session_state.selected_gm_branch),
-        horizontal=True,
-        key="incident_gm_selector",
-    )
-    st.session_state.selected_gm_branch = selected_gm
-    active_gm = incident["gms"][selected_gm]
-    st.markdown(f"**Lead GM:** {selected_gm} - `{active_gm['role']}`")
-    st.markdown(f"**Domain Responsibility:** {active_gm['domain']}")
-    st.info(f"**Operational Position:** {active_gm['stance']}")
-
-    st.subheader(f"Tier 3 | Site Operations Telemetry ({selected_gm})")
-    for check in active_gm["checks"]:
-        check_col1, check_col2, check_col3 = st.columns([1, 3, 2])
-        check_col1.write(f"**{check['id']}**")
-        check_col2.write(check["name"])
-        if check["status"] == "CLEARED":
-            check_col3.success(f"CLEARED: {check['evidence']}")
-        else:
-            check_col3.error(f"HELD: {check['evidence']}")
-else:
-    st.write("Telemetry routing nominal.")
-
-st.subheader("Tier 4 | Forensic Audit Ledger & Remedial Action Engine")
-if incident["status"] == "DEADLOCKED":
-    st.markdown("### Authorize Executive Remedial Action")
-    action_col1, action_col2, action_col3 = st.columns(3)
-    with action_col1:
-        st.markdown("**Option A: Indemnity Carve-Out**")
-        st.caption("Filing proceeds. Directorate absorbs OEM warranty forfeiture risk.")
-        if st.button("Authorize Carve-Out & File COD", key="authorize_carveout", use_container_width=True):
-            incident["status"] = "RESOLVED"
-            incident["burn_rate_sec"] = 0.0
-            incident["audit_log"].append(
-                f"[{datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}] CHAIRMAN DIRECTIVE EXECUTED: Issued Executive Indemnification Carve-Out. Warranty exposure retained at Directorate level. David Chen authorized to submit Part 2 COD immediately."
-            )
-            for gm_data in incident["gms"].values():
-                for check in gm_data["checks"]:
-                    check["status"] = "CLEARED"
-                    check["evidence"] = "Directorate Override"
-            st.rerun()
-    with action_col2:
-        st.markdown("**Option B: Dispatch Test Team**")
-        st.caption("Authorize $35k draw to rush IEEE 2800 field crew in 6 hours.")
-        if st.button("Draw Capital & Expedite", key="expedite_test_team", use_container_width=True):
-            incident["audit_log"].append(
-                f"[{datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}] EMERGENCY CAPITAL DRAW: $35,000 drawn for expedited IEEE 2800 field crew. Expected clear in 6 hours."
-            )
-            st.rerun()
-    with action_col3:
-        st.markdown("**Option C: Stand-Down Order**")
-        st.caption("Demobilize idle high-voltage contractor crews to stop burn.")
-        if st.button("Demobilize Crews", key="demobilize_crews", use_container_width=True):
-            incident["burn_rate_sec"] = 0.0
-            incident["audit_log"].append(
-                f"[{datetime.datetime.utcnow().strftime('%H:%M:%S UTC')}] CONTRACTOR STAND-DOWN: Permian high-voltage crews demobilized. Carry cost halted to $0/sec pending queue outcome."
-            )
-            st.rerun()
-
-st.markdown("### Ledger Entries (Cryptographic Chain)")
-for log_entry in reversed(incident["audit_log"]):
-    st.code(log_entry, language="yaml")
