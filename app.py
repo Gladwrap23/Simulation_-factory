@@ -15,18 +15,65 @@ CARRY_BURN_PER_SEC = 1.01
 GM_DOMAINS = {
     "Marcus Vance": {
         "domain": "Grid Interconnection & Telemetry",
+        "short_label": "Grid & Telemetry | SLA 45m",
         "sla_seconds": 45 * 60,
         "sla_label": "45 min",
+        "stance": (
+            "Holding telemetry attestation open. ICCP scan is drifting against the 4-second ERCOT "
+            "polling requirement and will not certify a point-map he cannot reproduce twice."
+        ),
+        "contract_risk": (
+            "Telemetry non-conformance under ERCOT Nodal Protocol § 6.5.5.2 exposes the asset to "
+            "resource-status suspension and forfeiture of dispatch revenue."
+        ),
+        "escalation": "Escalate to Grid Risk & Technical Integrity Committee for a 4-hour re-scan window.",
+        "suggested_query": "Can we proceed if ICCP telemetry has 4-second drift?",
+        "synthesis": (
+            "4-second ICCP drift sits at the outer edge of ERCOT tolerance, not outside it. Proceeding is "
+            "defensible with a logged re-scan commitment; the telemetry defect is administrative, not "
+            "electrical, and does not justify continued standby carry."
+        ),
     },
     "Elena Rostova": {
         "domain": "Field Substation & High-Voltage",
+        "short_label": "Field Substation | SLA 3.0h",
         "sla_seconds": 3 * 3600,
         "sla_label": "3.0 hrs",
+        "stance": (
+            "Withholding signature. Refuses to energize without EPC warranty indemnity waiver."
+        ),
+        "contract_risk": (
+            "Energization prior to IEEE 2800 packet closure voids the OEM high-voltage transformer "
+            "warranty — $1.2M unhedged equipment exposure carried at the operating company."
+        ),
+        "escalation": "Issue Directorate Indemnity Carve-Out and fund $1.2M Asset Defense Escrow.",
+        "suggested_query": "What happens if we grant Elena an emergency warranty indemnification?",
+        "synthesis": (
+            "An emergency indemnification transfers $1.2M of warranty exposure to the directorate reserve "
+            "and clears the energization hold immediately. Idle carry overtakes the equipment risk in "
+            "roughly 13.8 days, so the carve-out is net capital-accretive today."
+        ),
     },
     "David Chen": {
         "domain": "Regulatory & Market Operations",
+        "short_label": "Regulatory Operations | SLA 90m",
         "sla_seconds": 90 * 60,
         "sla_label": "90 min",
+        "stance": (
+            "Demanding immediate Part 2 COD attestation filing. Queue position drops within 48 hours "
+            "and he will not absorb the restudy liability created by frontline delay."
+        ),
+        "contract_risk": (
+            "Missing the ERCOT IA § 4.2 filing window triggers queue cancellation, a $4.5M restudy "
+            "forfeiture, and a 14-month COD slip."
+        ),
+        "escalation": "Authorize provisional filing under statutory safe harbor with counsel attestation.",
+        "suggested_query": "What is the penalty under ERCOT IA § 4.2 if we force provisional filing?",
+        "synthesis": (
+            "Provisional filing under § 4.2 carries a curable deficiency notice and potential administrative "
+            "penalty, materially cheaper than queue cancellation. Filing now preserves the interconnect "
+            "window and halts the standby clock."
+        ),
     },
 }
 
@@ -157,6 +204,45 @@ def gm_open_checks(book: str, gm_name: str) -> list:
     return [check for check in SOP_CHECKS if check["owner"] == gm_name and not book_state.get(check["key"])]
 
 
+def gm_checks(gm_name: str) -> list:
+    return [check for check in SOP_CHECKS if check["owner"] == gm_name]
+
+
+def identify_bottleneck(book: str, elapsed_seconds: float):
+    """Pacing GM = worst SLA overrun with open checks; falls back to first GM still holding checks."""
+    candidates = [
+        (name, meta, gm_open_checks(book, name), elapsed_seconds - meta["sla_seconds"])
+        for name, meta in GM_DOMAINS.items()
+        if gm_open_checks(book, name)
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item[3])
+
+
+def fetch_gm_ledger_events(book: str, gm_name: str, limit: int = 3) -> list:
+    if not st.session_state.get("ledger_ready"):
+        return []
+    try:
+        with ledger_store.get_db() as conn:
+            rows = conn.execute(
+                """
+                SELECT actor_id, official_title, action_type, t1_resolution, hesitation_cost,
+                       blocker_notes, sha256_hash
+                FROM forensic_ledger
+                WHERE operating_book = ?
+                  AND (actor_id LIKE ? OR official_title LIKE ? OR blocker_notes LIKE ?
+                       OR actor_id = 'CHAIRMAN')
+                ORDER BY entry_id DESC
+                LIMIT ?
+                """,
+                (book, f"%{gm_name}%", f"%{gm_name}%", f"%{gm_name}%", limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
+
+
 def write_ledger_event(book: str, action: str, rationale: str, work_order_id: str, t0) -> str:
     if not st.session_state.get("ledger_ready"):
         return "LEDGER OFFLINE - EVENT HELD IN SESSION CHAIN"
@@ -186,6 +272,96 @@ def _kpi_card(label: str, value: str, basis: str, accent: str) -> str:
         f"<div style='color:{accent};font-size:0.75rem;margin-top:6px;font-weight:600;'>{basis}</div>"
         "</div>"
     )
+
+
+def render_gm_dossier(
+    incident: dict,
+    selected_book: str,
+    gm_name: str,
+    elapsed: float,
+    live_carry: float,
+    readiness: int,
+) -> None:
+    """Cross-tier drawer uniting Tier 2 stance, Tier 3 SOP state, and Tier 4 ledger for one GM."""
+    gm_meta = GM_DOMAINS[gm_name]
+    book_state = ensure_checklist(selected_book)
+    open_checks = gm_open_checks(selected_book, gm_name)
+
+    st.markdown(f"### 🔍 Unified Domain Dossier: {gm_name} — {gm_meta['domain']}")
+    tier2_col, tier3_col, tier4_col = st.columns(3)
+
+    with tier2_col:
+        st.markdown("**TIER 2 · MANAGEMENT STANCE**")
+        st.warning(gm_meta["stance"])
+        st.markdown(f"**Contractual Risk:** {gm_meta['contract_risk']}")
+        st.markdown(f"**Escalation Directive:** {gm_meta['escalation']}")
+        st.caption(
+            f"SLA {gm_meta['sla_label']} · elapsed {elapsed/3600:,.1f} hrs · "
+            f"{len(open_checks)} gate(s) withheld"
+        )
+
+    with tier3_col:
+        st.markdown("**TIER 3 · SITE SOP VERIFICATION**")
+        for check in gm_checks(gm_name):
+            widget_key = f"sop_{selected_book}_{check['key']}"
+            st.session_state.setdefault(widget_key, bool(book_state.get(check["key"])))
+            verified = st.checkbox(
+                f"{check['name']}: {'Cleared' if book_state.get(check['key']) else 'PENDING'}",
+                key=widget_key,
+            )
+            if verified != bool(book_state.get(check["key"])):
+                st.session_state["checklist_db"][selected_book][check["key"]] = verified
+                st.rerun()
+        heartbeat = datetime.datetime.utcnow().strftime("%H:%M:%S UTC")
+        st.caption(
+            f"Telemetry heartbeat {heartbeat} · link {'DEGRADED' if open_checks else 'NOMINAL'} · "
+            f"book readiness {readiness}/8"
+        )
+
+    with tier4_col:
+        st.markdown("**TIER 4 · FORENSIC AUDIT LEDGER**")
+        events = fetch_gm_ledger_events(selected_book, gm_name)
+        if not events:
+            st.info("No chained ledger blocks recorded for this domain yet.")
+        for event in events:
+            st.markdown(
+                f"`{event['action_type']}` · {event['t1_resolution']}\n\n"
+                f"**Actor:** {event['actor_id']} ({event['official_title']}) · "
+                f"**Hesitation Cost:** ${event['hesitation_cost']:,.2f}"
+            )
+            st.caption(f"Counsel rationale: {event['blocker_notes'] or 'n/a'}")
+            st.code(f"SHA-256: {event['sha256_hash']}", language="text")
+
+    st.markdown("#### Chairman Command Interrogation")
+    suggested = gm_meta["suggested_query"]
+    if st.button(
+        f"Load suggested interrogation: “{suggested}”",
+        key=f"suggest_query_{selected_book}_{gm_name}",
+        use_container_width=True,
+    ):
+        st.session_state[f"chairman_query_{selected_book}_{gm_name}"] = suggested
+        st.rerun()
+
+    user_query = st.text_input(
+        "Ask Command Intelligence about this deadlock, GM stances, or financial exposure...",
+        placeholder=suggested,
+        key=f"chairman_query_{selected_book}_{gm_name}",
+    )
+    if user_query:
+        with st.chat_message("assistant"):
+            st.write(
+                f"**Executive Synthesis for Chairman — {gm_name} domain:** Evaluating '{user_query}' against "
+                f"live standby carry (${CARRY_BURN_PER_SEC:.2f}/sec, ${live_carry:,.0f} accrued) and "
+                f"SOP readiness {readiness}/8."
+            )
+            st.info(
+                f"**Structural Analysis:** {gm_meta['synthesis']}\n\n"
+                f"**Burn vs. Legal Exposure:** every additional hour of deadlock costs "
+                f"${CARRY_BURN_PER_SEC * 3600:,.0f} in contractor carry "
+                f"(${WEEKLY_HOLDING_BURN:,.0f}/wk). Measured against {gm_meta['contract_risk'].rstrip('.')}, "
+                f"continued inaction is the more expensive fiduciary path.\n\n"
+                f"**Directive:** {gm_meta['escalation']}"
+            )
 
 
 def render_tier_1(incident: dict, selected_book: str) -> None:
@@ -246,9 +422,12 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
         unsafe_allow_html=True,
     )
 
+    bottleneck = identify_bottleneck(selected_book, elapsed)
+    if st.session_state.get("inspected_gm") not in GM_DOMAINS:
+        st.session_state["inspected_gm"] = bottleneck[0] if bottleneck else "Elena Rostova"
+
     st.markdown("#### Domain Critical-Path Chronometer (SLA Heat Map)")
     chrono_cols = st.columns(3)
-    breach_profiles = []
     for column, (gm_name, gm_meta) in zip(chrono_cols, GM_DOMAINS.items()):
         open_checks = gm_open_checks(selected_book, gm_name)
         over_sla = elapsed > gm_meta["sla_seconds"]
@@ -259,15 +438,15 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
         else:
             status, accent = "ON SCHEDULE", "#F5A623"
 
-        if open_checks and over_sla:
-            breach_profiles.append((gm_name, gm_meta, open_checks, elapsed - gm_meta["sla_seconds"]))
-
+        is_inspected = st.session_state["inspected_gm"] == gm_name
         overrun = max(0.0, elapsed - gm_meta["sla_seconds"])
         column.markdown(
-            f"<div style='background:#0B0F19;border:1px solid {accent};border-radius:8px;padding:14px 16px;'>"
+            f"<div style='background:#0B0F19;border:{'2px' if is_inspected else '1px'} solid {accent};"
+            f"border-radius:8px;padding:14px 16px;"
+            f"box-shadow:{'0 0 18px ' + accent + '55' if is_inspected else 'none'};'>"
             f"<div style='color:#FFFFFF;font-size:1.05rem;font-weight:800;'>{gm_name}</div>"
-            f"<div style='color:#9AA4B2;font-size:0.8rem;margin-top:2px;'>{gm_meta['domain']}</div>"
-            f"<div style='color:#9AA4B2;font-size:0.78rem;margin-top:8px;'>SLA: {gm_meta['sla_label']} · "
+            f"<div style='color:#9AA4B2;font-size:0.8rem;margin-top:2px;'>{gm_meta['short_label']}</div>"
+            f"<div style='color:#9AA4B2;font-size:0.78rem;margin-top:8px;'>{gm_meta['domain']} · "
             f"Elapsed: {elapsed/3600:,.1f} hrs</div>"
             f"<div style='color:{accent};font-size:0.95rem;font-weight:800;margin-top:8px;'>{status}</div>"
             f"<div style='color:#9AA4B2;font-size:0.75rem;margin-top:4px;'>Open checks: {len(open_checks)} · "
@@ -275,21 +454,35 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
             "</div>",
             unsafe_allow_html=True,
         )
+        if column.button(
+            "🔎 INSPECTING DOMAIN" if is_inspected else "🔍 INSPECT DOMAIN",
+            key=f"inspect_gm_{selected_book}_{gm_name}",
+            use_container_width=True,
+            type="primary" if is_inspected else "secondary",
+        ):
+            st.session_state["inspected_gm"] = gm_name
+            st.rerun()
+
+    with st.container():
+        render_gm_dossier(
+            incident,
+            selected_book,
+            st.session_state["inspected_gm"],
+            elapsed,
+            live_carry,
+            readiness,
+        )
 
     st.markdown("")
     if readiness < 8:
-        pacing = max(breach_profiles, key=lambda item: item[3], default=None)
-        if pacing is None:
-            bottleneck_gm, bottleneck_meta, bottleneck_checks = next(
-                (
-                    (name, meta, gm_open_checks(selected_book, name))
-                    for name, meta in GM_DOMAINS.items()
-                    if gm_open_checks(selected_book, name)
-                ),
-                ("Unassigned", {"domain": "n/a", "sla_label": "n/a"}, []),
+        if bottleneck is None:
+            bottleneck_gm, bottleneck_meta, bottleneck_checks = (
+                "Unassigned",
+                {"domain": "n/a", "sla_label": "n/a"},
+                [],
             )
         else:
-            bottleneck_gm, bottleneck_meta, bottleneck_checks, _ = pacing
+            bottleneck_gm, bottleneck_meta, bottleneck_checks, _ = bottleneck
 
         unverified = "".join(
             f"<li style='color:#FFD5D5;'>{check['name']} <span style='color:#9AA4B2;'>"
@@ -335,24 +528,6 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
             unsafe_allow_html=True,
         )
 
-    st.markdown("### Chairman Command Interrogation")
-    user_query = st.text_input(
-        "Ask Command Intelligence about this deadlock, GM stances, or financial exposure...",
-        placeholder="e.g., What happens to queue priority if we delay filing by 48 hours?",
-        key=f"chairman_query_{st.session_state.active_incident_id}",
-    )
-    if user_query:
-        with st.chat_message("assistant"):
-            st.write(
-                f"**Executive Synthesis for Chairman:** Evaluating '{user_query}' against live standby carry "
-                f"(${CARRY_BURN_PER_SEC:.2f}/sec, ${live_carry:,.0f} accrued) and SOP readiness {readiness}/8."
-            )
-            st.info(
-                "Queue priority remains intact for 48 hours. Delay beyond that threshold forfeits the ERCOT "
-                "interconnect window and triggers an immediate $4.5M restudy penalty. Recommendation: exercise "
-                "the DGCL § 141 safe-harbor gate clearance below."
-            )
-
     st.markdown(
         "<div style='border:2px solid #F5A623;border-radius:10px;padding:18px 20px;margin-top:14px;"
         "background:rgba(245,166,35,0.06);'>"
@@ -381,6 +556,8 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
         ):
             for check in SOP_CHECKS:
                 st.session_state["checklist_db"][selected_book][check["key"]] = True
+                # drop stale checkbox widget state so Tier 3 re-seeds from checklist_db
+                st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
             ledger_status = write_ledger_event(
                 book=selected_book,
                 action="CHAIRMAN_UNILATERAL_OVERRIDE",
