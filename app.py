@@ -9,26 +9,21 @@ import ledger_store
 
 VIEW_TIER_1 = "🏛️ Tier 1 | Chairman Directorate"
 VIEW_TIER_2 = "📋 Tier 2 | Executive Management Overview"
-VIEW_TIER_3 = "⚡ Tier 3 | Site Operations Tactical Command Post"
-VIEW_SEP_DOCKETS = "——— DOMAIN DOCKETS (OWNER LOCKED) ———"
 VIEW_DOCKET_VANCE = "⚡ Docket: Marcus Vance (Grid & Telemetry)"
 VIEW_DOCKET_ROSTOVA = "🔧 Docket: Elena Rostova (Field Substation)"
 VIEW_DOCKET_CHEN = "⚖️ Docket: David Chen (Regulatory & Market Ops)"
-VIEW_SEP_AUDIT = "——— MASTER AUDIT ———"
+VIEW_TIER_3 = "⚡ Tier 3 | Site Operations Tactical Command"
 VIEW_TIER_4 = "📜 Tier 4 | Master Forensic Ledger"
 
-COMMAND_VIEWS = [
+NAV_OPTIONS = [
     VIEW_TIER_1,
     VIEW_TIER_2,
-    VIEW_TIER_3,
-    VIEW_SEP_DOCKETS,
     VIEW_DOCKET_VANCE,
     VIEW_DOCKET_ROSTOVA,
     VIEW_DOCKET_CHEN,
-    VIEW_SEP_AUDIT,
+    VIEW_TIER_3,
     VIEW_TIER_4,
 ]
-NAV_SEPARATORS = {VIEW_SEP_DOCKETS, VIEW_SEP_AUDIT}
 
 DOCKET_ROUTES = {
     "Marcus Vance": VIEW_DOCKET_VANCE,
@@ -324,8 +319,8 @@ if "technician_handle" not in st.session_state:
     st.session_state["technician_handle"] = "T3-FIELD-LEAD / H. Alvarez"
 if "field_evidence" not in st.session_state:
     st.session_state["field_evidence"] = {}
-if "command_view" not in st.session_state:
-    st.session_state["command_view"] = VIEW_TIER_1
+if "active_view" not in st.session_state:
+    st.session_state["active_view"] = NAV_OPTIONS[0]
 if "ledger_ready" not in st.session_state:
     try:
         ledger_store.init_db()
@@ -390,54 +385,91 @@ def fetch_gm_ledger_events(book: str, gm_name: str, limit: int = 200) -> list:
         return []
 
 
-def write_ledger_event(
-    book: str,
-    action: str,
+def commit_to_ledger(
+    event_type: str,
+    actor: str,
+    domain: str,
     rationale: str,
-    work_order_id: str,
-    t0,
-    actor_id: str = "CHAIRMAN",
-    title: str = "Chairman of the Board",
+    payload: str = "",
     tier: int = 1,
-    blocker: str = "GOVERNANCE_DEADLOCK",
+    title: str | None = None,
+    book: str | None = None,
+    work_order_id: str | None = None,
+    t0=None,
 ) -> str:
+    """Single writer for every governance event: SHA-256 block hash + committed SQLite insert."""
     if not st.session_state.get("ledger_ready"):
         return "LEDGER OFFLINE - EVENT HELD IN SESSION CHAIN"
+
+    book = book or st.session_state["selected_book"]
+    work_order_id = work_order_id or st.session_state.active_incident_id
+    t1 = datetime.datetime.utcnow()
+    t0_dt = t0 if isinstance(t0, datetime.datetime) else t1
+    lag = max(0.0, (t1 - t0_dt).total_seconds())
+    cost = ledger_store.calculate_hesitation_cost(lag)
+    stamp = t1.strftime("%Y-%m-%d %H:%M:%S UTC")
+    notes = rationale if not payload else f"{rationale} || PAYLOAD: {payload}"
+    block_hash = hashlib.sha256(f"{stamp}|{actor}|{event_type}|{rationale}".encode()).hexdigest()
+
     try:
-        ledger_store.record_ledger_entry(
-            book=book,
-            tier=tier,
-            actor_id=actor_id,
-            title=title,
-            action=action,
-            work_order_id=work_order_id,
-            t0=t0,
-            blocker=blocker,
-            notes=rationale,
-        )
-        return "COMMITTED TO SQLITE FORENSIC LEDGER (SHA-256 CHAINED)"
+        conn = ledger_store.get_db()
+        try:
+            conn.execute(
+                """
+                INSERT INTO forensic_ledger (
+                    operating_book, tier_level, actor_id, official_title, action_type,
+                    work_order_id, t0_detection, t1_resolution, governance_lag_sec,
+                    hesitation_cost, blocker_category, blocker_notes, sha256_hash
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    book,
+                    tier,
+                    actor,
+                    title or actor,
+                    event_type,
+                    work_order_id,
+                    t0_dt.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    stamp,
+                    lag,
+                    cost,
+                    domain,
+                    notes,
+                    block_hash,
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        return f"COMMITTED TO SQLITE LEDGER · SHA-256 {block_hash[:16]}…"
     except Exception as exc:
         return f"LEDGER WRITE FAILED: {exc}"
 
 
-def fetch_ledger_chain(book: str, limit: int = 200) -> list:
+def fetch_ledger_chain(book: str | None = None, limit: int = 1000) -> list:
+    """Uncached read of the master ledger; book=None returns every block, newest first."""
     if not st.session_state.get("ledger_ready"):
         return []
     try:
         with ledger_store.get_db() as conn:
-            rows = conn.execute(
-                "SELECT * FROM forensic_ledger WHERE operating_book = ? ORDER BY entry_id DESC LIMIT ?",
-                (book, limit),
-            ).fetchall()
+            if book is None:
+                rows = conn.execute(
+                    "SELECT * FROM forensic_ledger ORDER BY entry_id DESC LIMIT ?", (limit,)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM forensic_ledger WHERE operating_book = ? ORDER BY entry_id DESC LIMIT ?",
+                    (book, limit),
+                ).fetchall()
         return [dict(row) for row in rows]
     except Exception:
         return []
 
 
 def route_to(view: str) -> None:
-    """Programmatic navigation: drop the nav widget key so the radio re-seeds from command_view."""
-    st.session_state["command_view"] = view
-    st.session_state.pop("command_view_radio", None)
+    """Programmatic navigation: drop the nav widget key so the radio re-seeds from active_view."""
+    st.session_state["active_view"] = view
+    st.session_state.pop("nav_radio", None)
     st.rerun()
 
 
@@ -634,16 +666,16 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
             st.session_state.pop(f"docket_sop_{selected_book}_{check['key']}", None)
             st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
         st.session_state["domain_frozen"][freeze_key] = True
-        ledger_status = write_ledger_event(
-            book=selected_book,
-            action="BILATERAL_INDEMNIFICATION_ISSUED",
+        ledger_status = commit_to_ledger(
+            event_type="BILATERAL_INDEMNIFICATION_ISSUED",
+            actor=gm_name,
+            domain=gm_meta["domain"],
             rationale=waiver_rationale,
-            work_order_id=st.session_state.active_incident_id,
-            t0=incident["start_time"],
-            actor_id=gm_name,
-            title=gm_meta["role"],
+            payload=json.dumps({"checks_cleared": [c["key"] for c in owned_checks], "standby": "HALTED"}),
             tier=2,
-            blocker="INDEMNIFICATION",
+            title=gm_meta["role"],
+            book=selected_book,
+            t0=incident["start_time"],
         )
         stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
         incident["audit_log"].append(
@@ -683,16 +715,16 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         minute_hash = hashlib.sha256(
             f"{selected_book}|{gm_name}|{stamp}|{meeting_notes}".encode()
         ).hexdigest()
-        ledger_status = write_ledger_event(
-            book=selected_book,
-            action="FORENSIC_MEETING_RECORD",
-            rationale=f"[minutes_sha256={minute_hash}] {meeting_notes}",
-            work_order_id=st.session_state.active_incident_id,
-            t0=incident["start_time"],
-            actor_id=gm_name,
-            title=gm_meta["role"],
+        ledger_status = commit_to_ledger(
+            event_type="FORENSIC_MEETING_RECORD",
+            actor=gm_name,
+            domain=gm_meta["domain"],
+            rationale=meeting_notes,
+            payload=json.dumps({"minutes_sha256": minute_hash, "sealed_at": stamp}),
             tier=2,
-            blocker="EXECUTIVE_MEETING",
+            title=gm_meta["role"],
+            book=selected_book,
+            t0=incident["start_time"],
         )
         incident["audit_log"].append(
             f"[{stamp}] FORENSIC_MEETING_RECORD ({gm_name}): sealed minutes {minute_hash[:16]}… | {ledger_status}"
@@ -726,19 +758,16 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
         use_container_width=True,
     ):
         stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        ledger_status = write_ledger_event(
-            book=selected_book,
-            action="EXECUTIVE_FIELD_ORDER",
-            rationale=(
-                f"[{stamp}] DIRECTIVE from {gm_name} to {frontline['name']} "
-                f"({frontline['role']}): {gm_directive} || FIELD STATUS: {field_status}"
-            ),
-            work_order_id=st.session_state.active_incident_id,
-            t0=incident["start_time"],
-            actor_id=gm_name,
-            title=gm_meta["role"],
+        ledger_status = commit_to_ledger(
+            event_type="EXECUTIVE_FIELD_ORDER",
+            actor=gm_name,
+            domain=gm_meta["domain"],
+            rationale=f"DIRECTIVE to {frontline['name']} ({frontline['role']}): {gm_directive}",
+            payload=json.dumps({"field_status": field_status, "dispatched_at": stamp}),
             tier=2,
-            blocker="FIELD_DISPATCH",
+            title=gm_meta["role"],
+            book=selected_book,
+            t0=incident["start_time"],
         )
         incident["audit_log"].append(
             f"[{stamp}] EXECUTIVE_FIELD_ORDER ({gm_name} → {frontline['name']}): {gm_directive} | {ledger_status}"
@@ -761,19 +790,19 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
             st.session_state["checklist_db"][selected_book][check["key"]] = verified
             st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
             if verified:
-                write_ledger_event(
-                    book=selected_book,
-                    action="CHECK_VERIFIED",
+                commit_to_ledger(
+                    event_type="CHECK_VERIFIED",
+                    actor=gm_name,
+                    domain=gm_meta["domain"],
                     rationale=(
                         f"{check['name']} executed by {frontline['name']} ({frontline['role']}) and "
                         f"countersigned by {gm_name} ({gm_meta['role']})."
                     ),
-                    work_order_id=st.session_state.active_incident_id,
-                    t0=incident["start_time"],
-                    actor_id=gm_name,
-                    title=gm_meta["role"],
+                    payload=json.dumps({"check": check["key"], "source": "GM_DOCKET"}),
                     tier=3,
-                    blocker="SOP_GATE",
+                    title=gm_meta["role"],
+                    book=selected_book,
+                    t0=incident["start_time"],
                 )
             st.rerun()
     st.caption(
@@ -809,13 +838,14 @@ def render_gm_docket(incident: dict, selected_book: str, gm_name: str) -> None:
                 st.code(f"SHA-256: {row['sha256_hash']}", language="text")
 
 
-def render_tier_4_ledger(incident: dict, selected_book: str) -> None:
-    """Immutable chronological chain of all governance events for the active book."""
-    st.subheader("Tier 4 | Forensic Audit Ledger")
-    chain = fetch_ledger_chain(selected_book)
+def render_tier_4(incident: dict, selected_book: str) -> None:
+    """Master forensic ledger: every block from every tier, newest first, hashes and payloads visible."""
+    st.subheader("📜 Tier 4 | Master Forensic Ledger")
+    chain = fetch_ledger_chain()
     if not chain:
-        st.info("No SQLite ledger blocks recorded for this operating book yet.")
+        st.info("No SQLite ledger blocks recorded yet.")
     else:
+        st.caption(f"{len(chain)} immutable blocks · newest first · live read, no caching.")
         st.dataframe(
             [
                 {
@@ -825,6 +855,8 @@ def render_tier_4_ledger(incident: dict, selected_book: str) -> None:
                     "Actor": row["actor_id"],
                     "Title": row["official_title"],
                     "Tier": row["tier_level"],
+                    "Domain": row["blocker_category"],
+                    "Book": row["operating_book"],
                     "Lag (s)": round(row["governance_lag_sec"] or 0.0, 1),
                     "Hesitation Cost": f"${row['hesitation_cost']:,.2f}",
                     "SHA-256": row["sha256_hash"],
@@ -1018,19 +1050,22 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
             st.session_state["field_escalations"].setdefault(selected_book, []).append(escalation)
             st.session_state["escalation_form_open"] = False
             incident["status"] = "CRITICAL FIELD BLOCK"
-            ledger_status = write_ledger_event(
-                book=selected_book,
-                action="TACTICAL_BLOCKER_ESCALATED",
-                rationale=(
-                    f"ROOT CAUSE: {escalation['detail']} || THIRD PARTY: {escalation['vendor']} || "
-                    f"REQUESTED OF GM: {escalation['requested_action']}"
+            ledger_status = commit_to_ledger(
+                event_type="TACTICAL_BLOCKER_ESCALATED",
+                actor=technician,
+                domain="Site Operations (Tier 3)",
+                rationale=f"ROOT CAUSE: {escalation['detail']}",
+                payload=json.dumps(
+                    {
+                        "third_party": escalation["vendor"],
+                        "requested_action": escalation["requested_action"],
+                        "response_deadline": escalation["deadline"].strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    }
                 ),
-                work_order_id=st.session_state.active_incident_id,
-                t0=incident["start_time"],
-                actor_id=technician,
-                title="Tier 3 Frontline Site Lead",
                 tier=3,
-                blocker="FIELD_BLOCK",
+                title="Tier 3 Frontline Site Lead",
+                book=selected_book,
+                t0=incident["start_time"],
             )
             incident["audit_log"].append(
                 f"[{escalation['opened_at']}] TACTICAL_BLOCKER_ESCALATED ({technician}): "
@@ -1071,27 +1106,52 @@ def render_tier_3(incident: dict, selected_book: str) -> None:
             )
             if uploaded is not None:
                 st.caption(f"Attached: {uploaded.name} ({uploaded.size:,} bytes)")
+            if st.button("Commit field note to ledger", key=f"commit_note_{evidence_key}"):
+                note_status = commit_to_ledger(
+                    event_type="FIELD_NOTE_RECORDED",
+                    actor=technician,
+                    domain=check["owner"],
+                    rationale=f"Field note for Check #{index} {check['name']}",
+                    payload=json.dumps(
+                        {
+                            "check": check["key"],
+                            "note": evidence["note"],
+                            "dictation": evidence["dictation"],
+                            "attachment": uploaded.name if uploaded is not None else None,
+                        }
+                    ),
+                    tier=3,
+                    title="Tier 3 Frontline Site Lead",
+                    book=selected_book,
+                    t0=incident["start_time"],
+                )
+                st.success(note_status)
 
         if verified != bool(book_state.get(check["key"])):
             st.session_state["checklist_db"][selected_book][check["key"]] = verified
             st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
             st.session_state.pop(f"docket_sop_{selected_book}_{check['key']}", None)
-            if verified:
-                write_ledger_event(
-                    book=selected_book,
-                    action="CHECK_VERIFIED",
-                    rationale=(
-                        f"Check #{index} {check['name']} stamped by {technician} at the panel. "
-                        f"EVIDENCE: {evidence['note'] or 'n/a'} || DICTATION: "
-                        f"{evidence['dictation'] or 'n/a'}"
-                    ),
-                    work_order_id=st.session_state.active_incident_id,
-                    t0=incident["start_time"],
-                    actor_id=technician,
-                    title="Tier 3 Frontline Site Lead",
-                    tier=3,
-                    blocker="SOP_GATE",
-                )
+            commit_to_ledger(
+                event_type="CHECK_VERIFIED" if verified else "CHECK_WITHDRAWN",
+                actor=technician,
+                domain=check["owner"],
+                rationale=(
+                    f"Check #{index} {check['name']} "
+                    f"{'stamped' if verified else 'withdrawn'} by {technician} at the panel."
+                ),
+                payload=json.dumps(
+                    {
+                        "check": check["key"],
+                        "evidence": evidence["note"],
+                        "dictation": evidence["dictation"],
+                        "source": "TIER_3",
+                    }
+                ),
+                tier=3,
+                title="Tier 3 Frontline Site Lead",
+                book=selected_book,
+                t0=incident["start_time"],
+            )
             st.rerun()
 
     st.caption(
@@ -1112,6 +1172,8 @@ def render_tier_2_overview(incident: dict, selected_book: str) -> None:
         )
     for gm_name, gm_meta in GM_DOMAINS.items():
         open_checks = gm_open_checks(selected_book, gm_name)
+        owned = gm_checks(gm_name)
+        cleared = len(owned) - len(open_checks)
         with st.container(border=True):
             st.markdown(f"**{gm_name}** — `{gm_meta['role']}`")
             st.markdown(f"**Domain Responsibility:** {gm_meta['domain']}")
@@ -1119,12 +1181,45 @@ def render_tier_2_overview(incident: dict, selected_book: str) -> None:
                 f"**Paired Tier 3 Site Lead:** {gm_meta['frontline']['name']} — "
                 f"{gm_meta['frontline']['role']}"
             )
+            st.progress(cleared / len(owned), text=f"Domain gates verified {cleared} / {len(owned)}")
+            if open_checks:
+                st.markdown("**Open checks:**")
+                for check in open_checks:
+                    st.markdown(f"- {check['name']}")
+            else:
+                st.success("All domain gates verified.")
             st.info(f"**Operational Position:** {gm_meta['stance']}")
             st.caption(
                 f"SLA {gm_meta['sla_label']} · {len(open_checks)} gate(s) withheld · "
                 f"{gm_meta['contract_risk']}"
             )
-            if st.button(f"Open {gm_name} docket", key=f"tier2_open_{gm_name}"):
+            directive_col, nav_col = st.columns([3, 1])
+            domain_directive = directive_col.text_input(
+                f"Directive to {gm_name}",
+                key=f"tier2_directive_{selected_book}_{gm_name}",
+                placeholder="Issue a domain directive or cross-domain escalation...",
+                label_visibility="collapsed",
+            )
+            if directive_col.button(
+                f"Issue directive to {gm_name}", key=f"tier2_directive_btn_{gm_name}"
+            ):
+                status = commit_to_ledger(
+                    event_type="DOMAIN_DIRECTIVE_ISSUED",
+                    actor="CHAIRMAN",
+                    domain=gm_meta["domain"],
+                    rationale=domain_directive or "Domain directive issued without written basis.",
+                    payload=json.dumps({"target_gm": gm_name, "open_checks": len(open_checks)}),
+                    tier=2,
+                    title="Chairman of the Board",
+                    book=selected_book,
+                    t0=incident["start_time"],
+                )
+                incident["audit_log"].append(
+                    f"[{datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}] "
+                    f"DOMAIN_DIRECTIVE_ISSUED ({gm_name}): {domain_directive} | {status}"
+                )
+                st.success(status)
+            if nav_col.button("Inspect Docket", key=f"tier2_open_{gm_name}", use_container_width=True):
                 st.session_state["inspected_gm"] = gm_name
                 route_to(DOCKET_ROUTES[gm_name])
 
@@ -1370,13 +1465,19 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
         ):
             for check in SOP_CHECKS:
                 st.session_state["checklist_db"][selected_book][check["key"]] = True
-                # drop stale checkbox widget state so Tier 3 re-seeds from checklist_db
+                # drop stale checkbox widget state so every tier re-seeds from checklist_db
                 st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
-            ledger_status = write_ledger_event(
-                book=selected_book,
-                action="CHAIRMAN_UNILATERAL_OVERRIDE",
+                st.session_state.pop(f"docket_sop_{selected_book}_{check['key']}", None)
+                st.session_state.pop(f"tier3_sop_{selected_book}_{check['key']}", None)
+            ledger_status = commit_to_ledger(
+                event_type="CHAIRMAN_UNILATERAL_OVERRIDE",
+                actor="CHAIRMAN",
+                domain="Board Directorate",
                 rationale=counsel_rationale,
-                work_order_id=st.session_state.active_incident_id,
+                payload=json.dumps({"gates_forced": [c["key"] for c in SOP_CHECKS], "authority": "DGCL 141"}),
+                tier=1,
+                title="Chairman of the Board",
+                book=selected_book,
                 t0=incident["start_time"],
             )
             stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -1393,11 +1494,15 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
         ):
             st.session_state["standby_frozen"][selected_book] = True
             incident["burn_rate_sec"] = 0.0
-            ledger_status = write_ledger_event(
-                book=selected_book,
-                action="CHAIRMAN_STANDBY_FREEZE",
+            ledger_status = commit_to_ledger(
+                event_type="CHAIRMAN_STANDBY_FREEZE",
+                actor="CHAIRMAN",
+                domain="Board Directorate",
                 rationale=counsel_rationale,
-                work_order_id=st.session_state.active_incident_id,
+                payload=json.dumps({"burn_rate_sec": 0.0, "circuit_breaker": "TRIPPED"}),
+                tier=1,
+                title="Chairman of the Board",
+                book=selected_book,
                 t0=incident["start_time"],
             )
             stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -1488,17 +1593,14 @@ for incident_id, incident_data in st.session_state.incident_store.items():
 st.sidebar.divider()
 nav_choice = st.sidebar.radio(
     "Command view",
-    COMMAND_VIEWS,
-    index=COMMAND_VIEWS.index(st.session_state["command_view"]),
-    key="command_view_radio",
+    NAV_OPTIONS,
+    index=NAV_OPTIONS.index(st.session_state["active_view"]),
+    key="nav_radio",
 )
-if nav_choice in NAV_SEPARATORS:
-    st.session_state.pop("command_view_radio", None)
+if nav_choice != st.session_state["active_view"]:
+    st.session_state["active_view"] = nav_choice
     st.rerun()
-if nav_choice != st.session_state["command_view"]:
-    st.session_state["command_view"] = nav_choice
-    st.rerun()
-active_view = st.session_state["command_view"]
+active_view = st.session_state["active_view"]
 
 incident = st.session_state.incident_store[st.session_state.active_incident_id]
 elapsed_seconds = (datetime.datetime.now() - incident["start_time"]).total_seconds()
@@ -1536,7 +1638,7 @@ if active_view == VIEW_TIER_3:
     st.stop()
 
 if active_view == VIEW_TIER_4:
-    render_tier_4_ledger(incident, st.session_state["selected_book"])
+    render_tier_4(incident, st.session_state["selected_book"])
     render_remedial_engine(incident)
     st.stop()
 
