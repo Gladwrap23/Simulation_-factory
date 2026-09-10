@@ -9,6 +9,7 @@ import ledger_store
 
 VIEW_TIER_1 = "🏛️ Tier 1 | Chairman Directorate"
 VIEW_TIER_2 = "📋 Tier 2 | Executive Management Overview"
+VIEW_TIER_3 = "⚡ Tier 3 | Site Operations Tactical Command Post"
 VIEW_SEP_DOCKETS = "——— DOMAIN DOCKETS (OWNER LOCKED) ———"
 VIEW_DOCKET_VANCE = "⚡ Docket: Marcus Vance (Grid & Telemetry)"
 VIEW_DOCKET_ROSTOVA = "🔧 Docket: Elena Rostova (Field Substation)"
@@ -19,6 +20,7 @@ VIEW_TIER_4 = "📜 Tier 4 | Master Forensic Ledger"
 COMMAND_VIEWS = [
     VIEW_TIER_1,
     VIEW_TIER_2,
+    VIEW_TIER_3,
     VIEW_SEP_DOCKETS,
     VIEW_DOCKET_VANCE,
     VIEW_DOCKET_ROSTOVA,
@@ -42,6 +44,7 @@ WEEKLY_HOLDING_BURN = 610_000
 CLIENT_REALIZATION_TARGET = 549_000
 PHOENIX_ADVISORY_FEE = 61_000
 CARRY_BURN_PER_SEC = 1.01
+SITE_LOCATION = "Wharton 345kV Substation / Inverter Yard"
 
 GM_DOMAINS = {
     "Marcus Vance": {
@@ -313,6 +316,14 @@ if "standby_frozen" not in st.session_state:
     st.session_state["standby_frozen"] = {}
 if "domain_frozen" not in st.session_state:
     st.session_state["domain_frozen"] = {}
+if "field_escalations" not in st.session_state:
+    st.session_state["field_escalations"] = {}
+if "escalation_form_open" not in st.session_state:
+    st.session_state["escalation_form_open"] = False
+if "technician_handle" not in st.session_state:
+    st.session_state["technician_handle"] = "T3-FIELD-LEAD / H. Alvarez"
+if "field_evidence" not in st.session_state:
+    st.session_state["field_evidence"] = {}
 if "command_view" not in st.session_state:
     st.session_state["command_view"] = VIEW_TIER_1
 if "ledger_ready" not in st.session_state:
@@ -835,8 +846,270 @@ def render_tier_4_ledger(incident: dict, selected_book: str) -> None:
         st.code(log_entry, language="yaml")
 
 
+def active_field_block(book: str):
+    """Most recent unresolved Tier 3 escalation for the book, if any."""
+    escalations = st.session_state["field_escalations"].get(book, [])
+    return escalations[-1] if escalations else None
+
+
+def field_diagnostic(query: str) -> str:
+    """Procedural field response keyed off equipment/protocol terms in the technician's query."""
+    text = query.lower()
+    if "dnp3" in text or "sel-751" in text or "relay" in text:
+        return (
+            "**SEL-751 / DNP3 communication timeout — field procedure**\n"
+            "1. Open the relay HMI and confirm Port 3 settings: PROTO=DNP3, baud 19200, parity NONE.\n"
+            "2. Verify the DNP3 outstation address matches the SCADA master map (ADDR mismatch is the "
+            "most common timeout cause after a firmware load).\n"
+            "3. Issue `SER` and `STA` at the relay prompt; capture the last 20 sequential events for evidence.\n"
+            "4. Loop-test the fiber pair with an OTDR shot; margin below 3 dB requires re-termination.\n"
+            "5. If the link recovers, hold a 10-minute soak with 4-second polling before stamping the gate.\n"
+            "6. Safety: no relay setting group change while the breaker is in service — take the element to "
+            "test mode with the trip lockout applied first."
+        )
+    if "dielectric" in text or "oil" in text or "transformer" in text:
+        return (
+            "**Transformer dielectric / oil test — field procedure**\n"
+            "1. De-energize, ground both HV and LV bushings, and apply the personal protective grounds.\n"
+            "2. Draw the oil sample from the bottom valve into a clean amber syringe; log temperature.\n"
+            "3. Run ASTM D877/D1816 breakdown voltage — five shots, discard the outlier, average the rest.\n"
+            "4. Reject if the average is below 30 kV; requires filtration and a repeat run.\n"
+            "5. Photograph the meter face and attach it as evidence before stamping the gate.\n"
+            "6. Safety: hold the grounds in place until the test set is fully discharged and disconnected."
+        )
+    if "iccp" in text or "telemetry" in text or "scada" in text or "rtu" in text:
+        return (
+            "**ICCP / RTU telemetry drift — field procedure**\n"
+            "1. Confirm the RTU clock is disciplined to GPS; a drifting clock reads as scan-interval drift.\n"
+            "2. Run a dual-path scan for 30 minutes and log the interval histogram at both ends.\n"
+            "3. Compare the point-map checksum against the ERCOT-approved list; correct any offset points.\n"
+            "4. Fail the primary path to the backup circuit and repeat the scan to isolate the carrier.\n"
+            "5. Export the point-map evidence file and attach it before stamping the gate."
+        )
+    if "ground" in text or "grid resistance" in text:
+        return (
+            "**Grounding grid verification — field procedure**\n"
+            "1. Use the fall-of-potential method at 62% spacing; three traverses at 90° offsets.\n"
+            "2. Target is under 1 Ω for a substation grid; log soil moisture and ambient temperature.\n"
+            "3. Inspect every exothermic weld on the riser conductors for cracks or discoloration.\n"
+            "4. Attach the meter readings and witness signature before stamping the gate."
+        )
+    if "firmware" in text or "patch" in text or "rollback" in text:
+        return (
+            "**Firmware fault / rollback — field procedure**\n"
+            "1. Capture the current settings file and event buffer before touching the image.\n"
+            "2. Verify the vendor image checksum against the OEM release note.\n"
+            "3. Roll back on the redundant unit first; keep the in-service unit on the known-good image.\n"
+            "4. Re-verify protection element pickup values after the load — settings do not always survive.\n"
+            "5. Safety: place affected zones in test mode and notify the control room before the reboot."
+        )
+    return (
+        "**General field procedure**\n"
+        "1. Isolate the affected circuit, apply lockout/tagout, and verify zero energy with a proven meter.\n"
+        "2. Reproduce the fault once and capture instrument readings, event logs, and photos as evidence.\n"
+        "3. Check the OEM manual step against the approved SOP revision before deviating.\n"
+        "4. If the resolution requires a commercial or contractual decision, raise the Field Blocker Beacon "
+        "instead of holding the crew idle."
+    )
+
+
+def render_tier_3(incident: dict, selected_book: str) -> None:
+    """Frontline tactical command post: field diagnostics, escalation beacon, attested SOP execution."""
+    book_state = ensure_checklist(selected_book)
+    readiness = readiness_count(selected_book)
+    frozen = st.session_state["standby_frozen"].get(selected_book, False)
+    burn_rate = 0.0 if frozen else CARRY_BURN_PER_SEC
+    blocker = active_field_block(selected_book)
+
+    st.markdown(
+        "<div class='command-header'>⚡ Tier 3 | Site Operations Tactical Command Post</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<div class='field-banner'>"
+        f"<div><span class='field-label'>Active Site</span>"
+        f"<span class='field-value'>{SITE_LOCATION}</span></div>"
+        f"<div><span class='field-label'>Standby Burn Rate</span>"
+        f"<span class='field-value'>${burn_rate * 3600:,.0f}/hr idle crew · ${burn_rate:.2f}/sec</span></div>"
+        f"<div><span class='field-label'>SOP Readiness</span>"
+        f"<span class='field-value'>{readiness} / 8 verified</span></div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    st.progress(readiness / len(SOP_CHECKS), text=f"SOP readiness {readiness} / {len(SOP_CHECKS)} verified")
+
+    technician = st.text_input(
+        "Technician handle (signs every attestation)",
+        key="technician_handle",
+    )
+
+    st.markdown(
+        "#### 🛠️ Frontline Technical Co-Pilot: Query OEM Manuals, IEEE Standards & "
+        "Step-by-Step Troubleshooting"
+    )
+    diagnostic_query = st.text_input(
+        "Field diagnostic query",
+        placeholder="e.g., How do we resolve DNP3 communication timeout on SEL-751 relay during step 3?",
+        key=f"field_diagnostic_query_{selected_book}",
+        label_visibility="collapsed",
+    )
+    if st.button("🔍 Run Field Diagnostic", key=f"run_field_diagnostic_{selected_book}", use_container_width=True):
+        st.session_state[f"field_diagnostic_result_{selected_book}"] = diagnostic_query
+    diagnostic_result = st.session_state.get(f"field_diagnostic_result_{selected_book}")
+    if diagnostic_result:
+        st.info(field_diagnostic(diagnostic_result))
+
+    if blocker:
+        remaining = (blocker["deadline"] - datetime.datetime.utcnow()).total_seconds()
+        clock = (
+            f"{remaining/60:,.0f} min remaining on management response clock"
+            if remaining > 0
+            else f"RESPONSE CLOCK EXPIRED {abs(remaining)/60:,.0f} min ago"
+        )
+        st.error(
+            f"🚨 **CRITICAL FIELD BLOCK ACTIVE** — {blocker['detail']}\n\n"
+            f"**Third party:** {blocker['vendor']} · **Requested of GM:** {blocker['requested_action']}\n\n"
+            f"**Escalated:** {blocker['opened_at']} · {clock}"
+        )
+    else:
+        st.markdown(
+            "<div class='beacon-box'>🚨 FIELD BLOCKER BEACON — raise a stall to General Management "
+            "and the Directorate rather than holding crews idle at "
+            f"${burn_rate * 3600:,.0f}/hr.</div>",
+            unsafe_allow_html=True,
+        )
+
+    if st.button(
+        "🚨 Escalate Field Blocker to General Management & Directorate",
+        key=f"open_escalation_{selected_book}",
+        use_container_width=True,
+    ):
+        st.session_state["escalation_form_open"] = True
+
+    if st.session_state["escalation_form_open"]:
+        with st.form(f"escalation_form_{selected_book}"):
+            st.markdown("**Field Blocker Escalation**")
+            root_cause = st.text_area(
+                "Root Cause / Blocker Detail",
+                placeholder=(
+                    "e.g., EPC contractor refusing to certify transformer dielectric oil test "
+                    "without a waiver"
+                ),
+            )
+            third_party = st.text_input(
+                "Third Party / Vendor Causing Stall",
+                placeholder="e.g., Permian HV Services (EPC) / OEM warranty desk",
+            )
+            requested_action = st.text_area(
+                "Requested Action from GM",
+                placeholder="e.g., Issue executive indemnity waiver or invoke liquidated damages",
+            )
+            submitted = st.form_submit_button("Submit Escalation & Start 30-Minute Response Clock")
+        if submitted:
+            opened = datetime.datetime.utcnow()
+            escalation = {
+                "detail": root_cause or "Unspecified field blocker",
+                "vendor": third_party or "Unspecified third party",
+                "requested_action": requested_action or "Executive determination requested",
+                "opened_at": opened.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "deadline": opened + datetime.timedelta(minutes=30),
+                "technician": technician,
+            }
+            st.session_state["field_escalations"].setdefault(selected_book, []).append(escalation)
+            st.session_state["escalation_form_open"] = False
+            incident["status"] = "CRITICAL FIELD BLOCK"
+            ledger_status = write_ledger_event(
+                book=selected_book,
+                action="TACTICAL_BLOCKER_ESCALATED",
+                rationale=(
+                    f"ROOT CAUSE: {escalation['detail']} || THIRD PARTY: {escalation['vendor']} || "
+                    f"REQUESTED OF GM: {escalation['requested_action']}"
+                ),
+                work_order_id=st.session_state.active_incident_id,
+                t0=incident["start_time"],
+                actor_id=technician,
+                title="Tier 3 Frontline Site Lead",
+                tier=3,
+                blocker="FIELD_BLOCK",
+            )
+            incident["audit_log"].append(
+                f"[{escalation['opened_at']}] TACTICAL_BLOCKER_ESCALATED ({technician}): "
+                f"{escalation['detail']} | GM response due by "
+                f"{escalation['deadline'].strftime('%H:%M:%S UTC')} | {ledger_status}"
+            )
+            st.rerun()
+
+    st.markdown("#### ✅ Field Execution & Attestation (Checks #1 – #8)")
+    for index, check in enumerate(SOP_CHECKS, start=1):
+        widget_key = f"tier3_sop_{selected_book}_{check['key']}"
+        st.session_state.setdefault(widget_key, bool(book_state.get(check["key"])))
+        verified = st.checkbox(
+            f"Check #{index} — {check['name']} ({check['owner']}) — "
+            f"{'VERIFIED' if book_state.get(check['key']) else 'PENDING'}",
+            key=widget_key,
+        )
+        evidence_key = f"{selected_book}|{check['key']}"
+        evidence = st.session_state["field_evidence"].setdefault(
+            evidence_key, {"note": "", "dictation": ""}
+        )
+        with st.expander(f"📝 Frontline Field Note & Evidence Attachment — Check #{index}"):
+            evidence["note"] = st.text_area(
+                "Witness test values, multimeter readings, instrument serials",
+                value=evidence["note"],
+                key=f"evidence_note_{evidence_key}",
+            )
+            evidence["dictation"] = st.text_area(
+                "🎙️ Dictate Field Note (Voice-to-Evidence)",
+                value=evidence["dictation"],
+                key=f"evidence_dictation_{evidence_key}",
+                placeholder="Spoken field note transcribed at the panel...",
+            )
+            uploaded = st.file_uploader(
+                "Attach photo / instrument capture",
+                key=f"evidence_photo_{evidence_key}",
+                type=["png", "jpg", "jpeg", "pdf"],
+            )
+            if uploaded is not None:
+                st.caption(f"Attached: {uploaded.name} ({uploaded.size:,} bytes)")
+
+        if verified != bool(book_state.get(check["key"])):
+            st.session_state["checklist_db"][selected_book][check["key"]] = verified
+            st.session_state.pop(f"sop_{selected_book}_{check['key']}", None)
+            st.session_state.pop(f"docket_sop_{selected_book}_{check['key']}", None)
+            if verified:
+                write_ledger_event(
+                    book=selected_book,
+                    action="CHECK_VERIFIED",
+                    rationale=(
+                        f"Check #{index} {check['name']} stamped by {technician} at the panel. "
+                        f"EVIDENCE: {evidence['note'] or 'n/a'} || DICTATION: "
+                        f"{evidence['dictation'] or 'n/a'}"
+                    ),
+                    work_order_id=st.session_state.active_incident_id,
+                    t0=incident["start_time"],
+                    actor_id=technician,
+                    title="Tier 3 Frontline Site Lead",
+                    tier=3,
+                    blocker="SOP_GATE",
+                )
+            st.rerun()
+
+    st.caption(
+        f"Heartbeat {datetime.datetime.utcnow().strftime('%H:%M:%S UTC')} · readiness "
+        f"{readiness}/8 synced live to Tier 1 Chairman metrics and Tier 2 GM dockets."
+    )
+
+
 def render_tier_2_overview(incident: dict, selected_book: str) -> None:
     st.subheader("Tier 2 | General Management Overview")
+    blocker = active_field_block(selected_book)
+    if blocker:
+        remaining = (blocker["deadline"] - datetime.datetime.utcnow()).total_seconds()
+        st.error(
+            f"🚨 CRITICAL FIELD BLOCK escalated from Tier 3 — {blocker['detail']}\n\n"
+            f"**Third party:** {blocker['vendor']} · **Requested action:** {blocker['requested_action']} · "
+            f"**Response clock:** {remaining/60:,.0f} min"
+        )
     for gm_name, gm_meta in GM_DOMAINS.items():
         open_checks = gm_open_checks(selected_book, gm_name)
         with st.container(border=True):
@@ -956,6 +1229,14 @@ def render_tier_1(incident: dict, selected_book: str) -> None:
     )
 
     bottleneck = identify_bottleneck(selected_book, elapsed)
+    field_block = active_field_block(selected_book)
+    if field_block:
+        remaining = (field_block["deadline"] - datetime.datetime.utcnow()).total_seconds()
+        st.error(
+            f"🚨 CRITICAL FIELD BLOCK (Tier 3 escalation) — {field_block['detail']}\n\n"
+            f"**Third party:** {field_block['vendor']} · **Requested action:** "
+            f"{field_block['requested_action']} · **Management response clock:** {remaining/60:,.0f} min"
+        )
     if st.session_state.get("inspected_gm") not in GM_DOMAINS:
         st.session_state["inspected_gm"] = bottleneck[0] if bottleneck else "Elena Rostova"
 
@@ -1134,6 +1415,57 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.markdown(
+    """
+    <style>
+    .command-header {
+        background: linear-gradient(90deg, #101826 0%, #0B0F19 100%);
+        border-left: 8px solid #F5A623;
+        border-radius: 8px;
+        color: #FFFFFF;
+        font-size: 1.6rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+    }
+    .field-banner {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        background: #0B0F19;
+        border: 2px solid #00FFA3;
+        border-radius: 8px;
+        padding: 14px 20px;
+        margin-bottom: 10px;
+    }
+    .field-label {
+        display: block;
+        color: #9AA4B2;
+        font-size: 0.72rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+    }
+    .field-value {
+        display: block;
+        color: #FFFFFF;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+    .beacon-box {
+        border: 2px solid #F5A623;
+        border-radius: 8px;
+        background: rgba(245, 166, 35, 0.10);
+        color: #F5A623;
+        font-weight: 700;
+        padding: 12px 18px;
+        margin: 10px 0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.sidebar.title("FACTORY COMMAND POST")
 st.sidebar.caption("Autonomous Capital Defense Control Plane")
 total_fleet_burn = sum(
@@ -1197,6 +1529,10 @@ st.header(f"{incident['priority']}: {incident['title']}")
 
 if active_view == VIEW_TIER_2:
     render_tier_2_overview(incident, st.session_state["selected_book"])
+    st.stop()
+
+if active_view == VIEW_TIER_3:
+    render_tier_3(incident, st.session_state["selected_book"])
     st.stop()
 
 if active_view == VIEW_TIER_4:
