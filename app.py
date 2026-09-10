@@ -2,6 +2,45 @@ import datetime
 
 import streamlit as st
 
+import ledger_store
+
+
+TOTAL_ASSET_EXPOSURE = 88_500_000
+BOARD_EXPOSURE_LIMIT = 95_000_000
+WEEKLY_HOLDING_BURN = 610_000
+CLIENT_REALIZATION_TARGET = 549_000
+PHOENIX_ADVISORY_FEE = 61_000
+CARRY_BURN_PER_SEC = 1.01
+
+GM_DOMAINS = {
+    "Marcus Vance": {
+        "domain": "Grid Interconnection & Telemetry",
+        "sla_seconds": 45 * 60,
+        "sla_label": "45 min",
+    },
+    "Elena Rostova": {
+        "domain": "Field Substation & High-Voltage",
+        "sla_seconds": 3 * 3600,
+        "sla_label": "3.0 hrs",
+    },
+    "David Chen": {
+        "domain": "Regulatory & Market Operations",
+        "sla_seconds": 90 * 60,
+        "sla_label": "90 min",
+    },
+}
+
+SOP_CHECKS = [
+    {"key": "check_1", "name": "ICCP 4-Sec Telemetry Handshake", "owner": "Marcus Vance", "default": True},
+    {"key": "check_2", "name": "PSCAD EMT Model Validation", "owner": "Marcus Vance", "default": True},
+    {"key": "check_3", "name": "RTU Point-Map Certification", "owner": "Marcus Vance", "default": True},
+    {"key": "check_4", "name": "IEEE 2800 Ride-Through Test Packet", "owner": "Elena Rostova", "default": True},
+    {"key": "check_5", "name": "HV Transformer Relay Coordination Study", "owner": "Elena Rostova", "default": True},
+    {"key": "check_6", "name": "Substation Grounding & Safety Clearance", "owner": "Elena Rostova", "default": False},
+    {"key": "check_7", "name": "ERCOT Part 2 COD Attestation Filing", "owner": "David Chen", "default": False},
+    {"key": "check_8", "name": "NERC Registration & Settlement Enablement", "owner": "David Chen", "default": False},
+]
+
 
 INCIDENTS = {
     "INC-001": {
@@ -85,6 +124,297 @@ if "active_incident_id" not in st.session_state:
     st.session_state.active_incident_id = "INC-001"
 if "selected_gm_branch" not in st.session_state:
     st.session_state.selected_gm_branch = "Elena Rostova"
+if "selected_book" not in st.session_state:
+    st.session_state["selected_book"] = "ERCOT_INTERCONNECT"
+if "checklist_db" not in st.session_state:
+    st.session_state["checklist_db"] = {}
+if "standby_frozen" not in st.session_state:
+    st.session_state["standby_frozen"] = {}
+if "ledger_ready" not in st.session_state:
+    try:
+        ledger_store.init_db()
+        st.session_state["ledger_ready"] = True
+    except Exception:  # ledger persistence is best-effort; UI must stay live
+        st.session_state["ledger_ready"] = False
+
+
+def ensure_checklist(book: str) -> dict:
+    """Idempotent per-book SOP state so checks survive view navigation."""
+    checklist_db = st.session_state["checklist_db"]
+    book_state = checklist_db.setdefault(book, {})
+    for check in SOP_CHECKS:
+        book_state.setdefault(check["key"], check["default"])
+    return book_state
+
+
+def readiness_count(book: str) -> int:
+    book_state = ensure_checklist(book)
+    return sum(1 for check in SOP_CHECKS if book_state.get(check["key"]))
+
+
+def gm_open_checks(book: str, gm_name: str) -> list:
+    book_state = ensure_checklist(book)
+    return [check for check in SOP_CHECKS if check["owner"] == gm_name and not book_state.get(check["key"])]
+
+
+def write_ledger_event(book: str, action: str, rationale: str, work_order_id: str, t0) -> str:
+    if not st.session_state.get("ledger_ready"):
+        return "LEDGER OFFLINE - EVENT HELD IN SESSION CHAIN"
+    try:
+        ledger_store.record_ledger_entry(
+            book=book,
+            tier=1,
+            actor_id="CHAIRMAN",
+            title="Chairman of the Board",
+            action=action,
+            work_order_id=work_order_id,
+            t0=t0,
+            blocker="GOVERNANCE_DEADLOCK",
+            notes=rationale,
+        )
+        return "COMMITTED TO SQLITE FORENSIC LEDGER (SHA-256 CHAINED)"
+    except Exception as exc:
+        return f"LEDGER WRITE FAILED: {exc}"
+
+
+def _kpi_card(label: str, value: str, basis: str, accent: str) -> str:
+    return (
+        f"<div style='background:#0B0F19;border:1px solid {accent};border-left:6px solid {accent};"
+        "border-radius:8px;padding:14px 16px;height:132px;'>"
+        f"<div style='color:#9AA4B2;font-size:0.72rem;letter-spacing:0.09em;text-transform:uppercase;'>{label}</div>"
+        f"<div style='color:#FFFFFF;font-size:1.55rem;font-weight:800;margin-top:6px;'>{value}</div>"
+        f"<div style='color:{accent};font-size:0.75rem;margin-top:6px;font-weight:600;'>{basis}</div>"
+        "</div>"
+    )
+
+
+def render_tier_1(incident: dict, selected_book: str) -> None:
+    """Chairman Directorate Command Center (fiduciary ribbon, SLA clocks, override console)."""
+    book_state = ensure_checklist(selected_book)
+    readiness = readiness_count(selected_book)
+    frozen = st.session_state["standby_frozen"].get(selected_book, False)
+
+    elapsed = (datetime.datetime.now() - incident["start_time"]).total_seconds()
+    live_carry = 0.0 if frozen else elapsed * CARRY_BURN_PER_SEC
+
+    st.subheader("Tier 1 | Chairman Directorate Command Center")
+
+    ribbon = st.columns(5)
+    ribbon[0].markdown(
+        _kpi_card(
+            "Total Asset Exposure",
+            f"${TOTAL_ASSET_EXPOSURE/1_000_000:,.1f}M",
+            f"Board Limit ${BOARD_EXPOSURE_LIMIT/1_000_000:,.1f}M",
+            "#F5A623",
+        ),
+        unsafe_allow_html=True,
+    )
+    ribbon[1].markdown(
+        _kpi_card(
+            "Holding Burn",
+            "$0 / wk (FROZEN)" if frozen else f"${WEEKLY_HOLDING_BURN:,.0f} / wk",
+            f"Live ticker ${0.00 if frozen else CARRY_BURN_PER_SEC:.2f}/sec · accrued ${live_carry:,.0f}",
+            "#00FFA3" if frozen else "#FF4B4B",
+        ),
+        unsafe_allow_html=True,
+    )
+    ribbon[2].markdown(
+        _kpi_card(
+            "Client Realization",
+            f"${CLIENT_REALIZATION_TARGET:,.0f}",
+            "Target preservation",
+            "#4DA3FF",
+        ),
+        unsafe_allow_html=True,
+    )
+    ribbon[3].markdown(
+        _kpi_card(
+            "Phoenix Advisory Fee",
+            f"${PHOENIX_ADVISORY_FEE:,.0f}",
+            "10% accrual on realization",
+            "#B388FF",
+        ),
+        unsafe_allow_html=True,
+    )
+    ribbon[4].markdown(
+        _kpi_card(
+            "SOP Readiness",
+            f"{readiness} / 8",
+            "GATE CLEARED" if readiness == 8 else f"{8 - readiness} CHECKS UNVERIFIED",
+            "#00FFA3" if readiness == 8 else "#FF4B4B",
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### Domain Critical-Path Chronometer (SLA Heat Map)")
+    chrono_cols = st.columns(3)
+    breach_profiles = []
+    for column, (gm_name, gm_meta) in zip(chrono_cols, GM_DOMAINS.items()):
+        open_checks = gm_open_checks(selected_book, gm_name)
+        over_sla = elapsed > gm_meta["sla_seconds"]
+        if not open_checks:
+            status, accent = "CLEARED", "#00FFA3"
+        elif over_sla:
+            status, accent = "BREACHED / ACCRUING BURN", "#FF4B4B"
+        else:
+            status, accent = "ON SCHEDULE", "#F5A623"
+
+        if open_checks and over_sla:
+            breach_profiles.append((gm_name, gm_meta, open_checks, elapsed - gm_meta["sla_seconds"]))
+
+        overrun = max(0.0, elapsed - gm_meta["sla_seconds"])
+        column.markdown(
+            f"<div style='background:#0B0F19;border:1px solid {accent};border-radius:8px;padding:14px 16px;'>"
+            f"<div style='color:#FFFFFF;font-size:1.05rem;font-weight:800;'>{gm_name}</div>"
+            f"<div style='color:#9AA4B2;font-size:0.8rem;margin-top:2px;'>{gm_meta['domain']}</div>"
+            f"<div style='color:#9AA4B2;font-size:0.78rem;margin-top:8px;'>SLA: {gm_meta['sla_label']} · "
+            f"Elapsed: {elapsed/3600:,.1f} hrs</div>"
+            f"<div style='color:{accent};font-size:0.95rem;font-weight:800;margin-top:8px;'>{status}</div>"
+            f"<div style='color:#9AA4B2;font-size:0.75rem;margin-top:4px;'>Open checks: {len(open_checks)} · "
+            f"Overrun: {overrun/3600:,.1f} hrs</div>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("")
+    if readiness < 8:
+        pacing = max(breach_profiles, key=lambda item: item[3], default=None)
+        if pacing is None:
+            bottleneck_gm, bottleneck_meta, bottleneck_checks = next(
+                (
+                    (name, meta, gm_open_checks(selected_book, name))
+                    for name, meta in GM_DOMAINS.items()
+                    if gm_open_checks(selected_book, name)
+                ),
+                ("Unassigned", {"domain": "n/a", "sla_label": "n/a"}, []),
+            )
+        else:
+            bottleneck_gm, bottleneck_meta, bottleneck_checks, _ = pacing
+
+        unverified = "".join(
+            f"<li style='color:#FFD5D5;'>{check['name']} <span style='color:#9AA4B2;'>"
+            f"({check['owner']})</span></li>"
+            for check in SOP_CHECKS
+            if not book_state.get(check["key"])
+        )
+        st.markdown(
+            "<div style='border:2px solid #FF4B4B;border-radius:10px;padding:20px 22px;"
+            "background:rgba(255,75,75,0.07);box-shadow:0 0 22px rgba(255,75,75,0.35);'>"
+            "<div style='color:#FF4B4B;font-size:1.25rem;font-weight:900;letter-spacing:0.04em;'>"
+            "🚨 CRITICAL PIPELINE STALL: ACTIVE FIDUCIARY EXPOSURE</div>"
+            f"<p style='color:#FFFFFF;margin-top:10px;margin-bottom:6px;'><b>Pacing Bottleneck:</b> "
+            f"{bottleneck_gm} — {bottleneck_meta['domain']} (SLA {bottleneck_meta['sla_label']}, "
+            f"{len(bottleneck_checks)} check(s) unresolved)</p>"
+            f"<p style='color:#FFFFFF;margin:0 0 4px 0;'><b>Unverified Check Items ({8 - readiness}):</b></p>"
+            f"<ul style='margin-top:0;'>{unverified}</ul>"
+            f"<p style='color:#FFFFFF;margin:6px 0;'><b>Accrued Idle Carry:</b> ${live_carry:,.0f} "
+            f"(${WEEKLY_HOLDING_BURN:,.0f}/wk contractor standby at ${CARRY_BURN_PER_SEC:.2f}/sec)</p>"
+            "<p style='color:#FF9C9C;margin:10px 0 0 0;font-style:italic;'><b>Legal Directive:</b> "
+            "Actual knowledge established under DGCL Caremark doctrine. Inaction constitutes documented "
+            "governance drift.</p>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div style='border:2px solid #00FFA3;border-radius:10px;padding:20px 22px;"
+            "background:rgba(0,255,163,0.07);box-shadow:0 0 22px rgba(0,255,163,0.32);'>"
+            "<div style='color:#00FFA3;font-size:1.25rem;font-weight:900;letter-spacing:0.04em;'>"
+            "🟢 ACTIVE REMEDIATION CONFIRMED — GATE CLEARED &amp; AUDITED</div>"
+            "<p style='color:#FFFFFF;margin-top:10px;'><b>Root-Cause Rectification:</b> All 8 frontline SOP "
+            "gates verified across Grid Interconnection & Telemetry, Field Substation & High-Voltage, and "
+            "Regulatory & Market Operations. Sequential sign-off deadlock replaced by directorate-attested "
+            "parallel clearance.</p>"
+            f"<p style='color:#FFFFFF;margin:6px 0;'><b>Capital Preserved:</b> ${WEEKLY_HOLDING_BURN:,.0f}/wk "
+            f"standby carry arrested; ${CLIENT_REALIZATION_TARGET:,.0f} client realization target defended; "
+            f"${PHOENIX_ADVISORY_FEE:,.0f} Phoenix advisory fee accrual secured.</p>"
+            "<p style='color:#FFFFFF;margin:6px 0;'><b>Downstream Commercialization:</b> "
+            "(1) Transmit Part 2 COD attestation to ERCOT; (2) enable market settlement &amp; NERC registration; "
+            "(3) demobilize standby crews; (4) release audited gate packet to the Board minute book.</p>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("### Chairman Command Interrogation")
+    user_query = st.text_input(
+        "Ask Command Intelligence about this deadlock, GM stances, or financial exposure...",
+        placeholder="e.g., What happens to queue priority if we delay filing by 48 hours?",
+        key=f"chairman_query_{st.session_state.active_incident_id}",
+    )
+    if user_query:
+        with st.chat_message("assistant"):
+            st.write(
+                f"**Executive Synthesis for Chairman:** Evaluating '{user_query}' against live standby carry "
+                f"(${CARRY_BURN_PER_SEC:.2f}/sec, ${live_carry:,.0f} accrued) and SOP readiness {readiness}/8."
+            )
+            st.info(
+                "Queue priority remains intact for 48 hours. Delay beyond that threshold forfeits the ERCOT "
+                "interconnect window and triggers an immediate $4.5M restudy penalty. Recommendation: exercise "
+                "the DGCL § 141 safe-harbor gate clearance below."
+            )
+
+    st.markdown(
+        "<div style='border:2px solid #F5A623;border-radius:10px;padding:18px 20px;margin-top:14px;"
+        "background:rgba(245,166,35,0.06);'>"
+        "<div style='color:#F5A623;font-size:1.2rem;font-weight:900;letter-spacing:0.05em;'>"
+        "⚡ CHAIRMAN DIRECTORATE STATUTORY OVERRIDE CONSOLE</div>"
+        "<div style='color:#E6C48A;font-size:0.88rem;margin-top:4px;'>"
+        "Exercise DGCL § 141 Safe-Harbor Authority &amp; Unilateral Gate Clearance</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    counsel_rationale = st.text_input(
+        "Statutory Counsel Justification / Fiduciary Filing Basis",
+        value=(
+            "Board-authorized unilateral safe-harbor override to arrest $610k/wk contractor carry burn; "
+            "executing expedited regulatory attestation."
+        ),
+        key=f"counsel_rationale_{selected_book}",
+    )
+
+    override_col_a, override_col_b = st.columns(2)
+    with override_col_a:
+        if st.button(
+            "🚨 UNILATERAL GATE CLEARANCE (FORCE COD ATTESTATION)",
+            key=f"unilateral_gate_clearance_{selected_book}",
+            use_container_width=True,
+        ):
+            for check in SOP_CHECKS:
+                st.session_state["checklist_db"][selected_book][check["key"]] = True
+            ledger_status = write_ledger_event(
+                book=selected_book,
+                action="CHAIRMAN_UNILATERAL_OVERRIDE",
+                rationale=counsel_rationale,
+                work_order_id=st.session_state.active_incident_id,
+                t0=incident["start_time"],
+            )
+            stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            incident["audit_log"].append(
+                f"[{stamp}] CHAIRMAN_UNILATERAL_OVERRIDE: All 8 SOP gates force-cleared under DGCL § 141 "
+                f"safe harbor. Rationale: {counsel_rationale} | {ledger_status}"
+            )
+            st.rerun()
+    with override_col_b:
+        if st.button(
+            "🛑 EMERGENCY STANDBY FREEZE (TRIP CIRCUIT BREAKER)",
+            key=f"emergency_standby_freeze_{selected_book}",
+            use_container_width=True,
+        ):
+            st.session_state["standby_frozen"][selected_book] = True
+            incident["burn_rate_sec"] = 0.0
+            ledger_status = write_ledger_event(
+                book=selected_book,
+                action="CHAIRMAN_STANDBY_FREEZE",
+                rationale=counsel_rationale,
+                work_order_id=st.session_state.active_incident_id,
+                t0=incident["start_time"],
+            )
+            stamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            incident["audit_log"].append(
+                f"[{stamp}] CHAIRMAN_STANDBY_FREEZE: Standby carry billing tripped to $0/sec. "
+                f"Rationale: {counsel_rationale} | {ledger_status}"
+            )
+            st.rerun()
 
 
 st.set_page_config(
@@ -128,27 +458,26 @@ col2.metric(
 col3.metric("Sunk Accrual (Since Lock)", f"${accumulated_burn:,.0f}", incident["schedule_drift"], delta_color="inverse")
 col4.metric(
     "Operational Readiness",
-    "8 / 8 Frontline SOP",
+    f"{readiness_count(st.session_state['selected_book'])} / 8 Frontline SOP",
     "GOV DEADLOCKED" if incident["status"] == "DEADLOCKED" else "CLEARED",
     delta_color="inverse" if incident["status"] == "DEADLOCKED" else "normal",
 )
 
 st.divider()
 st.header(f"{incident['priority']}: {incident['title']}")
-st.subheader("Tier 1 | Chairman Directorate & Cognizant Director")
-tier1_col1, tier1_col2 = st.columns([2, 1])
-with tier1_col1:
-    st.markdown(
-        "**Blockage:** Grid Interconnection Agreement Section 4.2 Part 2 COD Filing Gate\n\n"
-        f"**Cognizant Director:** `{incident['cognizant_director']['name']}` ({incident['cognizant_director']['role']})\n\n"
-        f"**Directorate Status:** `{incident['cognizant_director']['status']}`"
-    )
-with tier1_col2:
-    if incident["status"] == "DEADLOCKED":
-        st.warning("DIRECTORATE INTERVENTION REQUIRED")
-        if st.button("Concur with Chairman Carve-Out", key="directorate_concurrence", use_container_width=True):
-            incident["cognizant_director"]["status"] = "DIRECTORATE CONCURRENCE GRANTED"
-            st.rerun()
+render_tier_1(incident, st.session_state["selected_book"])
+
+st.markdown(
+    "**Blockage:** Grid Interconnection Agreement Section 4.2 Part 2 COD Filing Gate &nbsp;|&nbsp; "
+    f"**Cognizant Director:** `{incident['cognizant_director']['name']}` "
+    f"({incident['cognizant_director']['role']}) &nbsp;|&nbsp; "
+    f"**Directorate Status:** `{incident['cognizant_director']['status']}`"
+)
+if incident["status"] == "DEADLOCKED" and st.button(
+    "Concur with Chairman Carve-Out", key="directorate_concurrence"
+):
+    incident["cognizant_director"]["status"] = "DIRECTORATE CONCURRENCE GRANTED"
+    st.rerun()
 
 with st.expander(
     f"Command Intelligence Briefing | {incident['cognizant_director']['name']}",
@@ -215,48 +544,6 @@ with st.expander(
             )
             st.success("Stamped to Forensic Audit Ledger.")
             st.rerun()
-
-with st.container():
-    st.markdown("### Chairman Command Interrogation")
-    user_query = st.text_input(
-        "Ask Command Intelligence about this deadlock, GM stances, or financial exposure:",
-        placeholder="e.g., What happens to queue priority if we delay filing by 48 hours?",
-        key=f"chairman_query_{st.session_state.active_incident_id}",
-    )
-
-    if user_query:
-        with st.chat_message("assistant"):
-            st.write(
-                f"**Executive Synthesis for Chairman:** Evaluating '{user_query}' "
-                f"against current burn (${incident['burn_rate_sec']:.2f}/sec) and "
-                "Elena Rostova's warranty objection..."
-            )
-            st.info(
-                "Queue priority remains intact for 48 hours. However, delaying beyond "
-                "that threshold forfeits the ERCOT interconnect window and triggers an "
-                "immediate $4.5M restudy penalty. Recommendation: Issue the Tier 1 "
-                "indemnification carve-out now."
-            )
-
-    st.markdown("### Direct Chairman Override")
-    override_note = st.text_area(
-        "Executive Directive / Redline Modifications:",
-        placeholder="Enter binding instructions to Elena Rostova and David Chen...",
-        key=f"override_note_{st.session_state.active_incident_id}",
-    )
-    if st.button(
-        "Issue Binding Chairman Directive & Lock Ledger",
-        key=f"chairman_directive_{st.session_state.active_incident_id}",
-    ):
-        timestamp = datetime.datetime.utcnow().strftime("%H:%M:%S UTC")
-        incident["status"] = "RESOLVED"
-        incident["burn_rate_sec"] = 0.0
-        incident["audit_log"].append(
-            f"[{timestamp}] UNILATERAL CHAIRMAN DIRECTIVE: {override_note} - "
-            "All GM branches ordered to comply."
-        )
-        st.success("Chairman directive enforced. Holding burn halted to $0/wk.")
-        st.rerun()
 
 st.subheader("Tier 2 | General Management Workspaces")
 if incident["gms"]:
