@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import json
 import streamlit as st
 
 st.set_page_config(
@@ -17,6 +18,9 @@ st.markdown(
         div[data-testid="stMetricLabel"] { color: #8b949e; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
         div[data-testid="stMetricValue"] { color: #f0f6fc; font-family: monospace; font-size: 1.6rem; }
         .stButton>button { border-radius: 4px; height: 44px; font-weight: 600; letter-spacing: .02em; }
+        .branch-crimson { border: 2px solid #da3633 !important; background-color: rgba(218, 54, 51, 0.08) !important; }
+        .branch-amber { border: 2px solid #d29922 !important; background-color: rgba(210, 153, 34, 0.08) !important; }
+        .branch-emerald { border: 2px solid #238636 !important; background-color: rgba(35, 134, 54, 0.12) !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -26,6 +30,10 @@ if "micro_drift_active" not in st.session_state:
     st.session_state.micro_drift_active = False
 if "drift_minutes" not in st.session_state:
     st.session_state.drift_minutes = 0
+if "conference_focus" not in st.session_state:
+    st.session_state.conference_focus = "NONE"
+if "remedial_simulation" not in st.session_state:
+    st.session_state.remedial_simulation = "Option A: Authorize Directorate Indemnity Carve-Out (Dominant)"
 if "selected_incident_id" not in st.session_state:
     st.session_state.selected_incident_id = "INC-001"
 
@@ -115,11 +123,23 @@ if "app_state" not in st.session_state:
     st.session_state.app_state = SECTORS
 
 
-def record_ledger_entry(incident, event_text):
+def record_ledger_entry(incident, event_text, custom_snapshot=None):
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     previous_hash = incident["audit_log"][-1]["hash"] if incident["audit_log"] else "000000"
-    entry_hash = hashlib.sha256(f"{timestamp}|{previous_hash}|{event_text}".encode()).hexdigest()[:10]
-    incident["audit_log"].append({"ts": timestamp, "hash": entry_hash, "event": event_text})
+    work_order_data = incident.get("tier3_work_order", {})
+    telemetry = work_order_data.get("telemetry_metrics", {})
+    snapshot = custom_snapshot or {
+        "holding_burn_sec": incident.get("base_burn_rate_sec", 0.0),
+        "financial_crossover_days": incident.get("crossover_days", 0.0),
+        "gate_clock": "47h 15m" if st.session_state.micro_drift_active else "48h 00m",
+        "telemetry_thd": telemetry.get("THD Harmonics", ("N/A", ""))[0],
+        "telemetry_inrush": telemetry.get("Inrush Damping", ("N/A", ""))[0],
+        "bjr_shield_status": "SATISFIED (Business Judgment Rule Preserved)",
+        "counterfactual_tested": st.session_state.remedial_simulation,
+    }
+    raw_payload = f"{timestamp}|{previous_hash}|{event_text}|{json.dumps(snapshot, sort_keys=True)}"
+    entry_hash = hashlib.sha256(raw_payload.encode()).hexdigest()[:10]
+    incident["audit_log"].append({"ts": timestamp, "hash": entry_hash, "event": event_text, "snapshot": snapshot})
 
 
 with st.sidebar:
@@ -165,7 +185,10 @@ current_burn_rate = active_inc["base_burn_rate_sec"] if active_inc["status"] != 
 
 def render_ledger(incident):
     for item in reversed(incident["audit_log"]):
-        st.code(f"[{item['ts']}] SHA:{item['hash']} | {item['event']}", language="yaml")
+        with st.expander(f"🔒 [{item['ts']}] SHA-256:{item['hash']} — {item['event']}"):
+            st.markdown("**Point-in-Time Evidence Snapshot:**")
+            st.json(item.get("snapshot", {}))
+            st.caption("Telemetry, timers, evaluated options, and fiduciary constraints sealed at this ledger event.")
 
 
 def render_telemetry(incident):
@@ -298,9 +321,17 @@ else:
         prompt = conf_q1.text_input("Conference Query:", placeholder="e.g., Why is Work Order #8821 stalled? / What unblocks Elena?", label_visibility="collapsed")
         why_stalled = conf_q2.button("Why is the Fix Stalled?", use_container_width=True)
         unblock = conf_q3.button("What Unblocks the GM?", use_container_width=True)
-        if why_stalled: prompt = "Why is Work Order #8821 stalled?"
-        elif unblock: prompt = "What unblocks Elena?"
-        if prompt:
+        if why_stalled:
+            st.session_state.conference_focus = "WHY_STALLED"
+        elif unblock:
+            st.session_state.conference_focus = "WHAT_UNBLOCKS"
+        elif prompt:
+            st.session_state.conference_focus = "CUSTOM"
+        if st.session_state.conference_focus == "WHY_STALLED":
+            st.markdown('**Master Orchestrator ➔ Site Telemetry Agent:** *"Emergency PE crew is physically staged at the Permian relay building. Physical testing is ready; access is legally blocked."*\n\n**Master Orchestrator ➔ Chairman:** *"The fix has not failed mechanically. It is blocked by an access gate. Executing the Directorate Carve-Out releases the OEM engineer immediately."*')
+        elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
+            st.markdown('**Master Orchestrator ➔ Fiduciary Shield Agent:** *"An executive Board Resolution granting a complete Directorate Indemnity Waiver absorbs liability at the board level. Elena is legally cleared to sign within 5 minutes of execution."*')
+        elif st.session_state.conference_focus == "CUSTOM":
             st.markdown(f'**Chairman:** *"{prompt}"*')
             query = prompt.lower()
             if "why" in query or "wo-8821" in query or "stalled" in query or "held" in query:
@@ -321,7 +352,14 @@ else:
             st.markdown(f"**Lead:** Elena Rostova ({field_gm['title'] if field_gm else 'Field Operations'})")
             st.markdown(f"**Cognizant Director:** {active_inc['director_seat']}")
             st.markdown("**Embedded Agent:** `Site Telemetry Agent` (Active)")
-            st.error("🚨 **Friction Point:** Check #6 unverified; harmonic sweep access held.")
+            if active_inc["status"] == "RESOLVED":
+                st.success("✅ **Gate Cleared:** Transformer energized under board escrow.")
+            elif st.session_state.conference_focus == "WHY_STALLED":
+                st.error("🚨 **Friction Point (CRIMSON):** Physical cabinet access withheld pending corporate legal indemnity.")
+            elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
+                st.success("🟢 **Friction Point (RESOLVED):** Cabinet access clears upon Branch 3 indemnity execution.")
+            else:
+                st.error("🚨 **Friction Point:** Check #6 unverified; harmonic sweep access held.")
             st.info("**Branch Recommendation:** Direct emergency PE stamp upload on the active work order upon legal clearance.")
             order = active_inc.get("tier3_work_order", {})
             st.write(f"**Work Order:** `{order.get('id', 'N/A')}` ({order.get('progress_pct', 0)}%)")
@@ -369,7 +407,8 @@ else:
     with t4_col1:
         with st.container(border=True):
             st.markdown("#### Authorized Remedial Levers")
-            choice = st.radio("Select Remedial Action:", ["Option A: Authorize Directorate Indemnity Carve-Out (Dominant)", "Option B: Mobilize Emergency PE Testing Crew ($35k Draw)", "Option C: Demobilize Permian High-Voltage Contractors"])
+            st.session_state.remedial_simulation = st.radio("Select Remedial Action:", ["Option A: Authorize Directorate Indemnity Carve-Out (Dominant)", "Option B: Mobilize Emergency PE Testing Crew ($35k Draw)", "Option C: Demobilize Permian High-Voltage Contractors"], index=0)
+            choice = st.session_state.remedial_simulation
             if "Option A" in choice:
                 st.markdown("* **Holding Burn:** `$610,848/wk` ➔ **`$0/wk`** (Halted instantly).\n* **Elena Rostova:** Exonerated. Board Escrow absorbs $1.2M warranty risk.\n* **David Chen:** Filing transmitted to ERCOT. Queue protected.\n* **Fiduciary Shield:** Delaware Business Judgment Rule satisfied.")
                 if active_inc["status"] == "DEADLOCKED" and st.button("Execute Directorate Carve-Out", use_container_width=True):
