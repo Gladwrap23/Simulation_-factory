@@ -143,23 +143,35 @@ Contractor idle carry is bleeding **${p_inc['burn_rate_sec']:.2f}/second**. Hold
             elif "stall" in ql or "why" in ql: st.info("**Master Agent ➔ Friction Diagnostic:** Deadlock centered on Check #6. Elena Rostova refuses sign-off under OEM Warranty Clause 14.b due to unverified IEEE 2800 harmonic data. David Chen is blocked because the ERCOT IA § 4.2 filing gate expires in 48 hours.")
             elif "48" in ql or "wait" in ql: st.warning("**Master Agent ➔ Counterfactual Projection:** Waiting 48 hours forfeits the ERCOT Interconnection Queue position ($4.5M restudy penalty + 14-month COD slip) and incurs an additional $174,528 in idle contractor carry. Default notice triggered under PPA.")
             else: st.info(f"**Master Agent Synthesis:** Active standoff between {list(p_inc['gms'].keys())}. Recommendation: Issue Tier 1 Directorate Indemnity Carve-Out to absorb technical warranty risk and transmit COD filing immediately.")
-    tab_tree, tab_remedy, tab_ledger = st.tabs(["🌳 Panoramic Arbitration Tree", "⚡ Guardrailed Remedial Actions", "📋 Forensic Audit Ledger"])
-    with tab_tree:
-        st.subheader("Cross-Branch General Management Arbitration")
-        st.caption(f"Active Gating Blocker: **{p_inc['title']}** — Status: `{p_inc['status']}`")
-        b_col1, b_col2 = st.columns(2)
-        for i, gname in enumerate(p_inc["gms"]):
-            with (b_col1 if i % 2 == 0 else b_col2):
-                with st.container(border=True):
-                    g = p_inc["gms"][gname]
-                    st.markdown(f"#### Branch: {gname}")
-                    st.caption(f"{g['title']} | `{g['domain']}`")
-                    st.warning(f"**Position:** {g['position']}")
-                    st.markdown("**Field Gating Telemetry:**")
-                    for chk in g["checks"]: st.write(f"{'✅' if chk['status'] == 'CLEARED' else '🚨'} **{chk['id']}**: {chk['name']} — `{chk['evidence']}`")
-    with tab_remedy:
-        st.subheader("Executive Remedial Levers & Consequence Simulation")
-        st.caption("Every option mathematically projects burn deltas and personal liability shifts before execution.")
+    st.markdown("### Tier 2 | Cross-Branch General Management Arbitration")
+    b_col1, b_col2 = st.columns(2)
+    with b_col1:
+        with st.container(border=True):
+            st.markdown("#### Elena Rostova | GM - Field Operations")
+            st.warning(f"**Position:** {p_inc['gms']['Elena Rostova']['position']}")
+            st.markdown("##### Tier 3 | Field Gating Telemetry")
+            for chk in p_inc["gms"]["Elena Rostova"]["checks"]:
+                if chk["status"] == "CLEARED":
+                    st.success(f"{chk['id']}: {chk['name']} — {chk['evidence']}")
+                else:
+                    st.error(f"{chk['id']}: {chk['name']} — {chk['evidence']}")
+
+    with b_col2:
+        with st.container(border=True):
+            st.markdown("#### David Chen | GM - Regulatory Accounts")
+            st.warning(f"**Position:** {p_inc['gms']['David Chen']['position']}")
+            st.markdown("##### Tier 3 | Regulatory Gateway Telemetry")
+            for chk in p_inc["gms"]["David Chen"]["checks"]:
+                if chk["status"] == "CLEARED":
+                    st.success(f"{chk['id']}: {chk['name']} — {chk['evidence']}")
+                else:
+                    st.error(f"{chk['id']}: {chk['name']} — {chk['evidence']}")
+
+    st.markdown("### Tier 4 | Executive Remedial Engine & Cryptographic Audit Ledger")
+    t4_col1, t4_col2 = st.columns([1, 1])
+    with t4_col1:
+        st.markdown("#### Authorized Remedial Levers")
+        st.caption("Every option projects burn deltas and liability shifts before execution.")
         choice = st.radio("Simulate Executive Remedial Action:", ["Option A: Authorize Directorate Indemnity Carve-Out (Dominant)", "Option B: Mobilize Emergency PE Testing Crew ($35k Draw)", "Option C: Demobilize Permian High-Voltage Contractors"], index=0)
         with st.container(border=True):
             st.markdown("#### Consequence & Balance-Sheet Impact Preview")
@@ -178,7 +190,8 @@ Contractor idle carry is bleeding **${p_inc['burn_rate_sec']:.2f}/second**. Hold
             else:
                 st.markdown("* **Holding Burn Impact:** `$610,848/wk` ➔ **`$0/wk`** (Contractors stood down).\n* **Elena Rostova Liability:** Protected. Transformer isolated from grid.\n* **David Chen Regulatory Queue:** **TOTAL FORFEITURE.** 48-hour filing window missed. $4.5M study lost; 14-month slip.\n* **Fiduciary Shield:** ⚠️ **LOCKED BY FIDUCIARY SHIELD AGENT.** Violates capital defense threshold.")
                 st.error("Action Inadmissible: Fiduciary Shield Agent has locked this option due to catastrophic queue forfeiture.")
-    with tab_ledger:
-        st.subheader("Tier 4 | Cryptographic Forensic Audit Trail")
-        st.caption("Every telemetry breach, AI synthesis, concurrence, and Chairman override is immutably hashed.")
-        for item in reversed(p_inc["audit_log"]): st.code(f"[{item['ts']}] SHA-256:{item['hash']} | {item['event']}", language="yaml")
+
+    with t4_col2:
+        st.markdown("#### Immutable Cryptographic Chain")
+        for item in reversed(p_inc["audit_log"]):
+            st.code(f"[{item['ts']}] SHA-256:{item['hash']} | {item['event']}", language="yaml")
