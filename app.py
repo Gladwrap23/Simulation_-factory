@@ -4,21 +4,21 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v3.2_high_contrast_typography_sep15_2026"
+APP_BUILD_ID = "v3.3_i18n_de_es_en_sep15_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
     st.session_state["build_id"] = APP_BUILD_ID
 
 st.set_page_config(
-    page_title="Factory Command Post | Autonomous Capital Defense",
+    page_title="Command Post | Autonomous Capital Defense",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # =========================================================
-# 1. INDUSTRIAL HIGH-CONTRAST TYPOGRAPHY OVERHAUL
+# 1. INDUSTRIAL HIGH-CONTRAST TYPOGRAPHY & RESILIENT FLEX
 # =========================================================
 st.markdown("""
     <style>
@@ -28,7 +28,6 @@ st.markdown("""
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
         }
         
-        /* Global eradication of fine print */
         p { 
             font-size: 1.1rem !important; 
             line-height: 1.6 !important; 
@@ -45,7 +44,15 @@ st.markdown("""
             color: #f0f6fc !important;
         }
         
-        /* High-Contrast Executive Metrics */
+        .hero-gateway {
+            background: linear-gradient(180deg, rgba(22, 27, 34, 0.95) 0%, rgba(13, 17, 23, 0.95) 100%);
+            border: 2px solid #58a6ff;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
         .exec-metric-card {
             background-color: #161b22;
             border: 2px solid #30363d;
@@ -56,14 +63,14 @@ st.markdown("""
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 120px;
+            min-height: 125px;
         }
         .exec-metric-label {
             color: #e6edf3;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
             margin-bottom: 6px;
         }
         .exec-metric-val {
@@ -83,11 +90,94 @@ st.markdown("""
             border-radius: 6px;
             font-weight: 700;
             font-size: 1.05rem !important;
-            letter-spacing: 0.02em;
             padding: 10px 18px;
         }
     </style>
 """, unsafe_allow_html=True)
+
+# =========================================================
+# 2. LOCALIZATION DICTIONARY (I18N)
+# =========================================================
+I18N = {
+    "English (US / UK / AU)": {
+        "title": "Executive Chairman Command Post",
+        "sub_app": "Autonomous Capital Defense Control Plane",
+        "location_header": "PROJECT LOCATION / REGULATORY ANCHOR",
+        "docket_label": "Regulatory Baseline Docket",
+        "calib_input_label": "COMMAND GATEWAY: ENTER PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE):",
+        "override_active": "EXECUTIVE OVERRIDE ACTIVE",
+        "baseline_synced": "PUBLIC BASELINE SYNCHRONIZED",
+        "toll_fee": "Toll-Gate Fee (Milestone)",
+        "escrow_desc": "↑ 0.085% CapEx Escrow",
+        "session_window": "Live Session Window",
+        "session_desc": "↑ Cryptographic Epoch Active",
+        "holding_burn": "Portfolio Holding Burn",
+        "cap_under_def": "Capital Under Defense",
+        "active_block": "Active Block",
+        "crossover_sub": "↑ Crossover to Total Loss",
+        "why_stalled": "🚨 1. Why is the Fix Stalled?",
+        "what_unblocks": "🟢 2. What Unblocks the Gate?",
+        "interrogate_hint": "3. Type query to interrogate agent engine...",
+        "branches_title": "The Three Cascading Branches & Remedial Levers",
+        "opt_a": "Execute Option A Directive",
+        "pipeline_title": "🔒 Gated Incident Pipeline (Next 4 Bottlenecks)",
+        "active_threat": "🟡 ACTIVE THREAT",
+        "queued": "🔒 QUEUED",
+        "audit_title": "Tier 4 | Sealed Cryptographic Job Capsules"
+    },
+    "Deutsch (German)": {
+        "title": "Aufsichtsratsvorsitzender Lagezentrum",
+        "sub_app": "Autonome Kontrollplattform zur Kapitalverteidigung",
+        "location_header": "PROJEKTSTANDORT / REGULATORISCHER ANKER",
+        "docket_label": "Regulatorische Voraktenbasis",
+        "calib_input_label": "FÜHRUNGSTOR: PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL (ANTIPPEN ZUM KALIBRIEREN):",
+        "override_active": "LEITUNGS-ÜBERSTEUERUNG AKTIV",
+        "baseline_synced": "ÖFFENTLICHE BASISDATEN SYNCHRONISIERT",
+        "toll_fee": "Meilenstein-Freigabegebühr",
+        "escrow_desc": "↑ 0,085% Verwahrungsschild",
+        "session_window": "Laufendes Sitzungsfenster",
+        "session_desc": "↑ Kryptographische Epoche Aktiv",
+        "holding_burn": "Portfolio-Halteverlust",
+        "cap_under_def": "Verteidigtes Anlagekapital",
+        "active_block": "Aktive Störung",
+        "crossover_sub": "↑ Zeit bis zum Totalverlust",
+        "why_stalled": "🚨 1. Warum stockt die Freigabe?",
+        "what_unblocks": "🟢 2. Wie wird das Tor entsperrt?",
+        "interrogate_hint": "3. Frage zur Sachverhaltsaufklärung eingeben...",
+        "branches_title": "Die Drei Kaskadierenden Säulen & Abhilfemassnahmen",
+        "opt_a": "Weisung Option A Vollstrecken",
+        "pipeline_title": "🔒 Nachgelagerte Engpass-Pipeline (Nächste 4 Prüfpunkte)",
+        "active_threat": "🟡 AKUTE BEDROHUNG",
+        "queued": "🔒 WARTESCHLANGE",
+        "audit_title": "Stufe 4 | Versiegelte Kryptographische Einsatzkapseln"
+    },
+    "Español (Chile / CEN)": {
+        "title": "Puesto de Mando del Presidente Ejecutivo",
+        "sub_app": "Plano de Control para la Defensa Autónoma del Capital",
+        "location_header": "UBICACIÓN DEL PROYECTO / ANCLA REGULATORIA",
+        "docket_label": "Expediente Regulatorio Base",
+        "calib_input_label": "PORTAL DE MANDO: INGRESE PRESUPUESTO / CAPEX EN RIESGO (TOQUE PARA RECALIBRAR):",
+        "override_active": "INTERVENCIÓN EJECUTIVA ACTIVA",
+        "baseline_synced": "LÍNEA BASE PÚBLICA SINCRONIZADA",
+        "toll_fee": "Tarifa de Hito de Paso",
+        "escrow_desc": "↑ Custodia Fiduciaria 0,085%",
+        "session_window": "Ventana de Sesión Activa",
+        "session_desc": "↑ Época Criptográfica Activa",
+        "holding_burn": "Pérdida por Retención",
+        "cap_under_def": "Capital Bajo Defensa",
+        "active_block": "Bloqueo Operacional",
+        "crossover_sub": "↑ Plazo para la Pérdida Total",
+        "why_stalled": "🚨 1. ¿Por qué está trabada la solución?",
+        "what_unblocks": "🟢 2. ¿Qué desbloquea la compuerta?",
+        "interrogate_hint": "3. Escriba consulta para interrogar a los agentes...",
+        "branches_title": "Las Tres Ramas en Cascada y Palancas de Mitigación",
+        "opt_a": "Ejecutar Directiva Opción A",
+        "pipeline_title": "🔒 Ducto de Incidentes Consecutivos (Próximos 4 Cuellos de Botella)",
+        "active_threat": "🟡 AMENAZA ACTIVA",
+        "queued": "🔒 EN ESPERA",
+        "audit_title": "Nivel 4 | Cápsulas Criptográficas de Auditoría Selladas"
+    }
+}
 
 TODAY_STR = "15 Sep 2026"
 
@@ -129,7 +219,7 @@ SECTORS = {
                         "entries": [
                             "DOCKET INGESTION: Baseline verified against ERCOT Docket #54219.",
                             "CAPITAL AUDIT: Sovereign capital cap locked at $88,500,000.",
-                            "FIDUCIARY ANCHOR: Delaware DGCL § 141 safe harbor initialized."
+                            "FIDUCIARY ANCHOR: Safe harbor initialized."
                         ]
                     }
                 ]
@@ -171,35 +261,35 @@ SECTORS = {
             "DB-005": {"title": "Balise Telegram Buffer Sync", "priority": "P5 - MONITORED", "base_daily_bleed": 69120}
         }
     },
-    "TEPCO Holdings | Transmission Grid (Japan)": {
-        "currency": "¥",
-        "asset_cap": 42_000_000_000,
-        "baseline_docket": "METI Electricity Grid Intertie Filing #TK-402",
+    "Coordinador Eléctrico Nacional | Atacama BESS (Chile)": {
+        "currency": "$",
+        "asset_cap": 145_000_000,
+        "baseline_docket": "CEN Res. Exenta N° 842 / Atacama-Santiago Intertie",
         "baseline_date": "15 Sep 2026",
-        "statute": "Japanese Companies Act Art. 423 (Fiduciary Defense Shield)",
-        "directors": {"Keisuke Yokoo": {"seat": "Chairman of the Board"}},
+        "statute": "Ley General de Servicios Eléctricos Art. 72-1 (Chile)",
+        "directors": {"Juan Carlos Olmedo": {"seat": "Presidente del Consejo Directivo"}},
         "incidents": {
-            "TEPCO-500KV-01": {
-                "title": "Shin-Shinano 500kV Frequency Converter Synchronization Stall",
-                "priority": "P1 - CRITICAL",
-                "base_daily_bleed": 125280,
+            "CEN-BESS-01": {
+                "title": "Prueba de Inyección de Armónicos y Sincronismo 220kV",
+                "priority": "P1 - CRÍTICO",
+                "base_daily_bleed": 45000,
                 "status": "DEADLOCKED",
-                "director_seat": "Keisuke Yokoo",
-                "tier3_work_order": {"id": "WO-TEPCO-4410", "progress_pct": 70, "steps": []},
+                "director_seat": "Juan Carlos Olmedo",
+                "tier3_work_order": {"id": "WO-CEN-332", "progress_pct": 70, "steps": []},
                 "audit_packages": [
                     {
-                        "job_id": "JOB-001: METI Baseline Ingestion",
+                        "job_id": "JOB-001: Registro CEN Ingestado",
                         "status": "SEALED & ATTESTED",
                         "sealed_at": "2026-09-15 00:00:00 UTC",
-                        "package_hash": "jp8834f109a12c7",
-                        "entries": ["METI INTERTIE FILING: Shin-Shinano 500kV locked."]
+                        "package_hash": "cl4491a082b1",
+                        "entries": ["EXPEDIENTE CEN INGESTADO: Res. Exenta N° 842 locked."]
                     }
                 ]
             },
-            "TEP-002": {"title": "Transformer Bushing Tan-Delta Spike", "priority": "P2 - HIGH", "base_daily_bleed": 73440},
-            "TEP-003": {"title": "50Hz/60Hz Intertie Buffer Calibration", "priority": "P3 - MODERATE", "base_daily_bleed": 34560},
-            "TEP-004": {"title": "SF6 Gas Pressure Telemetry Recalibration", "priority": "P4 - MONITORED", "base_daily_bleed": 12960},
-            "TEP-005": {"title": "Substation Seismic Isolator Verification", "priority": "P5 - MONITORED", "base_daily_bleed": 17280}
+            "CEN-002": {"title": "Ajuste de Protecciones Subestación Kimal", "priority": "P2 - ALTO", "base_daily_bleed": 31200},
+            "CEN-003": {"title": "Verificación Filtro STATCOM Cardones", "priority": "P3 - MEDIO", "base_daily_bleed": 14000},
+            "CEN-004": {"title": "Monitoreo Térmico Línea 2x500kV", "priority": "P4 - MONITOREADO", "base_daily_bleed": 5600},
+            "CEN-005": {"title": "Sincronización AGC Despacho Atacama", "priority": "P5 - MONITOREADO", "base_daily_bleed": 4200}
         }
     }
 }
@@ -242,13 +332,18 @@ def seal_active_package(incident: dict):
         packages[-1]["sealed_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
 # =========================================================
-# SIDEBAR
+# 3. SIDEBAR WITH THREE-WAY LOCALIZATION
 # =========================================================
 with st.sidebar:
     st.markdown("### 🏛️ COMMAND POST")
-    st.markdown("<div style='font-size:0.95rem; color:#c9d1d9; margin-bottom:12px;'>Autonomous Capital Defense Control Plane</div>", unsafe_allow_html=True)
     
-    st.selectbox("Localization / 言語 / Sprache:", ["English (US / UK / AU)", "日本語 (Japanese)", "Deutsch (German)"])
+    lang_choice = st.selectbox(
+        "Localization / Idioma / Sprache:",
+        ["English (US / UK / AU)", "Deutsch (German)", "Español (Chile / CEN)"]
+    )
+    t = I18N[lang_choice]
+    
+    st.markdown(f"<div style='font-size:0.95rem; color:#c9d1d9; margin-bottom:12px;'>{t['sub_app']}</div>", unsafe_allow_html=True)
     
     active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
     sector = st.session_state.app_state[active_sector]
@@ -261,20 +356,18 @@ with st.sidebar:
     scale_factor = current_calib_capex / sector["asset_cap"]
 
     selected_role = st.radio(
-        "Active Governance Profile:",
-        ["Executive Chairman (Panoramic Tree)", "Tier 3: Site Operations / Field Lead"] +
+        "Governance Profile:",
+        [t["title"], "Tier 3: Site Operations / Field Lead"] +
         [f"Director: {d}" for d in sector["directors"].keys()]
     )
     
     st.divider()
     st.markdown("#### Active Incident Queue")
-    st.caption("Crossover horizons scaled to Chairman CapEx:")
-    
     for inc_key, inc_obj in sector["incidents"].items():
         is_sel = inc_key == st.session_state.selected_incident_id
         inc_daily = inc_obj.get("base_daily_bleed", 50000) * scale_factor
         inc_crossover = round(current_calib_capex / inc_daily, 1) if inc_daily > 0 else 999
-        btn_label = f"{inc_obj.get('priority', 'P1')}: {inc_key}\n{inc_crossover}d Crossover Horizon"
+        btn_label = f"{inc_obj.get('priority', 'P1')}: {inc_key}\n{inc_crossover}d Crossover"
         
         if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
             st.session_state.selected_incident_id = inc_key
@@ -288,19 +381,19 @@ active_inc = sector["incidents"][st.session_state.selected_incident_id]
 is_resolved = active_inc.get("status") == "RESOLVED"
 
 # =========================================================
-# EXECUTIVE CHAIRMAN VIEW
+# 4. EXECUTIVE CHAIRMAN VIEW (HERO GATEWAY)
 # =========================================================
-if selected_role == "Executive Chairman (Panoramic Tree)":
-    st.title("Executive Chairman Command Post")
+if selected_role == t["title"]:
+    st.title(t["title"])
     
-    # High-Visibility Legal Defense Banner
+    # High-Visibility Statutory Banner
     st.markdown(f"""
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #58a6ff; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div>Asset: <strong style="color:#ffffff;">{active_sector}</strong></div>
             <div style="color:#58a6ff;">|</div>
-            <div>Legal Defense Shield: <strong style="color:#58a6ff;">{sector['statute']}</strong></div>
+            <div>Statute: <strong style="color:#58a6ff;">{sector['statute']}</strong></div>
             <div style="color:#58a6ff;">|</div>
-            <div>Audit Date: <strong style="color:#ffffff;">{TODAY_STR}</strong></div>
+            <div>Date: <strong style="color:#ffffff;">{TODAY_STR}</strong></div>
         </div>
     """, unsafe_allow_html=True)
     
@@ -309,87 +402,83 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
         st.session_state[ts_key] = f"{TODAY_STR} 00:00 UTC"
         
     # ---------------------------------------------------------
-    # DUAL-RECORD QUICK-CALIBRATOR
+    # HERO INGESTION GATEWAY (FULL-WIDTH ILLUMINATED TERMINAL)
     # ---------------------------------------------------------
-    with st.container(border=True):
-        qc1, qc2, qc3 = st.columns([2, 1, 1])
-        with qc1:
-            st.markdown(f"""
-                <div style="font-size: 1.05rem; color: #c9d1d9; margin-bottom: 6px;">
-                    Public Regulatory Baseline: <strong style="color:#ffffff; font-size:1.15rem;">{curr_sym}{sector['asset_cap']:,}</strong> 
-                    <span style="color:#58a6ff; font-weight:600;">({sector['baseline_docket']} | {sector['baseline_date']})</span>
+    with st.container():
+        st.markdown(f"""
+            <div class="hero-gateway">
+                <div style="font-size:0.95rem; font-weight:700; color:#58a6ff; letter-spacing:0.08em; margin-bottom:4px;">
+                    ⚡ {t['location_header']}
                 </div>
-            """, unsafe_allow_html=True)
-            
-            raw_input_str = st.text_input(
-                "Chairman Quick-Calibrator: Enter Project Budget / CapEx at Risk:",
-                value=f"{st.session_state[calib_key]:,}"
+                <div style="font-size:1.15rem; font-weight:700; color:#ffffff; margin-bottom:12px;">
+                    {active_sector} — <span style="color:#c9d1d9; font-weight:400;">{sector['baseline_docket']} (Effective: {sector['baseline_date']})</span>
+                </div>
+                <div style="font-size:1.0rem; color:#e6edf3; font-weight:600; margin-bottom:8px;">
+                    {t['calib_input_label']}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        raw_input_str = st.text_input(
+            "CapEx Quick-Calibrator Input",
+            value=f"{st.session_state[calib_key]:,}",
+            label_visibility="collapsed"
+        )
+        parsed_capex = int(re.sub(r"[^\d]", "", raw_input_str) or sector["asset_cap"])
+        
+        if parsed_capex != st.session_state[calib_key]:
+            now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            st.session_state[calib_key] = parsed_capex
+            st.session_state[ts_key] = now_str
+            seal_active_package(active_inc)
+            append_to_active_package(
+                active_inc,
+                f"JOB-{len(active_inc.get('audit_packages', []))+1:03d}: CapEx Re-Calibration",
+                f"Chairman re-calibrated exposure to {curr_sym}{parsed_capex:,}. Dynamic scaling enforced.",
+                force_new_package=True
             )
-            parsed_capex = int(re.sub(r"[^\d]", "", raw_input_str) or sector["asset_cap"])
-            
-            if parsed_capex != st.session_state[calib_key]:
-                now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-                st.session_state[calib_key] = parsed_capex
-                st.session_state[ts_key] = now_str
-                seal_active_package(active_inc)
-                append_to_active_package(
-                    active_inc,
-                    f"JOB-{len(active_inc.get('audit_packages', []))+1:03d}: CapEx Re-Calibration to {curr_sym}{parsed_capex:,}",
-                    f"Chairman recalibrated CapEx to {curr_sym}{parsed_capex:,} (Delta: {curr_sym}{parsed_capex - sector['asset_cap']:,}). Pipeline dynamically scaled.",
-                    force_new_package=True
-                )
-                st.rerun()
+            st.rerun()
 
-            is_overridden = parsed_capex != sector["asset_cap"]
-            badge_color = "#e3b341" if is_overridden else "#58a6ff"
-            badge_label = "EXECUTIVE OVERRIDE ACTIVE" if is_overridden else "PUBLIC BASELINE SYNCHRONIZED"
-            st.markdown(f"""
-                <div style="margin-top:8px; display:flex; flex-direction:column; gap:4px;">
-                    <div style="font-family:ui-monospace, monospace; font-size:2.3rem; font-weight:800; color:{badge_color};">{curr_sym}{parsed_capex:,}</div>
-                    <div style="font-size:1.05rem; font-weight:700; color:{badge_color};">
-                        ● {badge_label} <span style="color:#ffffff; font-weight:600;">(Effective: {st.session_state[ts_key]})</span>
-                    </div>
+        is_overridden = parsed_capex != sector["asset_cap"]
+        badge_color = "#e3b341" if is_overridden else "#58a6ff"
+        badge_label = t["override_active"] if is_overridden else t["baseline_synced"]
+        
+        st.markdown(f"""
+            <div style="margin-top:-10px; margin-bottom:20px; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-family:ui-monospace, monospace; font-size:2.5rem; font-weight:800; color:{badge_color};">
+                    {curr_sym}{parsed_capex:,}
                 </div>
-            """, unsafe_allow_html=True)
-
-        calibrated_toll_gate = max(25000, int(round(parsed_capex * 0.00085, -3)))
-
-        with qc2:
-            if is_resolved:
-                st.markdown(f"""
-                    <div style="background-color:rgba(46,160,67,0.18); border:2px solid #2ea043; padding:14px; border-radius:8px; text-align:center; min-height:115px; display:flex; flex-direction:column; justify-content:center;">
-                        <div style="color:#3fb950; font-size:0.9rem; font-weight:700; text-transform:uppercase;">🟢 Toll-Gate Fee Due</div>
-                        <div style="color:#ffffff; font-family:monospace; font-size:1.75rem; font-weight:800; margin-top:4px;">{curr_sym}{calibrated_toll_gate:,}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                    <div class="exec-metric-card">
-                        <div class="exec-metric-label">Toll-Gate Fee (Milestone)</div>
-                        <div class="exec-metric-val">{curr_sym}{calibrated_toll_gate:,}</div>
-                        <div class="exec-metric-sub" style="color:#3fb950;">↑ 0.085% CapEx Escrow</div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-        with qc3:
-            if is_resolved:
-                st.markdown("""
-                    <div style="background-color:rgba(46,160,67,0.18); border:2px solid #2ea043; padding:14px; border-radius:8px; text-align:center; min-height:115px; display:flex; flex-direction:column; justify-content:center;">
-                        <div style="color:#3fb950; font-size:0.9rem; font-weight:700; text-transform:uppercase;">✅ BJR Shield Status</div>
-                        <div style="color:#ffffff; font-family:monospace; font-size:1.45rem; font-weight:800; margin-top:6px;">AWAITING WIRE</div>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                    <div class="exec-metric-card">
-                        <div class="exec-metric-label">Live Session Window</div>
-                        <div class="exec-metric-val">09:42</div>
-                        <div class="exec-metric-sub" style="color:#3fb950;">↑ Zero-Retention Enforced</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                <div style="font-size:1.05rem; font-weight:700; color:{badge_color};">
+                    ● {badge_label} <span style="color:#ffffff; font-weight:600;">(Effective: {st.session_state[ts_key]})</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # MAIN TRUNK: HIGH-VISIBILITY FINANCIAL READOUT
+    # SECONDARY METRICS: TOLL-GATE & EPOCH
+    # ---------------------------------------------------------
+    calibrated_toll_gate = max(25000, int(round(parsed_capex * 0.00085, -3)))
+    
+    sub1, sub2 = st.columns(2)
+    with sub1:
+        st.markdown(f"""
+            <div class="exec-metric-card">
+                <div class="exec-metric-label">{t['toll_fee']}</div>
+                <div class="exec-metric-val">{curr_sym}{calibrated_toll_gate:,}</div>
+                <div class="exec-metric-sub" style="color:#3fb950;">{t['escrow_desc']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with sub2:
+        st.markdown(f"""
+            <div class="exec-metric-card">
+                <div class="exec-metric-label">{t['session_window']}</div>
+                <div class="exec-metric-val">09:42</div>
+                <div class="exec-metric-sub" style="color:#3fb950;">{t['session_desc']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # MAIN TRUNK: FINANCIAL READOUT
     # ---------------------------------------------------------
     active_incidents = [i for i in sector["incidents"].values() if i.get("status") != "RESOLVED"]
     total_burn_day = sum(int(round(i.get("base_daily_bleed", 50000) * scale_factor)) for i in active_incidents)
@@ -400,7 +489,7 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
     with k1:
         st.markdown(f"""
             <div class="exec-metric-card">
-                <div class="exec-metric-label">Portfolio Holding Burn ({TODAY_STR})</div>
+                <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
                 <div class="exec-metric-val" style="color:#f85149;">{curr_sym}{total_burn_wk:,.0f} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
                 <div class="exec-metric-sub" style="color:#f85149; font-family:monospace; font-size:1.05rem;">↑ {curr_sym}{total_burn_day:,.0f} / Day</div>
             </div>
@@ -408,76 +497,68 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
     with k2:
         st.markdown(f"""
             <div class="exec-metric-card">
-                <div class="exec-metric-label">Capital Under Defense</div>
+                <div class="exec-metric-label">{t['cap_under_def']}</div>
                 <div class="exec-metric-val">{curr_sym}{parsed_capex:,.0f}</div>
-                <div class="exec-metric-sub" style="color:#3fb950; font-size:1.05rem;">↑ Asset Defense Escrow Intact</div>
+                <div class="exec-metric-sub" style="color:#3fb950; font-size:1.05rem;">↑ Escrow Intact</div>
             </div>
         """, unsafe_allow_html=True)
     with k3:
         st.markdown(f"""
             <div class="exec-metric-card">
-                <div class="exec-metric-label">Active Block: {st.session_state.selected_incident_id}</div>
+                <div class="exec-metric-label">{t['active_block']}: {st.session_state.selected_incident_id}</div>
                 <div class="exec-metric-val" style="color:#e3b341;">{dynamic_crossover_days} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">Days</span></div>
-                <div class="exec-metric-sub" style="color:#e3b341; font-size:1.05rem;">↑ Crossover to Total Loss</div>
+                <div class="exec-metric-sub" style="color:#e3b341; font-size:1.05rem;">{t['crossover_sub']}</div>
             </div>
         """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # INSTANT AGENT DIAGNOSTIC CONFERENCE
+    # DIAGNOSTIC AGENT CONFERENCE
     # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown("### 🎙️ Instant Diagnostic Agent Conference")
-        st.caption("Interrogate domain agents to diagnose root friction without micromanaging field physics.")
-        
         diag_col1, diag_col2, diag_col3 = st.columns([1, 1, 2])
         with diag_col1:
-            if st.button("🚨 1. Why is the Fix Stalled?", use_container_width=True, type="primary" if st.session_state.conference_focus == "WHY_STALLED" else "secondary"):
+            if st.button(t["why_stalled"], use_container_width=True, type="primary" if st.session_state.conference_focus == "WHY_STALLED" else "secondary"):
                 st.session_state.conference_focus = "WHY_STALLED"
-                append_to_active_package(active_inc, "DIAGNOSTIC", "Chairman inquiry: Why is the fix stalled?")
+                append_to_active_package(active_inc, "DIAGNOSTIC", "Inquiry: Why is the fix stalled?")
                 st.rerun()
         with diag_col2:
-            if st.button("🟢 2. What Unblocks the Gate?", use_container_width=True, type="primary" if st.session_state.conference_focus == "WHAT_UNBLOCKS" else "secondary"):
+            if st.button(t["what_unblocks"], use_container_width=True, type="primary" if st.session_state.conference_focus == "WHAT_UNBLOCKS" else "secondary"):
                 st.session_state.conference_focus = "WHAT_UNBLOCKS"
-                append_to_active_package(active_inc, "DIAGNOSTIC", "Chairman inquiry: What unblocks the gate?")
+                append_to_active_package(active_inc, "DIAGNOSTIC", "Inquiry: What unblocks the gate?")
                 st.rerun()
         with diag_col3:
-            custom_query = st.text_input("3. Type Interrogation Query:", placeholder="Type query to interrogate agent engine...", label_visibility="collapsed")
+            custom_query = st.text_input("Interrogate", placeholder=t["interrogate_hint"], label_visibility="collapsed")
             if custom_query:
                 st.session_state.conference_focus = "CUSTOM"
                 st.session_state.custom_query_text = custom_query
-                append_to_active_package(active_inc, "DIAGNOSTIC", f"Custom inquiry: '{custom_query}'")
+                append_to_active_package(active_inc, "DIAGNOSTIC", f"Custom: '{custom_query}'")
             
         st.markdown("---")
         if st.session_state.conference_focus == "WHY_STALLED":
             st.markdown(
-                f"🔴 **Master Orchestrator ➔ Site Telemetry Agent:** *'Inquire status on {st.session_state.selected_incident_id}. Why is the gate blocked on {TODAY_STR}?'*\n\n"
-                f"🔴 **Site Telemetry Agent:** *'Permian HV crew is staged on site. However, the OEM field supervisor is withholding physical access to the relay cabinet pending written corporate indemnity under Clause 14.b. Mechanical physics are nominal (THD at 4.1%); access is legally blocked, bleeding {curr_sym}{total_burn_day:,.0f} / Day.'*"
+                f"🔴 **Master Orchestrator ➔ Telemetry Agent:** *'Interrogating incident {st.session_state.selected_incident_id}.'* \n\n"
+                f"🔴 **Telemetry Agent:** *'Field hardware tests completed at 75%. OEM supervisor holds sign-off pending indemnification against Clause 14.b. Physical telemetry is nominal; signatory deadlock active.'*"
             )
         elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
             st.markdown(
-                "🟢 **Master Orchestrator ➔ Fiduciary Shield Agent:** *'What specific instrument unblocks the gate immediately?'*\n\n"
-                f"🟢 **Fiduciary Shield Agent:** *'A Board Resolution (Option A) executing a Directorate Indemnity Carve-Out from the {curr_sym}{parsed_capex:,} Capital Under Defense absorbs all warranty liability at the board level. This clears the GM to execute the IEEE 2800 sign-off within 5 minutes.'*"
+                f"🟢 **Master Orchestrator ➔ Fiduciary Shield Agent:** *'What instrument unblocks this gate?'* \n\n"
+                f"🟢 **Fiduciary Shield Agent:** *'Board Resolution (Option A) executing a Directorate Indemnity Carve-Out shields the site lead under {sector['statute']}, releasing the attestation within 5 minutes.'*"
             )
-        elif st.session_state.conference_focus == "CUSTOM":
-            st.markdown(f"🔍 **Agent Synthesis for Query: '{st.session_state.get('custom_query_text', '')}'**")
-            st.info(f"Cross-referencing telemetry logs against {sector['statute']}. Field physics nominal. Primary bottleneck remains contractual signatory deadlock on {st.session_state.selected_incident_id}.")
         else:
             st.markdown(
-                f"⚡ **Active Conference Synthesis ({TODAY_STR}):** Interrogating **Site Telemetry Agent** and **Fiduciary Shield Agent** for **{st.session_state.selected_incident_id}**. "
-                f"Physical sweep is at 75% progress. Select an action above to diagnose root cause or command the GM carve-out."
+                f"⚡ **Active Interrogation Standby ({TODAY_STR}):** Agents synchronized with {sector['statute']} and physical telemetry. Select an action above to execute diagnostic."
             )
 
     # ---------------------------------------------------------
-    # REMEDIAL LEVERS
+    # REMEDIAL LEVERS & BRANCHES
     # ---------------------------------------------------------
-    st.markdown("### The Three Cascading Branches & Remedial Levers")
-    st.caption("Simulate executive levers to project immediate consequences across Physical, Market, and Fiduciary pillars:")
-
+    st.markdown(f"### {t['branches_title']}")
     with st.container(border=True):
-        rem_col1, rem_col2 = st.columns([3, 1])
-        with rem_col1:
+        r1, r2 = st.columns([3, 1])
+        with r1:
             st.session_state.remedial_simulation = st.radio(
-                "Select Executive Action to Simulate:",
+                "Simulate Remedial Action:",
                 [
                     "Option A: Directorate Carve-Out (Dominant Path)",
                     "Option B: Mobilize Secondary Field Crew ($35k Draw)",
@@ -485,100 +566,36 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
                 ],
                 horizontal=True
             )
-        with rem_col2:
+        with r2:
             st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
             if not is_resolved:
                 if "Option A" in st.session_state.remedial_simulation:
-                    if st.button("Execute Option A Directive", use_container_width=True, type="primary"):
+                    if st.button(t["opt_a"], use_container_width=True, type="primary"):
                         active_inc["status"] = "RESOLVED"
                         active_inc["base_daily_bleed"] = 0
                         wo = active_inc.get("tier3_work_order", {})
                         wo["progress_pct"] = 100
-                        for s in wo.get("steps", []):
-                            s["done"] = True
-                        append_to_active_package(
-                            active_inc,
-                            "REMEDIAL EXECUTION",
-                            f"CHAIRMAN DIRECTIVE: Option A executed. Holding burn halted to 0. BJR safe harbor enforced."
-                        )
+                        for s in wo.get("steps", []): s["done"] = True
+                        append_to_active_package(active_inc, "REMEDIAL EXECUTION", "Option A executed. Burn halted to 0.")
                         st.session_state.conference_focus = "DEFAULT"
-                        st.success("Option A Executed. Holding burn halted to 0.")
+                        st.success("Option A Executed.")
                         st.rerun()
-                elif "Option B" in st.session_state.remedial_simulation:
-                    if st.button("Authorize $35k Capital Draw", use_container_width=True):
-                        append_to_active_package(active_inc, "CAPITAL DRAW", "Secondary crew mobilized ($35k draw).")
-                        st.success("Capital Released.")
-                        st.rerun()
-                else:
-                    st.button("Option Inadmissible", use_container_width=True, disabled=True)
             else:
                 if st.button(f"⚡ Settle Milestone Fee ({curr_sym}{calibrated_toll_gate:,})", use_container_width=True, type="primary"):
                     seal_active_package(active_inc)
-                    st.success("Milestone Settled. Audit Capsule Sealed. Ready to unlock INC-002.")
+                    st.success("Milestone Settled. Audit Capsule Sealed.")
 
     # ---------------------------------------------------------
-    # BRANCH CARDS
-    # ---------------------------------------------------------
-    b_col1, b_col2, b_col3 = st.columns(3)
-
-    def render_branch_card(title, domain, director_name, agent_name, status_badge, metric_txt, card_type):
-        border_col = "#2ea043" if card_type == "green" else ("#e3b341" if card_type == "amber" else "#da3633")
-        bg_col = "rgba(46, 160, 67, 0.18)" if card_type == "green" else ("rgba(227, 179, 65, 0.18)" if card_type == "amber" else "rgba(218, 54, 51, 0.18)")
-        
-        return f"""
-        <div style="background-color: {bg_col}; border: 2px solid {border_col}; border-radius: 8px; padding: 22px; height: 100%; display: flex; flex-direction: column; gap: 14px;">
-            <h3 style="margin:0; color:#ffffff; font-size:1.4rem; font-weight:800;">{title}</h3>
-            <div style="color:#ffffff; font-size:1.15rem; font-weight:700; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 4px;">
-                {domain}
-            </div>
-            <div style="font-size:1.0rem; color:#c9d1d9;">
-                Cognizant Director: <br>
-                <strong style="color:#ffffff; font-size:1.3rem; display:inline-block; margin-top:4px;">{director_name}</strong>
-            </div>
-            <div style="font-size:1.0rem; color:#c9d1d9;">
-                Embedded Agent: <br>
-                <code style="color:#a5d6ff; background:rgba(56,139,253,0.25); padding:4px 8px; font-size:1.0rem; border-radius:4px; display:inline-block; margin-top:4px;">{agent_name}</code>
-            </div>
-            <div style="font-weight:700; font-size:1.2rem; padding: 14px 16px; background: rgba(0,0,0,0.4); border-radius: 6px; border-left: 6px solid {border_col}; color:#ffffff; margin-top:4px;">
-                {status_badge}
-            </div>
-            <div style="font-family:ui-monospace, monospace; color:#ffffff; font-size:1.1rem; font-weight:600; margin-top: auto; padding-top: 10px;">
-                {metric_txt}
-            </div>
-        </div>
-        """
-
-    with b_col1:
-        c_type = "green" if is_resolved else "red"
-        s_badge = "🟢 CLEARED: Field access granted." if is_resolved else "🔴 OUTSTANDING: Field access locked."
-        wo_id = active_inc.get("tier3_work_order", {}).get("id", "N/A")
-        wo_pct = 100 if is_resolved else active_inc.get("tier3_work_order", {}).get("progress_pct", 0)
-        st.markdown(render_branch_card("Branch 1: Physical / Field", "Hardware Gate | Plant & Crews", active_inc.get("director_seat", "Technical Integrity"), "Site Telemetry Agent", s_badge, f"Work Order: {wo_id} ({wo_pct}%)", c_type), unsafe_allow_html=True)
-
-    with b_col2:
-        c_type = "green" if is_resolved else "amber"
-        s_badge = "🟢 CLEARED: Grid filing secured." if is_resolved else "🟡 COLLATERAL: 48h Window Expiring."
-        st.markdown(render_branch_card("Branch 2: Regulatory / Market", "Commercial Gate | Interconnection", "David Chen (Proxy)", "Market Surveillance Agent", s_badge, "Handshake Status: Latency Validated", c_type), unsafe_allow_html=True)
-
-    with b_col3:
-        c_type = "green" if is_resolved else "red"
-        s_badge = "🟢 CLEARED: Capital defended." if is_resolved else f"🔴 OUTSTANDING: Crossover in {dynamic_crossover_days}d."
-        vel_txt = f"Bleed: {curr_sym}0 / Day" if is_resolved else f"Bleed: {curr_sym}{total_burn_day:,.0f} / Day"
-        st.markdown(render_branch_card("Branch 3: Fiduciary / Capital", "Balance Sheet Gate | Liability Escrow", "Executive Board Chair", "Fiduciary Shield Agent", s_badge, vel_txt, c_type), unsafe_allow_html=True)
-
-    # ---------------------------------------------------------
-    # GATED INCIDENT PIPELINE (HIGH-CONTRAST / DAYS & WEEKS)
+    # PIPELINE (DYNAMIC TRANSLATION)
     # ---------------------------------------------------------
     with st.container(border=True):
-        st.markdown("### 🔒 Gated Incident Pipeline (Next 4 Bottlenecks)")
-        st.caption("Sequential project bottlenecks locked behind Milestone fee settlement. Dynamically scaled to Chairman CapEx:")
-
+        st.markdown(f"### {t['pipeline_title']}")
         p1, p2, p3, p4 = st.columns(4)
 
         def render_pipeline_card(num_title, raw_bleed, inc_code, is_threat):
             border = "#e3b341" if is_threat else "#30363d"
             bg = "rgba(227, 179, 65, 0.16)" if is_threat else "#161b22"
-            status_txt = "🟡 ACTIVE THREAT" if is_threat else "🔒 QUEUED"
+            status_txt = t["active_threat"] if is_threat else t["queued"]
             status_color = "#e3b341" if is_threat else "#c9d1d9"
             
             scaled_daily = int(round(raw_bleed * scale_factor))
@@ -592,7 +609,7 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
                     {curr_sym}{scaled_daily:,} <span style="font-size:1.0rem; font-weight:600; color:#c9d1d9;">/ Day</span>
                 </div>
                 <div style="font-size:0.95rem; font-weight:600; color:#c9d1d9; margin-bottom:6px;">
-                    Weekly Burn: {curr_sym}{scaled_weekly:,} / Wk
+                    {curr_sym}{scaled_weekly:,} / Wk
                 </div>
                 <div style="font-size:1.05rem; font-weight:700; color:#e3b341; margin-bottom:14px;">
                     Horizon: {crossover_days} Days
@@ -603,7 +620,7 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
             </div>
             """
 
-        pipe_keys = [k for k in sector["incidents"].keys() if k not in ["INC-001", "DB-ETCS-01", "TEPCO-500KV-01"]]
+        pipe_keys = [k for k in sector["incidents"].keys() if k not in ["INC-001", "DB-ETCS-01", "CEN-BESS-01"]]
         with p1:
             inc_p1 = sector["incidents"].get(pipe_keys[0], {})
             st.markdown(render_pipeline_card("1. Inrush Damping", inc_p1.get("base_daily_bleed", 38880), pipe_keys[0], is_resolved), unsafe_allow_html=True)
@@ -618,12 +635,10 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
             st.markdown(render_pipeline_card("4. Substation Oil DGA", inc_p4.get("base_daily_bleed", 6912), pipe_keys[3], False), unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # TIER 4: JOB-PACKAGED CRYPTOGRAPHIC AUDIT CAPSULES
+    # TIER 4 AUDIT LEDGER
     # ---------------------------------------------------------
     with st.container(border=True):
-        st.markdown("### Tier 4 | Sealed Cryptographic Job Capsules")
-        st.caption("Discrete decision packages signed and sealed per executive mandate. Immutable proof under the Business Judgment Rule.")
-        
+        st.markdown(f"### {t['audit_title']}")
         for pkg in reversed(active_inc.get("audit_packages", [])):
             is_sealed = pkg["status"] == "SEALED & ATTESTED"
             badge_icon = "🔒" if is_sealed else "⚡"
@@ -633,28 +648,3 @@ if selected_role == "Executive Chairman (Panoramic Tree)":
                 st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold; font-size:1.1rem;'>{pkg['status']}</span>", unsafe_allow_html=True)
                 for entry in pkg.get("entries", []):
                     st.markdown(f"<div style='font-size:1.05rem; font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
-
-# =========================================================
-# TIER 3 & DIRECTOR VIEWS
-# =========================================================
-elif selected_role == "Tier 3: Site Operations / Field Lead":
-    st.title("Tier 3 | Site Operations & Field Execution Desk")
-    wo = active_inc.get("tier3_work_order", {})
-    t1, t2, t3 = st.columns(3)
-    t1.metric("Work Order", wo.get("id", "N/A"), active_inc.get("priority", "CRITICAL"))
-    t2.metric("Target Gate", "Check #6 (COD Attestation)")
-    t3.metric("Progress", f"{wo.get('progress_pct', 0)}%")
-    if not is_resolved and st.button("Complete Final PE Verification Stamp", use_container_width=True, type="primary"):
-        wo["progress_pct"] = 100
-        active_inc["status"] = "RESOLVED"
-        append_to_active_package(active_inc, "FIELD VERIFICATION", "TIER 3 FIELD STAMP: Telemetry validated on-site. Burn halted.")
-        st.success("Stamped & Transmitted.")
-        st.rerun()
-else:
-    dir_name = selected_role.replace("Director: ", "")
-    st.title(f"Directorate Oversight: {dir_name}")
-    st.metric("Jurisdiction Status", active_inc.get("status", "DEADLOCKED"), active_inc.get("priority", "P1"))
-    if not is_resolved and st.button("Issue Directorate Formal Concurrence", use_container_width=True):
-        append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal concurrence issued by {dir_name}.")
-        st.success("Concurrence sealed to active job package.")
-        st.rerun()
