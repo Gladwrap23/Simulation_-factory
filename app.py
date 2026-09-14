@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v3.6_neutral_reset_chain_of_command_sep15_2026"
+APP_BUILD_ID = "v3.7_circuit_breaker_unified_cascade_sep15_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1. INDUSTRIAL STYLING & SCOPED THROTTLE TYPOGRAPHY
+# 1. INDUSTRIAL STYLING & CIRCUIT BREAKER AFFORDANCE
 # =========================================================
 st.markdown("""
     <style>
@@ -44,7 +44,7 @@ st.markdown("""
             color: #f0f6fc !important;
         }
         
-        /* Chairman Throttle Input: Scoped ONLY to .capex-throttle */
+        /* Scoped Chairman Throttle Input */
         .capex-throttle div[data-testid="stTextInput"] input {
             font-size: 2.5rem !important;
             font-weight: 800 !important;
@@ -62,7 +62,7 @@ st.markdown("""
             box-shadow: 0 0 22px rgba(255, 75, 75, 0.4) !important;
         }
         
-        /* Normal diagnostic search inputs remain compact and executive */
+        /* Compact Diagnostic Text Input */
         div[data-testid="stTextInput"]:not(.capex-throttle *) input {
             font-size: 1.05rem !important;
             font-weight: 600 !important;
@@ -73,11 +73,36 @@ st.markdown("""
             padding: 10px 14px !important;
         }
         
+        /* Executive Cards */
         .exec-metric-card {
             background-color: #161b22;
             border: 2px solid #30363d;
             border-radius: 8px;
             padding: 16px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 125px;
+        }
+        .circuit-breaker-card {
+            background-color: rgba(248, 81, 73, 0.12);
+            border: 2px solid #f85149;
+            border-radius: 8px;
+            padding: 14px 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 125px;
+        }
+        .circuit-defended-card {
+            background-color: rgba(46, 160, 67, 0.15);
+            border: 2px solid #2ea043;
+            border-radius: 8px;
+            padding: 14px 16px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -133,6 +158,8 @@ I18N = {
         "cap_under_def": "Capital Under Defense",
         "active_block": "Active Block",
         "crossover_sub": "↑ Crossover to Total Loss",
+        "circuit_active": "🛑 HALT CAPITAL BLEED (UNIFIED DIRECTIVE)",
+        "circuit_defended": "🟢 CAPITAL DEFENDED — BLEED: $0",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
         "what_unblocks": "🟢 2. What Unblocks the Gate?",
         "interrogate_hint": "Type query to interrogate agents...",
@@ -157,6 +184,8 @@ I18N = {
         "cap_under_def": "Verteidigtes Anlagekapital",
         "active_block": "Aktive Störung",
         "crossover_sub": "↑ Zeit bis zum Totalverlust",
+        "circuit_active": "🛑 HALTEVERLUST STOPPEN (UNIFIED WEISUNG)",
+        "circuit_defended": "🟢 KAPITAL VERTEIDIGT — VERLUST: 0 €",
         "why_stalled": "🚨 1. Warum stockt die Freigabe?",
         "what_unblocks": "🟢 2. Wie wird das Tor entsperrt?",
         "interrogate_hint": "Frage zur Aufklärung eingeben...",
@@ -181,6 +210,8 @@ I18N = {
         "cap_under_def": "Capital Bajo Defensa",
         "active_block": "Bloqueo Operacional",
         "crossover_sub": "↑ Plazo para la Pérdida Total",
+        "circuit_active": "🛑 DETENER PÉRDIDA (DIRECTIVA UNIFICADA)",
+        "circuit_defended": "🟢 CAPITAL DEFENDIDO — PÉRDIDA: $0",
         "why_stalled": "🚨 1. ¿Por qué está trabada la solución?",
         "what_unblocks": "🟢 2. ¿Qué desbloquea la compuerta?",
         "interrogate_hint": "Escriba consulta de investigación...",
@@ -205,6 +236,8 @@ I18N = {
         "cap_under_def": "Capital sous Défense",
         "active_block": "Point de Blocage Actif",
         "crossover_sub": "↑ Délai Avant Perte Totale",
+        "circuit_active": "🛑 STOPPER L'HÉMORRAGIE (DIRECTIVE UNIFIÉE)",
+        "circuit_defended": "🟢 CAPITAL DÉFENDU — PERTE: 0 €",
         "why_stalled": "🚨 1. Pourquoi le déblocage est-il gelé ?",
         "what_unblocks": "🟢 2. Quel acte juridique libère le site ?",
         "interrogate_hint": "Interroger les agents...",
@@ -229,6 +262,8 @@ I18N = {
         "cap_under_def": "防衛対象総資本",
         "active_block": "アクティブ遮断事象",
         "crossover_sub": "↑ 資本全損までの限界日数",
+        "circuit_active": "🛑 資本流出を遮断 (統合指揮権発動)",
+        "circuit_defended": "🟢 資本防衛完了 — 流出損失: ¥0",
         "why_stalled": "🚨 1. なぜ現場は停滞しているのか？",
         "what_unblocks": "🟢 2. どの決議がゲートを解除するか？",
         "interrogate_hint": "エージェントへ直接諮問を入力...",
@@ -455,6 +490,21 @@ def seal_active_package(incident: dict):
         packages[-1]["status"] = "SEALED & ATTESTED"
         packages[-1]["sealed_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
+def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: float):
+    incident["status"] = "RESOLVED"
+    incident["base_daily_bleed"] = 0
+    wo = incident.get("tier3_work_order", {})
+    wo["progress_pct"] = 100
+    if wo.get("steps"):
+        for s in wo["steps"]:
+            s["done"] = True
+    append_to_active_package(
+        incident,
+        f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Unified Circuit Breaker Directive",
+        f"UNIFIED EXECUTIVE DIRECTIVE: Faced with {daily_bleed:,.0f}/Day holding bleed, Chairman halted burn across Branch 1 (Field Access Cleared), Branch 3 (Directorate Safe Harbor Enforced under {statute}), and Tier 3 (PE Digital Stamp Transmitted).",
+        force_new_package=True
+    )
+
 def reset_incident_to_neutral(incident: dict, baseline_cap: int):
     incident["status"] = "DEADLOCKED"
     incident["base_daily_bleed"] = 87264
@@ -465,8 +515,8 @@ def reset_incident_to_neutral(incident: dict, baseline_cap: int):
         wo["steps"][-1]["done"] = False
     append_to_active_package(
         incident,
-        f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Neutral Simulation Reset",
-        "Executive reset state to neutral deadlock. Holding burn re-engaged for counterfactual analysis.",
+        f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Neutral Counterfactual Reset",
+        "Executive counterfactual reset executed. Holding burn re-engaged for alternative branch simulation.",
         force_new_package=True
     )
 
@@ -501,7 +551,6 @@ with st.sidebar:
     current_calib_capex = st.session_state[calib_key]
     scale_factor = current_calib_capex / sector["asset_cap"]
 
-    # Role synchronization
     role_options = [t["title"], "Tier 3: Site Operations / Field Lead"] + [f"Director: {d}" for d in sector["directors"].keys()]
     if "selected_role" not in st.session_state or st.session_state.selected_role not in role_options:
         st.session_state.selected_role = t["title"]
@@ -571,7 +620,6 @@ if selected_role == t["title"]:
             </div>
         """, unsafe_allow_html=True)
         
-        # Scoped CapEx Input Box
         st.markdown('<div class="capex-throttle">', unsafe_allow_html=True)
         raw_input_str = st.text_input(
             label="Chairman Quick-Calibrator Input",
@@ -634,7 +682,7 @@ if selected_role == t["title"]:
         """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # MAIN TRUNK: FINANCIAL READOUT
+    # MAIN TRUNK: THE INTERACTIVE CAPITAL CIRCUIT BREAKER
     # ---------------------------------------------------------
     active_incidents = [i for i in sector["incidents"].values() if i.get("status") != "RESOLVED"]
     total_burn_day = sum(int(round(i.get("base_daily_bleed", 50000) * scale_factor)) for i in active_incidents)
@@ -643,13 +691,34 @@ if selected_role == t["title"]:
 
     k1, k2, k3 = st.columns(3)
     with k1:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
-                <div class="exec-metric-val" style="color:#f85149;">{curr_sym}{total_burn_wk:,.0f} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
-                <div class="exec-metric-sub" style="color:#f85149; font-family:monospace; font-size:1.05rem;">↑ {curr_sym}{total_burn_day:,.0f} / Day</div>
-            </div>
-        """, unsafe_allow_html=True)
+        if not is_resolved:
+            st.markdown(f"""
+                <div class="circuit-breaker-card">
+                    <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
+                    <div class="exec-metric-val" style="color:#f85149;">{curr_sym}{total_burn_wk:,.0f} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
+                    <div class="exec-metric-sub" style="color:#f85149; font-family:monospace; font-size:1.05rem; margin-bottom:8px;">↑ {curr_sym}{total_burn_day:,.0f} / Day</div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+            if st.button(t["circuit_active"], use_container_width=True, type="primary"):
+                execute_unified_circuit_breaker(active_inc, sector["statute"], total_burn_day)
+                st.session_state.conference_focus = "DEFAULT"
+                st.success("Unified directive executed. Capital defended across all branches.")
+                st.rerun()
+        else:
+            st.markdown(f"""
+                <div class="circuit-defended-card">
+                    <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
+                    <div class="exec-metric-val" style="color:#3fb950;">{curr_sym}0 <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
+                    <div class="exec-metric-sub" style="color:#3fb950; font-family:monospace; font-size:1.05rem; margin-bottom:8px;">{t['circuit_defended']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+            if st.button("↩️ Revert to Neutral (Simulate Risk)", use_container_width=True):
+                reset_incident_to_neutral(active_inc, sector["asset_cap"])
+                st.warning("Bleed restored. Counterfactual analysis active.")
+                st.rerun()
+                
     with k2:
         st.markdown(f"""
             <div class="exec-metric-card">
@@ -706,61 +775,13 @@ if selected_role == t["title"]:
             st.info(f"Cross-referencing telemetry logs against {sector['statute']}. Primary bottleneck remains contractual signatory deadlock on {st.session_state.selected_incident_id}.")
         else:
             st.markdown(
-                f"⚡ **Active Interrogation Standby ({TODAY_STR}):** Agents synchronized with {sector['statute']} and physical telemetry. Select an action above to execute diagnostic."
+                f"⚡ **Active Interrogation Standby ({TODAY_STR}):** Agents synchronized with {sector['statute']} and physical telemetry. Select an action above or tap the Holding Burn Circuit Breaker to halt exposure."
             )
-
-    # ---------------------------------------------------------
-    # REMEDIAL LEVERS (WITH REVERT TO NEUTRAL SANDBOX)
-    # ---------------------------------------------------------
-    st.markdown(f"### {t['branches_title']}")
-    with st.container(border=True):
-        r1, r2 = st.columns([3, 2])
-        with r1:
-            st.session_state.remedial_simulation = st.radio(
-                "Simulate Remedial Action:",
-                [
-                    "Option A: Directorate Carve-Out (Dominant Path)",
-                    "Option B: Mobilize Secondary Field Crew ($35k Draw)",
-                    "Option C: Demobilize Site Contractors (Standby)"
-                ],
-                horizontal=True
-            )
-        with r2:
-            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-            btn_box1, btn_box2 = st.columns(2)
-            
-            if not is_resolved:
-                with btn_box1:
-                    if "Option A" in st.session_state.remedial_simulation:
-                        if st.button(t["opt_a"], use_container_width=True, type="primary"):
-                            active_inc["status"] = "RESOLVED"
-                            active_inc["base_daily_bleed"] = 0
-                            wo = active_inc.get("tier3_work_order", {})
-                            wo["progress_pct"] = 100
-                            for s in wo.get("steps", []): s["done"] = True
-                            append_to_active_package(active_inc, "REMEDIAL EXECUTION", "Option A executed. Holding burn halted to 0.")
-                            st.session_state.conference_focus = "DEFAULT"
-                            st.success("Option A Executed.")
-                            st.rerun()
-                with btn_box2:
-                    if st.button("🔄 Neutral Baseline", use_container_width=True):
-                        reset_incident_to_neutral(active_inc, sector["asset_cap"])
-                        st.info("System set to neutral.")
-                        st.rerun()
-            else:
-                with btn_box1:
-                    if st.button(f"⚡ Settle Fee ({curr_sym}{calibrated_toll_gate:,})", use_container_width=True, type="primary"):
-                        seal_active_package(active_inc)
-                        st.success("Milestone Settled. Audit Sealed.")
-                with btn_box2:
-                    if st.button("↩️ Revert to Neutral", use_container_width=True):
-                        reset_incident_to_neutral(active_inc, sector["asset_cap"])
-                        st.warning("Reverted to neutral deadlock state.")
-                        st.rerun()
 
     # ---------------------------------------------------------
     # THE THREE CASCADING BRANCHES (ACCOUNTABILITY HEATMAP)
     # ---------------------------------------------------------
+    st.markdown(f"### {t['branches_title']}")
     b_col1, b_col2, b_col3 = st.columns(3)
 
     def render_branch_card(title, domain, director_name, agent_name, status_badge, metric_txt, card_type):
@@ -813,7 +834,7 @@ if selected_role == t["title"]:
     # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown("### 📡 Operational Chain of Command: Directives & Field Execution")
-        st.caption("Inspect live enforcement of Chairman directives across Directorate governance and Tier 3 field teams:")
+        st.caption("Synchronized execution state between Directorate safe harbor and Tier 3 field teams:")
         
         flow_col1, flow_col2 = st.columns(2)
         with flow_col1:
@@ -826,7 +847,7 @@ if selected_role == t["title"]:
                         Cognizant Director: <strong>{active_inc.get('director_seat', 'Board')}</strong><br>
                         Legal Safe Harbor: <strong>{sector['statute']}</strong><br>
                         Mandate Status: <span style="color:{'#3fb950' if is_resolved else '#e3b341'}; font-weight:bold;">
-                            {'CONCURRENCE EXECUTED' if is_resolved else 'AWAITING CHAIRMAN DIRECTIVE'}
+                            {'DIRECTORATE INDEMNITY SEALED' if is_resolved else 'AWAITING CHAIRMAN DIRECTIVE'}
                         </span>
                     </div>
                 </div>
