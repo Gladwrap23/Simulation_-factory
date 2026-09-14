@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v3.4_chairman_throttle_global_roster_sep15_2026"
+APP_BUILD_ID = "v3.5_red_command_gateway_sep15_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1. INDUSTRIAL HIGH-CONTRAST TYPOGRAPHY & RESILIENT FLEX
+# 1. INDUSTRIAL HIGH-CONTRAST TYPOGRAPHY & THROTTLE INPUT
 # =========================================================
 st.markdown("""
     <style>
@@ -43,31 +43,23 @@ st.markdown("""
             font-weight: 600 !important; 
             color: #f0f6fc !important;
         }
-
+        
+        /* Chairman Throttle Input: Oversized, Centered, High-Contrast */
         div[data-testid="stTextInput"] input {
-            font-size: 2.4rem !important;
+            font-size: 2.5rem !important;
             font-weight: 800 !important;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
             color: #ffffff !important;
             background-color: #090d13 !important;
             border: 2px solid #58a6ff !important;
             border-radius: 8px !important;
-            padding: 12px 20px !important;
+            padding: 14px 20px !important;
             text-align: center !important;
             box-shadow: 0 0 16px rgba(88, 166, 255, 0.25) !important;
         }
         div[data-testid="stTextInput"] input:focus {
-            border-color: #e3b341 !important;
-            box-shadow: 0 0 20px rgba(227, 179, 65, 0.35) !important;
-        }
-        
-        .hero-gateway {
-            background: linear-gradient(180deg, rgba(22, 27, 34, 0.95) 0%, rgba(13, 17, 23, 0.95) 100%);
-            border: 2px solid #58a6ff;
-            box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);
-            border-radius: 10px;
-            padding: 24px;
-            margin-bottom: 20px;
+            border-color: #ff4b4b !important;
+            box-shadow: 0 0 22px rgba(255, 75, 75, 0.4) !important;
         }
         
         .exec-metric-card {
@@ -113,15 +105,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================
-# 2. LOCALIZATION DICTIONARY (I18N)
+# 2. LOCALIZATION DICTIONARY & SOVEREIGN ROSTER
 # =========================================================
 I18N = {
-    "English (US / UK / AU)": {
+    "English [USA · UK · Australia]": {
         "title": "Executive Chairman Command Post",
         "sub_app": "Autonomous Capital Defense Control Plane",
-        "location_header": "PROJECT LOCATION / REGULATORY ANCHOR",
-        "docket_label": "Regulatory Baseline Docket",
-        "calib_input_label": "COMMAND GATEWAY: ENTER PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE):",
+        "calib_red_header": "COMMAND GATEWAY: ENTER PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
         "baseline_synced": "PUBLIC BASELINE SYNCHRONIZED",
         "toll_fee": "Toll-Gate Fee (Milestone)",
@@ -142,12 +132,10 @@ I18N = {
         "queued": "🔒 QUEUED",
         "audit_title": "Tier 4 | Sealed Cryptographic Job Capsules"
     },
-    "Deutsch (German)": {
+    "Deutsch [Deutschland · Österreich]": {
         "title": "Aufsichtsratsvorsitzender Lagezentrum",
         "sub_app": "Autonome Kontrollplattform zur Kapitalverteidigung",
-        "location_header": "PROJEKTSTANDORT / REGULATORISCHER ANKER",
-        "docket_label": "Regulatorische Voraktenbasis",
-        "calib_input_label": "FÜHRUNGSTOR: PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL (ANTIPPEN ZUM KALIBRIEREN):",
+        "calib_red_header": "FÜHRUNGSTOR: PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL (ANTIPPEN ZUM KALIBRIEREN)",
         "override_active": "LEITUNGS-ÜBERSTEUERUNG AKTIV",
         "baseline_synced": "ÖFFENTLICHE BASISDATEN SYNCHRONISIERT",
         "toll_fee": "Meilenstein-Freigabegebühr",
@@ -168,12 +156,10 @@ I18N = {
         "queued": "🔒 WARTESCHLANGE",
         "audit_title": "Stufe 4 | Versiegelte Kryptographische Einsatzkapseln"
     },
-    "Español (Chile / CEN)": {
+    "Español [Chile · Brasil · Sudamérica]": {
         "title": "Puesto de Mando del Presidente Ejecutivo",
         "sub_app": "Plano de Control para la Defensa Autónoma del Capital",
-        "location_header": "UBICACIÓN DEL PROYECTO / ANCLA REGULATORIA",
-        "docket_label": "Expediente Regulatorio Base",
-        "calib_input_label": "PORTAL DE MANDO: INGRESE PRESUPUESTO / CAPEX EN RIESGO (TOQUE PARA RECALIBRAR):",
+        "calib_red_header": "PORTAL DE MANDO: INGRESE PRESUPUESTO / CAPEX EN RIESGO (TOQUE PARA RECALIBRAR)",
         "override_active": "INTERVENCIÓN EJECUTIVA ACTIVA",
         "baseline_synced": "LÍNEA BASE PÚBLICA SINCRONIZADA",
         "toll_fee": "Tarifa de Hito de Paso",
@@ -193,6 +179,54 @@ I18N = {
         "active_threat": "🟡 AMENAZA ACTIVA",
         "queued": "🔒 EN ESPERA",
         "audit_title": "Nivel 4 | Cápsulas Criptográficas de Auditoría Selladas"
+    },
+    "Français [France · RTE · Europe]": {
+        "title": "Poste de Commandement du Président Exécutif",
+        "sub_app": "Plateforme Autonome de Défense du Capital Fédéral",
+        "calib_red_header": "PORTAIL DE COMMANDEMENT : SAISIR LE BUDGET / CAPEX EN RISQUE (TOUCHER POUR RECALIBRER)",
+        "override_active": "INTERVENTION EXÉCUTIVE ACTIVE",
+        "baseline_synced": "RÉFÉRENTIEL PUBLIC SYNCHRONISÉ",
+        "toll_fee": "Frais d'Étape de Déblocage",
+        "escrow_desc": "↑ Séquestre Fiduciaire 0,085%",
+        "session_window": "Fenêtre de Session Active",
+        "session_desc": "↑ Époque Cryptographique Active",
+        "holding_burn": "Perte de Rétention du Portefeuille",
+        "cap_under_def": "Capital sous Défense",
+        "active_block": "Point de Blocage Actif",
+        "crossover_sub": "↑ Délai Avant Perte Totale",
+        "why_stalled": "🚨 1. Pourquoi le déblocage est-il gelé ?",
+        "what_unblocks": "🟢 2. Quel acte juridique libère le site ?",
+        "interrogate_hint": "3. Interroger les agents de gouvernance...",
+        "branches_title": "Les Trois Piliers en Cascade & Leviers d'Atténuation",
+        "opt_a": "Exécuter la Directive Option A",
+        "pipeline_title": "🔒 File Gérée des Goulots d'Étranglement (4 Prochains)",
+        "active_threat": "🟡 MENACE ACTIVE",
+        "queued": "🔒 EN ATTENTE",
+        "audit_title": "Niveau 4 | Capsules d'Audit Cryptographiques Scellées"
+    },
+    "日本語 [日本 · TEPCO · METI]": {
+        "title": "取締役会長 統合指令ポスト (Command Post)",
+        "sub_app": "自律型自己資本防衛コントロールプレーン",
+        "calib_red_header": "コマンド・ゲートウェイ：防衛対象資本・予算を入力（タップして再設定）",
+        "override_active": "取締役会による上書き発動中",
+        "baseline_synced": "規制当局ベースライン同期済み",
+        "toll_fee": "マイルストーン解除手数料",
+        "escrow_desc": "↑ 0.085% 信託保全エスクロー",
+        "session_window": "暗号化セッション窓口",
+        "session_desc": "↑ 暗号学的エポック稼働中",
+        "holding_burn": "ポートフォリオ保留損失",
+        "cap_under_def": "防衛対象総資本",
+        "active_block": "アクティブ遮断事象",
+        "crossover_sub": "↑ 資本全損までの限界日数",
+        "why_stalled": "🚨 1. なぜ現場は停滞しているのか？",
+        "what_unblocks": "🟢 2. どの決議がゲートを解除するか？",
+        "interrogate_hint": "3. エージェントへ直接諮問を入力...",
+        "branches_title": "3つの連動防衛ブランチと解決手段",
+        "opt_a": "選択肢A 取締役会免責決議を実行",
+        "pipeline_title": "🔒 順次解決ボトルネック・パイプライン",
+        "active_threat": "🟡 進行中の危機",
+        "queued": "🔒 保留中",
+        "audit_title": "ティア4 | 封印済み暗号監査カプセル"
     }
 }
 
@@ -236,7 +270,7 @@ SECTORS = {
                         "entries": [
                             "DOCKET INGESTION: Baseline verified against ERCOT Docket #54219.",
                             "CAPITAL AUDIT: Sovereign capital cap locked at $88,500,000.",
-                            "FIDUCIARY ANCHOR: Safe harbor initialized."
+                            "FIDUCIARY ANCHOR: Delaware DGCL § 141 safe harbor initialized."
                         ]
                     }
                 ]
@@ -324,13 +358,15 @@ SECTORS = {
                 "status": "DEADLOCKED",
                 "director_seat": "Xavier Piechaczyk",
                 "tier3_work_order": {"id": "WO-RTE-881", "progress_pct": 60, "steps": []},
-                "audit_packages": [{
-                    "job_id": "JOB-001: Dossier RTE Verrouillé",
-                    "status": "SEALED & ATTESTED",
-                    "sealed_at": "2026-09-15 00:00:00 UTC",
-                    "package_hash": "fr7710a902d3",
-                    "entries": ["SRADDET INGESTION: Dossier RTE #FR-901 homologué."]
-                }]
+                "audit_packages": [
+                    {
+                        "job_id": "JOB-001: Dossier RTE Verrouillé",
+                        "status": "SEALED & ATTESTED",
+                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "package_hash": "fr7710a902d3",
+                        "entries": ["SRADDET INGESTION: Dossier RTE #FR-901 homologué."]
+                    }
+                ]
             },
             "RTE-002": {"title": "Compensation Puissance Réactive Provence", "priority": "P2 - HAUT", "base_daily_bleed": 42000},
             "RTE-003": {"title": "Synchronisation Îlotage Nucléaire/BESS", "priority": "P3 - MOYEN", "base_daily_bleed": 18500},
@@ -353,13 +389,15 @@ SECTORS = {
                 "status": "DEADLOCKED",
                 "director_seat": "Keisuke Yokoo",
                 "tier3_work_order": {"id": "WO-TEPCO-4410", "progress_pct": 70, "steps": []},
-                "audit_packages": [{
-                    "job_id": "JOB-001: METI Baseline Ingestion",
-                    "status": "SEALED & ATTESTED",
-                    "sealed_at": "2026-09-15 00:00:00 UTC",
-                    "package_hash": "jp8834f109a12c7",
-                    "entries": ["METI INTERTIE FILING: Shin-Shinano 500kV locked."]
-                }]
+                "audit_packages": [
+                    {
+                        "job_id": "JOB-001: METI Baseline Ingestion",
+                        "status": "SEALED & ATTESTED",
+                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "package_hash": "jp8834f109a12c7",
+                        "entries": ["METI INTERTIE FILING: Shin-Shinano 500kV locked."]
+                    }
+                ]
             },
             "TEP-002": {"title": "Transformer Bushing Tan-Delta Spike", "priority": "P2 - HIGH", "base_daily_bleed": 73440},
             "TEP-003": {"title": "50Hz/60Hz Intertie Buffer Calibration", "priority": "P3 - MODERATE", "base_daily_bleed": 34560},
@@ -407,21 +445,21 @@ def seal_active_package(incident: dict):
         packages[-1]["sealed_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
 # =========================================================
-# 3. SIDEBAR WITH THREE-WAY LOCALIZATION
+# 3. SIDEBAR WITH EXPANDED SOVEREIGN ROSTER
 # =========================================================
 with st.sidebar:
     st.markdown("### 🏛️ COMMAND POST")
     
     lang_choice = st.selectbox(
-        "Localization / Idioma / Sprache:",
-        ["English (US / UK / AU)", "Deutsch (German)", "Español (Chile / CEN)"]
+        "Localization / Language Agent Coverage:",
+        list(I18N.keys())
     )
     t = I18N[lang_choice]
-
+    
     st.markdown("""
         <div style="background: rgba(88, 166, 255, 0.08); border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.4;">
             <strong style="color: #58a6ff;">Sovereign Coverage Roster:</strong><br>
-            USA · UK · AUS · DEU · JPN · CHL · BRA · FRA
+            🇺🇸 USA · 🇬🇧 UK · 🇦🇺 AUS · 🇩🇪 DEU · 🇯🇵 JPN · 🇨🇱 CHL · 🇧🇷 BRA · 🇫🇷 FRA
         </div>
     """, unsafe_allow_html=True)
     
@@ -463,12 +501,12 @@ active_inc = sector["incidents"][st.session_state.selected_incident_id]
 is_resolved = active_inc.get("status") == "RESOLVED"
 
 # =========================================================
-# 4. EXECUTIVE CHAIRMAN VIEW (HERO GATEWAY)
+# 4. EXECUTIVE CHAIRMAN VIEW (RED-HEADER COMMAND GATEWAY)
 # =========================================================
 if selected_role == t["title"]:
     st.title(t["title"])
     
-    # High-Visibility Statutory Banner
+    # Statutory Defense Banner
     st.markdown(f"""
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #58a6ff; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div>Asset: <strong style="color:#ffffff;">{active_sector}</strong></div>
@@ -484,30 +522,33 @@ if selected_role == t["title"]:
         st.session_state[ts_key] = f"{TODAY_STR} 00:00 UTC"
         
     # ---------------------------------------------------------
-    # HERO INGESTION GATEWAY (FULL-WIDTH ILLUMINATED TERMINAL)
+    # UNIFIED CHAIRMAN QUICK-CALIBRATOR TERMINAL (BOLD RED GATE)
     # ---------------------------------------------------------
-    with st.container():
+    with st.container(border=True):
         st.markdown(f"""
-            <div class="hero-gateway">
-                <div style="font-size:0.95rem; font-weight:700; color:#58a6ff; letter-spacing:0.08em; margin-bottom:4px;">
-                    ⚡ {t['location_header']}
+            <div style="text-align: center; margin-bottom: 14px;">
+                <div style="font-size:0.95rem; font-weight:700; color:#58a6ff; letter-spacing:0.08em; text-transform:uppercase;">
+                    ⚡ {active_sector} — {sector['baseline_docket']}
                 </div>
-                <div style="font-size:1.15rem; font-weight:700; color:#ffffff; margin-bottom:12px;">
-                    {active_sector} — <span style="color:#c9d1d9; font-weight:400;">{sector['baseline_docket']} (Effective: {sector['baseline_date']})</span>
+                <div style="color: #ff4b4b; font-size: 1.5rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 10px 0 6px 0; line-height: 1.3;">
+                    🚨 {t['calib_red_header']}
                 </div>
-                <div style="font-size:1.0rem; color:#e6edf3; font-weight:600; margin-bottom:8px;">
-                    {t['calib_input_label']}
+                <div style="font-size:0.95rem; color:#8b949e;">
+                    Statutory Baseline Docket: <strong style="color:#ffffff;">{curr_sym}{sector['asset_cap']:,}</strong> 
+                    <span style="color:#58a6ff;">(Effective: {sector['baseline_date']})</span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
         
+        # Centerpiece Throttle Input Box
         raw_input_str = st.text_input(
-            "CapEx Quick-Calibrator Input",
+            label="Chairman Quick-Calibrator Input",
             value=f"{st.session_state[calib_key]:,}",
             label_visibility="collapsed"
         )
         parsed_capex = int(re.sub(r"[^\d]", "", raw_input_str) or sector["asset_cap"])
         
+        # Trigger Job Package & Seal on Change
         if parsed_capex != st.session_state[calib_key]:
             now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
             st.session_state[calib_key] = parsed_capex
@@ -526,13 +567,13 @@ if selected_role == t["title"]:
         badge_label = t["override_active"] if is_overridden else t["baseline_synced"]
         
         st.markdown(f"""
-            <div style="margin-top:-10px; margin-bottom:20px; display:flex; flex-direction:column; gap:4px;">
-                <div style="font-family:ui-monospace, monospace; font-size:2.5rem; font-weight:800; color:{badge_color};">
-                    {curr_sym}{parsed_capex:,}
-                </div>
-                <div style="font-size:1.05rem; font-weight:700; color:{badge_color};">
-                    ● {badge_label} <span style="color:#ffffff; font-weight:600;">(Effective: {st.session_state[ts_key]})</span>
-                </div>
+            <div style="text-align:center; margin-top:10px; margin-bottom:4px;">
+                <span style="font-size:1.15rem; font-weight:800; color:{badge_color};">
+                    ● {badge_label}: {curr_sym}{parsed_capex:,}
+                </span>
+                <span style="color:#ffffff; font-size:0.95rem; font-weight:600; margin-left:8px;">
+                    (Effective Audit Timestamp: {st.session_state[ts_key]})
+                </span>
             </div>
         """, unsafe_allow_html=True)
 
@@ -702,9 +743,7 @@ if selected_role == t["title"]:
             </div>
             """
 
-        pipe_keys = [k for k in sector["incidents"].keys() if k not in [
-            "INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"
-        ]]
+        pipe_keys = [k for k in sector["incidents"].keys() if k not in ["INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01"]]
         with p1:
             inc_p1 = sector["incidents"].get(pipe_keys[0], {})
             st.markdown(render_pipeline_card("1. Inrush Damping", inc_p1.get("base_daily_bleed", 38880), pipe_keys[0], is_resolved), unsafe_allow_html=True)
