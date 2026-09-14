@@ -3,6 +3,12 @@ import hashlib
 import json
 import streamlit as st
 
+LOCALE_LABELS = {
+    "English (US / UK / AU)": {"book": "Operating Book (Global Assets):", "role": "Active Governance Profile:", "queue": "Active Incident Queue"},
+    "日本語 (Japanese)": {"book": "運用ポートフォリオ:", "role": "ガバナンス・プロファイル:", "queue": "アクティブ・インシデント"},
+    "Deutsch (German)": {"book": "Betriebsportfolio (Globale Assets):", "role": "Aktives Governance-Profil:", "queue": "Aktive Incident-Warteschlange"},
+}
+
 st.set_page_config(
     page_title="Factory Command Post | Autonomous Capital Defense",
     page_icon="⚡",
@@ -52,6 +58,7 @@ def work_order(order_id, title, crew, gate, progress, steps, metrics):
 
 SECTORS = {
     "ERCOT BESS / Grid Storage": {
+        "currency": "$",
         "asset_cap": 88_500_000,
         "directors": {
             "Dr. Arthur Pendleton": {
@@ -119,6 +126,35 @@ SECTORS = {
     }
 }
 
+SECTORS.update({
+    "Deutsche Bahn AG | Rail Corridor (Germany)": {
+        "currency": "€", "asset_cap": 34_000_000_000,
+        "directors": {"Werner Gatzer": {"seat": "Aufsichtsratsvorsitzender", "focus": "Federal Infrastructure Allocation & EBA Compliance", "assigned_gm": "Signaling Operations Lead"}},
+        "incidents": {"DB-ETCS-01": {
+            "title": "Rhine-Alpine ETCS Level 2 Baseline Handshake Stall", "priority": "P1 - CRITICAL", "base_burn_rate_sec": 20.0,
+            "start_time": datetime.datetime.now() - datetime.timedelta(hours=14), "schedule_drift": "+14h Track Possession Slip", "status": "DEADLOCKED", "director_seat": "Werner Gatzer",
+            "deadlock_summary": "Signaling safety certification is holding the international rail closure release.", "crossover_days": 4.2,
+            "tier3_work_order": work_order("WO-DB-9901-ETCS", "Radio Block Center Handshake Certification", "Frankfurt Rail Engineering Taskforce", "EBA Release", 65,
+                [("Balise Telegram Frequency Sweep", True), ("GSM-R Interoperability Verification", True), ("EBA Safety Case Digital Stamp", False)], {"RBC Latency": ("82 ms", "Limit: 120 ms [NOMINAL]"), "Packet Loss Rate": ("0.001%", "Max: 0.01%")} ),
+            "gms": {"Signaling Operations Lead": {"title": "GM - Train Control & Safety Engineering", "domain": "Rhine Corridor Signaling & RBC Nodes", "position": "Withholding release pending certified EBA telegram logs.", "checks": [{"id": "Check #1", "name": "Balise Telegram Ingestion", "status": "CLEARED", "evidence": "Verified"}, {"id": "Check #2", "name": "EBA Statutory Safety Stamp", "status": "BLOCKED", "evidence": "Awaiting certification"}]}},
+            "audit_log": [{"ts": "2026-09-13 04:00:00 UTC", "hash": "de9910a1b2", "event": "INCIDENT INITIALIZED: ETCS commissioning halted over safety certification."}],
+        }},
+    },
+    "TEPCO Holdings | Transmission Grid (Japan)": {
+        "currency": "¥", "asset_cap": 42_000_000_000,
+        "directors": {"Keisuke Yokoo": {"seat": "Chairman of the Board", "focus": "Capital Defense & METI Reliability Compliance", "assigned_gm": "Grid Operations Lead"}},
+        "incidents": {"TEPCO-500KV-01": {
+            "title": "Shin-Shinano 500kV Frequency Converter Synchronization Stall", "priority": "P1 - CRITICAL", "base_burn_rate_sec": 1.45,
+            "start_time": datetime.datetime.now() - datetime.timedelta(days=1), "schedule_drift": "+24h Grid Sync Slip", "status": "DEADLOCKED", "director_seat": "Keisuke Yokoo",
+            "deadlock_summary": "Harmonic filter dampening validation is holding the METI intertie clearance.", "crossover_days": 9.5,
+            "tier3_work_order": work_order("WO-TEPCO-4410", "50-to-60Hz Converter Waveform Verification", "Tokyo Substation Engineering Group", "METI Intertie Clearance", 70,
+                [("Filter Capacitor Bank Step-Test", True), ("Frequency Inversion Damping", True), ("Final Synchronization Signature", False)], {"Harmonic Distortion": ("2.1%", "METI Limit: 3.0%"), "Phase Sync Delta": ("0.4 deg", "Max: 1.0 deg")} ),
+            "gms": {"Grid Operations Lead": {"title": "GM - High-Voltage Transmission", "domain": "Shin-Shinano Frequency Converter Substation", "position": "Awaiting formal board liability indemnity before energizing.", "checks": [{"id": "Check #1", "name": "Converter Waveform Test", "status": "CLEARED", "evidence": "2.1% THD"}, {"id": "Check #2", "name": "METI Grid Intertie Gate", "status": "BLOCKED", "evidence": "Awaiting indemnity"}]}},
+            "audit_log": [{"ts": "2026-09-13 06:00:00 UTC", "hash": "jp8834f109", "event": "INCIDENT INITIALIZED: 500kV converter sync held pending indemnity."}],
+        }},
+    },
+})
+
 if "app_state" not in st.session_state:
     st.session_state.app_state = SECTORS
 
@@ -145,11 +181,14 @@ def record_ledger_entry(incident, event_text, custom_snapshot=None):
 with st.sidebar:
     st.markdown("### 🏛️ COMMAND POST")
     st.caption("Autonomous Capital Defense Control Plane")
-    active_sector = st.selectbox("Operating Book (Top 12 Sectors):", list(st.session_state.app_state))
+    lang_choice = st.selectbox("Localization / 言語 / Sprache:", list(LOCALE_LABELS))
+    labels = LOCALE_LABELS[lang_choice]
+    active_sector = st.selectbox(labels["book"], list(st.session_state.app_state))
     sector = st.session_state.app_state[active_sector]
-    selected_role = st.radio("Active Governance Profile:", ["Executive Chairman (Panoramic Tree)", "Tier 3: Site Operations / Field Lead"] + [f"Director: {d}" for d in sector["directors"]])
+    curr_sym = sector.get("currency", "$")
+    selected_role = st.radio(labels["role"], ["Executive Chairman (Panoramic Tree)", "Tier 3: Site Operations / Field Lead"] + [f"Director: {d}" for d in sector["directors"]])
     st.divider()
-    st.markdown("#### Active Blockage Queue")
+    st.markdown(f"#### {labels['queue']}")
     st.caption("Select branch to inspect and arbitrate:")
     for incident_id, incident in sector["incidents"].items():
         selected = incident_id == st.session_state.selected_incident_id
@@ -163,17 +202,17 @@ with st.sidebar:
         if st.button("Simulate +45m Field Slip", use_container_width=True):
             st.session_state.micro_drift_active = True
             st.session_state.drift_minutes = 45
-            incident = sector["incidents"]["INC-001"]
-            incident["crossover_days"] = 12.1
-            incident["schedule_drift"] = "+9 Days 45m COD Drift"
+            incident = next(iter(sector["incidents"].values()))
+            incident.setdefault("nominal_crossover_days", incident["crossover_days"])
+            incident["crossover_days"] = max(1.0, round(incident["crossover_days"] * 0.85, 1))
+            incident["schedule_drift"] = f"{incident['schedule_drift']} +45m"
             record_ledger_entry(incident, "MICRO-DRIFT DETECTED: Step 3 frequency injection delayed +45m. System recalibrated Crossover to 12.1 days.")
             st.rerun()
     elif st.button("Reset Field Slip", use_container_width=True):
         st.session_state.micro_drift_active = False
         st.session_state.drift_minutes = 0
-        incident = sector["incidents"]["INC-001"]
-        incident["crossover_days"] = 13.8
-        incident["schedule_drift"] = "+9 Days COD Drift"
+        incident = next(iter(sector["incidents"].values()))
+        incident["crossover_days"] = incident.get("nominal_crossover_days", incident["crossover_days"])
         record_ledger_entry(incident, "DRIFT RECOVERY: Field operations re-aligned with nominal baseline.")
         st.rerun()
 
@@ -245,8 +284,8 @@ elif selected_role.startswith("Director:"):
     st.caption(f"Mandate: **{director['focus']}** | Designated Director: **{director_name}**")
     m1, m2, m3 = st.columns(3)
     m1.metric("Jurisdiction Status", active_inc["status"], delta=active_inc["priority"])
-    m2.metric("Domain Holding Burn", f"${current_burn_rate * 604800:,.0f} / wk", f"${current_burn_rate:.2f}/sec", delta_color="inverse")
-    m3.metric("Accrued Delay Burn", f"${accrued:,.0f}", active_inc["schedule_drift"], delta_color="inverse")
+    m2.metric("Domain Holding Burn", f"{curr_sym}{current_burn_rate * 604800:,.0f} / wk", f"{curr_sym}{current_burn_rate:.2f}/sec", delta_color="inverse")
+    m3.metric("Accrued Delay Burn", f"{curr_sym}{accrued:,.0f}", active_inc["schedule_drift"], delta_color="inverse")
     st.divider()
     with st.container(border=True):
         st.subheader("Tier 1B | Directorate Mandate & Concurrence")
@@ -285,18 +324,18 @@ elif selected_role.startswith("Director:"):
 
 else:
     st.title("Executive Chairman Command Post")
-    st.caption(f"Master Autonomous Capital Defense Post | Operating Asset: **{active_sector}** | Fleet Capital Cap: **${sector['asset_cap']:,.0f}**")
+    st.caption(f"Master Autonomous Capital Defense Post | Operating Asset: **{active_sector}** | Fleet Capital Cap: **{curr_sym}{sector['asset_cap']:,.0f}**")
     active_incidents = [incident for incident in sector["incidents"].values() if incident["status"] != "RESOLVED"]
     total_burn = sum(incident["base_burn_rate_sec"] for incident in active_incidents)
     k1, k2, k3 = st.columns(3)
-    k1.metric("Fleet Holding Burn", f"${total_burn * 604800:,.0f} / wk", f"${total_burn:.2f}/sec", delta_color="inverse")
-    k2.metric("Capital Under Direct Lock", f"${sector['asset_cap']:,.0f}", "Asset Defense Escrow Intact")
+    k1.metric("Fleet Holding Burn", f"{curr_sym}{total_burn * 604800:,.0f} / wk", f"{curr_sym}{total_burn:.2f}/sec", delta_color="inverse")
+    k2.metric("Capital Under Direct Lock", f"{curr_sym}{sector['asset_cap']:,.0f}", "Asset Defense Escrow Intact")
     k3.metric("Active Operational Block", st.session_state.selected_incident_id, f"Crossover: {active_inc['crossover_days']} Days", delta_color="inverse")
 
     if st.session_state.micro_drift_active:
         st.error(f"🚨 **AUTONOMOUS TRIPWIRE ALERT | MICRO-DRIFT DETECTED (+{st.session_state.drift_minutes}m)**\n\n**Root Cause:** Harmonic test injection on Permian Relay Rack 4 exceeded time budget by 45 minutes.\n\n**System Recalibration:** Crossover threshold recalibrated from **13.8 days ➔ 12.1 days**.\n\n**Master Recommendation:** Execute **Option A (Directorate Carve-Out)** immediately.")
     elif active_inc["status"] == "DEADLOCKED":
-        st.warning(f"⚠️ **MASTER AGENT INTERRUPT:** Active standstill on **{st.session_state.selected_incident_id} ({active_inc['title']})**.\n\nContractor idle carry is bleeding **${current_burn_rate:.2f}/second**. Unhedged holding costs cross the $1.2M transformer value in **{active_inc['crossover_days']} days**.")
+        st.warning(f"⚠️ **MASTER AGENT INTERRUPT:** Active standstill on **{st.session_state.selected_incident_id} ({active_inc['title']})**.\n\nContractor idle carry is bleeding **{curr_sym}{current_burn_rate:.2f}/second**. Unhedged holding costs cross the asset value in **{active_inc['crossover_days']} days**.")
 
     st.markdown("#### Autonomous Agent Fleet Status")
     ag1, ag2, ag3, ag4 = st.columns(4)
