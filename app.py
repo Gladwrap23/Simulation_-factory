@@ -782,92 +782,80 @@ else:
                     st.success("Milestone 1 Fee Settled. Tier 4 BJR Capsule Unsealed. Unlocking INC-002.")
 
     b_col1, b_col2, b_col3 = st.columns(3)
-    conf = st.session_state.conference_focus
-    sim = st.session_state.remedial_simulation
+    is_res = active_inc["status"] == "RESOLVED"
+
+    def get_card_html(title, caption, director, agent, status_text, metric_text, style_class, icon):
+        bg, border = "#161b22", "#30363d"
+        if style_class == "green":
+            bg, border = "rgba(46, 160, 67, 0.15)", "#2ea043"
+        elif style_class == "red":
+            bg, border = "rgba(218, 54, 51, 0.15)", "#da3633"
+        elif style_class == "amber":
+            bg, border = "rgba(227, 179, 65, 0.15)", "#e3b341"
+
+        return f"""
+        <div style="background-color: {bg}; border: 1px solid {border}; border-radius: 6px; padding: 16px; height: 100%; display: flex; flex-direction: column; gap: 8px;">
+            <h4 style="margin:0; color:#f0f6fc;">{title}</h4>
+            <div style="color:#8b949e; font-size:0.8rem; margin-bottom:4px;">{caption}</div>
+            <div style="font-size:0.85rem;"><strong>Cognizant Director:</strong> {director}</div>
+            <div style="font-size:0.85rem; margin-bottom:4px;"><strong>Embedded Agent:</strong> <code style="color:#a5d6ff; background:rgba(56,139,253,0.15); padding:2px 4px; border-radius:3px;">{agent}</code></div>
+            <div style="font-weight:600; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; border-left: 3px solid {border};">{icon} {status_text}</div>
+            <div style="font-family:monospace; color:#8b949e; font-size:0.85rem; margin-top: auto; padding-top: 8px;">{metric_text}</div>
+        </div>
+        """
 
     with b_col1:
-        with st.container(border=True):
-            st.markdown("#### Branch 1: Physical / Field")
-            st.caption("Hardware Gate | Plant & Crews")
-            st.markdown(f"**Cognizant Director:** {active_inc.get('director_seat', 'Board Seat')}")
-            st.markdown("**Embedded Agent:** `Site Telemetry Agent`")
-
-            if active_inc["status"] == "RESOLVED":
-                st.success("✅ **Gate Cleared:** Field verification approved under board escrow.")
-            elif conf == "WHY_STALLED":
-                st.error("🚨 **Friction Point (CRIMSON):** Physical cabinet access held by OEM engineer pending indemnity.")
-            elif conf == "WHAT_UNBLOCKS":
-                st.success("🟢 **Friction Point (RESOLVED):** Cleared to grant access upon Option A execution.")
-            elif "Option B" in sim:
-                st.warning("⚠️ **Simulated State:** Secondary crew staged; adds 6-hour delay.")
-            else:
-                st.error("🚨 **Friction Point:** Testing held; OEM warranty at risk.")
-
-            wo = active_inc.get("tier3_work_order", {})
-            st.write(f"**Work Order:** `{wo.get('id', 'N/A')}` ({wo.get('progress_pct', 0)}%)")
+        status_class = "green" if is_res else "red"
+        status_icon = "🟢" if is_res else "🔴"
+        status_text = "CLEARED: Field access granted." if is_res else "OUTSTANDING: Field access locked."
+        work_order_data = active_inc.get("tier3_work_order", {})
+        metric_text = f"Work Order: {work_order_data.get('id', 'N/A')} ({100 if is_res else work_order_data.get('progress_pct', 0)}%)"
+        st.markdown(get_card_html("Branch 1: Physical / Field", "Hardware Gate | Plant & Crews", active_inc.get("director_seat", "Board Seat"), "Site Telemetry Agent", status_text, metric_text, status_class, status_icon), unsafe_allow_html=True)
 
     with b_col2:
-        with st.container(border=True):
-            st.markdown("#### Branch 2: Regulatory / Market")
-            st.caption("Commercial Gate | Interconnection")
-            st.markdown("**Cognizant Director:** Regulatory Lead")
-            st.markdown("**Embedded Agent:** `Market Surveillance Agent`")
-
-            if active_inc["status"] == "RESOLVED":
-                st.success("✅ **Filing Complete:** Commercial grid gate verified.")
-            elif conf == "WHY_STALLED":
-                st.warning("⏳ **Friction Point (AMBER):** Statutory filing countdown running ($4.5M deposit at risk).")
-            elif conf == "WHAT_UNBLOCKS":
-                st.success("🟢 **Friction Point (READY):** Filing packet staged for instant transmission.")
-            elif "Option C" in sim:
-                st.error("🚫 **BREACH:** Regulatory queue forfeited!")
-            else:
-                st.warning("⏳ **Friction Point:** Interconnection gate countdown running.")
-
-            st.write("**Handshake Status:** Latency Validated")
+        status_class = "green" if is_res else "amber"
+        status_icon = "🟢" if is_res else "🟡"
+        status_text = "CLEARED: Grid filing secured." if is_res else "COLLATERAL: Market window expiring."
+        st.markdown(get_card_html("Branch 2: Regulatory / Market", "Commercial Gate | Interconnection", "Regulatory Lead", "Market Surveillance Agent", status_text, "Handshake Status: Latency Validated", status_class, status_icon), unsafe_allow_html=True)
 
     with b_col3:
-        with st.container(border=True):
-            st.markdown("#### Branch 3: Fiduciary / Capital")
-            st.caption("Balance Sheet Gate | Liability Escrow")
-            st.markdown("**Cognizant Director:** Executive Board Chair")
-            st.markdown("**Embedded Agent:** `Fiduciary Shield Agent`")
-
-            if active_inc["status"] == "RESOLVED":
-                st.success("✅ **Capital Defended:** Holding burn halted to 0.")
-            elif conf == "WHAT_UNBLOCKS":
-                st.success("🟢 **Remedial Key (EMERALD):** Directorate Carve-Out transfers liability to escrow.")
-            elif "Option C" in sim:
-                st.error("⚠️ **LOCKED:** Violates board duty of care.")
-            else:
-                st.error(f"⚠️ **Friction Point:** Holding burn crosses asset value in {active_inc['crossover_days']} days.")
-
-            st.write(f"**Velocity:** {curr_sym}{current_burn_rate:.2f}/sec")
+        status_class = "green" if is_res else "red"
+        status_icon = "🟢" if is_res else "🔴"
+        status_text = "CLEARED: Capital defended." if is_res else f"OUTSTANDING: Burn crosses asset in {active_inc.get('crossover_days', 0)}d."
+        velocity_text = f"Velocity: {curr_sym}0.00/sec" if is_res else f"Velocity: {curr_sym}{current_burn_rate:.2f}/sec"
+        st.markdown(get_card_html("Branch 3: Fiduciary / Capital", "Balance Sheet Gate | Liability Escrow", "Executive Board Chair", "Fiduciary Shield Agent", status_text, velocity_text, status_class, status_icon), unsafe_allow_html=True)
 
     # ---------------------------------------------------------
     # PIPELINE MONITOR: SUBSEQUENT 4 BOTTLENECKS
     # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown("### 🔒 Gated Incident Pipeline (Next 4 Bottlenecks)")
-        st.caption("Sequential project bottlenecks locked behind Milestone 1 fee settlement:")
+        st.caption("Sequential project bottlenecks locked behind Milestone settlement:")
 
         p1, p2, p3, p4 = st.columns(4)
+
+        def get_pipe_html(title, bleed, status, state):
+            bg, border, text = "#161b22", "#30363d", "#8b949e"
+            if state == "amber":
+                bg, border, text = "rgba(227, 179, 65, 0.15)", "#e3b341", "#e3b341"
+            elif state == "green":
+                bg, border, text = "rgba(46, 160, 67, 0.15)", "#2ea043", "#2ea043"
+            return f"""<div style="background-color: {bg}; border: 1px solid {border}; border-radius: 6px; padding: 12px; height: 100%;">
+                <div style="font-weight:bold; font-size:0.9rem; color:#f0f6fc; margin-bottom:4px;">{title}</div>
+                <div style="font-size:0.75rem; color:#8b949e; margin-bottom:8px;">Bleed: {bleed}</div>
+                <div style="font-size:0.75rem; font-weight:bold; color:{text};">{status}</div>
+            </div>"""
+
         with p1:
-            st.markdown("**1. Inrush Damping Curve**")
-            st.caption(f"Bleed: {curr_sym}0.45/sec ({curr_sym}38.8k/day)")
-            st.warning("🔒 Queued: INC-002")
+            state = "amber" if is_res else "gray"
+            status = "🟡 ACTIVE THREAT" if is_res else "🔒 QUEUED"
+            st.markdown(get_pipe_html("1. Inrush Damping", f"{curr_sym}0.45/sec", f"{status}: INC-002", state), unsafe_allow_html=True)
         with p2:
-            st.markdown("**2. SCADA IEC 61850 Gateway**")
-            st.caption(f"Bleed: {curr_sym}0.18/sec ({curr_sym}15.5k/day)")
-            st.warning("🔒 Queued: INC-003")
+            st.markdown(get_pipe_html("2. SCADA IEC 61850", f"{curr_sym}0.18/sec", "🔒 QUEUED: INC-003", "gray"), unsafe_allow_html=True)
         with p3:
-            st.markdown("**3. BESS Skid Firmware OTA**")
-            st.caption(f"Bleed: {curr_sym}0.05/sec ({curr_sym}4.3k/day)")
-            st.warning("🔒 Queued: INC-004")
+            st.markdown(get_pipe_html("3. BESS Firmware OTA", f"{curr_sym}0.05/sec", "🔒 QUEUED: INC-004", "gray"), unsafe_allow_html=True)
         with p4:
-            st.markdown("**4. Substation Oil DGA Baseline**")
-            st.caption(f"Bleed: {curr_sym}0.08/sec ({curr_sym}6.9k/day)")
-            st.warning("🔒 Queued: INC-005")
+            st.markdown(get_pipe_html("4. Oil DGA Baseline", f"{curr_sym}0.08/sec", "🔒 QUEUED: INC-005", "gray"), unsafe_allow_html=True)
 
     # ---------------------------------------------------------
     # TIER 4: DEDICATED FORENSIC LEDGER & BJR SHIELD
