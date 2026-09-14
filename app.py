@@ -423,7 +423,7 @@ SECTORS = {
     },
 }
 
-if "app_state" not in st.session_state:
+if "app_state" not in st.session_state or "statute" not in list(st.session_state.app_state.values())[0]:
     st.session_state.app_state = SECTORS
 
 if "selected_incident_id" not in st.session_state:
@@ -601,7 +601,7 @@ elif selected_role.startswith("Director:"):
         f"{curr_sym}{current_burn_rate:.2f}/sec",
         delta_color="inverse",
     )
-    m3.metric("Statutory Shield", sector["statute"][:24] + "...")
+    m3.metric("Statutory Shield", sector.get("statute", "DGCL § 141")[:24] + "...")
 
     st.divider()
     with st.container(border=True):
@@ -626,7 +626,7 @@ elif selected_role.startswith("Director:"):
 else:
     st.title("Executive Chairman Command Post")
     st.caption(
-        f"Operating Sector: **{active_sector}** | Statutory Defense: **{sector['statute']}**"
+        f"Operating Sector: **{active_sector}** | Statutory Defense: **{sector.get('statute', 'DGCL § 141')}**"
     )
 
     # ---------------------------------------------------------
