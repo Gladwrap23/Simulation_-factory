@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v3.5_red_command_gateway_sep15_2026"
+APP_BUILD_ID = "v3.6_neutral_reset_chain_of_command_sep15_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1. INDUSTRIAL HIGH-CONTRAST TYPOGRAPHY & THROTTLE INPUT
+# 1. INDUSTRIAL STYLING & SCOPED THROTTLE TYPOGRAPHY
 # =========================================================
 st.markdown("""
     <style>
@@ -44,8 +44,8 @@ st.markdown("""
             color: #f0f6fc !important;
         }
         
-        /* Chairman Throttle Input: Oversized, Centered, High-Contrast */
-        div[data-testid="stTextInput"] input {
+        /* Chairman Throttle Input: Scoped ONLY to .capex-throttle */
+        .capex-throttle div[data-testid="stTextInput"] input {
             font-size: 2.5rem !important;
             font-weight: 800 !important;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
@@ -57,9 +57,20 @@ st.markdown("""
             text-align: center !important;
             box-shadow: 0 0 16px rgba(88, 166, 255, 0.25) !important;
         }
-        div[data-testid="stTextInput"] input:focus {
+        .capex-throttle div[data-testid="stTextInput"] input:focus {
             border-color: #ff4b4b !important;
             box-shadow: 0 0 22px rgba(255, 75, 75, 0.4) !important;
+        }
+        
+        /* Normal diagnostic search inputs remain compact and executive */
+        div[data-testid="stTextInput"]:not(.capex-throttle *) input {
+            font-size: 1.05rem !important;
+            font-weight: 600 !important;
+            background-color: #161b22 !important;
+            border: 1px solid #30363d !important;
+            color: #f0f6fc !important;
+            border-radius: 6px !important;
+            padding: 10px 14px !important;
         }
         
         .exec-metric-card {
@@ -105,7 +116,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================
-# 2. LOCALIZATION DICTIONARY & SOVEREIGN ROSTER
+# 2. LOCALIZATION DICTIONARY & ROSTER
 # =========================================================
 I18N = {
     "English [USA · UK · Australia]": {
@@ -124,7 +135,7 @@ I18N = {
         "crossover_sub": "↑ Crossover to Total Loss",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
         "what_unblocks": "🟢 2. What Unblocks the Gate?",
-        "interrogate_hint": "3. Type query to interrogate agent engine...",
+        "interrogate_hint": "Type query to interrogate agents...",
         "branches_title": "The Three Cascading Branches & Remedial Levers",
         "opt_a": "Execute Option A Directive",
         "pipeline_title": "🔒 Gated Incident Pipeline (Next 4 Bottlenecks)",
@@ -148,7 +159,7 @@ I18N = {
         "crossover_sub": "↑ Zeit bis zum Totalverlust",
         "why_stalled": "🚨 1. Warum stockt die Freigabe?",
         "what_unblocks": "🟢 2. Wie wird das Tor entsperrt?",
-        "interrogate_hint": "3. Frage zur Sachverhaltsaufklärung eingeben...",
+        "interrogate_hint": "Frage zur Aufklärung eingeben...",
         "branches_title": "Die Drei Kaskadierenden Säulen & Abhilfemassnahmen",
         "opt_a": "Weisung Option A Vollstrecken",
         "pipeline_title": "🔒 Nachgelagerte Engpass-Pipeline (Nächste 4 Prüfpunkte)",
@@ -172,7 +183,7 @@ I18N = {
         "crossover_sub": "↑ Plazo para la Pérdida Total",
         "why_stalled": "🚨 1. ¿Por qué está trabada la solución?",
         "what_unblocks": "🟢 2. ¿Qué desbloquea la compuerta?",
-        "interrogate_hint": "3. Escriba consulta para interrogar a los agentes...",
+        "interrogate_hint": "Escriba consulta de investigación...",
         "branches_title": "Las Tres Ramas en Cascada y Palancas de Mitigación",
         "opt_a": "Ejecutar Directiva Opción A",
         "pipeline_title": "🔒 Ducto de Incidentes Consecutivos (Próximos 4 Cuellos de Botella)",
@@ -196,7 +207,7 @@ I18N = {
         "crossover_sub": "↑ Délai Avant Perte Totale",
         "why_stalled": "🚨 1. Pourquoi le déblocage est-il gelé ?",
         "what_unblocks": "🟢 2. Quel acte juridique libère le site ?",
-        "interrogate_hint": "3. Interroger les agents de gouvernance...",
+        "interrogate_hint": "Interroger les agents...",
         "branches_title": "Les Trois Piliers en Cascade & Leviers d'Atténuation",
         "opt_a": "Exécuter la Directive Option A",
         "pipeline_title": "🔒 File Gérée des Goulots d'Étranglement (4 Prochains)",
@@ -220,7 +231,7 @@ I18N = {
         "crossover_sub": "↑ 資本全損までの限界日数",
         "why_stalled": "🚨 1. なぜ現場は停滞しているのか？",
         "what_unblocks": "🟢 2. どの決議がゲートを解除するか？",
-        "interrogate_hint": "3. エージェントへ直接諮問を入力...",
+        "interrogate_hint": "エージェントへ直接諮問を入力...",
         "branches_title": "3つの連動防衛ブランチと解決手段",
         "opt_a": "選択肢A 取締役会免責決議を実行",
         "pipeline_title": "🔒 順次解決ボトルネック・パイプライン",
@@ -444,8 +455,23 @@ def seal_active_package(incident: dict):
         packages[-1]["status"] = "SEALED & ATTESTED"
         packages[-1]["sealed_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
+def reset_incident_to_neutral(incident: dict, baseline_cap: int):
+    incident["status"] = "DEADLOCKED"
+    incident["base_daily_bleed"] = 87264
+    wo = incident.get("tier3_work_order", {})
+    wo["progress_pct"] = 75
+    if wo.get("steps"):
+        for s in wo["steps"][:-1]: s["done"] = True
+        wo["steps"][-1]["done"] = False
+    append_to_active_package(
+        incident,
+        f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Neutral Simulation Reset",
+        "Executive reset state to neutral deadlock. Holding burn re-engaged for counterfactual analysis.",
+        force_new_package=True
+    )
+
 # =========================================================
-# 3. SIDEBAR WITH EXPANDED SOVEREIGN ROSTER
+# 3. SIDEBAR WITH EXPANDED ROSTER & PERSISTENT ROLE
 # =========================================================
 with st.sidebar:
     st.markdown("### 🏛️ COMMAND POST")
@@ -475,11 +501,17 @@ with st.sidebar:
     current_calib_capex = st.session_state[calib_key]
     scale_factor = current_calib_capex / sector["asset_cap"]
 
+    # Role synchronization
+    role_options = [t["title"], "Tier 3: Site Operations / Field Lead"] + [f"Director: {d}" for d in sector["directors"].keys()]
+    if "selected_role" not in st.session_state or st.session_state.selected_role not in role_options:
+        st.session_state.selected_role = t["title"]
+
     selected_role = st.radio(
         "Governance Profile:",
-        [t["title"], "Tier 3: Site Operations / Field Lead"] +
-        [f"Director: {d}" for d in sector["directors"].keys()]
+        role_options,
+        index=role_options.index(st.session_state.selected_role)
     )
+    st.session_state.selected_role = selected_role
     
     st.divider()
     st.markdown("#### Active Incident Queue")
@@ -501,12 +533,11 @@ active_inc = sector["incidents"][st.session_state.selected_incident_id]
 is_resolved = active_inc.get("status") == "RESOLVED"
 
 # =========================================================
-# 4. EXECUTIVE CHAIRMAN VIEW (RED-HEADER COMMAND GATEWAY)
+# 4. VIEW: EXECUTIVE CHAIRMAN
 # =========================================================
 if selected_role == t["title"]:
     st.title(t["title"])
     
-    # Statutory Defense Banner
     st.markdown(f"""
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #58a6ff; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div>Asset: <strong style="color:#ffffff;">{active_sector}</strong></div>
@@ -540,15 +571,17 @@ if selected_role == t["title"]:
             </div>
         """, unsafe_allow_html=True)
         
-        # Centerpiece Throttle Input Box
+        # Scoped CapEx Input Box
+        st.markdown('<div class="capex-throttle">', unsafe_allow_html=True)
         raw_input_str = st.text_input(
             label="Chairman Quick-Calibrator Input",
             value=f"{st.session_state[calib_key]:,}",
             label_visibility="collapsed"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
         parsed_capex = int(re.sub(r"[^\d]", "", raw_input_str) or sector["asset_cap"])
         
-        # Trigger Job Package & Seal on Change
         if parsed_capex != st.session_state[calib_key]:
             now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
             st.session_state[calib_key] = parsed_capex
@@ -635,7 +668,7 @@ if selected_role == t["title"]:
         """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # DIAGNOSTIC AGENT CONFERENCE
+    # DIAGNOSTIC AGENT CONFERENCE (COMPACT & PROPORTIONAL)
     # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown("### 🎙️ Instant Diagnostic Agent Conference")
@@ -651,7 +684,7 @@ if selected_role == t["title"]:
                 append_to_active_package(active_inc, "DIAGNOSTIC", "Inquiry: What unblocks the gate?")
                 st.rerun()
         with diag_col3:
-            custom_query = st.text_input("Interrogate", placeholder=t["interrogate_hint"], label_visibility="collapsed")
+            custom_query = st.text_input("3. Custom Interrogation Query", placeholder=t["interrogate_hint"], label_visibility="collapsed")
             if custom_query:
                 st.session_state.conference_focus = "CUSTOM"
                 st.session_state.custom_query_text = custom_query
@@ -668,17 +701,20 @@ if selected_role == t["title"]:
                 f"🟢 **Master Orchestrator ➔ Fiduciary Shield Agent:** *'What instrument unblocks this gate?'* \n\n"
                 f"🟢 **Fiduciary Shield Agent:** *'Board Resolution (Option A) executing a Directorate Indemnity Carve-Out shields the site lead under {sector['statute']}, releasing the attestation within 5 minutes.'*"
             )
+        elif st.session_state.conference_focus == "CUSTOM":
+            st.markdown(f"🔍 **Agent Synthesis for Query: '{st.session_state.get('custom_query_text', '')}'**")
+            st.info(f"Cross-referencing telemetry logs against {sector['statute']}. Primary bottleneck remains contractual signatory deadlock on {st.session_state.selected_incident_id}.")
         else:
             st.markdown(
                 f"⚡ **Active Interrogation Standby ({TODAY_STR}):** Agents synchronized with {sector['statute']} and physical telemetry. Select an action above to execute diagnostic."
             )
 
     # ---------------------------------------------------------
-    # REMEDIAL LEVERS & BRANCHES
+    # REMEDIAL LEVERS (WITH REVERT TO NEUTRAL SANDBOX)
     # ---------------------------------------------------------
     st.markdown(f"### {t['branches_title']}")
     with st.container(border=True):
-        r1, r2 = st.columns([3, 1])
+        r1, r2 = st.columns([3, 2])
         with r1:
             st.session_state.remedial_simulation = st.radio(
                 "Simulate Remedial Action:",
@@ -691,22 +727,136 @@ if selected_role == t["title"]:
             )
         with r2:
             st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+            btn_box1, btn_box2 = st.columns(2)
+            
             if not is_resolved:
-                if "Option A" in st.session_state.remedial_simulation:
-                    if st.button(t["opt_a"], use_container_width=True, type="primary"):
-                        active_inc["status"] = "RESOLVED"
-                        active_inc["base_daily_bleed"] = 0
-                        wo = active_inc.get("tier3_work_order", {})
-                        wo["progress_pct"] = 100
-                        for s in wo.get("steps", []): s["done"] = True
-                        append_to_active_package(active_inc, "REMEDIAL EXECUTION", "Option A executed. Burn halted to 0.")
-                        st.session_state.conference_focus = "DEFAULT"
-                        st.success("Option A Executed.")
+                with btn_box1:
+                    if "Option A" in st.session_state.remedial_simulation:
+                        if st.button(t["opt_a"], use_container_width=True, type="primary"):
+                            active_inc["status"] = "RESOLVED"
+                            active_inc["base_daily_bleed"] = 0
+                            wo = active_inc.get("tier3_work_order", {})
+                            wo["progress_pct"] = 100
+                            for s in wo.get("steps", []): s["done"] = True
+                            append_to_active_package(active_inc, "REMEDIAL EXECUTION", "Option A executed. Holding burn halted to 0.")
+                            st.session_state.conference_focus = "DEFAULT"
+                            st.success("Option A Executed.")
+                            st.rerun()
+                with btn_box2:
+                    if st.button("🔄 Neutral Baseline", use_container_width=True):
+                        reset_incident_to_neutral(active_inc, sector["asset_cap"])
+                        st.info("System set to neutral.")
                         st.rerun()
             else:
-                if st.button(f"⚡ Settle Milestone Fee ({curr_sym}{calibrated_toll_gate:,})", use_container_width=True, type="primary"):
-                    seal_active_package(active_inc)
-                    st.success("Milestone Settled. Audit Capsule Sealed.")
+                with btn_box1:
+                    if st.button(f"⚡ Settle Fee ({curr_sym}{calibrated_toll_gate:,})", use_container_width=True, type="primary"):
+                        seal_active_package(active_inc)
+                        st.success("Milestone Settled. Audit Sealed.")
+                with btn_box2:
+                    if st.button("↩️ Revert to Neutral", use_container_width=True):
+                        reset_incident_to_neutral(active_inc, sector["asset_cap"])
+                        st.warning("Reverted to neutral deadlock state.")
+                        st.rerun()
+
+    # ---------------------------------------------------------
+    # THE THREE CASCADING BRANCHES (ACCOUNTABILITY HEATMAP)
+    # ---------------------------------------------------------
+    b_col1, b_col2, b_col3 = st.columns(3)
+
+    def render_branch_card(title, domain, director_name, agent_name, status_badge, metric_txt, card_type):
+        border_col = "#2ea043" if card_type == "green" else ("#e3b341" if card_type == "amber" else "#da3633")
+        bg_col = "rgba(46, 160, 67, 0.18)" if card_type == "green" else ("rgba(227, 179, 65, 0.18)" if card_type == "amber" else "rgba(218, 54, 51, 0.18)")
+        
+        return f"""
+        <div style="background-color: {bg_col}; border: 2px solid {border_col}; border-radius: 8px; padding: 22px; height: 100%; display: flex; flex-direction: column; gap: 14px;">
+            <h3 style="margin:0; color:#ffffff; font-size:1.4rem; font-weight:800;">{title}</h3>
+            <div style="color:#ffffff; font-size:1.15rem; font-weight:700; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 4px;">
+                {domain}
+            </div>
+            <div style="font-size:1.0rem; color:#c9d1d9;">
+                Cognizant Director: <br>
+                <strong style="color:#ffffff; font-size:1.3rem; display:inline-block; margin-top:4px;">{director_name}</strong>
+            </div>
+            <div style="font-size:1.0rem; color:#c9d1d9;">
+                Embedded Agent: <br>
+                <code style="color:#a5d6ff; background:rgba(56,139,253,0.25); padding:4px 8px; font-size:1.0rem; border-radius:4px; display:inline-block; margin-top:4px;">{agent_name}</code>
+            </div>
+            <div style="font-weight:700; font-size:1.2rem; padding: 14px 16px; background: rgba(0,0,0,0.4); border-radius: 6px; border-left: 6px solid {border_col}; color:#ffffff; margin-top:4px;">
+                {status_badge}
+            </div>
+            <div style="font-family:ui-monospace, monospace; color:#ffffff; font-size:1.1rem; font-weight:600; margin-top: auto; padding-top: 10px;">
+                {metric_txt}
+            </div>
+        </div>
+        """
+
+    with b_col1:
+        c_type = "green" if is_resolved else "red"
+        s_badge = "🟢 CLEARED: Field access granted." if is_resolved else "🔴 OUTSTANDING: Field access locked."
+        wo_id = active_inc.get("tier3_work_order", {}).get("id", "N/A")
+        wo_pct = 100 if is_resolved else active_inc.get("tier3_work_order", {}).get("progress_pct", 0)
+        st.markdown(render_branch_card("Branch 1: Physical / Field", "Hardware Gate | Plant & Crews", active_inc.get("director_seat", "Technical Integrity"), "Site Telemetry Agent", s_badge, f"Work Order: {wo_id} ({wo_pct}%)", c_type), unsafe_allow_html=True)
+
+    with b_col2:
+        c_type = "green" if is_resolved else "amber"
+        s_badge = "🟢 CLEARED: Grid filing secured." if is_resolved else "🟡 COLLATERAL: 48h Window Expiring."
+        st.markdown(render_branch_card("Branch 2: Regulatory / Market", "Commercial Gate | Interconnection", "David Chen (Proxy)", "Market Surveillance Agent", s_badge, "Handshake Status: Latency Validated", c_type), unsafe_allow_html=True)
+
+    with b_col3:
+        c_type = "green" if is_resolved else "red"
+        s_badge = "🟢 CLEARED: Capital defended." if is_resolved else f"🔴 OUTSTANDING: Crossover in {dynamic_crossover_days}d."
+        vel_txt = f"Bleed: {curr_sym}0 / Day" if is_resolved else f"Bleed: {curr_sym}{total_burn_day:,.0f} / Day"
+        st.markdown(render_branch_card("Branch 3: Fiduciary / Capital", "Balance Sheet Gate | Liability Escrow", "Executive Board Chair", "Fiduciary Shield Agent", s_badge, vel_txt, c_type), unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # OPERATIONAL CHAIN OF COMMAND: BRIDGE TO TIER 3 & DIRECTORS
+    # ---------------------------------------------------------
+    with st.container(border=True):
+        st.markdown("### 📡 Operational Chain of Command: Directives & Field Execution")
+        st.caption("Inspect live enforcement of Chairman directives across Directorate governance and Tier 3 field teams:")
+        
+        flow_col1, flow_col2 = st.columns(2)
+        with flow_col1:
+            st.markdown(f"""
+                <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:14px;">
+                    <div style="font-weight:700; color:#58a6ff; font-size:1.1rem; margin-bottom:4px;">
+                        🏛️ Directorate Governance Desk
+                    </div>
+                    <div style="font-size:0.95rem; color:#c9d1d9;">
+                        Cognizant Director: <strong>{active_inc.get('director_seat', 'Board')}</strong><br>
+                        Legal Safe Harbor: <strong>{sector['statute']}</strong><br>
+                        Mandate Status: <span style="color:{'#3fb950' if is_resolved else '#e3b341'}; font-weight:bold;">
+                            {'CONCURRENCE EXECUTED' if is_resolved else 'AWAITING CHAIRMAN DIRECTIVE'}
+                        </span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            first_dir = list(sector["directors"].keys())[0]
+            if st.button(f"🔎 Drill Down to Director Oversight ({first_dir})", use_container_width=True):
+                st.session_state.selected_role = f"Director: {first_dir}"
+                st.rerun()
+                
+        with flow_col2:
+            wo = active_inc.get("tier3_work_order", {})
+            st.markdown(f"""
+                <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:14px;">
+                    <div style="font-weight:700; color:#e3b341; font-size:1.1rem; margin-bottom:4px;">
+                        👷 Tier 3 Site Operations & Field Execution Desk
+                    </div>
+                    <div style="font-size:0.95rem; color:#c9d1d9;">
+                        Active Work Order: <strong>{wo.get('id', 'N/A')} ({wo.get('title', 'Telemetry')})</strong><br>
+                        Hardware Progress: <strong>{wo.get('progress_pct', 0)}% Completed</strong><br>
+                        Sign-off Status: <span style="color:{'#3fb950' if is_resolved else '#da3633'}; font-weight:bold;">
+                            {'PE DIGITAL STAMP TRANSMITTED' if is_resolved else 'BLOCKED BEHIND CLAUSE 14.b'}
+                        </span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+            if st.button("⚡ Drill Down to Tier 3 Field Execution Desk", use_container_width=True, type="primary"):
+                st.session_state.selected_role = "Tier 3: Site Operations / Field Lead"
+                st.rerun()
 
     # ---------------------------------------------------------
     # PIPELINE (DYNAMIC TRANSLATION)
@@ -771,3 +921,63 @@ if selected_role == t["title"]:
                 st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold; font-size:1.1rem;'>{pkg['status']}</span>", unsafe_allow_html=True)
                 for entry in pkg.get("entries", []):
                     st.markdown(f"<div style='font-size:1.05rem; font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
+
+# =========================================================
+# 5. VIEW: TIER 3 SITE OPERATIONS & FIELD EXECUTION DESK
+# =========================================================
+elif selected_role == "Tier 3: Site Operations / Field Lead":
+    st.title("Tier 3 | Site Operations & Field Execution Desk")
+    st.caption(f"Asset: **{active_sector}** | Bound Work Order: **{active_inc.get('tier3_work_order', {}).get('id', 'N/A')}**")
+    
+    if st.button("↩️ Return to Executive Command Post", type="secondary"):
+        st.session_state.selected_role = t["title"]
+        st.rerun()
+        
+    wo = active_inc.get("tier3_work_order", {})
+    t1, t2, t3 = st.columns(3)
+    t1.metric("Work Order", wo.get("id", "N/A"), active_inc.get("priority", "CRITICAL"))
+    t2.metric("Target Gate", "Check #6 (COD Attestation)")
+    t3.metric("Progress", f"{wo.get('progress_pct', 0)}%")
+    
+    col_t, col_m = st.columns([3, 2])
+    with col_t:
+        with st.container(border=True):
+            st.markdown(f"#### Punch List: {wo.get('title', 'Tasks')}")
+            for idx, step in enumerate(wo.get("steps", [])):
+                st.write(f"{'✅' if step['done'] else '⏳'} **Step {idx+1}:** {step['task']}")
+            if not is_resolved and st.button("Complete Final PE Verification Stamp", use_container_width=True, type="primary"):
+                wo["progress_pct"] = 100
+                if wo.get("steps"): wo["steps"][-1]["done"] = True
+                active_inc["status"] = "RESOLVED"
+                active_inc["base_daily_bleed"] = 0
+                append_to_active_package(active_inc, "FIELD VERIFICATION", "TIER 3 FIELD STAMP: Telemetry validated on-site. Burn halted.")
+                st.success("Stamped & Transmitted.")
+                st.rerun()
+    with col_m:
+        with st.container(border=True):
+            st.markdown("#### Live Telemetry Sweep")
+            st.metric("THD Harmonics", "4.1%", delta="Limit: 5.0% [NOMINAL]")
+            st.metric("Inrush Damping", "1.18 pu", delta="Trip: 1.40 pu")
+            st.metric("Frequency Response", "14.2 MW/0.1Hz", delta="Compliant")
+
+# =========================================================
+# 6. VIEW: DIRECTORATE OVERSIGHT
+# =========================================================
+else:
+    dir_name = selected_role.replace("Director: ", "")
+    st.title(f"Directorate Oversight: {dir_name}")
+    st.caption(f"Seat: **Chair, Grid Risk & Technical Integrity** | Statute: **{sector['statute']}**")
+    
+    if st.button("↩️ Return to Executive Command Post", type="secondary"):
+        st.session_state.selected_role = t["title"]
+        st.rerun()
+        
+    st.metric("Jurisdiction Status", active_inc.get("status", "DEADLOCKED"), active_inc.get("priority", "P1"))
+    
+    with st.container(border=True):
+        st.markdown(f"#### Fiduciary Defense Instrument ({sector['statute']})")
+        st.info("Exercising statutory discretion under the Business Judgment Rule to indemnify site engineers against OEM warranty breach.")
+        if not is_resolved and st.button("Issue Directorate Formal Concurrence", use_container_width=True, type="primary"):
+            append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal concurrence issued by {dir_name}.")
+            st.success("Concurrence sealed to active job package.")
+            st.rerun()
