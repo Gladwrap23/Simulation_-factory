@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v3.7_circuit_breaker_unified_cascade_sep15_2026"
+APP_BUILD_ID = "v4.0_two_stage_command_vault_sep15_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -146,6 +146,7 @@ st.markdown("""
 I18N = {
     "English [USA · UK · Australia]": {
         "title": "Executive Chairman Command Post",
+        "vault_title": "Forward Pipeline & Tier 4 Forensic Vault",
         "sub_app": "Autonomous Capital Defense Control Plane",
         "calib_red_header": "COMMAND GATEWAY: ENTER PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
@@ -172,6 +173,7 @@ I18N = {
     },
     "Deutsch [Deutschland · Österreich]": {
         "title": "Aufsichtsratsvorsitzender Lagezentrum",
+        "vault_title": "Engpass-Pipeline & Stufe 4 Forensischer Tresor",
         "sub_app": "Autonome Kontrollplattform zur Kapitalverteidigung",
         "calib_red_header": "FÜHRUNGSTOR: PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL (ANTIPPEN ZUM KALIBRIEREN)",
         "override_active": "LEITUNGS-ÜBERSTEUERUNG AKTIV",
@@ -198,6 +200,7 @@ I18N = {
     },
     "Español [Chile · Brasil · Sudamérica]": {
         "title": "Puesto de Mando del Presidente Ejecutivo",
+        "vault_title": "Ducto Consecutivo y Bóveda Forense Nivel 4",
         "sub_app": "Plano de Control para la Defensa Autónoma del Capital",
         "calib_red_header": "PORTAL DE MANDO: INGRESE PRESUPUESTO / CAPEX EN RIESGO (TOQUE PARA RECALIBRAR)",
         "override_active": "INTERVENCIÓN EJECUTIVA ACTIVA",
@@ -224,6 +227,7 @@ I18N = {
     },
     "Français [France · RTE · Europe]": {
         "title": "Poste de Commandement du Président Exécutif",
+        "vault_title": "File des Goulots d'Étranglement & Coffre d'Audit Niveau 4",
         "sub_app": "Plateforme Autonome de Défense du Capital Fédéral",
         "calib_red_header": "PORTAIL DE COMMANDEMENT : SAISIR LE BUDGET / CAPEX EN RISQUE (TOUCHER POUR RECALIBRER)",
         "override_active": "INTERVENTION EXÉCUTIVE ACTIVE",
@@ -250,6 +254,7 @@ I18N = {
     },
     "日本語 [日本 · TEPCO · METI]": {
         "title": "取締役会長 統合指令ポスト (Command Post)",
+        "vault_title": "後続ボトルネック・パイプライン ＆ ティア4法廷監査保管庫",
         "sub_app": "自律型自己資本防衛コントロールプレーン",
         "calib_red_header": "コマンド・ゲートウェイ：防衛対象資本・予算を入力（タップして再設定）",
         "override_active": "取締役会による上書き発動中",
@@ -551,7 +556,11 @@ with st.sidebar:
     current_calib_capex = st.session_state[calib_key]
     scale_factor = current_calib_capex / sector["asset_cap"]
 
-    role_options = [t["title"], "Tier 3: Site Operations / Field Lead"] + [f"Director: {d}" for d in sector["directors"].keys()]
+    role_options = [
+        t["title"],
+        t["vault_title"],
+        "Tier 3: Site Operations / Field Lead"
+    ] + [f"Director: {d}" for d in sector["directors"].keys()]
     if "selected_role" not in st.session_state or st.session_state.selected_role not in role_options:
         st.session_state.selected_role = t["title"]
 
@@ -914,7 +923,9 @@ if selected_role == t["title"]:
             </div>
             """
 
-        pipe_keys = [k for k in sector["incidents"].keys() if k not in ["INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01"]]
+        pipe_keys = [k for k in sector["incidents"].keys() if k not in [
+            "INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"
+        ]]
         with p1:
             inc_p1 = sector["incidents"].get(pipe_keys[0], {})
             st.markdown(render_pipeline_card("1. Inrush Damping", inc_p1.get("base_daily_bleed", 38880), pipe_keys[0], is_resolved), unsafe_allow_html=True)
@@ -943,8 +954,68 @@ if selected_role == t["title"]:
                 for entry in pkg.get("entries", []):
                     st.markdown(f"<div style='font-size:1.05rem; font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
 
+    if is_resolved:
+        st.markdown("---")
+        st.success("P1 incident resolved and capital secured. The forward pipeline and forensic vault are ready.")
+        if st.button(f"Proceed to {t['vault_title']}", use_container_width=True, type="primary"):
+            st.session_state.selected_role = t["vault_title"]
+            st.rerun()
+
 # =========================================================
-# 5. VIEW: TIER 3 SITE OPERATIONS & FIELD EXECUTION DESK
+# 5. VIEW: PAGE 2 - FORWARD PIPELINE & TIER 4 FORENSIC VAULT
+# =========================================================
+elif selected_role == t["vault_title"]:
+    st.title(f"🏛️ {t['vault_title']}")
+    st.caption(f"Asset Portfolio: **{active_sector}** | Legal Base: **{sector['statute']}**")
+
+    if st.button("↩️ Return to Executive Command Post", type="secondary"):
+        st.session_state.selected_role = t["title"]
+        st.rerun()
+
+    st.divider()
+    st.markdown(f"### {t['pipeline_title']}")
+    st.caption("Sequential project bottlenecks dynamically scaled to Chairman CapEx:")
+    p1, p2, p3, p4 = st.columns(4)
+
+    def render_vault_pipeline_card(number, title, incident_key, is_threat=False):
+        incident = sector["incidents"].get(incident_key, {})
+        daily = int(round(incident.get("base_daily_bleed", 0) * scale_factor))
+        weekly = daily * 7
+        horizon = round(current_calib_capex / daily, 1) if daily > 0 else 999.9
+        border = "#e3b341" if is_threat else "#30363d"
+        status = t["active_threat"] if is_threat else t["queued"]
+        return f"""
+        <div style="background:#161b22; border:2px solid {border}; border-radius:8px; padding:18px; height:100%; text-align:center;">
+            <div style="font-weight:700; font-size:1.15rem; color:#ffffff; margin-bottom:8px;">{number}. {title}</div>
+            <div style="font-family:ui-monospace, monospace; font-size:1.7rem; font-weight:800; color:#ffffff;">{curr_sym}{daily:,} <span style="font-size:1rem; color:#c9d1d9;">/ Day</span></div>
+            <div style="font-size:0.95rem; color:#c9d1d9; margin:6px 0;">{curr_sym}{weekly:,} / Wk</div>
+            <div style="font-size:1.05rem; font-weight:700; color:#e3b341;">Horizon: {horizon} Days</div>
+            <div style="font-size:1rem; font-weight:700; color:{'#e3b341' if is_threat else '#c9d1d9'}; margin-top:12px;">{status}: {incident_key}</div>
+        </div>
+        """
+
+    vault_pipe_keys = [k for k in sector["incidents"] if k not in [
+        "INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"
+    ]]
+    pipeline_titles = ["Inrush Damping", "SCADA IEC 61850", "BESS Firmware OTA", "Substation Oil DGA"]
+    for column, number, title, incident_key in zip((p1, p2, p3, p4), range(1, 5), pipeline_titles, vault_pipe_keys):
+        with column:
+            st.markdown(render_vault_pipeline_card(number, title, incident_key, number == 1 and is_resolved), unsafe_allow_html=True)
+
+    st.divider()
+    st.markdown(f"### {t['audit_title']}")
+    st.caption("Deterministic, immutable audit packages sealed under the Business Judgment Rule:")
+    for pkg in reversed(active_inc.get("audit_packages", [])):
+        is_sealed = pkg["status"] == "SEALED & ATTESTED"
+        badge_icon = "🔒" if is_sealed else "⚡"
+        status_color = "#3fb950" if is_sealed else "#e3b341"
+        with st.expander(f"{badge_icon} {pkg['job_id']} | Root Hash: SHA-256:{pkg['package_hash']}", expanded=True):
+            st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{pkg['status']}</span>", unsafe_allow_html=True)
+            for entry in pkg.get("entries", []):
+                st.markdown(f"<div style='font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
+
+# =========================================================
+# 6. VIEW: TIER 3 SITE OPERATIONS & FIELD EXECUTION DESK
 # =========================================================
 elif selected_role == "Tier 3: Site Operations / Field Lead":
     st.title("Tier 3 | Site Operations & Field Execution Desk")
@@ -982,7 +1053,7 @@ elif selected_role == "Tier 3: Site Operations / Field Lead":
             st.metric("Frequency Response", "14.2 MW/0.1Hz", delta="Compliant")
 
 # =========================================================
-# 6. VIEW: DIRECTORATE OVERSIGHT
+# 7. VIEW: DIRECTORATE OVERSIGHT
 # =========================================================
 else:
     dir_name = selected_role.replace("Director: ", "")
