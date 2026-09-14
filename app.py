@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v3.3_i18n_de_es_en_sep15_2026"
+APP_BUILD_ID = "v3.4_chairman_throttle_global_roster_sep15_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -42,6 +42,23 @@ st.markdown("""
             font-size: 1.1rem !important; 
             font-weight: 600 !important; 
             color: #f0f6fc !important;
+        }
+
+        div[data-testid="stTextInput"] input {
+            font-size: 2.4rem !important;
+            font-weight: 800 !important;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+            color: #ffffff !important;
+            background-color: #090d13 !important;
+            border: 2px solid #58a6ff !important;
+            border-radius: 8px !important;
+            padding: 12px 20px !important;
+            text-align: center !important;
+            box-shadow: 0 0 16px rgba(88, 166, 255, 0.25) !important;
+        }
+        div[data-testid="stTextInput"] input:focus {
+            border-color: #e3b341 !important;
+            box-shadow: 0 0 20px rgba(227, 179, 65, 0.35) !important;
         }
         
         .hero-gateway {
@@ -291,6 +308,64 @@ SECTORS = {
             "CEN-004": {"title": "Monitoreo Térmico Línea 2x500kV", "priority": "P4 - MONITOREADO", "base_daily_bleed": 5600},
             "CEN-005": {"title": "Sincronización AGC Despacho Atacama", "priority": "P5 - MONITOREADO", "base_daily_bleed": 4200}
         }
+    },
+    "RTE & Enedis | Substation Storage (France)": {
+        "currency": "€",
+        "asset_cap": 210_000_000,
+        "baseline_docket": "RTE Schéma Régional de Raccordement (SRADDET #FR-901)",
+        "baseline_date": "15 Sep 2026",
+        "statute": "Code de Commerce Art. L225-251 (Protection Dirigeant)",
+        "directors": {"Xavier Piechaczyk": {"seat": "Président du Directoire"}},
+        "incidents": {
+            "RTE-BESS-01": {
+                "title": "Blocage d'Injection Haute Tension Poste 400kV",
+                "priority": "P1 - CRITIQUE",
+                "base_daily_bleed": 68000,
+                "status": "DEADLOCKED",
+                "director_seat": "Xavier Piechaczyk",
+                "tier3_work_order": {"id": "WO-RTE-881", "progress_pct": 60, "steps": []},
+                "audit_packages": [{
+                    "job_id": "JOB-001: Dossier RTE Verrouillé",
+                    "status": "SEALED & ATTESTED",
+                    "sealed_at": "2026-09-15 00:00:00 UTC",
+                    "package_hash": "fr7710a902d3",
+                    "entries": ["SRADDET INGESTION: Dossier RTE #FR-901 homologué."]
+                }]
+            },
+            "RTE-002": {"title": "Compensation Puissance Réactive Provence", "priority": "P2 - HAUT", "base_daily_bleed": 42000},
+            "RTE-003": {"title": "Synchronisation Îlotage Nucléaire/BESS", "priority": "P3 - MOYEN", "base_daily_bleed": 18500},
+            "RTE-004": {"title": "Contrôle Automatisme Fréquence 50Hz", "priority": "P4 - SURVEILLÉ", "base_daily_bleed": 7200},
+            "RTE-005": {"title": "Inspection Télécom SCADA Enedis", "priority": "P5 - SURVEILLÉ", "base_daily_bleed": 5100}
+        }
+    },
+    "TEPCO Holdings | Transmission Grid (Japan)": {
+        "currency": "¥",
+        "asset_cap": 42_000_000_000,
+        "baseline_docket": "METI Electricity Grid Intertie Filing #TK-402",
+        "baseline_date": "15 Sep 2026",
+        "statute": "Japanese Companies Act Art. 423 (Fiduciary Defense Shield)",
+        "directors": {"Keisuke Yokoo": {"seat": "Chairman of the Board"}},
+        "incidents": {
+            "TEPCO-500KV-01": {
+                "title": "Shin-Shinano 500kV Frequency Converter Synchronization Stall",
+                "priority": "P1 - CRITICAL",
+                "base_daily_bleed": 125280,
+                "status": "DEADLOCKED",
+                "director_seat": "Keisuke Yokoo",
+                "tier3_work_order": {"id": "WO-TEPCO-4410", "progress_pct": 70, "steps": []},
+                "audit_packages": [{
+                    "job_id": "JOB-001: METI Baseline Ingestion",
+                    "status": "SEALED & ATTESTED",
+                    "sealed_at": "2026-09-15 00:00:00 UTC",
+                    "package_hash": "jp8834f109a12c7",
+                    "entries": ["METI INTERTIE FILING: Shin-Shinano 500kV locked."]
+                }]
+            },
+            "TEP-002": {"title": "Transformer Bushing Tan-Delta Spike", "priority": "P2 - HIGH", "base_daily_bleed": 73440},
+            "TEP-003": {"title": "50Hz/60Hz Intertie Buffer Calibration", "priority": "P3 - MODERATE", "base_daily_bleed": 34560},
+            "TEP-004": {"title": "SF6 Gas Pressure Telemetry Recalibration", "priority": "P4 - MONITORED", "base_daily_bleed": 12960},
+            "TEP-005": {"title": "Substation Seismic Isolator Verification", "priority": "P5 - MONITORED", "base_daily_bleed": 17280}
+        }
     }
 }
 
@@ -342,6 +417,13 @@ with st.sidebar:
         ["English (US / UK / AU)", "Deutsch (German)", "Español (Chile / CEN)"]
     )
     t = I18N[lang_choice]
+
+    st.markdown("""
+        <div style="background: rgba(88, 166, 255, 0.08); border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.4;">
+            <strong style="color: #58a6ff;">Sovereign Coverage Roster:</strong><br>
+            USA · UK · AUS · DEU · JPN · CHL · BRA · FRA
+        </div>
+    """, unsafe_allow_html=True)
     
     st.markdown(f"<div style='font-size:0.95rem; color:#c9d1d9; margin-bottom:12px;'>{t['sub_app']}</div>", unsafe_allow_html=True)
     
@@ -620,7 +702,9 @@ if selected_role == t["title"]:
             </div>
             """
 
-        pipe_keys = [k for k in sector["incidents"].keys() if k not in ["INC-001", "DB-ETCS-01", "CEN-BESS-01"]]
+        pipe_keys = [k for k in sector["incidents"].keys() if k not in [
+            "INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"
+        ]]
         with p1:
             inc_p1 = sector["incidents"].get(pipe_keys[0], {})
             st.markdown(render_pipeline_card("1. Inrush Damping", inc_p1.get("base_daily_bleed", 38880), pipe_keys[0], is_resolved), unsafe_allow_html=True)
