@@ -777,6 +777,9 @@ else:
                         st.rerun()
                 else:
                     st.button("Option Inadmissible", use_container_width=True, disabled=True)
+            else:
+                if st.button("⚡ Settle Milestone Fee ($75k)", use_container_width=True, type="primary"):
+                    st.success("Milestone 1 Fee Settled. Tier 4 BJR Capsule Unsealed. Unlocking INC-002.")
 
     b_col1, b_col2, b_col3 = st.columns(3)
     conf = st.session_state.conference_focus
