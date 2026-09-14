@@ -39,6 +39,12 @@ st.markdown(
             margin-bottom: 12px;
         }
     </style>
+    <style>
+        /* Typography Overhauls */
+        p { font-size: 1.1rem !important; line-height: 1.6 !important; }
+        div[data-testid="stCaptionContainer"] p { font-size: 1.0rem !important; color: #a1aeb9 !important; }
+        .stRadio label { font-size: 1.1rem !important; font-weight: 500 !important; }
+    </style>
 """,
     unsafe_allow_html=True,
 )
@@ -794,13 +800,13 @@ else:
             bg, border = "rgba(227, 179, 65, 0.15)", "#e3b341"
 
         return f"""
-        <div style="background-color: {bg}; border: 1px solid {border}; border-radius: 6px; padding: 16px; height: 100%; display: flex; flex-direction: column; gap: 8px;">
-            <h4 style="margin:0; color:#f0f6fc;">{title}</h4>
-            <div style="color:#8b949e; font-size:0.8rem; margin-bottom:4px;">{caption}</div>
-            <div style="font-size:0.85rem;"><strong>Cognizant Director:</strong> {director}</div>
-            <div style="font-size:0.85rem; margin-bottom:4px;"><strong>Embedded Agent:</strong> <code style="color:#a5d6ff; background:rgba(56,139,253,0.15); padding:2px 4px; border-radius:3px;">{agent}</code></div>
-            <div style="font-weight:600; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; border-left: 3px solid {border};">{icon} {status_text}</div>
-            <div style="font-family:monospace; color:#8b949e; font-size:0.85rem; margin-top: auto; padding-top: 8px;">{metric_text}</div>
+        <div style="background-color: {bg}; border: 1px solid {border}; border-radius: 6px; padding: 18px; height: 100%; display: flex; flex-direction: column; gap: 12px;">
+            <h3 style="margin:0; color:#f0f6fc; font-size:1.3rem;">{title}</h3>
+            <div style="color:#c9d1d9; font-size:1.05rem; font-weight:600; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom:4px;">{caption}</div>
+            <div style="font-size:1.0rem; color:#8b949e;">Cognizant Director: <br><strong style="color:#ffffff; font-size:1.2rem; display:inline-block; margin-top:4px;">{director}</strong></div>
+            <div style="font-size:1.0rem; color:#8b949e; margin-bottom:6px;">Embedded Agent: <br><code style="color:#a5d6ff; background:rgba(56,139,253,0.15); padding:4px 8px; font-size:1.0rem; border-radius:4px; display:inline-block; margin-top:4px;">{agent}</code></div>
+            <div style="font-weight:600; font-size:1.1rem; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px; border-left: 4px solid {border}; color:#f0f6fc;">{icon} {status_text}</div>
+            <div style="font-family:monospace; color:#c9d1d9; font-size:1.05rem; margin-top: auto; padding-top: 12px;">{metric_text}</div>
         </div>
         """
 
