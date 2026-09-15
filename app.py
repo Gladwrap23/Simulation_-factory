@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.5_plain_english_legal_artifacts_and_exhibits_sep16_2026"
+APP_BUILD_ID = "v4.6_persistent_tier2_countersignature_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -682,12 +682,18 @@ def seal_active_package(incident: dict):
 
 def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: float):
     incident["status"] = "RESOLVED"
+    incident["director_signed"] = True
     incident["base_daily_bleed"] = 0
     wo = incident.get("tier3_work_order", {})
     wo["progress_pct"] = 100
     if wo.get("steps"):
         for s in wo["steps"]:
             s["done"] = True
+    for sig in incident.get("legal_instrument", {}).get("signatories", []):
+        if "Director" in sig.get("role", ""):
+            sig["status"] = "COUNTERSIGNED & SEALED"
+        elif "Engineer" in sig.get("role", ""):
+            sig["status"] = "DIGITAL STAMP TRANSMITTED"
     append_to_active_package(
         incident,
         f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Unified Circuit Breaker Directive",
@@ -697,12 +703,18 @@ def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: f
 
 def reset_incident_to_neutral(incident: dict):
     incident["status"] = "DEADLOCKED"
+    incident["director_signed"] = False
     incident["base_daily_bleed"] = 87264
     wo = incident.get("tier3_work_order", {})
     wo["progress_pct"] = 75
     if wo.get("steps"):
         for s in wo["steps"][:-1]: s["done"] = True
         wo["steps"][-1]["done"] = False
+    for sig in incident.get("legal_instrument", {}).get("signatories", []):
+        if "Director" in sig.get("role", ""):
+            sig["status"] = "PENDING DIRECTOR COUNTERSIGNATURE"
+        elif "Engineer" in sig.get("role", ""):
+            sig["status"] = "HELD PENDING INDEMNITY"
     append_to_active_package(
         incident,
         f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Neutral Counterfactual Reset",
@@ -733,7 +745,7 @@ def ensure_legal_artifacts(incident: dict, sector: dict):
             f"{counterparty.get('clause_invoked', 'the applicable warranty clause')}."
         ),
         "signatories": [
-            {"role": "Cognizant Director", "name": incident.get("director_seat", "Executive Board"), "status": "EXECUTED & ATTESTED", "hash": "sha256:pending-director-attestation"},
+            {"role": "Cognizant Director", "name": incident.get("director_seat", "Executive Board"), "status": "PENDING DIRECTOR COUNTERSIGNATURE", "hash": "sha256:pending-director-attestation"},
             {"role": "Lead Professional Engineer", "name": lead, "status": "DIGITAL STAMP PENDING", "hash": "sha256:pending-field-stamp"}
         ]
     })
@@ -832,12 +844,18 @@ if st.session_state.selected_incident_id not in sector["incidents"]:
 active_inc = sector["incidents"][st.session_state.selected_incident_id]
 ensure_legal_artifacts(active_inc, sector)
 is_resolved = active_inc.get("status") == "RESOLVED"
+is_dir_signed = active_inc.get("director_signed", False) or is_resolved
 
 # =========================================================
 # 4. VIEW: PAGE 1 — PART ONE: TACTICAL COMMAND POST
 # =========================================================
 if selected_view == t["tier1_title"]:
     st.title(t["tier1_title"])
+
+    if is_resolved:
+        st.markdown("**ATTESTATION CONFIRMED:** Lead PE digital stamp received. Holding burn halted to $0/day.")
+    elif is_dir_signed:
+        st.markdown("**DIRECTOR CONCURRENCE ACTIVE:** Directorate countersigned indemnity. Advance to Tier 3 to release the PE stamp.")
     
     st.markdown(f"""
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #58a6ff; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
@@ -1217,13 +1235,15 @@ elif selected_view == t["tier3_title"]:
             
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
             if not is_resolved:
+                shield_badge = "🟢 Directorate Indemnity Shield Active" if is_dir_signed else "⚠️ Awaiting Directorate Countersignature"
                 st.markdown(f"""
                     <div style="background: rgba(248, 81, 73, 0.12); border: 1px solid #f85149; border-radius: 6px; padding: 12px; margin-bottom: 12px; font-size: 0.95rem;">
+                        <strong style="color:{'#3fb950' if is_dir_signed else '#e3b341'};">{shield_badge}</strong><br>
                         ⚠️ <strong>Signatory Trap Detected:</strong> Counterparty warranty disclaimer ({active_inc.get('counterparty', {}).get('clause_invoked', 'Clause 14.b')}) threatens personal liability for Lead PE upon unilateral sign-off.
                         Executing below absorbs liability under <strong>{sector['statute']}</strong>.
                     </div>
                 """, unsafe_allow_html=True)
-                if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
+                if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary", disabled=not is_dir_signed):
                     execute_unified_circuit_breaker(active_inc, sector["statute"], active_inc.get("base_daily_bleed", 87264))
                     st.session_state.selected_view = t["tier1_title"]
                     st.success("PE Stamp sealed. Attestation transmitted to grid operator. Holding burn halted to $0.")
@@ -1488,7 +1508,8 @@ elif selected_view == t["tier2_title"]:
         st.rerun()
         
     st.divider()
-    st.metric("Governance State", active_inc.get("status", "DEADLOCKED"), active_inc.get("priority", "P1"))
+    gov_status = "INDEMNITY CONCURRED" if is_dir_signed else active_inc.get("status", "DEADLOCKED")
+    st.metric("Governance State", gov_status, "SAFE HARBOR ACTIVE" if is_dir_signed else active_inc.get("priority", "P1"))
     
     with st.container(border=True):
         st.markdown(f"""
@@ -1501,10 +1522,23 @@ elif selected_view == t["tier2_title"]:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        if not is_resolved:
+        if not is_dir_signed:
             if st.button(f"✍️ Countersign Directorate Indemnity Resolution ({first_dir})", use_container_width=True, type="primary"):
+                active_inc["director_signed"] = True
+                for sig in inst.get("signatories", []):
+                    if "Director" in sig.get("role", ""):
+                        sig["status"] = "COUNTERSIGNED & RELIED"
                 append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal fiduciary concurrence and reliance countersigned by {first_dir} under {sector['statute']}.")
                 st.success("Resolution countersigned. Reliance documented under the applicable governance standard.")
                 st.rerun()
         else:
             st.success(f"✅ Resolution active. Countersigned and attested by {first_dir}.")
+            nav_col1, nav_col2 = st.columns(2)
+            with nav_col1:
+                if st.button("➔ Advance to Tier 3: Release PE Stamp", use_container_width=True, type="primary"):
+                    st.session_state.selected_view = t["tier3_title"]
+                    st.rerun()
+            with nav_col2:
+                if st.button("↩️ Return to Tier 1: Chairman Command Post", use_container_width=True):
+                    st.session_state.selected_view = t["tier1_title"]
+                    st.rerun()
