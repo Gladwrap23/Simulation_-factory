@@ -4,21 +4,21 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.0_two_stage_command_vault_sep15_2026"
+APP_BUILD_ID = "v4.2_tier3_remediation_and_part2_vault_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
     st.session_state["build_id"] = APP_BUILD_ID
 
 st.set_page_config(
-    page_title="Command Post | Autonomous Capital Defense",
+    page_title="Command Post & Forensic Vault | Autonomous Capital Defense",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # =========================================================
-# 1. INDUSTRIAL STYLING & CIRCUIT BREAKER AFFORDANCE
+# 1. INDUSTRIAL STYLING & DIRECTIVE ELEVATION
 # =========================================================
 st.markdown("""
     <style>
@@ -44,25 +44,28 @@ st.markdown("""
             color: #f0f6fc !important;
         }
         
-        /* Scoped Chairman Throttle Input */
-        .capex-throttle div[data-testid="stTextInput"] input {
-            font-size: 2.5rem !important;
-            font-weight: 800 !important;
+        /* Chairman Throttle Input: MASSIVE & ALERT RED */
+        .capex-throttle div[data-testid="stTextInput"] input,
+        .capex-throttle input[type="text"] {
+            font-size: 3.2rem !important;
+            font-weight: 900 !important;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-            color: #ffffff !important;
+            color: #ff4b4b !important;
             background-color: #090d13 !important;
             border: 2px solid #58a6ff !important;
             border-radius: 8px !important;
-            padding: 14px 20px !important;
+            padding: 18px 20px !important;
             text-align: center !important;
             box-shadow: 0 0 16px rgba(88, 166, 255, 0.25) !important;
+            height: auto !important;
         }
-        .capex-throttle div[data-testid="stTextInput"] input:focus {
+        .capex-throttle div[data-testid="stTextInput"] input:focus,
+        .capex-throttle input[type="text"]:focus {
             border-color: #ff4b4b !important;
             box-shadow: 0 0 22px rgba(255, 75, 75, 0.4) !important;
         }
         
-        /* Compact Diagnostic Text Input */
+        /* Diagnostic Input */
         div[data-testid="stTextInput"]:not(.capex-throttle *) input {
             font-size: 1.05rem !important;
             font-weight: 600 !important;
@@ -73,7 +76,7 @@ st.markdown("""
             padding: 10px 14px !important;
         }
         
-        /* Executive Cards */
+        /* Metric & Evidence Cards */
         .exec-metric-card {
             background-color: #161b22;
             border: 2px solid #30363d;
@@ -101,6 +104,18 @@ st.markdown("""
         .circuit-defended-card {
             background-color: rgba(46, 160, 67, 0.15);
             border: 2px solid #2ea043;
+            border-radius: 8px;
+            padding: 14px 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 125px;
+        }
+        .claim-demand-card {
+            background-color: rgba(227, 179, 65, 0.12);
+            border: 2px solid #e3b341;
             border-radius: 8px;
             padding: 14px 16px;
             text-align: center;
@@ -141,14 +156,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================
-# 2. LOCALIZATION DICTIONARY & ROSTER
+# 2. LOCALIZATION DICTIONARY & MULTI-PAGE LABELS
 # =========================================================
 I18N = {
     "English [USA · UK · Australia]": {
-        "title": "Executive Chairman Command Post",
-        "vault_title": "Forward Pipeline & Tier 4 Forensic Vault",
-        "sub_app": "Autonomous Capital Defense Control Plane",
-        "calib_red_header": "COMMAND GATEWAY: ENTER PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
+        "title": "Part One: Tactical Command Post",
+        "tier3_title": "Tier 3: Site Operations & Operator Remediation",
+        "vault_title": "Part Two: Forensic Cost Recovery Vault",
+        "sub_app": "Autonomous Capital Defense & Claims Recovery Engine",
+        "calib_red_header": "COMMAND GATEWAY: ENTER NEW PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
         "baseline_synced": "PUBLIC BASELINE SYNCHRONIZED",
         "toll_fee": "Toll-Gate Fee (Milestone)",
@@ -165,17 +181,17 @@ I18N = {
         "what_unblocks": "🟢 2. What Unblocks the Gate?",
         "interrogate_hint": "Type query to interrogate agents...",
         "branches_title": "The Three Cascading Branches & Remedial Levers",
-        "opt_a": "Execute Option A Directive",
-        "pipeline_title": "🔒 Gated Incident Pipeline (Next 4 Bottlenecks)",
-        "active_threat": "🟡 ACTIVE THREAT",
-        "queued": "🔒 QUEUED",
-        "audit_title": "Tier 4 | Sealed Cryptographic Job Capsules"
+        "pipeline_title": "🔒 Forward Incident Pipeline (Next 4 Bottlenecks)",
+        "claim_total_label": "Direct Liquidated Claim Due",
+        "claim_sub": "↑ Reimbursable under Schedule D",
+        "audit_title": "Cryptographic Audit Ledger & Sealed Job Packages"
     },
     "Deutsch [Deutschland · Österreich]": {
-        "title": "Aufsichtsratsvorsitzender Lagezentrum",
-        "vault_title": "Engpass-Pipeline & Stufe 4 Forensischer Tresor",
-        "sub_app": "Autonome Kontrollplattform zur Kapitalverteidigung",
-        "calib_red_header": "FÜHRUNGSTOR: PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL (ANTIPPEN ZUM KALIBRIEREN)",
+        "title": "Teil Eins: Taktisches Führungszentrum",
+        "tier3_title": "Stufe 3: Standortbetrieb & Bediener-Sanierung",
+        "vault_title": "Teil Zwei: Forensischer Kostenerstattungstresor",
+        "sub_app": "Autonome Kapitalverteidigungs- & Forderungsdurchsetzungs-Plattform",
+        "calib_red_header": "FÜHRUNGSTOR: NEUES PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL EINGEBEN",
         "override_active": "LEITUNGS-ÜBERSTEUERUNG AKTIV",
         "baseline_synced": "ÖFFENTLICHE BASISDATEN SYNCHRONISIERT",
         "toll_fee": "Meilenstein-Freigabegebühr",
@@ -192,17 +208,17 @@ I18N = {
         "what_unblocks": "🟢 2. Wie wird das Tor entsperrt?",
         "interrogate_hint": "Frage zur Aufklärung eingeben...",
         "branches_title": "Die Drei Kaskadierenden Säulen & Abhilfemassnahmen",
-        "opt_a": "Weisung Option A Vollstrecken",
         "pipeline_title": "🔒 Nachgelagerte Engpass-Pipeline (Nächste 4 Prüfpunkte)",
-        "active_threat": "🟡 AKUTE BEDROHUNG",
-        "queued": "🔒 WARTESCHLANGE",
-        "audit_title": "Stufe 4 | Versiegelte Kryptographische Einsatzkapseln"
+        "claim_total_label": "Fälliger Direktschadensersatz",
+        "claim_sub": "↑ Durchsetzbar nach Klausel D",
+        "audit_title": "Kryptographisches Audit-Register & Versiegelte Einsatzkapseln"
     },
     "Español [Chile · Brasil · Sudamérica]": {
-        "title": "Puesto de Mando del Presidente Ejecutivo",
-        "vault_title": "Ducto Consecutivo y Bóveda Forense Nivel 4",
-        "sub_app": "Plano de Control para la Defensa Autónoma del Capital",
-        "calib_red_header": "PORTAL DE MANDO: INGRESE PRESUPUESTO / CAPEX EN RIESGO (TOQUE PARA RECALIBRAR)",
+        "title": "Parte Uno: Puesto de Mando Táctico",
+        "tier3_title": "Nivel 3: Operaciones de Campo y Mitigación",
+        "vault_title": "Parte Dos: Bóveda Forense de Recuperación de Costos",
+        "sub_app": "Plano de Control para la Defensa y Recuperación de Capital",
+        "calib_red_header": "PORTAL DE MANDO: INGRESE NUEVO PRESUPUESTO / CAPEX EN RIESGO",
         "override_active": "INTERVENCIÓN EJECUTIVA ACTIVA",
         "baseline_synced": "LÍNEA BASE PÚBLICA SINCRONIZADA",
         "toll_fee": "Tarifa de Hito de Paso",
@@ -219,17 +235,17 @@ I18N = {
         "what_unblocks": "🟢 2. ¿Qué desbloquea la compuerta?",
         "interrogate_hint": "Escriba consulta de investigación...",
         "branches_title": "Las Tres Ramas en Cascada y Palancas de Mitigación",
-        "opt_a": "Ejecutar Directiva Opción A",
-        "pipeline_title": "🔒 Ducto de Incidentes Consecutivos (Próximos 4 Cuellos de Botella)",
-        "active_threat": "🟡 AMENAZA ACTIVA",
-        "queued": "🔒 EN ESPERA",
-        "audit_title": "Nivel 4 | Cápsulas Criptográficas de Auditoría Selladas"
+        "pipeline_title": "🔒 Ducto Consecutivo (Próximos 4 Cuellos de Botella)",
+        "claim_total_label": "Reclamo Directo por Daños Liquidados",
+        "claim_sub": "↑ Cobrable según Anexo D",
+        "audit_title": "Registro Criptográfico de Auditoría y Cápsulas Selladas"
     },
     "Français [France · RTE · Europe]": {
-        "title": "Poste de Commandement du Président Exécutif",
-        "vault_title": "File des Goulots d'Étranglement & Coffre d'Audit Niveau 4",
-        "sub_app": "Plateforme Autonome de Défense du Capital Fédéral",
-        "calib_red_header": "PORTAIL DE COMMANDEMENT : SAISIR LE BUDGET / CAPEX EN RISQUE (TOUCHER POUR RECALIBRER)",
+        "title": "Partie Un : Poste de Commandement Tactique",
+        "tier3_title": "Niveau 3 : Opérations de Terrain & Remédiation Opérateur",
+        "vault_title": "Partie Deux : Coffre Forensique de Recouvrement des Coûts",
+        "sub_app": "Plateforme Autonome de Défense du Capital & Recouvrement",
+        "calib_red_header": "PORTAIL DE COMMANDEMENT : SAISIR LE NOUVEAU BUDGET / CAPEX EN RISQUE",
         "override_active": "INTERVENTION EXÉCUTIVE ACTIVE",
         "baseline_synced": "RÉFÉRENTIEL PUBLIC SYNCHRONISÉ",
         "toll_fee": "Frais d'Étape de Déblocage",
@@ -246,17 +262,17 @@ I18N = {
         "what_unblocks": "🟢 2. Quel acte juridique libère le site ?",
         "interrogate_hint": "Interroger les agents...",
         "branches_title": "Les Trois Piliers en Cascade & Leviers d'Atténuation",
-        "opt_a": "Exécuter la Directive Option A",
-        "pipeline_title": "🔒 File Gérée des Goulots d'Étranglement (4 Prochains)",
-        "active_threat": "🟡 MENACE ACTIVE",
-        "queued": "🔒 EN ATTENTE",
-        "audit_title": "Niveau 4 | Capsules d'Audit Cryptographiques Scellées"
+        "pipeline_title": "🔒 File des Goulots d'Étranglement (4 Prochains)",
+        "claim_total_label": "Indemnité Contractuelle Directe Réclamée",
+        "claim_sub": "↑ Exigible selon l'Annexe D",
+        "audit_title": "Registre Cryptographique d'Audit & Capsules Scellées"
     },
     "日本語 [日本 · TEPCO · METI]": {
-        "title": "取締役会長 統合指令ポスト (Command Post)",
-        "vault_title": "後続ボトルネック・パイプライン ＆ ティア4法廷監査保管庫",
-        "sub_app": "自律型自己資本防衛コントロールプレーン",
-        "calib_red_header": "コマンド・ゲートウェイ：防衛対象資本・予算を入力（タップして再設定）",
+        "title": "第1部：戦術的指揮統制ポスト (Tactical Command)",
+        "tier3_title": "ティア3：現地運用および現場作業員是正デスク",
+        "vault_title": "第2部：法廷証拠・損害費用回収保管庫 (Forensic Vault)",
+        "sub_app": "自律型自己資本防衛および法的損害賠償回収エンジン",
+        "calib_red_header": "コマンド・ゲートウェイ：新しい防衛対象資本・予算を入力（タップして再設定）",
         "override_active": "取締役会による上書き発動中",
         "baseline_synced": "規制当局ベースライン同期済み",
         "toll_fee": "マイルストーン解除手数料",
@@ -273,22 +289,21 @@ I18N = {
         "what_unblocks": "🟢 2. どの決議がゲートを解除するか？",
         "interrogate_hint": "エージェントへ直接諮問を入力...",
         "branches_title": "3つの連動防衛ブランチと解決手段",
-        "opt_a": "選択肢A 取締役会免責決議を実行",
         "pipeline_title": "🔒 順次解決ボトルネック・パイプライン",
-        "active_threat": "🟡 進行中の危機",
-        "queued": "🔒 保留中",
-        "audit_title": "ティア4 | 封印済み暗号監査カプセル"
+        "claim_total_label": "契約に基づく違約金・損害賠償請求総額",
+        "claim_sub": "↑ 別紙D（履行遅延条項）に基づく請求可能額",
+        "audit_title": "暗号学的監査台帳および封印済みジョブパッケージ"
     }
 }
 
-TODAY_STR = "15 Sep 2026"
+TODAY_STR = "16 Sep 2026"
 
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
         "currency": "$",
         "asset_cap": 88_500_000,
         "baseline_docket": "ERCOT IA § 4.2 Interconnection Docket #54219",
-        "baseline_date": "15 Sep 2026",
+        "baseline_date": "16 Sep 2026",
         "statute": "Delaware DGCL § 141 (Business Judgment Rule)",
         "directors": {
             "Dr. Arthur Pendleton": {"seat": "Chair, Grid Risk & Technical Integrity"},
@@ -299,24 +314,48 @@ SECTORS = {
                 "title": "ERCOT IA § 4.2 Part 2 COD Attestation Deadlock",
                 "priority": "P1 - CRITICAL",
                 "base_daily_bleed": 87264,
+                "days_in_deadlock": 7,
                 "status": "DEADLOCKED",
                 "director_seat": "Dr. Arthur Pendleton",
+                "counterparty": {
+                    "name": "Apex Power Conversion Systems Corp (OEM)",
+                    "contract": "Turnkey EPC & Inverter Supply Agreement #TX-9011",
+                    "clause_invoked": "Clause 14.b (Inverter Warranty Voidance Disclaimer)",
+                    "breach_clause": "Schedule D § 3 (Unexcused Commissioning Demurrage)"
+                },
                 "tier3_work_order": {
                     "id": "WO-8821-HARMONIC",
-                    "title": "On-Site IEEE 2800 Harmonic Sweep",
+                    "title": "On-Site IEEE 2800 Harmonic Sweep & Attestation",
+                    "target_gate": "Check #6 (COD Attestation Gate)",
+                    "contractor": "Permian HV Field Services LLC",
+                    "field_lead": "Marcus Vance, PE",
                     "progress_pct": 75,
+                    "remediation_protocol": "Execute Board Indemnity Carve-Out to absorb Clause 14.b OEM warranty dispute. Clears Lead PE to digitally stamp harmonic mitigation packet and submit directly to ERCOT.",
                     "steps": [
-                        {"task": "Rack 4 PE Calibration", "done": True},
-                        {"task": "Inverter Bank 1-4 Frequency Injection", "done": True},
-                        {"task": "Damping Resonance Verification", "done": True},
-                        {"task": "PE Digital Stamp & Packet Sign-off", "done": False}
+                        {"task": "Rack 4 PE Calibration & Neutral Grounding Sweep", "done": True, "evidence": "Calibration log #PER-409 PASS"},
+                        {"task": "Inverter Bank 1-4 Sub-Cycle Injection Sweep", "done": True, "evidence": "THD 4.1% confirmed (< 5.0% threshold)"},
+                        {"task": "Damping Resonance Pulse Verification", "done": True, "evidence": "Active damping ratio: 1.18 pu nominal"},
+                        {"task": "PE Digital Stamp & Packet Submission", "done": False, "evidence": "Held pending Directorate Indemnity safe harbor"}
+                    ],
+                    "telemetry": [
+                        {"param": "THD Harmonics (IEEE 2800)", "val": "4.1%", "status": "NOMINAL", "limit": "< 5.0%"},
+                        {"param": "Inrush Damping Ratio", "val": "1.18 pu", "status": "NOMINAL", "limit": "Trip: 1.40 pu"},
+                        {"param": "Frequency Injection Stability", "val": "14.2 MW/0.1Hz", "status": "COMPLIANT", "limit": "ERCOT § 4.2"},
+                        {"param": "OEM Cabinet Remote Interlock", "val": "DISENGAGED", "status": "WARN", "limit": "Manual PE Bypass Required"}
                     ]
                 },
+                "forensic_timeline": [
+                    {"time": "2026-09-09 08:14:02.104 UTC", "party": "Grid Physics", "event": "Raw 10 kHz oscillography records grid voltage dip of 4.2% (nominal IEEE 2800 ride-through envelope)."},
+                    {"time": "2026-09-09 08:14:02.118 UTC", "party": "Apex Inverter OEM", "event": "Inverter Bank 2 trips out prematurely due to internal OEM firmware protection threshold miscalibration."},
+                    {"time": "2026-09-09 09:30:00.000 UTC", "party": "Apex Legal / Field", "event": "Apex invokes Clause 14.b warranty disclaimer, alleging utility surge and refusing attestation sign-off."},
+                    {"time": "2026-09-09 10:15:22.000 UTC", "party": "Security Access Logs", "event": "Turnstile badging records confirm Apex OEM Commissioning Lead was off-site during entire trip sequence."},
+                    {"time": "2026-09-16 00:00:00.000 UTC", "party": "Capital Audit Engine", "event": "Deadlock reaches Day 7. Accrued delay demurrage hits $610,848. Counterparty formal claim compiled."}
+                ],
                 "audit_packages": [
                     {
                         "job_id": "JOB-001: Statutory Ingestion Baseline",
                         "status": "SEALED & ATTESTED",
-                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "sealed_at": "2026-09-16 00:00:00 UTC",
                         "package_hash": "8f3a9e01c4b72e1",
                         "entries": [
                             "DOCKET INGESTION: Baseline verified against ERCOT Docket #54219.",
@@ -336,7 +375,7 @@ SECTORS = {
         "currency": "€",
         "asset_cap": 34_000_000_000,
         "baseline_docket": "Federal Railway Authority (EBA) Dossier #DE-882",
-        "baseline_date": "15 Sep 2026",
+        "baseline_date": "16 Sep 2026",
         "statute": "German AktG § 93 / § 116 (Aufsichtsrat Dual-Board Shield)",
         "directors": {"Werner Gatzer": {"seat": "Aufsichtsratsvorsitzender"}},
         "incidents": {
@@ -344,14 +383,45 @@ SECTORS = {
                 "title": "Rhine-Alpine ETCS Level 2 Baseline Handshake Stall",
                 "priority": "P1 - CRITICAL",
                 "base_daily_bleed": 1728000,
+                "days_in_deadlock": 5,
                 "status": "DEADLOCKED",
                 "director_seat": "Werner Gatzer",
-                "tier3_work_order": {"id": "WO-DB-9901", "progress_pct": 65, "steps": []},
+                "counterparty": {
+                    "name": "Signaling Interop Consortium GmbH",
+                    "contract": "Corridor ETCS Implementation Contract #DB-NETZ-441",
+                    "clause_invoked": "Klausel 19.3 (Software-Schnittstellenhaftungsausschluss)",
+                    "breach_clause": "VOB/B § 6 Abs. 6 (Schuldhafte Bauzeitverzögerung)"
+                },
+                "tier3_work_order": {
+                    "id": "WO-DB-9901",
+                    "title": "Radio Block Centre (RBC) Telegram Handshake Test",
+                    "target_gate": "EBA Interoperability Clearance #4",
+                    "contractor": "Siemens Mobility Trackside Team",
+                    "field_lead": "Dipl.-Ing. Hans Mueller",
+                    "progress_pct": 65,
+                    "remediation_protocol": "Execute Aufsichtsrat emergency waiver for safety telegram buffer validation, releasing field engineer to attest corridor readiness.",
+                    "steps": [
+                        {"task": "Balise Link Alignment Sweep", "done": True, "evidence": "Balise 402/403 sync PASS"},
+                        {"task": "GSM-R Cryptographic Key Refresh", "done": True, "evidence": "Session keys rotated"},
+                        {"task": "RBC Dual Handshake Telemetry Verification", "done": False, "evidence": "Awaiting Board waiver under AktG § 93"}
+                    ],
+                    "telemetry": [
+                        {"param": "Balise Telegram Buffer", "val": "99.8%", "status": "NOMINAL", "limit": "> 99.5%"},
+                        {"param": "GSM-R Interoperability Jitter", "val": "18 ms", "status": "NOMINAL", "limit": "< 30 ms"},
+                        {"param": "EBA Trackside Clearance", "val": "STANDBY", "status": "WARN", "limit": "Sign-off pending"}
+                    ]
+                },
+                "forensic_timeline": [
+                    {"time": "2026-09-11 11:20:00 UTC", "party": "EBA Trackside", "event": "Radio Block Centre reports telegram buffer packet drop at KM 144."},
+                    {"time": "2026-09-11 12:05:14 UTC", "party": "Consortium Legal", "event": "Vendor claims DB AG legacy catenary noise caused packet corruption; invokes Klausel 19.3."},
+                    {"time": "2026-09-11 14:10:00 UTC", "party": "Dark Data Telemetry", "event": "Fiber optic sniffer logs prove packet drop was internal buffer race condition in vendor RBC module."},
+                    {"time": "2026-09-16 00:00:00 UTC", "party": "Capital Audit Engine", "event": "5-day corridor stall reaches €8,640,000 claim value under VOB/B § 6."}
+                ],
                 "audit_packages": [
                     {
                         "job_id": "JOB-001: EBA Baseline Ingestion",
                         "status": "SEALED & ATTESTED",
-                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "sealed_at": "2026-09-16 00:00:00 UTC",
                         "package_hash": "de9910a1b2c45e8",
                         "entries": ["EBA DOCKET INGESTION: Rhine Corridor Dossier #DE-882 locked."]
                     }
@@ -367,7 +437,7 @@ SECTORS = {
         "currency": "$",
         "asset_cap": 145_000_000,
         "baseline_docket": "CEN Res. Exenta N° 842 / Atacama-Santiago Intertie",
-        "baseline_date": "15 Sep 2026",
+        "baseline_date": "16 Sep 2026",
         "statute": "Ley General de Servicios Eléctricos Art. 72-1 (Chile)",
         "directors": {"Juan Carlos Olmedo": {"seat": "Presidente del Consejo Directivo"}},
         "incidents": {
@@ -375,14 +445,45 @@ SECTORS = {
                 "title": "Prueba de Inyección de Armónicos y Sincronismo 220kV",
                 "priority": "P1 - CRÍTICO",
                 "base_daily_bleed": 45000,
+                "days_in_deadlock": 6,
                 "status": "DEADLOCKED",
                 "director_seat": "Juan Carlos Olmedo",
-                "tier3_work_order": {"id": "WO-CEN-332", "progress_pct": 70, "steps": []},
+                "counterparty": {
+                    "name": "Consorcio Inversores del Norte S.A.",
+                    "contract": "Contrato EPC Subestación Kimal-Cardones #CEN-2025",
+                    "clause_invoked": "Art. 22 Exclusión por Disturbio de Red",
+                    "breach_clause": "Cláusula Penal por Retraso de Interconexión § 8"
+                },
+                "tier3_work_order": {
+                    "id": "WO-CEN-332",
+                    "title": "Sincronización 220kV Subestación Kimal",
+                    "target_gate": "Autorización Definitiva CEN",
+                    "contractor": "Consorcio Atacama Transmisión",
+                    "field_lead": "Ing. Camilo Sandoval",
+                    "progress_pct": 70,
+                    "remediation_protocol": "Resolución de exención fiduciaria Art. 72-1 para liberación de firma digital y despacho inmediato.",
+                    "steps": [
+                        {"task": "Ajuste Filtro STATCOM Cardones", "done": True, "evidence": "Prueba de banco aprobada"},
+                        {"task": "Verificación Resonancia Inyección Solar", "done": True, "evidence": "THD 3.8% nominal"},
+                        {"task": "Firma Digital Protocolo PSS/E Despacho CEN", "done": False, "evidence": "Pendiente de resolución del Consejo"}
+                    ],
+                    "telemetry": [
+                        {"param": "THD Tensión 220kV", "val": "3.8%", "status": "NOMINAL", "limit": "< 4.5%"},
+                        {"param": "Potencia Reactiva Inyectada", "val": "45 MVAR", "status": "NOMINAL", "limit": "± 50 MVAR"},
+                        {"param": "Respuesta Dinámica STATCOM", "val": "85 ms", "status": "NOMINAL", "limit": "< 100 ms"}
+                    ]
+                },
+                "forensic_timeline": [
+                    {"time": "2026-09-10 14:00:00 UTC", "party": "Subestación Kimal", "event": "Inversor corta inyección durante rampa solar por desajuste de protecciones."},
+                    {"time": "2026-09-10 15:30:00 UTC", "party": "Contratista EPC", "event": "EPC atribuye falla a sobretensión en la línea Kimal-Cardones."},
+                    {"time": "2026-09-10 16:45:00 UTC", "party": "Registrador Oscilográfico", "event": "Registro de falla prueba que la red operaba en 220.1 kV. Falla originada en el software del contratista."},
+                    {"time": "2026-09-16 00:00:00 UTC", "party": "Motor Forense", "event": "6 días de atraso acumulados: $270,000 en pérdidas líquidas exigibles."}
+                ],
                 "audit_packages": [
                     {
                         "job_id": "JOB-001: Registro CEN Ingestado",
                         "status": "SEALED & ATTESTED",
-                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "sealed_at": "2026-09-16 00:00:00 UTC",
                         "package_hash": "cl4491a082b1",
                         "entries": ["EXPEDIENTE CEN INGESTADO: Res. Exenta N° 842 locked."]
                     }
@@ -398,7 +499,7 @@ SECTORS = {
         "currency": "€",
         "asset_cap": 210_000_000,
         "baseline_docket": "RTE Schéma Régional de Raccordement (SRADDET #FR-901)",
-        "baseline_date": "15 Sep 2026",
+        "baseline_date": "16 Sep 2026",
         "statute": "Code de Commerce Art. L225-251 (Protection Dirigeant)",
         "directors": {"Xavier Piechaczyk": {"seat": "Président du Directoire"}},
         "incidents": {
@@ -406,14 +507,45 @@ SECTORS = {
                 "title": "Blocage d'Injection Haute Tension Poste 400kV",
                 "priority": "P1 - CRITIQUE",
                 "base_daily_bleed": 68000,
+                "days_in_deadlock": 8,
                 "status": "DEADLOCKED",
                 "director_seat": "Xavier Piechaczyk",
-                "tier3_work_order": {"id": "WO-RTE-881", "progress_pct": 60, "steps": []},
+                "counterparty": {
+                    "name": "Systèmes Électriques Provence SAS",
+                    "contract": "Marché d'Interconnexion BESS Haute Tension #RTE-992",
+                    "clause_invoked": "Article 15.2 (Exonération Aléas Réseau)",
+                    "breach_clause": "Cahier des Clauses Spéciales § 11 (Pénalités d'Indisponibilité)"
+                },
+                "tier3_work_order": {
+                    "id": "WO-RTE-881",
+                    "title": "Attestation d'Injectabilité Réseau Nucléaire",
+                    "target_gate": "Validation Enedis/RTE Poste 400kV",
+                    "contractor": "Équipe Haute Tension RTE Provence",
+                    "field_lead": "Ing. Marc Lefèvre",
+                    "progress_pct": 60,
+                    "remediation_protocol": "Résolution de directoire exonérant l'ingénieur en chef sous l'article L225-251.",
+                    "steps": [
+                        {"task": "Contrôle Automatisme Fréquence 50Hz", "done": True, "evidence": "Test îlotage 50.02 Hz conforme"},
+                        {"task": "Vérification Puissance Réactive", "done": True, "evidence": "Régulation cos phi 0.98"},
+                        {"task": "Homologation Téléaction SCADA", "done": False, "evidence": "Attente signature directoire"}
+                    ],
+                    "telemetry": [
+                        {"param": "Stabilité Fréquence 50Hz", "val": "50.02 Hz", "status": "NOMINAL", "limit": "50.00 ± 0.05 Hz"},
+                        {"param": "Taux Harmoniques Rang 5/7", "val": "1.8%", "status": "NOMINAL", "limit": "< 3.0%"},
+                        {"param": "Téléaction SCADA Enedis", "val": "BLOQUÉE", "status": "WARN", "limit": "Autorisation requise"}
+                    ]
+                },
+                "forensic_timeline": [
+                    {"time": "2026-09-08 09:12:00 UTC", "party": "Poste 400kV", "event": "Refus de couplage suite à signal téléaction erroné."},
+                    {"time": "2026-09-08 10:00:00 UTC", "party": "Constructeur SAS", "event": "Le constructeur invoque l'Art. 15.2 en prétextant une fluctuation de la centrale voisine."},
+                    {"time": "2026-09-08 11:30:00 UTC", "party": "Oscilloperturbographe", "event": "La preuve brute montre que la passerelle de conversion du constructeur s'est désynchronisée."},
+                    {"time": "2026-09-16 00:00:00 UTC", "party": "Moteur Forensique", "event": "8 jours de retard totalisant 544 000 € de pénalités contractuelles dues."}
+                ],
                 "audit_packages": [
                     {
                         "job_id": "JOB-001: Dossier RTE Verrouillé",
                         "status": "SEALED & ATTESTED",
-                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "sealed_at": "2026-09-16 00:00:00 UTC",
                         "package_hash": "fr7710a902d3",
                         "entries": ["SRADDET INGESTION: Dossier RTE #FR-901 homologué."]
                     }
@@ -429,7 +561,7 @@ SECTORS = {
         "currency": "¥",
         "asset_cap": 42_000_000_000,
         "baseline_docket": "METI Electricity Grid Intertie Filing #TK-402",
-        "baseline_date": "15 Sep 2026",
+        "baseline_date": "16 Sep 2026",
         "statute": "Japanese Companies Act Art. 423 (Fiduciary Defense Shield)",
         "directors": {"Keisuke Yokoo": {"seat": "Chairman of the Board"}},
         "incidents": {
@@ -437,14 +569,45 @@ SECTORS = {
                 "title": "Shin-Shinano 500kV Frequency Converter Synchronization Stall",
                 "priority": "P1 - CRITICAL",
                 "base_daily_bleed": 125280,
+                "days_in_deadlock": 10,
                 "status": "DEADLOCKED",
                 "director_seat": "Keisuke Yokoo",
-                "tier3_work_order": {"id": "WO-TEPCO-4410", "progress_pct": 70, "steps": []},
+                "counterparty": {
+                    "name": "Kanto High-Voltage Engineering KK",
+                    "contract": "Shin-Shinano 500kV Intertie EPC Master Agreement #TK-881",
+                    "clause_invoked": "免責条項第12条 (系統外擾による免責)",
+                    "breach_clause": "基本契約第28条 (遅延損害賠償履行義務)"
+                },
+                "tier3_work_order": {
+                    "id": "WO-TEPCO-4410",
+                    "title": "周波数変換設備 (FC) 50Hz/60Hz連系実証試験",
+                    "target_gate": "経産省 METI 系統連系最終承認",
+                    "contractor": "東京電力パワーグリッド 送電技術部",
+                    "field_lead": "主任技術者 佐藤 健一",
+                    "progress_pct": 70,
+                    "remediation_protocol": "会社法423条に基づく取締役会免責決議の執行および主任技術者のデジタル印鑑捺印。",
+                    "steps": [
+                        {"task": "50Hz/60Hz 変換バッファ過渡応答確認", "done": True, "evidence": "周波数追従 PASS"},
+                        {"task": "ガス絶縁開閉装置 (GIS) 圧力実測", "done": True, "evidence": "SF6 圧力 0.58 MPa 正常"},
+                        {"task": "主任技術者 デジタル印鑑捺印および経産省提出", "done": False, "evidence": "取締役会免責決議待ち"}
+                    ],
+                    "telemetry": [
+                        {"param": "周波数偏差 (50Hz側)", "val": "±0.02 Hz", "status": "NOMINAL", "limit": "±0.10 Hz以内"},
+                        {"param": "変換ロス率", "val": "1.42%", "status": "NOMINAL", "limit": "< 1.80%"},
+                        {"param": "系統連系ゲートウェイ", "val": "承認待機", "status": "WARN", "limit": "捺印後即時送電可能"}
+                    ]
+                },
+                "forensic_timeline": [
+                    {"time": "2026-09-06 10:00:00 JST", "party": "新信濃変電所", "event": "周波数変換連系テスト中に制御保護装置が誤作動停止。"},
+                    {"time": "2026-09-06 14:00:00 JST", "party": "設備施工業者", "event": "施工業者が免責条項第12条を主張し、50Hz系統側の電圧動揺が原因と報告。"},
+                    {"time": "2026-09-06 16:30:00 JST", "party": "オシログラフィ記録", "event": "ミリ秒データ解析により、系統電圧は規定値内であり停止原因がインバータ設定値の入力ミスであることを立証。"},
+                    {"time": "2026-09-16 00:00:00 JST", "party": "監査エンジン", "event": "10日間の停止損失：契約第28条に基づき ¥1,252,800 の損害賠償を確定。"}
+                ],
                 "audit_packages": [
                     {
                         "job_id": "JOB-001: METI Baseline Ingestion",
                         "status": "SEALED & ATTESTED",
-                        "sealed_at": "2026-09-15 00:00:00 UTC",
+                        "sealed_at": "2026-09-16 00:00:00 UTC",
                         "package_hash": "jp8834f109a12c7",
                         "entries": ["METI INTERTIE FILING: Shin-Shinano 500kV locked."]
                     }
@@ -466,9 +629,6 @@ if "selected_incident_id" not in st.session_state:
 
 if "conference_focus" not in st.session_state:
     st.session_state.conference_focus = "DEFAULT"
-
-if "remedial_simulation" not in st.session_state:
-    st.session_state.remedial_simulation = "Option A: Directorate Carve-Out (Dominant Path)"
 
 def append_to_active_package(incident: dict, job_title: str, event_text: str, force_new_package=False):
     packages = incident.setdefault("audit_packages", [])
@@ -510,7 +670,7 @@ def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: f
         force_new_package=True
     )
 
-def reset_incident_to_neutral(incident: dict, baseline_cap: int):
+def reset_incident_to_neutral(incident: dict):
     incident["status"] = "DEADLOCKED"
     incident["base_daily_bleed"] = 87264
     wo = incident.get("tier3_work_order", {})
@@ -526,7 +686,7 @@ def reset_incident_to_neutral(incident: dict, baseline_cap: int):
     )
 
 # =========================================================
-# 3. SIDEBAR WITH EXPANDED ROSTER & PERSISTENT ROLE
+# 3. SIDEBAR NAVIGATION
 # =========================================================
 with st.sidebar:
     st.markdown("### 🏛️ COMMAND POST")
@@ -556,20 +716,21 @@ with st.sidebar:
     current_calib_capex = st.session_state[calib_key]
     scale_factor = current_calib_capex / sector["asset_cap"]
 
-    role_options = [
-        t["title"],
-        t["vault_title"],
-        "Tier 3: Site Operations / Field Lead"
+    nav_options = [
+        t["title"], 
+        t["tier3_title"],
+        t["vault_title"]
     ] + [f"Director: {d}" for d in sector["directors"].keys()]
-    if "selected_role" not in st.session_state or st.session_state.selected_role not in role_options:
-        st.session_state.selected_role = t["title"]
+    
+    if "selected_view" not in st.session_state or st.session_state.selected_view not in nav_options:
+        st.session_state.selected_view = t["title"]
 
-    selected_role = st.radio(
-        "Governance Profile:",
-        role_options,
-        index=role_options.index(st.session_state.selected_role)
+    selected_view = st.radio(
+        "Governance & Execution Console:",
+        nav_options,
+        index=nav_options.index(st.session_state.selected_view)
     )
-    st.session_state.selected_role = selected_role
+    st.session_state.selected_view = selected_view
     
     st.divider()
     st.markdown("#### Active Incident Queue")
@@ -582,6 +743,7 @@ with st.sidebar:
         if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
+            st.session_state.selected_view = t["title"]
             st.rerun()
 
 if st.session_state.selected_incident_id not in sector["incidents"]:
@@ -591,9 +753,9 @@ active_inc = sector["incidents"][st.session_state.selected_incident_id]
 is_resolved = active_inc.get("status") == "RESOLVED"
 
 # =========================================================
-# 4. VIEW: EXECUTIVE CHAIRMAN
+# 4. VIEW: PAGE 1 — PART ONE: TACTICAL COMMAND POST
 # =========================================================
-if selected_role == t["title"]:
+if selected_view == t["title"]:
     st.title(t["title"])
     
     st.markdown(f"""
@@ -611,7 +773,7 @@ if selected_role == t["title"]:
         st.session_state[ts_key] = f"{TODAY_STR} 00:00 UTC"
         
     # ---------------------------------------------------------
-    # UNIFIED CHAIRMAN QUICK-CALIBRATOR TERMINAL (BOLD RED GATE)
+    # COMMAND GATEWAY: ENTER NEW PROJECT BUDGET (MASSIVE RED)
     # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown(f"""
@@ -659,7 +821,7 @@ if selected_role == t["title"]:
         st.markdown(f"""
             <div style="text-align:center; margin-top:10px; margin-bottom:4px;">
                 <span style="font-size:1.15rem; font-weight:800; color:{badge_color};">
-                    ● {badge_label}: {curr_sym}{parsed_capex:,}
+                    ● {badge_label}
                 </span>
                 <span style="color:#ffffff; font-size:0.95rem; font-weight:600; margin-left:8px;">
                     (Effective Audit Timestamp: {st.session_state[ts_key]})
@@ -724,7 +886,7 @@ if selected_role == t["title"]:
             """, unsafe_allow_html=True)
             st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
             if st.button("↩️ Revert to Neutral (Simulate Risk)", use_container_width=True):
-                reset_incident_to_neutral(active_inc, sector["asset_cap"])
+                reset_incident_to_neutral(active_inc)
                 st.warning("Bleed restored. Counterfactual analysis active.")
                 st.rerun()
                 
@@ -746,7 +908,7 @@ if selected_role == t["title"]:
         """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # DIAGNOSTIC AGENT CONFERENCE (COMPACT & PROPORTIONAL)
+    # DIAGNOSTIC AGENT CONFERENCE
     # ---------------------------------------------------------
     with st.container(border=True):
         st.markdown("### 🎙️ Instant Diagnostic Agent Conference")
@@ -772,12 +934,12 @@ if selected_role == t["title"]:
         if st.session_state.conference_focus == "WHY_STALLED":
             st.markdown(
                 f"🔴 **Master Orchestrator ➔ Telemetry Agent:** *'Interrogating incident {st.session_state.selected_incident_id}.'* \n\n"
-                f"🔴 **Telemetry Agent:** *'Field hardware tests completed at 75%. OEM supervisor holds sign-off pending indemnification against Clause 14.b. Physical telemetry is nominal; signatory deadlock active.'*"
+                f"🔴 **Telemetry Agent:** *'Physical telemetry is nominal (THD 4.1% < 5.0%). OEM field contractor holds attestation behind Clause 14.b warranty disclaimer. Deadlock is contractual, not physical.'*"
             )
         elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
             st.markdown(
                 f"🟢 **Master Orchestrator ➔ Fiduciary Shield Agent:** *'What instrument unblocks this gate?'* \n\n"
-                f"🟢 **Fiduciary Shield Agent:** *'Board Resolution (Option A) executing a Directorate Indemnity Carve-Out shields the site lead under {sector['statute']}, releasing the attestation within 5 minutes.'*"
+                f"🟢 **Fiduciary Shield Agent:** *'Board Resolution executing a Directorate Indemnity Carve-Out shields the Lead PE under {sector['statute']}, releasing the digital stamp within 5 minutes.'*"
             )
         elif st.session_state.conference_focus == "CUSTOM":
             st.markdown(f"🔍 **Agent Synthesis for Query: '{st.session_state.get('custom_query_text', '')}'**")
@@ -839,237 +1001,373 @@ if selected_role == t["title"]:
         st.markdown(render_branch_card("Branch 3: Fiduciary / Capital", "Balance Sheet Gate | Liability Escrow", "Executive Board Chair", "Fiduciary Shield Agent", s_badge, vel_txt, c_type), unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # OPERATIONAL CHAIN OF COMMAND: BRIDGE TO TIER 3 & DIRECTORS
+    # SINGLE-LINE DESCENDING OPERATIONAL CHAIN OF COMMAND
     # ---------------------------------------------------------
+    st.markdown("### 📡 Operational Chain of Command (Single-Line Descending Hierarchy)")
+    st.caption("Inspect and drill directly into Directorate governance and Tier 3 field desks:")
+    
+    first_dir = list(sector["directors"].keys())[0]
+    
     with st.container(border=True):
-        st.markdown("### 📡 Operational Chain of Command: Directives & Field Execution")
-        st.caption("Synchronized execution state between Directorate safe harbor and Tier 3 field teams:")
-        
-        flow_col1, flow_col2 = st.columns(2)
-        with flow_col1:
-            st.markdown(f"""
-                <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:14px;">
-                    <div style="font-weight:700; color:#58a6ff; font-size:1.1rem; margin-bottom:4px;">
-                        🏛️ Directorate Governance Desk
-                    </div>
-                    <div style="font-size:0.95rem; color:#c9d1d9;">
-                        Cognizant Director: <strong>{active_inc.get('director_seat', 'Board')}</strong><br>
-                        Legal Safe Harbor: <strong>{sector['statute']}</strong><br>
-                        Mandate Status: <span style="color:{'#3fb950' if is_resolved else '#e3b341'}; font-weight:bold;">
-                            {'DIRECTORATE INDEMNITY SEALED' if is_resolved else 'AWAITING CHAIRMAN DIRECTIVE'}
-                        </span>
+        st.markdown(f"""
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <div style="font-weight:800; color:#58a6ff; font-size:1.2rem;">🏛️ Level 1: Directorate Governance Desk</div>
+                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">
+                        Cognizant Director: <strong style="color:#ffffff;">{active_inc.get('director_seat', 'Board')}</strong> | 
+                        Statutory Shield: <strong style="color:#58a6ff;">{sector['statute']}</strong>
                     </div>
                 </div>
-            """, unsafe_allow_html=True)
-            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-            first_dir = list(sector["directors"].keys())[0]
-            if st.button(f"🔎 Drill Down to Director Oversight ({first_dir})", use_container_width=True):
-                st.session_state.selected_role = f"Director: {first_dir}"
-                st.rerun()
-                
-        with flow_col2:
-            wo = active_inc.get("tier3_work_order", {})
-            st.markdown(f"""
-                <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:14px;">
-                    <div style="font-weight:700; color:#e3b341; font-size:1.1rem; margin-bottom:4px;">
-                        👷 Tier 3 Site Operations & Field Execution Desk
-                    </div>
-                    <div style="font-size:0.95rem; color:#c9d1d9;">
-                        Active Work Order: <strong>{wo.get('id', 'N/A')} ({wo.get('title', 'Telemetry')})</strong><br>
-                        Hardware Progress: <strong>{wo.get('progress_pct', 0)}% Completed</strong><br>
-                        Sign-off Status: <span style="color:{'#3fb950' if is_resolved else '#da3633'}; font-weight:bold;">
-                            {'PE DIGITAL STAMP TRANSMITTED' if is_resolved else 'BLOCKED BEHIND CLAUSE 14.b'}
-                        </span>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-            if st.button("⚡ Drill Down to Tier 3 Field Execution Desk", use_container_width=True, type="primary"):
-                st.session_state.selected_role = "Tier 3: Site Operations / Field Lead"
-                st.rerun()
-
-    # ---------------------------------------------------------
-    # PIPELINE (DYNAMIC TRANSLATION)
-    # ---------------------------------------------------------
-    with st.container(border=True):
-        st.markdown(f"### {t['pipeline_title']}")
-        p1, p2, p3, p4 = st.columns(4)
-
-        def render_pipeline_card(num_title, raw_bleed, inc_code, is_threat):
-            border = "#e3b341" if is_threat else "#30363d"
-            bg = "rgba(227, 179, 65, 0.16)" if is_threat else "#161b22"
-            status_txt = t["active_threat"] if is_threat else t["queued"]
-            status_color = "#e3b341" if is_threat else "#c9d1d9"
-            
-            scaled_daily = int(round(raw_bleed * scale_factor))
-            scaled_weekly = scaled_daily * 7
-            crossover_days = round(parsed_capex / scaled_daily, 1) if scaled_daily > 0 else 999.9
-            
-            return f"""
-            <div style="background-color:{bg}; border:2px solid {border}; border-radius:8px; padding:18px; height:100%; display:flex; flex-direction:column; text-align:center;">
-                <div style="font-weight:700; font-size:1.15rem; color:#ffffff; margin-bottom:8px;">{num_title}</div>
-                <div style="font-family:ui-monospace, monospace; font-size:1.7rem; font-weight:800; color:#ffffff; margin: 4px 0;">
-                    {curr_sym}{scaled_daily:,} <span style="font-size:1.0rem; font-weight:600; color:#c9d1d9;">/ Day</span>
-                </div>
-                <div style="font-size:0.95rem; font-weight:600; color:#c9d1d9; margin-bottom:6px;">
-                    {curr_sym}{scaled_weekly:,} / Wk
-                </div>
-                <div style="font-size:1.05rem; font-weight:700; color:#e3b341; margin-bottom:14px;">
-                    Horizon: {crossover_days} Days
-                </div>
-                <div style="font-size:1.0rem; font-weight:700; color:{status_color}; margin-top:auto;">
-                    {status_txt}: {inc_code}
+                <div style="font-size:1.1rem; font-weight:800; color:{'#3fb950' if is_resolved else '#e3b341'};">
+                    ● {'DIRECTORATE INDEMNITY SEALED' if is_resolved else 'AWAITING CHAIRMAN DIRECTIVE'}
                 </div>
             </div>
-            """
-
-        pipe_keys = [k for k in sector["incidents"].keys() if k not in [
-            "INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"
-        ]]
-        with p1:
-            inc_p1 = sector["incidents"].get(pipe_keys[0], {})
-            st.markdown(render_pipeline_card("1. Inrush Damping", inc_p1.get("base_daily_bleed", 38880), pipe_keys[0], is_resolved), unsafe_allow_html=True)
-        with p2:
-            inc_p2 = sector["incidents"].get(pipe_keys[1], {})
-            st.markdown(render_pipeline_card("2. SCADA IEC 61850", inc_p2.get("base_daily_bleed", 15552), pipe_keys[1], False), unsafe_allow_html=True)
-        with p3:
-            inc_p3 = sector["incidents"].get(pipe_keys[2], {})
-            st.markdown(render_pipeline_card("3. BESS Firmware OTA", inc_p3.get("base_daily_bleed", 4320), pipe_keys[2], False), unsafe_allow_html=True)
-        with p4:
-            inc_p4 = sector["incidents"].get(pipe_keys[3], {})
-            st.markdown(render_pipeline_card("4. Substation Oil DGA", inc_p4.get("base_daily_bleed", 6912), pipe_keys[3], False), unsafe_allow_html=True)
-
-    # ---------------------------------------------------------
-    # TIER 4 AUDIT LEDGER
-    # ---------------------------------------------------------
-    with st.container(border=True):
-        st.markdown(f"### {t['audit_title']}")
-        for pkg in reversed(active_inc.get("audit_packages", [])):
-            is_sealed = pkg["status"] == "SEALED & ATTESTED"
-            badge_icon = "🔒" if is_sealed else "⚡"
-            status_color = "#3fb950" if is_sealed else "#e3b341"
-            
-            with st.expander(f"{badge_icon} {pkg['job_id']} | Root Hash: SHA-256:{pkg['package_hash']}", expanded=not is_sealed):
-                st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold; font-size:1.1rem;'>{pkg['status']}</span>", unsafe_allow_html=True)
-                for entry in pkg.get("entries", []):
-                    st.markdown(f"<div style='font-size:1.05rem; font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
-
-    if is_resolved:
-        st.markdown("---")
-        st.success("P1 incident resolved and capital secured. The forward pipeline and forensic vault are ready.")
-        if st.button(f"Proceed to {t['vault_title']}", use_container_width=True, type="primary"):
-            st.session_state.selected_role = t["vault_title"]
+        """, unsafe_allow_html=True)
+        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+        if st.button(f"🏛️ Drill Down to Director Oversight ({first_dir})", use_container_width=True):
+            st.session_state.selected_view = f"Director: {first_dir}"
             st.rerun()
 
-# =========================================================
-# 5. VIEW: PAGE 2 - FORWARD PIPELINE & TIER 4 FORENSIC VAULT
-# =========================================================
-elif selected_role == t["vault_title"]:
-    st.title(f"🏛️ {t['vault_title']}")
-    st.caption(f"Asset Portfolio: **{active_sector}** | Legal Base: **{sector['statute']}**")
+    wo = active_inc.get("tier3_work_order", {})
+    with st.container(border=True):
+        st.markdown(f"""
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <div style="font-weight:800; color:#e3b341; font-size:1.2rem;">👷 Level 2: Tier 3 Site Operations & Remediation Desk</div>
+                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">
+                        Work Order: <strong style="color:#ffffff;">{wo.get('id', 'N/A')} ({wo.get('title', 'Telemetry')})</strong> | 
+                        Progress: <strong style="color:#ffffff;">{wo.get('progress_pct', 0)}% Completed</strong>
+                    </div>
+                </div>
+                <div style="font-size:1.1rem; font-weight:800; color:{'#3fb950' if is_resolved else '#da3633'};">
+                    ● {'PE DIGITAL STAMP TRANSMITTED' if is_resolved else 'BLOCKED BEHIND CLAUSE 14.b'}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+        if st.button("⚡ Drill Down to Tier 3 Operator Remediation Desk", use_container_width=True, type="primary"):
+            st.session_state.selected_view = t["tier3_title"]
+            st.rerun()
 
-    if st.button("↩️ Return to Executive Command Post", type="secondary"):
-        st.session_state.selected_role = t["title"]
+    # ---------------------------------------------------------
+    # PROGRESSION BRIDGE TO PART TWO FORENSIC VAULT
+    # ---------------------------------------------------------
+    st.markdown("---")
+    if is_resolved:
+        st.markdown(f"""
+            <div style="background: rgba(46, 160, 67, 0.15); border: 2px solid #2ea043; border-radius: 8px; padding: 18px; text-align: center; margin-bottom: 12px;">
+                <div style="font-size: 1.3rem; font-weight: 800; color: #3fb950; margin-bottom: 6px;">
+                    ✅ P1 INCIDENT RESOLVED & CAPITAL SECURED
+                </div>
+                <div style="font-size: 1.05rem; color: #c9d1d9;">
+                    Holding bleed halted to $0. Millisecond evidence locked. Advance to Part Two to generate the Pre-Litigation Cost Recovery Dossier.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button(f"➔ Proceed to {t['vault_title']} (Forensic Recovery Dossier)", use_container_width=True, type="primary"):
+            st.session_state.selected_view = t["vault_title"]
+            st.rerun()
+    else:
+        st.info("💡 Incident INC-001 is actively bleeding capital. Tap the red Circuit Breaker above or execute operator sign-off at Tier 3 to defend capital and unlock Part Two.")
+
+# =========================================================
+# 5. VIEW: TIER 3 SITE OPERATIONS & OPERATOR REMEDIATION
+# =========================================================
+elif selected_view == t["tier3_title"]:
+    st.title(f"👷 {t['tier3_title']}")
+    wo = active_inc.get("tier3_work_order", {})
+    st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
+    
+    if st.button("↩️ Return to Part One (Tactical Command Post)", type="secondary"):
+        st.session_state.selected_view = t["title"]
         st.rerun()
-
+        
     st.divider()
-    st.markdown(f"### {t['pipeline_title']}")
-    st.caption("Sequential project bottlenecks dynamically scaled to Chairman CapEx:")
-    p1, p2, p3, p4 = st.columns(4)
+    
+    # 1. Operator Remediation Directive Banner
+    st.markdown(f"""
+        <div style="background: rgba(227, 179, 65, 0.15); border: 2px solid #e3b341; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+            <div style="font-size:1.25rem; font-weight:800; color:#e3b341; margin-bottom:6px;">
+                🎯 Operator Remediation Directive: {wo.get('target_gate', 'Gate Clearance')}
+            </div>
+            <div style="font-size:1.05rem; color:#f0f6fc; line-height:1.5;">
+                {wo.get('remediation_protocol', 'Follow on-site engineering instructions and execute digital signature.')}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    def render_vault_pipeline_card(number, title, incident_key, is_threat=False):
-        incident = sector["incidents"].get(incident_key, {})
-        daily = int(round(incident.get("base_daily_bleed", 0) * scale_factor))
-        weekly = daily * 7
-        horizon = round(current_calib_capex / daily, 1) if daily > 0 else 999.9
-        border = "#e3b341" if is_threat else "#30363d"
-        status = t["active_threat"] if is_threat else t["queued"]
+    t1, t2, t3 = st.columns(3)
+    t1.metric("Active Work Order", wo.get("id", "N/A"), active_inc.get("priority", "CRITICAL"))
+    t2.metric("Target Regulatory Gate", wo.get("target_gate", "COD Gate"))
+    t3.metric("Hardware Execution Progress", f"{wo.get('progress_pct', 0)}%")
+    
+    col_t, col_m = st.columns([3, 2])
+    with col_t:
+        with st.container(border=True):
+            st.markdown(f"#### Execution Punch List & Sign-Off: {wo.get('title', 'Tasks')}")
+            for idx, step in enumerate(wo.get("steps", [])):
+                st.markdown(f"""
+                    <div style="padding: 10px; border-bottom: 1px solid #30363d;">
+                        <span style="font-size: 1.15rem;">{'✅' if step['done'] else '⏳'}</span>
+                        <strong style="color: #ffffff; font-size: 1.05rem; margin-left: 6px;">Step {idx+1}: {step['task']}</strong>
+                        <div style="color: #8b949e; font-size: 0.95rem; margin-left: 28px;">Evidence: <code>{step.get('evidence', 'Verified')}</code></div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+            if not is_resolved:
+                st.markdown(f"""
+                    <div style="background: rgba(248, 81, 73, 0.12); border: 1px solid #f85149; border-radius: 6px; padding: 12px; margin-bottom: 12px; font-size: 0.95rem;">
+                        ⚠️ <strong>Signatory Trap Detected:</strong> Counterparty warranty disclaimer ({active_inc.get('counterparty', {}).get('clause_invoked', 'Clause 14.b')}) threatens personal liability for Lead PE upon unilateral sign-off.
+                        Executing below absorbs liability under <strong>{sector['statute']}</strong>.
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
+                    execute_unified_circuit_breaker(active_inc, sector["statute"], active_inc.get("base_daily_bleed", 87264))
+                    st.success("PE Stamp sealed. Attestation transmitted to grid operator. Holding burn halted to $0.")
+                    st.rerun()
+            else:
+                st.success(f"✅ Work order completed at 100%. Professional Engineer stamp transmitted by {wo.get('field_lead', 'Lead PE')}.")
+                if st.button("🔄 Reset Work Order to Neutral (Simulate Re-test)", use_container_width=True):
+                    reset_incident_to_neutral(active_inc)
+                    st.warning("Work order reset to 75% pending state.")
+                    st.rerun()
+                    
+    with col_m:
+        with st.container(border=True):
+            st.markdown("#### Live Site Telemetry Waveform Sweep")
+            st.caption("Millisecond-level dark data recorded at switchyard terminal:")
+            for telem in wo.get("telemetry", []):
+                val_col = "#3fb950" if telem["status"] == "NOMINAL" or telem["status"] == "COMPLIANT" else "#e3b341"
+                st.markdown(f"""
+                    <div style="background:#090d13; border:1px solid #30363d; border-radius:6px; padding:10px 14px; margin-bottom:10px;">
+                        <div style="font-size:0.9rem; color:#8b949e; text-transform:uppercase;">{telem['param']}</div>
+                        <div style="font-size:1.4rem; font-weight:800; font-family:monospace; color:{val_col}; margin: 2px 0;">{telem['val']}</div>
+                        <div style="font-size:0.85rem; color:#c9d1d9;">Threshold: <strong>{telem['limit']}</strong></div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+# =========================================================
+# 6. VIEW: PAGE 2 — PART TWO: FORENSIC COST RECOVERY VAULT
+# =========================================================
+elif selected_view == t["vault_title"]:
+    st.title(f"⚖️ {t['vault_title']}")
+    st.markdown(f"""
+        <div style="background: rgba(227, 179, 65, 0.1); border: 1px solid #e3b341; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+            <div>Target Entity: <strong style="color:#ffffff;">{active_inc.get('counterparty', {}).get('name', 'OEM Vendor')}</strong></div>
+            <div style="color:#e3b341;">|</div>
+            <div>Governing Contract: <strong style="color:#e3b341;">{active_inc.get('counterparty', {}).get('contract', 'EPC Agreement')}</strong></div>
+            <div style="color:#e3b341;">|</div>
+            <div>Format: <strong style="color:#ffffff;">Pre-Litigation Demand Package</strong></div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("↩️ Return to Part One (Tactical Command Post)", type="secondary"):
+        st.session_state.selected_view = t["title"]
+        st.rerun()
+        
+    st.divider()
+
+    # ---------------------------------------------------------
+    # TIER A: DIRECT CLAIM LEDGER & RECOVERY METRICS
+    # ---------------------------------------------------------
+    days_deadlocked = active_inc.get("days_in_deadlock", 7)
+    scaled_daily = int(round(active_inc.get("base_daily_bleed", 87264) * scale_factor))
+    if is_resolved:
+        scaled_daily = int(round(87264 * scale_factor))
+        
+    total_claim_amount = scaled_daily * days_deadlocked
+    idle_contractor_overhead = int(total_claim_amount * 0.42)
+    grid_penalty_exposure = int(total_claim_amount * 0.38)
+    capital_cost_carry = total_claim_amount - idle_contractor_overhead - grid_penalty_exposure
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f"""
+            <div class="claim-demand-card">
+                <div class="exec-metric-label">{t['claim_total_label']}</div>
+                <div class="exec-metric-val" style="color:#e3b341;">{curr_sym}{total_claim_amount:,.0f}</div>
+                <div class="exec-metric-sub" style="color:#e3b341;">{t['claim_sub']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""
+            <div class="exec-metric-card">
+                <div class="exec-metric-label">Assigned Liable Party</div>
+                <div class="exec-metric-val" style="font-size:1.35rem; color:#f85149;">{active_inc.get('counterparty', {}).get('name', 'OEM Vendor')[:28]}</div>
+                <div class="exec-metric-sub" style="color:#f85149;">100% Fault Attribution (Zero Shared Delay)</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"""
+            <div class="exec-metric-card">
+                <div class="exec-metric-label">Enforcement Instrument</div>
+                <div class="exec-metric-val" style="font-size:1.35rem; color:#58a6ff;">Standby Letter of Credit</div>
+                <div class="exec-metric-sub" style="color:#58a6ff;">Direct Escrow Drawdown Ready</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # TIER B: FORENSIC MICRO-TIMELINE FLIGHT RECORDER
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### ⏱️ Forensic Micro-Timeline Flight Recorder (Physical Telemetry vs. Contractual Events)")
+    st.caption("Millisecond-stamped evidentiary reconstruction linking physical machine exhaust to contractual default:")
+
+    with st.container(border=True):
+        for event in active_inc.get("forensic_timeline", []):
+            st.markdown(f"""
+                <div style="padding: 10px 14px; border-bottom: 1px solid #21262d; display: flex; flex-wrap: wrap; gap: 14px; align-items: baseline;">
+                    <code style="color: #58a6ff; font-weight: 700; font-size: 0.95rem;">{event['time']}</code>
+                    <span style="background: rgba(227, 179, 65, 0.2); color: #e3b341; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.85rem;">{event['party']}</span>
+                    <span style="color: #f0f6fc; font-size: 1.05rem; flex-grow: 1;">{event['event']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # TIER C: THREE ATTRIBUTION PROOF PILLARS
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### 🏛️ The Three Attribution Proof Pillars (The Indisputable Case)")
+    
+    p_col1, p_col2, p_col3 = st.columns(3)
+    with p_col1:
+        st.markdown(f"""
+            <div style="background-color: rgba(56, 139, 253, 0.12); border: 2px solid #58a6ff; border-radius: 8px; padding: 20px; height: 100%;">
+                <h3 style="margin:0; color:#58a6ff; font-size:1.3rem;">1. Physical Causation</h3>
+                <div style="color:#ffffff; font-weight:700; margin:8px 0;">Sub-Cycle Waveform Record</div>
+                <p style="font-size:0.95rem; color:#c9d1d9;">
+                    Raw 10 kHz oscillography demonstrates voltage remained within nominal ride-through envelope (4.1% THD). 
+                    Disproves counterparty claim of external grid disturbance.
+                </p>
+                <div style="font-family:monospace; color:#58a6ff; font-weight:700; font-size:0.9rem;">
+                    Status: HARDWARE EXONERATED
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with p_col2:
+        st.markdown(f"""
+            <div style="background-color: rgba(248, 81, 73, 0.12); border: 2px solid #f85149; border-radius: 8px; padding: 20px; height: 100%;">
+                <h3 style="margin:0; color:#f85149; font-size:1.3rem;">2. Breached Covenant</h3>
+                <div style="color:#ffffff; font-weight:700; margin:8px 0;">{active_inc.get('counterparty', {}).get('breach_clause', 'Schedule D')}</div>
+                <p style="font-size:0.95rem; color:#c9d1d9;">
+                    {active_inc.get('counterparty', {}).get('clause_invoked', 'Warranty Disclaimer')} is legally voided by evidence of off-site personnel.
+                    Unexcused commissioning demurrage triggered in full under Schedule D.
+                </p>
+                <div style="font-family:monospace; color:#f85149; font-weight:700; font-size:0.9rem;">
+                    Status: DEMURRAGE ACTIVE
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with p_col3:
+        st.markdown(f"""
+            <div style="background-color: rgba(46, 160, 67, 0.12); border: 2px solid #2ea043; border-radius: 8px; padding: 20px; height: 100%;">
+                <h3 style="margin:0; color:#3fb950; font-size:1.3rem;">3. Assigned Liability</h3>
+                <div style="color:#ffffff; font-weight:700; margin:8px 0;">{curr_sym}{total_claim_amount:,.0f} Reimbursable</div>
+                <p style="font-size:0.95rem; color:#c9d1d9;">
+                    • Standby Contractor Overhead: {curr_sym}{idle_contractor_overhead:,}<br>
+                    • Grid Non-Performance Exposure: {curr_sym}{grid_penalty_exposure:,}<br>
+                    • Capital Carrying Cost: {curr_sym}{capital_cost_carry:,}
+                </p>
+                <div style="font-family:monospace; color:#3fb950; font-weight:700; font-size:0.9rem;">
+                    Recovery Target: 100% RECOUPMENT
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # TIER D: PRE-LITIGATION SETTLEMENT DEMAND EXPORT
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### 📦 Sealed Pre-Litigation Recovery Demand Package")
+    st.caption("Cryptographically authenticated evidence dossier ready for General Counsel, Board of Directors, or Escrow Bank:")
+
+    claim_hash = hashlib.sha256(f"{active_sector}|{active_inc.get('counterparty', {}).get('name')}|{total_claim_amount}".encode()).hexdigest()
+
+    dossier_col1, dossier_col2 = st.columns([3, 1])
+    with dossier_col1:
+        st.markdown(f"""
+            <div style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:16px;">
+                <div style="color:#58a6ff; font-weight:800; font-size:1.15rem; margin-bottom:6px;">
+                    DOSSIER: PRE-LITIGATION DEMAND & ESCROW DRAWDOWN NOTICE
+                </div>
+                <div style="font-size:0.95rem; color:#c9d1d9;">
+                    Root Verification Hash: <code>SHA-256:{claim_hash}</code><br>
+                    Authenticated Time-Lock: <strong>{TODAY_STR} 00:00:00 UTC</strong> | Jurisdiction: <strong>{sector['statute']}</strong><br>
+                    Contents: Sub-cycle oscillography proof, turnstile badging logs, contract breach mapping, and liquidated damages ledger.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+    with dossier_col2:
+        st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+        if st.button("📄 Export Authenticated Pre-Litigation Dossier", use_container_width=True, type="primary"):
+            append_to_active_package(
+                active_inc,
+                f"JOB-{len(active_inc.get('audit_packages', []))+1:03d}: Pre-Litigation Claim Dossier Sealed",
+                f"CLAIM SEALED: Formal pre-litigation recovery demand of {curr_sym}{total_claim_amount:,.0f} issued against {active_inc.get('counterparty', {}).get('name')} under {active_inc.get('counterparty', {}).get('breach_clause')}. Root Hash: SHA-256:{claim_hash[:15]}.",
+                force_new_package=True
+            )
+            st.success("Dossier sealed and logged to immutable audit ledger.")
+            st.rerun()
+
+    # ---------------------------------------------------------
+    # TIER E: PIPELINE & CRYPTOGRAPHIC AUDIT VAULT
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.markdown(f"### {t['pipeline_title']}")
+    
+    pipe_keys = [k for k in sector["incidents"].keys() if k not in ["INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"]]
+    p1, p2, p3, p4 = st.columns(4)
+    def render_pipeline_card(num_title, raw_bleed, inc_code):
+        scaled_d = int(round(raw_bleed * scale_factor))
         return f"""
-        <div style="background:#161b22; border:2px solid {border}; border-radius:8px; padding:18px; height:100%; text-align:center;">
-            <div style="font-weight:700; font-size:1.15rem; color:#ffffff; margin-bottom:8px;">{number}. {title}</div>
-            <div style="font-family:ui-monospace, monospace; font-size:1.7rem; font-weight:800; color:#ffffff;">{curr_sym}{daily:,} <span style="font-size:1rem; color:#c9d1d9;">/ Day</span></div>
-            <div style="font-size:0.95rem; color:#c9d1d9; margin:6px 0;">{curr_sym}{weekly:,} / Wk</div>
-            <div style="font-size:1.05rem; font-weight:700; color:#e3b341;">Horizon: {horizon} Days</div>
-            <div style="font-size:1rem; font-weight:700; color:{'#e3b341' if is_threat else '#c9d1d9'}; margin-top:12px;">{status}: {incident_key}</div>
+        <div style="background-color:#161b22; border:2px solid #30363d; border-radius:8px; padding:16px; text-align:center;">
+            <div style="font-weight:700; color:#ffffff;">{num_title}</div>
+            <div style="font-family:monospace; font-size:1.4rem; font-weight:800; color:#ffffff; margin:4px 0;">{curr_sym}{scaled_d:,} / Day</div>
+            <div style="color:#8b949e; font-size:0.9rem;">QUEUED: {inc_code}</div>
         </div>
         """
+    with p1: st.markdown(render_pipeline_card("1. Inrush Damping", sector["incidents"].get(pipe_keys[0], {}).get("base_daily_bleed", 38880), pipe_keys[0]), unsafe_allow_html=True)
+    with p2: st.markdown(render_pipeline_card("2. SCADA IEC 61850", sector["incidents"].get(pipe_keys[1], {}).get("base_daily_bleed", 15552), pipe_keys[1]), unsafe_allow_html=True)
+    with p3: st.markdown(render_pipeline_card("3. BESS Firmware OTA", sector["incidents"].get(pipe_keys[2], {}).get("base_daily_bleed", 4320), pipe_keys[2]), unsafe_allow_html=True)
+    with p4: st.markdown(render_pipeline_card("4. Substation Oil DGA", sector["incidents"].get(pipe_keys[3], {}).get("base_daily_bleed", 6912), pipe_keys[3]), unsafe_allow_html=True)
 
-    vault_pipe_keys = [k for k in sector["incidents"] if k not in [
-        "INC-001", "DB-ETCS-01", "CEN-BESS-01", "RTE-BESS-01", "TEPCO-500KV-01"
-    ]]
-    pipeline_titles = ["Inrush Damping", "SCADA IEC 61850", "BESS Firmware OTA", "Substation Oil DGA"]
-    for column, number, title, incident_key in zip((p1, p2, p3, p4), range(1, 5), pipeline_titles, vault_pipe_keys):
-        with column:
-            st.markdown(render_vault_pipeline_card(number, title, incident_key, number == 1 and is_resolved), unsafe_allow_html=True)
-
-    st.divider()
+    st.markdown("---")
     st.markdown(f"### {t['audit_title']}")
-    st.caption("Deterministic, immutable audit packages sealed under the Business Judgment Rule:")
     for pkg in reversed(active_inc.get("audit_packages", [])):
         is_sealed = pkg["status"] == "SEALED & ATTESTED"
         badge_icon = "🔒" if is_sealed else "⚡"
         status_color = "#3fb950" if is_sealed else "#e3b341"
         with st.expander(f"{badge_icon} {pkg['job_id']} | Root Hash: SHA-256:{pkg['package_hash']}", expanded=True):
-            st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold;'>{pkg['status']}</span>", unsafe_allow_html=True)
+            st.markdown(f"**Status:** <span style='color:{status_color}; font-weight:bold; font-size:1.1rem;'>{pkg['status']}</span>", unsafe_allow_html=True)
             for entry in pkg.get("entries", []):
-                st.markdown(f"<div style='font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
-
-# =========================================================
-# 6. VIEW: TIER 3 SITE OPERATIONS & FIELD EXECUTION DESK
-# =========================================================
-elif selected_role == "Tier 3: Site Operations / Field Lead":
-    st.title("Tier 3 | Site Operations & Field Execution Desk")
-    st.caption(f"Asset: **{active_sector}** | Bound Work Order: **{active_inc.get('tier3_work_order', {}).get('id', 'N/A')}**")
-    
-    if st.button("↩️ Return to Executive Command Post", type="secondary"):
-        st.session_state.selected_role = t["title"]
-        st.rerun()
-        
-    wo = active_inc.get("tier3_work_order", {})
-    t1, t2, t3 = st.columns(3)
-    t1.metric("Work Order", wo.get("id", "N/A"), active_inc.get("priority", "CRITICAL"))
-    t2.metric("Target Gate", "Check #6 (COD Attestation)")
-    t3.metric("Progress", f"{wo.get('progress_pct', 0)}%")
-    
-    col_t, col_m = st.columns([3, 2])
-    with col_t:
-        with st.container(border=True):
-            st.markdown(f"#### Punch List: {wo.get('title', 'Tasks')}")
-            for idx, step in enumerate(wo.get("steps", [])):
-                st.write(f"{'✅' if step['done'] else '⏳'} **Step {idx+1}:** {step['task']}")
-            if not is_resolved and st.button("Complete Final PE Verification Stamp", use_container_width=True, type="primary"):
-                wo["progress_pct"] = 100
-                if wo.get("steps"): wo["steps"][-1]["done"] = True
-                active_inc["status"] = "RESOLVED"
-                active_inc["base_daily_bleed"] = 0
-                append_to_active_package(active_inc, "FIELD VERIFICATION", "TIER 3 FIELD STAMP: Telemetry validated on-site. Burn halted.")
-                st.success("Stamped & Transmitted.")
-                st.rerun()
-    with col_m:
-        with st.container(border=True):
-            st.markdown("#### Live Telemetry Sweep")
-            st.metric("THD Harmonics", "4.1%", delta="Limit: 5.0% [NOMINAL]")
-            st.metric("Inrush Damping", "1.18 pu", delta="Trip: 1.40 pu")
-            st.metric("Frequency Response", "14.2 MW/0.1Hz", delta="Compliant")
+                st.markdown(f"<div style='font-size:1.05rem; font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
 
 # =========================================================
 # 7. VIEW: DIRECTORATE OVERSIGHT
 # =========================================================
 else:
-    dir_name = selected_role.replace("Director: ", "")
-    st.title(f"Directorate Oversight: {dir_name}")
-    st.caption(f"Seat: **Chair, Grid Risk & Technical Integrity** | Statute: **{sector['statute']}**")
+    dir_name = selected_view.replace("Director: ", "")
+    st.title(f"🏛️ Directorate Oversight: {dir_name}")
+    st.caption(f"Jurisdiction: **{active_inc.get('director_seat', 'Board Seat')}** | Statute: **{sector['statute']}**")
     
-    if st.button("↩️ Return to Executive Command Post", type="secondary"):
-        st.session_state.selected_role = t["title"]
+    if st.button("↩️ Return to Part One (Tactical Command Post)", type="secondary"):
+        st.session_state.selected_view = t["title"]
         st.rerun()
         
-    st.metric("Jurisdiction Status", active_inc.get("status", "DEADLOCKED"), active_inc.get("priority", "P1"))
+    st.divider()
+    st.metric("Governance State", active_inc.get("status", "DEADLOCKED"), active_inc.get("priority", "P1"))
     
     with st.container(border=True):
-        st.markdown(f"#### Fiduciary Defense Instrument ({sector['statute']})")
-        st.info("Exercising statutory discretion under the Business Judgment Rule to indemnify site engineers against OEM warranty breach.")
+        st.markdown(f"#### Fiduciary Protection Instrument ({sector['statute']})")
+        st.markdown(f"""
+            This console exercises director oversight under the **Business Judgment Rule**. 
+            By issuing concurrence, the director attests that unblocking **{st.session_state.selected_incident_id}** 
+            protects corporate capital against holdout burn without exposing officers to personal liability.
+        """)
         if not is_resolved and st.button("Issue Directorate Formal Concurrence", use_container_width=True, type="primary"):
-            append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal concurrence issued by {dir_name}.")
+            append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal fiduciary concurrence issued by {dir_name}.")
             st.success("Concurrence sealed to active job package.")
             st.rerun()
