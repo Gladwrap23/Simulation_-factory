@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.2_tier3_remediation_and_part2_vault_sep16_2026"
+APP_BUILD_ID = "v4.4_tier1_4_flow_and_autoroute_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -160,9 +160,10 @@ st.markdown("""
 # =========================================================
 I18N = {
     "English [USA · UK · Australia]": {
-        "title": "Part One: Tactical Command Post",
-        "tier3_title": "Tier 3: Site Operations & Operator Remediation",
-        "vault_title": "Part Two: Forensic Cost Recovery Vault",
+        "tier1_title": "Tier 1 | Chairman Tactical Command Post (Part One)",
+        "tier2_title": "Tier 2 | Directorate Governance Desk",
+        "tier3_title": "Tier 3 | Site Operations & Operator Remediation Desk",
+        "tier4_title": "Tier 4 | Forensic Cost Recovery Vault (Part Two)",
         "sub_app": "Autonomous Capital Defense & Claims Recovery Engine",
         "calib_red_header": "COMMAND GATEWAY: ENTER NEW PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
@@ -187,9 +188,10 @@ I18N = {
         "audit_title": "Cryptographic Audit Ledger & Sealed Job Packages"
     },
     "Deutsch [Deutschland · Österreich]": {
-        "title": "Teil Eins: Taktisches Führungszentrum",
-        "tier3_title": "Stufe 3: Standortbetrieb & Bediener-Sanierung",
-        "vault_title": "Teil Zwei: Forensischer Kostenerstattungstresor",
+        "tier1_title": "Stufe 1 | Taktisches Führungszentrum (Teil Eins)",
+        "tier2_title": "Stufe 2 | Directorate Governance Desk",
+        "tier3_title": "Stufe 3 | Standortbetrieb & Bediener-Sanierungs-Desk",
+        "tier4_title": "Stufe 4 | Forensischer Kostenerstattungstresor (Teil Zwei)",
         "sub_app": "Autonome Kapitalverteidigungs- & Forderungsdurchsetzungs-Plattform",
         "calib_red_header": "FÜHRUNGSTOR: NEUES PROJEKTBUDGET / GEFÄHRDETES INVESTITIONSKAPITAL EINGEBEN",
         "override_active": "LEITUNGS-ÜBERSTEUERUNG AKTIV",
@@ -214,9 +216,10 @@ I18N = {
         "audit_title": "Kryptographisches Audit-Register & Versiegelte Einsatzkapseln"
     },
     "Español [Chile · Brasil · Sudamérica]": {
-        "title": "Parte Uno: Puesto de Mando Táctico",
-        "tier3_title": "Nivel 3: Operaciones de Campo y Mitigación",
-        "vault_title": "Parte Dos: Bóveda Forense de Recuperación de Costos",
+        "tier1_title": "Nivel 1 | Puesto de Mando Táctico (Parte Uno)",
+        "tier2_title": "Nivel 2 | Mesa de Gobernanza del Consejo",
+        "tier3_title": "Nivel 3 | Mesa de Operaciones de Campo y Mitigación",
+        "tier4_title": "Nivel 4 | Bóveda Forense de Recuperación de Costos (Parte Dos)",
         "sub_app": "Plano de Control para la Defensa y Recuperación de Capital",
         "calib_red_header": "PORTAL DE MANDO: INGRESE NUEVO PRESUPUESTO / CAPEX EN RIESGO",
         "override_active": "INTERVENCIÓN EJECUTIVA ACTIVA",
@@ -241,9 +244,10 @@ I18N = {
         "audit_title": "Registro Criptográfico de Auditoría y Cápsulas Selladas"
     },
     "Français [France · RTE · Europe]": {
-        "title": "Partie Un : Poste de Commandement Tactique",
-        "tier3_title": "Niveau 3 : Opérations de Terrain & Remédiation Opérateur",
-        "vault_title": "Partie Deux : Coffre Forensique de Recouvrement des Coûts",
+        "tier1_title": "Niveau 1 | Poste de Commandement Tactique (Partie Un)",
+        "tier2_title": "Niveau 2 | Bureau de Gouvernance du Directoire",
+        "tier3_title": "Niveau 3 | Bureau Opérations Terrain & Remédiation",
+        "tier4_title": "Niveau 4 | Coffre Forensique de Recouvrement (Partie Deux)",
         "sub_app": "Plateforme Autonome de Défense du Capital & Recouvrement",
         "calib_red_header": "PORTAIL DE COMMANDEMENT : SAISIR LE NOUVEAU BUDGET / CAPEX EN RISQUE",
         "override_active": "INTERVENTION EXÉCUTIVE ACTIVE",
@@ -268,9 +272,10 @@ I18N = {
         "audit_title": "Registre Cryptographique d'Audit & Capsules Scellées"
     },
     "日本語 [日本 · TEPCO · METI]": {
-        "title": "第1部：戦術的指揮統制ポスト (Tactical Command)",
-        "tier3_title": "ティア3：現地運用および現場作業員是正デスク",
-        "vault_title": "第2部：法廷証拠・損害費用回収保管庫 (Forensic Vault)",
+        "tier1_title": "ティア1 | 取締役会長 統合戦術指揮ポスト (第1部)",
+        "tier2_title": "ティア2 | 取締役会統治・免責監督デスク",
+        "tier3_title": "ティア3 | 現地運用および現場作業員是正デスク",
+        "tier4_title": "ティア4 | 法廷証拠・損害費用回収保管庫 (第2部)",
         "sub_app": "自律型自己資本防衛および法的損害賠償回収エンジン",
         "calib_red_header": "コマンド・ゲートウェイ：新しい防衛対象資本・予算を入力（タップして再設定）",
         "override_active": "取締役会による上書き発動中",
@@ -717,13 +722,14 @@ with st.sidebar:
     scale_factor = current_calib_capex / sector["asset_cap"]
 
     nav_options = [
-        t["title"], 
+        t["tier1_title"],
+        t["tier2_title"],
         t["tier3_title"],
-        t["vault_title"]
-    ] + [f"Director: {d}" for d in sector["directors"].keys()]
+        t["tier4_title"]
+    ]
     
     if "selected_view" not in st.session_state or st.session_state.selected_view not in nav_options:
-        st.session_state.selected_view = t["title"]
+        st.session_state.selected_view = t["tier1_title"]
 
     selected_view = st.radio(
         "Governance & Execution Console:",
@@ -743,7 +749,7 @@ with st.sidebar:
         if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
-            st.session_state.selected_view = t["title"]
+            st.session_state.selected_view = t["tier1_title"]
             st.rerun()
 
 if st.session_state.selected_incident_id not in sector["incidents"]:
@@ -755,8 +761,8 @@ is_resolved = active_inc.get("status") == "RESOLVED"
 # =========================================================
 # 4. VIEW: PAGE 1 — PART ONE: TACTICAL COMMAND POST
 # =========================================================
-if selected_view == t["title"]:
-    st.title(t["title"])
+if selected_view == t["tier1_title"]:
+    st.title(t["tier1_title"])
     
     st.markdown(f"""
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #58a6ff; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
@@ -1024,8 +1030,8 @@ if selected_view == t["title"]:
             </div>
         """, unsafe_allow_html=True)
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-        if st.button(f"🏛️ Drill Down to Director Oversight ({first_dir})", use_container_width=True):
-            st.session_state.selected_view = f"Director: {first_dir}"
+        if st.button("🏛️ Drill Down to Tier 2: Directorate Governance Desk", use_container_width=True):
+            st.session_state.selected_view = t["tier2_title"]
             st.rerun()
 
     wo = active_inc.get("tier3_work_order", {})
@@ -1064,8 +1070,8 @@ if selected_view == t["title"]:
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button(f"➔ Proceed to {t['vault_title']} (Forensic Recovery Dossier)", use_container_width=True, type="primary"):
-            st.session_state.selected_view = t["vault_title"]
+        if st.button(f"➔ Proceed to {t['tier4_title']}", use_container_width=True, type="primary"):
+            st.session_state.selected_view = t["tier4_title"]
             st.rerun()
     else:
         st.info("💡 Incident INC-001 is actively bleeding capital. Tap the red Circuit Breaker above or execute operator sign-off at Tier 3 to defend capital and unlock Part Two.")
@@ -1078,8 +1084,8 @@ elif selected_view == t["tier3_title"]:
     wo = active_inc.get("tier3_work_order", {})
     st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
     
-    if st.button("↩️ Return to Part One (Tactical Command Post)", type="secondary"):
-        st.session_state.selected_view = t["title"]
+    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
+        st.session_state.selected_view = t["tier1_title"]
         st.rerun()
         
     st.divider()
@@ -1124,6 +1130,7 @@ elif selected_view == t["tier3_title"]:
                 """, unsafe_allow_html=True)
                 if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
                     execute_unified_circuit_breaker(active_inc, sector["statute"], active_inc.get("base_daily_bleed", 87264))
+                    st.session_state.selected_view = t["tier1_title"]
                     st.success("PE Stamp sealed. Attestation transmitted to grid operator. Holding burn halted to $0.")
                     st.rerun()
             else:
@@ -1150,8 +1157,8 @@ elif selected_view == t["tier3_title"]:
 # =========================================================
 # 6. VIEW: PAGE 2 — PART TWO: FORENSIC COST RECOVERY VAULT
 # =========================================================
-elif selected_view == t["vault_title"]:
-    st.title(f"⚖️ {t['vault_title']}")
+elif selected_view == t["tier4_title"]:
+    st.title(f"⚖️ {t['tier4_title']}")
     st.markdown(f"""
         <div style="background: rgba(227, 179, 65, 0.1); border: 1px solid #e3b341; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div>Target Entity: <strong style="color:#ffffff;">{active_inc.get('counterparty', {}).get('name', 'OEM Vendor')}</strong></div>
@@ -1162,8 +1169,8 @@ elif selected_view == t["vault_title"]:
         </div>
     """, unsafe_allow_html=True)
     
-    if st.button("↩️ Return to Part One (Tactical Command Post)", type="secondary"):
-        st.session_state.selected_view = t["title"]
+    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
+        st.session_state.selected_view = t["tier1_title"]
         st.rerun()
         
     st.divider()
@@ -1346,15 +1353,15 @@ elif selected_view == t["vault_title"]:
                 st.markdown(f"<div style='font-size:1.05rem; font-family:monospace; margin:4px 0; color:#f0f6fc;'>• {entry}</div>", unsafe_allow_html=True)
 
 # =========================================================
-# 7. VIEW: DIRECTORATE OVERSIGHT
+# 7. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK
 # =========================================================
-else:
-    dir_name = selected_view.replace("Director: ", "")
-    st.title(f"🏛️ Directorate Oversight: {dir_name}")
-    st.caption(f"Jurisdiction: **{active_inc.get('director_seat', 'Board Seat')}** | Statute: **{sector['statute']}**")
+elif selected_view == t["tier2_title"]:
+    first_dir = list(sector["directors"].keys())[0]
+    st.title(t["tier2_title"])
+    st.caption(f"Asset: **{active_sector}** | Cognizant Director: **{first_dir}** | Statute: **{sector['statute']}**")
     
-    if st.button("↩️ Return to Part One (Tactical Command Post)", type="secondary"):
-        st.session_state.selected_view = t["title"]
+    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
+        st.session_state.selected_view = t["tier1_title"]
         st.rerun()
         
     st.divider()
@@ -1364,10 +1371,10 @@ else:
         st.markdown(f"#### Fiduciary Protection Instrument ({sector['statute']})")
         st.markdown(f"""
             This console exercises director oversight under the **Business Judgment Rule**. 
-            By issuing concurrence, the director attests that unblocking **{st.session_state.selected_incident_id}** 
+            By issuing formal concurrence, the director attests that unblocking **{st.session_state.selected_incident_id}** 
             protects corporate capital against holdout burn without exposing officers to personal liability.
         """)
         if not is_resolved and st.button("Issue Directorate Formal Concurrence", use_container_width=True, type="primary"):
-            append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal fiduciary concurrence issued by {dir_name}.")
+            append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal fiduciary concurrence issued by {first_dir}.")
             st.success("Concurrence sealed to active job package.")
             st.rerun()
