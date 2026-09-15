@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.7_logical_gateway_hierarchy_sep16_2026"
+APP_BUILD_ID = "v4.8_restructured_telemetry_hierarchy_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -89,6 +89,18 @@ st.markdown("""
             align-items: center;
             min-height: 125px;
         }
+        .exec-metric-card-secondary {
+            background-color: #11151c;
+            border: 1px solid #21262d;
+            border-radius: 6px;
+            padding: 10px 14px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 85px;
+        }
         .circuit-breaker-card {
             background-color: rgba(248, 81, 73, 0.12);
             border: 2px solid #f85149;
@@ -138,6 +150,13 @@ st.markdown("""
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-size: 1.95rem;
             font-weight: 800;
+            line-height: 1.15;
+        }
+        .exec-metric-val-secondary {
+            color: #ffffff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 1.35rem;
+            font-weight: 700;
             line-height: 1.15;
         }
         .exec-metric-sub {
@@ -925,31 +944,7 @@ if selected_view == t["tier1_title"]:
             )
             st.rerun()
 
-    # ---------------------------------------------------------
-    # SECONDARY METRICS: TOLL-GATE & EPOCH
-    # ---------------------------------------------------------
-    calibrated_toll_gate = max(25000, int(round(parsed_capex * 0.00085, -3)))
-    
-    sub1, sub2 = st.columns(2)
-    with sub1:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">{t['toll_fee']}</div>
-                <div class="exec-metric-val">{curr_sym}{calibrated_toll_gate:,}</div>
-                <div class="exec-metric-sub" style="color:#3fb950;">{t['escrow_desc']}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with sub2:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">{t['session_window']}</div>
-                <div class="exec-metric-val">09:42</div>
-                <div class="exec-metric-sub" style="color:#3fb950;">{t['session_desc']}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # ---------------------------------------------------------
-    # MAIN TRUNK: THE INTERACTIVE CAPITAL CIRCUIT BREAKER
+    # PRIMARY EXECUTIVE METRICS DIRECTLY BELOW RECALIBRATION
     # ---------------------------------------------------------
     active_incidents = [i for i in sector["incidents"].values() if i.get("status") != "RESOLVED"]
     total_burn_day = sum(int(round(i.get("base_daily_bleed", 50000) * scale_factor)) for i in active_incidents)
@@ -1000,6 +995,27 @@ if selected_view == t["tier1_title"]:
                 <div class="exec-metric-label">{t['active_block']}: {st.session_state.selected_incident_id}</div>
                 <div class="exec-metric-val" style="color:#e3b341;">{dynamic_crossover_days} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">Days</span></div>
                 <div class="exec-metric-sub" style="color:#e3b341; font-size:1.05rem;">{t['crossover_sub']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # SECONDARY ADMINISTRATIVE METRICS
+    calibrated_toll_gate = max(25000, int(round(parsed_capex * 0.00085, -3)))
+    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+    sub1, sub2 = st.columns(2)
+    with sub1:
+        st.markdown(f"""
+            <div class="exec-metric-card-secondary">
+                <div class="exec-metric-label" style="font-size:0.8rem; margin-bottom:2px;">{t['toll_fee']}</div>
+                <div class="exec-metric-val-secondary">{curr_sym}{calibrated_toll_gate:,}</div>
+                <div style="color:#3fb950; font-size:0.85rem; font-weight:600;">{t['escrow_desc']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with sub2:
+        st.markdown(f"""
+            <div class="exec-metric-card-secondary">
+                <div class="exec-metric-label" style="font-size:0.8rem; margin-bottom:2px;">{t['session_window']}</div>
+                <div class="exec-metric-val-secondary">09:42</div>
+                <div style="color:#3fb950; font-size:0.85rem; font-weight:600;">{t['session_desc']}</div>
             </div>
         """, unsafe_allow_html=True)
 
