@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.9_exact_plain_english_button_sep16_2026"
+APP_BUILD_ID = "v5.1_interactive_manual_pe_bypass_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -63,6 +63,30 @@ st.markdown("""
         .capex-throttle input[type="text"]:focus {
             border-color: #ff4b4b !important;
             box-shadow: 0 0 22px rgba(255, 75, 75, 0.4) !important;
+        }
+
+        div[data-testid="stButton"] button {
+            white-space: normal !important;
+            word-break: break-word !important;
+            height: auto !important;
+            min-height: 52px !important;
+            padding: 12px 14px !important;
+            line-height: 1.35 !important;
+            font-size: 1.05rem !important;
+            font-weight: 800 !important;
+            border-radius: 6px !important;
+        }
+
+        .emergency-halt-btn button {
+            background-color: #da3633 !important;
+            color: #ffffff !important;
+            border: 1px solid #f85149 !important;
+            box-shadow: 0 0 12px rgba(218, 54, 51, 0.4) !important;
+        }
+        .emergency-halt-btn button:hover {
+            background-color: #b62324 !important;
+            border-color: #ff7b72 !important;
+            box-shadow: 0 0 18px rgba(255, 75, 75, 0.6) !important;
         }
         
         /* Diagnostic Input */
@@ -215,7 +239,8 @@ I18N = {
         "cap_under_def": "Capital Under Defense",
         "active_block": "Active Block",
         "crossover_sub": "↑ Crossover to Total Loss",
-        "circuit_active": "🛑 STOP THE BLEED & ORDER IMMEDIATE ENERGIZATION (BOARD INDEMNITY SHIELD)",
+        "circuit_btn_line1": "🛑 STOP THE BLEED",
+        "circuit_btn_line2": "Execute Board Indemnity Shield",
         "circuit_active_hint": "One click absorbs engineer liability under statute, transmits the PE stamp, and halts the daily burn to $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDED — BLEED: $0",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
@@ -244,7 +269,8 @@ I18N = {
         "cap_under_def": "Verteidigtes Anlagekapital",
         "active_block": "Aktive Störung",
         "crossover_sub": "↑ Zeit bis zum Totalverlust",
-        "circuit_active": "🛑 HALTEVERLUST STOPPEN & SOFORTIGE EINSCHALTUNG ANORDNEN (VORSTANDSSCHUTZ)",
+        "circuit_btn_line1": "🛑 HALTEVERLUST STOPPEN",
+        "circuit_btn_line2": "Vorstandsschutz Aktivieren",
         "circuit_active_hint": "Ein Klick übernimmt die Ingenieurhaftung gemäß Gesetz, überträgt das Gutachten und senkt den täglichen Verlust auf 0 €.",
         "circuit_defended": "🟢 KAPITAL VERTEIDIGT — VERLUST: 0 €",
         "why_stalled": "🚨 1. Warum stockt die Freigabe?",
@@ -273,7 +299,8 @@ I18N = {
         "cap_under_def": "Capital Bajo Defensa",
         "active_block": "Bloqueo Operacional",
         "crossover_sub": "↑ Plazo para la Pérdida Total",
-        "circuit_active": "🛑 DETENER PÉRDIDA Y ORDENAR ENERGIZACIÓN INMEDIATA (BLINDAJE DEL DIRECTORIO)",
+        "circuit_btn_line1": "🛑 DETENER PÉRDIDA",
+        "circuit_btn_line2": "Ejecutar Blindaje del Directorio",
         "circuit_active_hint": "Un clic asume la responsabilidad del ingeniero por ley, emite el timbre PE y detiene el sangrado diario a $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDIDO — PÉRDIDA: $0",
         "why_stalled": "🚨 1. ¿Por qué está trabada la solución?",
@@ -302,7 +329,8 @@ I18N = {
         "cap_under_def": "Capital sous Défense",
         "active_block": "Point de Blocage Actif",
         "crossover_sub": "↑ Délai Avant Perte Totale",
-        "circuit_active": "🛑 STOPPER L'HÉMORRAGIE & ORDONNER LE COUPLAGE IMMÉDIAT (BOUCLIER DU DIRECTOIRE)",
+        "circuit_btn_line1": "🛑 STOPPER L'HÉMORRAGIE",
+        "circuit_btn_line2": "Activer le Bouclier du Directoire",
         "circuit_active_hint": "Un clic absorbe la responsabilité de l'ingénieur par la loi, transmet le visa et ramène la perte quotidienne à 0 €.",
         "circuit_defended": "🟢 CAPITAL DÉFENDU — PERTE: 0 €",
         "why_stalled": "🚨 1. Pourquoi le déblocage est-il gelé ?",
@@ -331,7 +359,8 @@ I18N = {
         "cap_under_def": "防衛対象総資本",
         "active_block": "アクティブ遮断事象",
         "crossover_sub": "↑ 資本全損までの限界日数",
-        "circuit_active": "🛑 資本流出を遮断し即時送電を命令する (取締役会免責シールド)",
+        "circuit_btn_line1": "🛑 資本流出を遮断する",
+        "circuit_btn_line2": "取締役会免責シールド発動",
         "circuit_active_hint": "ワンクリックで法律に基づく技術者の責任を吸収し、PEスタンプを送信し、日次損失を ¥0 に停止します。",
         "circuit_defended": "🟢 資本防衛完了 — 流出損失: ¥0",
         "why_stalled": "🚨 1. なぜ現場は停滞しているのか？",
@@ -670,6 +699,12 @@ SECTORS = {
     }
 }
 
+# Keep the hardware interlock state explicit for every incident that has a Tier 3 work order.
+for sector_data in SECTORS.values():
+    for incident_data in sector_data["incidents"].values():
+        if "tier3_work_order" in incident_data:
+            incident_data.setdefault("manual_pe_bypass", False)
+
 if "app_state" not in st.session_state:
     st.session_state.app_state = SECTORS
 
@@ -707,6 +742,7 @@ def seal_active_package(incident: dict):
 def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: float):
     incident["status"] = "RESOLVED"
     incident["director_signed"] = True
+    incident["manual_pe_bypass"] = True
     incident["base_daily_bleed"] = 0
     wo = incident.get("tier3_work_order", {})
     wo["progress_pct"] = 100
@@ -728,6 +764,7 @@ def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: f
 def reset_incident_to_neutral(incident: dict):
     incident["status"] = "DEADLOCKED"
     incident["director_signed"] = False
+    incident["manual_pe_bypass"] = False
     incident["base_daily_bleed"] = 87264
     wo = incident.get("tier3_work_order", {})
     wo["progress_pct"] = 75
@@ -967,11 +1004,14 @@ if selected_view == t["tier1_title"]:
                 </div>
             """, unsafe_allow_html=True)
             st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-            if st.button(t["circuit_active"], use_container_width=True, type="primary"):
+            st.markdown('<div class="emergency-halt-btn">', unsafe_allow_html=True)
+            button_label = f"{t['circuit_btn_line1']}\n{t['circuit_btn_line2']}"
+            if st.button(button_label, use_container_width=True):
                 execute_unified_circuit_breaker(active_inc, sector["statute"], total_burn_day)
                 st.session_state.conference_focus = "DEFAULT"
                 st.success("Unified directive executed. Capital defended across all branches.")
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
             st.caption(f"<div style='text-align:center; color:#c9d1d9; font-size:0.9rem;'>{t['circuit_active_hint']}</div>", unsafe_allow_html=True)
         else:
             st.markdown(f"""
@@ -1287,6 +1327,45 @@ elif selected_view == t["tier3_title"]:
                         <div style="font-size:0.85rem; color:#c9d1d9;">Threshold: <strong>{telem['limit']}</strong></div>
                     </div>
                 """, unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("#### Hardware Physical Interlock Control")
+            is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
+
+            if not is_bypassed:
+                st.markdown("""
+                    <div style="background:#161b22; border:2px solid #e3b341; border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+                        <div style="font-size:0.85rem; color:#8b949e; text-transform:uppercase; font-weight:700;">OEM Cabinet Remote Interlock</div>
+                        <div style="font-size:1.4rem; font-weight:900; font-family:monospace; color:#e3b341; margin:2px 0;">DISENGAGED</div>
+                        <div style="font-size:0.85rem; color:#c9d1d9;">Status: <strong style="color:#f85149;">Manual PE Bypass Required (Cabinet Locked)</strong></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button("⚡ Engage Manual PE Hardware Bypass", use_container_width=True, type="secondary"):
+                    active_inc["manual_pe_bypass"] = True
+                    append_to_active_package(
+                        active_inc,
+                        "PHYSICAL BYPASS ENGAGED",
+                        f"Lead PE {wo.get('field_lead', 'Engineering Lead')} engaged the on-site hardware bypass key. Remote interlock overridden."
+                    )
+                    st.success("Manual PE bypass engaged. Interlock overridden.")
+                    st.rerun()
+            else:
+                st.markdown("""
+                    <div style="background:rgba(46,160,67,0.15); border:2px solid #2ea043; border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+                        <div style="font-size:0.85rem; color:#8b949e; text-transform:uppercase; font-weight:700;">OEM Cabinet Remote Interlock</div>
+                        <div style="font-size:1.4rem; font-weight:900; font-family:monospace; color:#3fb950; margin:2px 0;">BYPASSED &amp; ENERGIZED</div>
+                        <div style="font-size:0.85rem; color:#c9d1d9;">Status: <strong style="color:#3fb950;">Hardware Safe (PE Bypass Key Active)</strong></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                if not is_resolved and st.button("↩️ Disengage Bypass Key (Restore Interlock)", use_container_width=True):
+                    active_inc["manual_pe_bypass"] = False
+                    append_to_active_package(
+                        active_inc,
+                        "PHYSICAL BYPASS DISENGAGED",
+                        "On-site hardware bypass key disengaged. OEM remote interlock restored."
+                    )
+                    st.warning("Manual bypass disengaged. Interlock restored to locked state.")
+                    st.rerun()
 
 # =========================================================
 # 6. VIEW: PAGE 2 — PART TWO: FORENSIC COST RECOVERY VAULT
