@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.8_restructured_telemetry_hierarchy_sep16_2026"
+APP_BUILD_ID = "v4.9_exact_plain_english_button_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -215,7 +215,8 @@ I18N = {
         "cap_under_def": "Capital Under Defense",
         "active_block": "Active Block",
         "crossover_sub": "↑ Crossover to Total Loss",
-        "circuit_active": "🛑 HALT CAPITAL BLEED (UNIFIED DIRECTIVE)",
+        "circuit_active": "🛑 STOP THE BLEED & ORDER IMMEDIATE ENERGIZATION (BOARD INDEMNITY SHIELD)",
+        "circuit_active_hint": "One click absorbs engineer liability under statute, transmits the PE stamp, and halts the daily burn to $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDED — BLEED: $0",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
         "what_unblocks": "🟢 2. What Document Unblocks the Gate?",
@@ -243,7 +244,8 @@ I18N = {
         "cap_under_def": "Verteidigtes Anlagekapital",
         "active_block": "Aktive Störung",
         "crossover_sub": "↑ Zeit bis zum Totalverlust",
-        "circuit_active": "🛑 HALTEVERLUST STOPPEN (UNIFIED WEISUNG)",
+        "circuit_active": "🛑 HALTEVERLUST STOPPEN & SOFORTIGE EINSCHALTUNG ANORDNEN (VORSTANDSSCHUTZ)",
+        "circuit_active_hint": "Ein Klick übernimmt die Ingenieurhaftung gemäß Gesetz, überträgt das Gutachten und senkt den täglichen Verlust auf 0 €.",
         "circuit_defended": "🟢 KAPITAL VERTEIDIGT — VERLUST: 0 €",
         "why_stalled": "🚨 1. Warum stockt die Freigabe?",
         "what_unblocks": "🟢 2. Welches Dokument entsperrt das Tor?",
@@ -271,7 +273,8 @@ I18N = {
         "cap_under_def": "Capital Bajo Defensa",
         "active_block": "Bloqueo Operacional",
         "crossover_sub": "↑ Plazo para la Pérdida Total",
-        "circuit_active": "🛑 DETENER PÉRDIDA (DIRECTIVA UNIFICADA)",
+        "circuit_active": "🛑 DETENER PÉRDIDA Y ORDENAR ENERGIZACIÓN INMEDIATA (BLINDAJE DEL DIRECTORIO)",
+        "circuit_active_hint": "Un clic asume la responsabilidad del ingeniero por ley, emite el timbre PE y detiene el sangrado diario a $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDIDO — PÉRDIDA: $0",
         "why_stalled": "🚨 1. ¿Por qué está trabada la solución?",
         "what_unblocks": "🟢 2. ¿Qué documento legal desbloquea la compuerta?",
@@ -299,7 +302,8 @@ I18N = {
         "cap_under_def": "Capital sous Défense",
         "active_block": "Point de Blocage Actif",
         "crossover_sub": "↑ Délai Avant Perte Totale",
-        "circuit_active": "🛑 STOPPER L'HÉMORRAGIE (DIRECTIVE UNIFIÉE)",
+        "circuit_active": "🛑 STOPPER L'HÉMORRAGIE & ORDONNER LE COUPLAGE IMMÉDIAT (BOUCLIER DU DIRECTOIRE)",
+        "circuit_active_hint": "Un clic absorbe la responsabilité de l'ingénieur par la loi, transmet le visa et ramène la perte quotidienne à 0 €.",
         "circuit_defended": "🟢 CAPITAL DÉFENDU — PERTE: 0 €",
         "why_stalled": "🚨 1. Pourquoi le déblocage est-il gelé ?",
         "what_unblocks": "🟢 2. Quel acte juridique formel débloque le site ?",
@@ -327,7 +331,8 @@ I18N = {
         "cap_under_def": "防衛対象総資本",
         "active_block": "アクティブ遮断事象",
         "crossover_sub": "↑ 資本全損までの限界日数",
-        "circuit_active": "🛑 資本流出を遮断 (統合指揮権発動)",
+        "circuit_active": "🛑 資本流出を遮断し即時送電を命令する (取締役会免責シールド)",
+        "circuit_active_hint": "ワンクリックで法律に基づく技術者の責任を吸収し、PEスタンプを送信し、日次損失を ¥0 に停止します。",
         "circuit_defended": "🟢 資本防衛完了 — 流出損失: ¥0",
         "why_stalled": "🚨 1. なぜ現場は停滞しているのか？",
         "what_unblocks": "🟢 2. どの法的文書がゲートを解除するか？",
@@ -967,6 +972,7 @@ if selected_view == t["tier1_title"]:
                 st.session_state.conference_focus = "DEFAULT"
                 st.success("Unified directive executed. Capital defended across all branches.")
                 st.rerun()
+            st.caption(f"<div style='text-align:center; color:#c9d1d9; font-size:0.9rem;'>{t['circuit_active_hint']}</div>", unsafe_allow_html=True)
         else:
             st.markdown(f"""
                 <div class="circuit-defended-card">
