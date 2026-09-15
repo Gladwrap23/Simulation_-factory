@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.6_persistent_tier2_countersignature_sep16_2026"
+APP_BUILD_ID = "v4.7_logical_gateway_hierarchy_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -872,20 +872,32 @@ if selected_view == t["tier1_title"]:
         st.session_state[ts_key] = f"{TODAY_STR} 00:00 UTC"
         
     # ---------------------------------------------------------
-    # COMMAND GATEWAY: ENTER NEW PROJECT BUDGET (MASSIVE RED)
+    # COMMAND GATEWAY: CONTEXT, STATUS, THEN ACTION
     # ---------------------------------------------------------
     with st.container(border=True):
+        parsed_current_capex = st.session_state[calib_key]
+        is_overridden = parsed_current_capex != sector["asset_cap"]
+        badge_color = "#e3b341" if is_overridden else "#58a6ff"
+        badge_label = t["override_active"] if is_overridden else t["baseline_synced"]
+
         st.markdown(f"""
             <div style="text-align: center; margin-bottom: 14px;">
-                <div style="font-size:0.95rem; font-weight:700; color:#58a6ff; letter-spacing:0.08em; text-transform:uppercase;">
+                <div style="font-size:1.05rem; font-weight:700; color:#58a6ff; letter-spacing:0.05em; text-transform:uppercase;">
                     ⚡ {active_sector} — {sector['baseline_docket']}
                 </div>
-                <div style="color: #ff4b4b; font-size: 1.5rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 10px 0 6px 0; line-height: 1.3;">
-                    🚨 {t['calib_red_header']}
-                </div>
-                <div style="font-size:0.95rem; color:#8b949e;">
-                    Statutory Baseline Docket: <strong style="color:#ffffff;">{curr_sym}{sector['asset_cap']:,}</strong> 
+                <div style="font-size:1.05rem; color:#c9d1d9; margin:6px 0;">
+                    Statutory Baseline CapEx at Risk: <strong style="color:#ffffff; font-size:1.15rem;">{curr_sym}{sector['asset_cap']:,}</strong>
                     <span style="color:#58a6ff;">(Effective: {sector['baseline_date']})</span>
+                </div>
+                <div style="margin-top:4px; margin-bottom:14px;">
+                    <span style="font-size:1.05rem; font-weight:800; color:{badge_color};">● {badge_label}</span>
+                    <span style="color:#8b949e; font-size:0.95rem; font-weight:600; margin-left:8px;">
+                        (Effective Audit Timestamp: {st.session_state[ts_key]})
+                    </span>
+                </div>
+                <div style="height:1px; background:#30363d; margin:12px 0 16px 0;"></div>
+                <div style="color:#ff4b4b; font-size:1.45rem; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; line-height:1.3;">
+                    🚨 {t['calib_red_header']}
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -912,21 +924,6 @@ if selected_view == t["tier1_title"]:
                 force_new_package=True
             )
             st.rerun()
-
-        is_overridden = parsed_capex != sector["asset_cap"]
-        badge_color = "#e3b341" if is_overridden else "#58a6ff"
-        badge_label = t["override_active"] if is_overridden else t["baseline_synced"]
-        
-        st.markdown(f"""
-            <div style="text-align:center; margin-top:10px; margin-bottom:4px;">
-                <span style="font-size:1.15rem; font-weight:800; color:{badge_color};">
-                    ● {badge_label}
-                </span>
-                <span style="color:#ffffff; font-size:0.95rem; font-weight:600; margin-left:8px;">
-                    (Effective Audit Timestamp: {st.session_state[ts_key]})
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
     # SECONDARY METRICS: TOLL-GATE & EPOCH
