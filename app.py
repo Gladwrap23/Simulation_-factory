@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v4.4_tier1_4_flow_and_autoroute_sep16_2026"
+APP_BUILD_ID = "v4.5_plain_english_legal_artifacts_and_exhibits_sep16_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -152,6 +152,26 @@ st.markdown("""
             font-size: 1.05rem !important;
             padding: 10px 18px;
         }
+
+        .legal-document-box {
+            background-color: #0d1117;
+            border: 2px solid #30363d;
+            border-left: 6px solid #58a6ff;
+            border-radius: 6px;
+            padding: 20px 24px;
+            font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+            color: #e6edf3;
+            line-height: 1.7;
+        }
+        .legal-header {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #58a6ff;
+            margin-bottom: 12px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -179,7 +199,7 @@ I18N = {
         "circuit_active": "🛑 HALT CAPITAL BLEED (UNIFIED DIRECTIVE)",
         "circuit_defended": "🟢 CAPITAL DEFENDED — BLEED: $0",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
-        "what_unblocks": "🟢 2. What Unblocks the Gate?",
+        "what_unblocks": "🟢 2. What Document Unblocks the Gate?",
         "interrogate_hint": "Type query to interrogate agents...",
         "branches_title": "The Three Cascading Branches & Remedial Levers",
         "pipeline_title": "🔒 Forward Incident Pipeline (Next 4 Bottlenecks)",
@@ -207,7 +227,7 @@ I18N = {
         "circuit_active": "🛑 HALTEVERLUST STOPPEN (UNIFIED WEISUNG)",
         "circuit_defended": "🟢 KAPITAL VERTEIDIGT — VERLUST: 0 €",
         "why_stalled": "🚨 1. Warum stockt die Freigabe?",
-        "what_unblocks": "🟢 2. Wie wird das Tor entsperrt?",
+        "what_unblocks": "🟢 2. Welches Dokument entsperrt das Tor?",
         "interrogate_hint": "Frage zur Aufklärung eingeben...",
         "branches_title": "Die Drei Kaskadierenden Säulen & Abhilfemassnahmen",
         "pipeline_title": "🔒 Nachgelagerte Engpass-Pipeline (Nächste 4 Prüfpunkte)",
@@ -235,7 +255,7 @@ I18N = {
         "circuit_active": "🛑 DETENER PÉRDIDA (DIRECTIVA UNIFICADA)",
         "circuit_defended": "🟢 CAPITAL DEFENDIDO — PÉRDIDA: $0",
         "why_stalled": "🚨 1. ¿Por qué está trabada la solución?",
-        "what_unblocks": "🟢 2. ¿Qué desbloquea la compuerta?",
+        "what_unblocks": "🟢 2. ¿Qué documento legal desbloquea la compuerta?",
         "interrogate_hint": "Escriba consulta de investigación...",
         "branches_title": "Las Tres Ramas en Cascada y Palancas de Mitigación",
         "pipeline_title": "🔒 Ducto Consecutivo (Próximos 4 Cuellos de Botella)",
@@ -263,7 +283,7 @@ I18N = {
         "circuit_active": "🛑 STOPPER L'HÉMORRAGIE (DIRECTIVE UNIFIÉE)",
         "circuit_defended": "🟢 CAPITAL DÉFENDU — PERTE: 0 €",
         "why_stalled": "🚨 1. Pourquoi le déblocage est-il gelé ?",
-        "what_unblocks": "🟢 2. Quel acte juridique libère le site ?",
+        "what_unblocks": "🟢 2. Quel acte juridique formel débloque le site ?",
         "interrogate_hint": "Interroger les agents...",
         "branches_title": "Les Trois Piliers en Cascade & Leviers d'Atténuation",
         "pipeline_title": "🔒 File des Goulots d'Étranglement (4 Prochains)",
@@ -291,7 +311,7 @@ I18N = {
         "circuit_active": "🛑 資本流出を遮断 (統合指揮権発動)",
         "circuit_defended": "🟢 資本防衛完了 — 流出損失: ¥0",
         "why_stalled": "🚨 1. なぜ現場は停滞しているのか？",
-        "what_unblocks": "🟢 2. どの決議がゲートを解除するか？",
+        "what_unblocks": "🟢 2. どの法的文書がゲートを解除するか？",
         "interrogate_hint": "エージェントへ直接諮問を入力...",
         "branches_title": "3つの連動防衛ブランチと解決手段",
         "pipeline_title": "🔒 順次解決ボトルネック・パイプライン",
@@ -690,6 +710,60 @@ def reset_incident_to_neutral(incident: dict):
         force_new_package=True
     )
 
+def ensure_legal_artifacts(incident: dict, sector: dict):
+    counterparty = incident.get("counterparty", {})
+    work_order = incident.get("tier3_work_order", {})
+    lead = work_order.get("field_lead", "Lead Professional Engineer")
+    daily_bleed = incident.get("base_daily_bleed", 0)
+    days_deadlocked = incident.get("days_in_deadlock", 0)
+    claim_amount = daily_bleed * days_deadlocked
+
+    incident.setdefault("legal_instrument", {
+        "title": "DIRECTORATE INDEMNITY & STATUTORY HOLD-HARMLESS RESOLUTION",
+        "authority": sector.get("statute", "Applicable corporate governance statute"),
+        "effective_date": f"{TODAY_STR} 00:00:00 UTC",
+        "recitals": [
+            f"WHEREAS, the operating asset is sustaining a daily holding bleed of {sector.get('currency', '$')}{daily_bleed:,.0f};",
+            "WHEREAS, recorded telemetry establishes that the physical remediation is within the applicable operating threshold;",
+            f"WHEREAS, Lead Professional Engineer {lead} requires corporate protection before executing the pending attestation;"
+        ],
+        "operative_resolution": (
+            f"NOW, THEREFORE, BE IT RESOLVED: The corporation indemnifies and holds harmless {lead} "
+            f"for the pending attestation and assumes responsibility for disputed claims under "
+            f"{counterparty.get('clause_invoked', 'the applicable warranty clause')}."
+        ),
+        "signatories": [
+            {"role": "Cognizant Director", "name": incident.get("director_seat", "Executive Board"), "status": "EXECUTED & ATTESTED", "hash": "sha256:pending-director-attestation"},
+            {"role": "Lead Professional Engineer", "name": lead, "status": "DIGITAL STAMP PENDING", "hash": "sha256:pending-field-stamp"}
+        ]
+    })
+    incident.setdefault("exhibits", [
+        {
+            "code": "EXHIBIT A-1",
+            "title": "Primary Telemetry and Fault Recorder Extract",
+            "filename": f"{incident.get('title', 'INCIDENT').replace(' ', '_')[:32]}_TELEMETRY.DAT",
+            "size": "Authenticated source extract",
+            "sha256": hashlib.sha256(f"{sector.get('baseline_docket')}|telemetry".encode()).hexdigest(),
+            "significance": "Establishes the physical operating condition and separates equipment behavior from the contractual delay."
+        },
+        {
+            "code": "EXHIBIT B-1",
+            "title": "Counterparty Access and Notice Log",
+            "filename": f"{incident.get('title', 'INCIDENT').replace(' ', '_')[:32]}_ACCESS_LOG.CSV",
+            "size": "Authenticated source extract",
+            "sha256": hashlib.sha256(f"{counterparty.get('name')}|access".encode()).hexdigest(),
+            "significance": "Records counterparty presence, notice, or non-performance relevant to the asserted contractual defense."
+        },
+        {
+            "code": "EXHIBIT C-1",
+            "title": "Liquidated Delay Damages Ledger",
+            "filename": f"{incident.get('title', 'INCIDENT').replace(' ', '_')[:32]}_DAMAGES_LEDGER.PDF",
+            "size": "Authenticated calculation",
+            "sha256": hashlib.sha256(f"{daily_bleed}|{days_deadlocked}|{claim_amount}".encode()).hexdigest(),
+            "significance": f"Calculates the asserted delay exposure as {sector.get('currency', '$')}{daily_bleed:,.0f} per day for {days_deadlocked} days."
+        }
+    ])
+
 # =========================================================
 # 3. SIDEBAR NAVIGATION
 # =========================================================
@@ -756,6 +830,7 @@ if st.session_state.selected_incident_id not in sector["incidents"]:
     st.session_state.selected_incident_id = list(sector["incidents"].keys())[0]
 
 active_inc = sector["incidents"][st.session_state.selected_incident_id]
+ensure_legal_artifacts(active_inc, sector)
 is_resolved = active_inc.get("status") == "RESOLVED"
 
 # =========================================================
@@ -927,7 +1002,7 @@ if selected_view == t["tier1_title"]:
         with diag_col2:
             if st.button(t["what_unblocks"], use_container_width=True, type="primary" if st.session_state.conference_focus == "WHAT_UNBLOCKS" else "secondary"):
                 st.session_state.conference_focus = "WHAT_UNBLOCKS"
-                append_to_active_package(active_inc, "DIAGNOSTIC", "Inquiry: What unblocks the gate?")
+                append_to_active_package(active_inc, "DIAGNOSTIC", "Inquiry: What formal legal document unblocks the gate?")
                 st.rerun()
         with diag_col3:
             custom_query = st.text_input("3. Custom Interrogation Query", placeholder=t["interrogate_hint"], label_visibility="collapsed")
@@ -943,10 +1018,30 @@ if selected_view == t["tier1_title"]:
                 f"🔴 **Telemetry Agent:** *'Physical telemetry is nominal (THD 4.1% < 5.0%). OEM field contractor holds attestation behind Clause 14.b warranty disclaimer. Deadlock is contractual, not physical.'*"
             )
         elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
+            inst = active_inc.get("legal_instrument", {})
             st.markdown(
-                f"🟢 **Master Orchestrator ➔ Fiduciary Shield Agent:** *'What instrument unblocks this gate?'* \n\n"
-                f"🟢 **Fiduciary Shield Agent:** *'Board Resolution executing a Directorate Indemnity Carve-Out shields the Lead PE under {sector['statute']}, releasing the digital stamp within 5 minutes.'*"
+                f"🟢 **Master Orchestrator ➔ Fiduciary Shield Agent:** *'What formal legal document unblocks this gate?'* \n\n"
+                f"🟢 **Fiduciary Shield Agent:** *'The **{inst.get('title', 'Board Resolution')}** pursuant to **{inst.get('authority', sector['statute'])}**.'* \n\n"
+                f"📄 **Plain-English Document Summary:** The company formally absorbs the disputed liability from the field engineer, authorizes the pending digital stamp, and creates a documented corporate reliance trail."
             )
+            with st.expander("🔎 Inspect Primary Legal Document & Executed Signatures", expanded=True):
+                st.markdown(f"""
+                    <div class="legal-document-box">
+                        <div class="legal-header">🏛️ Primary Legal Document: {inst.get('title')}</div>
+                        <div style="font-size:0.95rem; color:#8b949e; margin-bottom:14px;">
+                            Statutory Authority: <strong style="color:#ffffff;">{inst.get('authority')}</strong> |
+                            Effective: <strong style="color:#58a6ff;">{inst.get('effective_date')}</strong>
+                        </div>
+                        <div style="font-style:italic; margin-bottom:12px;">{'<br><br>'.join(inst.get('recitals', []))}</div>
+                        <div style="background:rgba(88,166,255,0.08); padding:12px; border-radius:4px; font-weight:bold; margin-bottom:16px;">
+                            {inst.get('operative_resolution')}
+                        </div>
+                        <div style="font-family:-apple-system, sans-serif; font-size:0.9rem; border-top:1px solid #30363d; padding-top:10px;">
+                            <strong style="color:#58a6ff;">EXECUTED DIGITAL SIGNATURES & VERIFICATION HASHES:</strong><br>
+                            {'<br>'.join([f"• <strong>{s['role']}</strong>: {s['name']} — <span style='color:#3fb950;'>{s['status']}</span> (<code>{s.get('hash', 'N/A')}</code>)" for s in inst.get('signatories', [])])}
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
         elif st.session_state.conference_focus == "CUSTOM":
             st.markdown(f"🔍 **Agent Synthesis for Query: '{st.session_state.get('custom_query_text', '')}'**")
             st.info(f"Cross-referencing telemetry logs against {sector['statute']}. Primary bottleneck remains contractual signatory deadlock on {st.session_state.selected_incident_id}.")
@@ -1232,7 +1327,34 @@ elif selected_view == t["tier4_title"]:
             """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # TIER C: THREE ATTRIBUTION PROOF PILLARS
+    # TIER C: PRIMARY EVIDENTIARY EXHIBIT INDEX
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### 📁 Primary Evidentiary Exhibit Index (Inspectable Audit Manifest)")
+    st.caption("Underlying authenticated artifacts establishing physical causation and contractual breach:")
+
+    for exh in active_inc.get("exhibits", []):
+        with st.container(border=True):
+            e_col1, e_col2 = st.columns([3, 1])
+            with e_col1:
+                st.markdown(f"""
+                    <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">{exh['code']}: {exh['title']}</div>
+                    <div style="font-size:0.95rem; color:#c9d1d9; margin:4px 0;">File: <code>{exh['filename']}</code> ({exh['size']})</div>
+                    <div style="font-size:0.85rem; color:#8b949e; font-family:monospace;">SHA-256: {exh['sha256']}</div>
+                    <div style="font-size:1.0rem; color:#f0f6fc; margin-top:8px;"><strong>Evidentiary Proof:</strong> {exh['significance']}</div>
+                """, unsafe_allow_html=True)
+            with e_col2:
+                st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+                st.download_button(
+                    label=f"⬇️ Download {exh['code']}",
+                    data=f"AUTHENTICATED EXHIBIT {exh['code']}\nSHA-256: {exh['sha256']}\n{exh['significance']}".encode(),
+                    file_name=exh["filename"],
+                    mime="application/octet-stream",
+                    use_container_width=True
+                )
+
+    # ---------------------------------------------------------
+    # TIER D: THREE ATTRIBUTION PROOF PILLARS
     # ---------------------------------------------------------
     st.markdown("---")
     st.markdown("### 🏛️ The Three Attribution Proof Pillars (The Indisputable Case)")
@@ -1358,6 +1480,7 @@ elif selected_view == t["tier4_title"]:
 elif selected_view == t["tier2_title"]:
     first_dir = list(sector["directors"].keys())[0]
     st.title(t["tier2_title"])
+    inst = active_inc.get("legal_instrument", {})
     st.caption(f"Asset: **{active_sector}** | Cognizant Director: **{first_dir}** | Statute: **{sector['statute']}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
@@ -1368,13 +1491,20 @@ elif selected_view == t["tier2_title"]:
     st.metric("Governance State", active_inc.get("status", "DEADLOCKED"), active_inc.get("priority", "P1"))
     
     with st.container(border=True):
-        st.markdown(f"#### Fiduciary Protection Instrument ({sector['statute']})")
         st.markdown(f"""
-            This console exercises director oversight under the **Business Judgment Rule**. 
-            By issuing formal concurrence, the director attests that unblocking **{st.session_state.selected_incident_id}** 
-            protects corporate capital against holdout burn without exposing officers to personal liability.
-        """)
-        if not is_resolved and st.button("Issue Directorate Formal Concurrence", use_container_width=True, type="primary"):
-            append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal fiduciary concurrence issued by {first_dir}.")
-            st.success("Concurrence sealed to active job package.")
-            st.rerun()
+            <div class="legal-document-box">
+                <div class="legal-header">📜 {inst.get('title')}</div>
+                <p><strong>Statutory Authority:</strong> {inst.get('authority')}</p>
+                <div style="font-style:italic; margin: 12px 0;">{'<br><br>'.join(inst.get('recitals', []))}</div>
+                <div style="background:rgba(88,166,255,0.08); padding:12px; border-radius:4px; font-weight:bold; margin-bottom:14px;">
+                    {inst.get('operative_resolution')}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if not is_resolved:
+            if st.button(f"✍️ Countersign Directorate Indemnity Resolution ({first_dir})", use_container_width=True, type="primary"):
+                append_to_active_package(active_inc, "DIRECTOR CONCURRENCE", f"Formal fiduciary concurrence and reliance countersigned by {first_dir} under {sector['statute']}.")
+                st.success("Resolution countersigned. Reliance documented under the applicable governance standard.")
+                st.rerun()
+        else:
+            st.success(f"✅ Resolution active. Countersigned and attested by {first_dir}.")
