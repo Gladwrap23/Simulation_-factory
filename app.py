@@ -4,14 +4,14 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v5.6_full_sidebar_restored_sep17_2026"
+APP_BUILD_ID = "v5.7_restructured_sidebar_branding_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
     st.session_state["build_id"] = APP_BUILD_ID
 
 st.set_page_config(
-    page_title="Autonomous Capital Defense | Command Post & Forensic Vault",
+    page_title="Autonomous Capital Defense | Forensic Claims Engine",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -87,6 +87,14 @@ st.markdown("""
             background-color: #b62324 !important;
             border-color: #ff7b72 !important;
             box-shadow: 0 0 30px rgba(255, 75, 75, 0.8) !important;
+        }
+
+        .sidebar-brand-card {
+            background: linear-gradient(180deg, rgba(88, 166, 255, 0.12) 0%, rgba(22, 27, 34, 0.8) 100%);
+            border: 1px solid #388bfd;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
         }
 
         .exec-metric-card {
@@ -438,12 +446,34 @@ def reset_incident_to_neutral(incident: dict):
 # 3. SIDEBAR NAVIGATION: COMPLETE RESTORED LEFT PANEL
 # =========================================================
 with st.sidebar:
-    st.markdown("### 🏛️ COMMAND POST")
+    st.markdown("""
+        <div class="sidebar-brand-card">
+            <div style="font-size: 1.15rem; font-weight: 900; color: #58a6ff; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.25;">
+                ⚡ Autonomous Capital Defense
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff; margin-top: 4px;">
+                Forensic Claims Engine
+            </div>
+            <div style="font-size: 0.8rem; color: #8b949e; margin-top: 6px; font-family: monospace;">
+                Pactum Sovereign OS · Build v5.7
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     t = I18N["English [USA · UK · Australia]"]
     
-    lang_choice = st.selectbox(
-        "Localization / Language Agent Coverage:",
-        list(I18N.keys())
+    active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
+    sector = st.session_state.app_state[active_sector]
+    curr_sym = sector["currency"]
+
+    st.selectbox(
+        "Sovereign Legal Jurisdiction:",
+        [
+            "🇺🇸 ERCOT / Delaware (DGCL § 141)",
+            "🇩🇪 EBA / Germany (AktG § 93)",
+            "🇨🇱 CEN / Chile (Art. 72-1)",
+            "🇫🇷 RTE / France (L225-251)",
+            "🇯🇵 METI / Japan (Art. 423)"
+        ]
     )
     
     st.markdown("""
@@ -454,10 +484,6 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     
     st.markdown(f"<div style='font-size:0.95rem; color:#c9d1d9; margin-bottom:12px;'>{t['sub_app']}</div>", unsafe_allow_html=True)
-    
-    active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
-    sector = st.session_state.app_state[active_sector]
-    curr_sym = sector["currency"]
     
     calib_key = f"capex_override_{active_sector}"
     if calib_key not in st.session_state:
@@ -508,7 +534,7 @@ is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
 if selected_view == t["tier1_title"]:
     st.markdown("""
         <div style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-            ⚡ ACTIVE BUILD: v5.6 | FULL SIDEBAR QUEUE + RELOCATED TAP TO HALT
+            ⚡ ACTIVE BUILD: v5.7 | BRAND-FIRST HIERARCHY + TAP TO HALT POSITIONED BELOW DIAGNOSTIC CONFERENCE
         </div>
     """, unsafe_allow_html=True)
 
