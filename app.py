@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.6_verified_governance_rebuild_sep17_2026"
+APP_BUILD_ID = "v6.7_chairman_preemption_and_scroll_fix_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -467,6 +467,34 @@ SECTORS = {
     }
 }
 
+BOARD_REMEDIES = {
+    "Dr. Arthur Pendleton": (
+        "Technical Safe-Harbor Reliance Certificate",
+        "Executes formal statutory reliance under DGCL § 141(e) on 10kHz oscillography data, shielding Marcus Vance from personal warranty voidance threats."
+    ),
+    "Executive Chairman": (
+        "Chairman Sovereign Preemption Warrant",
+        "Invokes the Business Judgment Rule unilaterally, preempting committee delays, absorbing vendor warranty liability, and ordering immediate grid energization."
+    ),
+    "Eleanor Vance, CPA": (
+        "Liquidated Damages Demurrage Certificate",
+        "Formalizes the accrued delay claim against Apex OEM under Schedule D § 3 and prepares standby letter-of-credit drawdown."
+    ),
+    "David Chen (Proxy)": (
+        "PUCT Statutory Compliance Attestation",
+        "Certifies that the plant's harmonics comply with IEEE 2800 and protects the interconnection filing from utility penalties."
+    ),
+    "Amb. Hiroshi Tanaka": (
+        "Formal Notice of Unexcused OEM Default",
+        "Repudiates Apex's warranty-voidance position using gate-access evidence showing absent OEM personnel."
+    )
+}
+
+for director in SECTORS["ERCOT BESS / Grid Storage (USA)"]["board_roster"]:
+    remedy_title, remedy_description = BOARD_REMEDIES[director["name"]]
+    director["remedy_title"] = remedy_title
+    director["remedy_description"] = remedy_description
+
 if "app_state" not in st.session_state:
     st.session_state.app_state = SECTORS
 
@@ -624,7 +652,7 @@ if selected_view == t["tier1_title"]:
     with top_col1:
         st.markdown("""
             <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.6 | VERIFIED GOVERNANCE CASSETTES & SCROLL RESET
+                ⚡ ACTIVE BUILD: v6.7 | CHAIRMAN PREEMPTION DESK & DOM SCROLL FIX ACTIVE
             </div>
         """, unsafe_allow_html=True)
     with top_col2:
@@ -1085,7 +1113,50 @@ elif selected_view == t["tier2_title"]:
                     if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
                         request_navigation(t["tier1_title"])
     else:
-        st.info(f"Director {current_d['name']} ({current_d['seat']}) is in passive oversight. No active bottlenecks are pinned to their department.")
+        if current_d["name"] == "Executive Chairman":
+            st.markdown("### ⚡ Sovereign Board Preemption Desk: Executive Chairman")
+            st.markdown(f"""
+                <div style="background:rgba(218,54,51,0.12); border-left:4px solid #da3633; padding:16px 20px; border-radius:4px; margin-bottom:18px;">
+                    <div style="font-weight:900; font-size:1.2rem; color:#ff4b4b;">PLENARY SOVEREIGN OVERRIDE (DELAWARE DGCL § 141)</div>
+                    <div style="font-size:1.05rem; color:#f0f6fc; margin-top:6px; line-height:1.6;">The Chairman may preempt committee delay, absorb vendor warranty liability, and order immediate energization when holding bleed threatens the balance sheet.</div>
+                </div>
+            """, unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown(f"""
+                    <div class="legal-document-box" style="border-left-color:#da3633;">
+                        <div class="legal-header" style="color:#da3633;">🏛️ CHAIRMAN'S EMERGENCY PREEMPTION & ENERGIZATION WARRANT</div>
+                        <p><strong>Authority:</strong> Delaware General Corporation Law § 141(a) & Corporate Charter Plenary Powers</p>
+                        <p><strong>Operative Order:</strong> Immediate transmission of the PE attestation stamp to ERCOT with complete corporate indemnity for Marcus Vance, PE and Permian HV Field Services LLC under Contract #TX-9011.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                if not is_resolved and st.button("🛑 EXECUTE CHAIRMAN'S PREEMPTION WARRANT (STOP CAPITAL BLEED)", use_container_width=True, type="primary"):
+                    execute_unified_circuit_breaker(active_inc, 87264 * scale_factor)
+                    st.success("Chairman's Preemption Warrant executed. Capital bleed stopped.")
+                    st.rerun()
+                elif is_resolved:
+                    st.success("Chairman Preemption is active. Capital defended to $0/day.")
+                    if st.button("➔ Advance to Tier 4: Departmental Forensic Vault", use_container_width=True, type="primary"):
+                        request_navigation(t["tier4_title"])
+        elif current_d["name"] == "Eleanor Vance, CPA":
+            st.markdown("### 📊 Audit & Demurrage Recovery Desk: Eleanor Vance, CPA")
+            st.markdown(f"""
+                <div style="background:rgba(227,179,65,0.1); border-left:4px solid #e3b341; padding:14px 18px; border-radius:4px; margin-bottom:16px;">
+                    <div style="font-weight:800; font-size:1.15rem; color:#e3b341;">SOX COMPLIANCE & LIQUIDATED DAMAGES AUDIT</div>
+                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">Every 24 hours of vendor stall adds $87,264 to the certified Schedule D claim ledger.</div>
+                </div>
+                <div class="legal-document-box"><strong>Certified Liquidated Demurrage Total:</strong> <span style="color:#e3b341; font-size:1.4rem;">${87264 * 7 * scale_factor:,.0f} USD</span><br><br>{current_d['remedy_description']}</div>
+            """, unsafe_allow_html=True)
+            if st.button("➔ Inspect Full Forensic Demurrage Ledger (Tier 4)", use_container_width=True, type="primary"):
+                request_navigation(t["tier4_title"])
+        else:
+            st.markdown(f"### 🌐 Committee Remit: {current_d['name']}")
+            st.markdown(f"""
+                <div style="background:rgba(88,166,255,0.08); border-left:4px solid #58a6ff; padding:14px 18px; border-radius:4px; margin-bottom:16px;">
+                    <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">{current_d['remedy_title']}</div>
+                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">{current_d['remedy_description']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.info("This committee stands ready in support. The primary blocker remains the high-voltage inverter attestation owned by Dr. Arthur Pendleton or the Executive Chairman.")
 
 # =========================================================
 # 6. VIEW: TIER 3 — SITE OPERATIONS & REMEDIATION DESK
