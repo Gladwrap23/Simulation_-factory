@@ -3,8 +3,9 @@ import hashlib
 import json
 import re
 import streamlit as st
+import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v5.9_full_tier_documentation_restored_sep17_2026"
+APP_BUILD_ID = "v6.0_universal_print_engine_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -202,6 +203,56 @@ st.markdown("""
             padding: 14px 16px;
             margin-bottom: 16px;
         }
+
+        @media print {
+            section[data-testid="stSidebar"],
+            header,
+            footer,
+            [data-testid="stToolbar"],
+            div[data-testid="stButton"],
+            button,
+            .tap-to-halt-container,
+            .active-build-banner {
+                display: none !important;
+            }
+
+            body, .stApp {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                font-family: "Times New Roman", Times, serif !important;
+            }
+
+            p, span, div, h1, h2, h3, h4, code {
+                color: #000000 !important;
+            }
+
+            .main .block-container {
+                max-width: 100% !important;
+                padding: 0.5in !important;
+                margin: 0 !important;
+            }
+
+            .exec-metric-card,
+            .circuit-breaker-card,
+            .circuit-defended-card,
+            .claim-demand-card,
+            .legal-document-box {
+                background-color: #ffffff !important;
+                border: 1px solid #111111 !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+                break-inside: avoid;
+            }
+
+            .exec-metric-val, .exec-metric-val-secondary {
+                color: #000000 !important;
+            }
+
+            a {
+                text-decoration: none !important;
+                color: #000000 !important;
+            }
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -379,6 +430,9 @@ if "selected_incident_id" not in st.session_state:
 if "conference_focus" not in st.session_state:
     st.session_state.conference_focus = "DEFAULT"
 
+if "trigger_print" not in st.session_state:
+    st.session_state.trigger_print = False
+
 def append_to_active_package(incident: dict, job_title: str, event_text: str, force_new_package=False):
     packages = incident.setdefault("audit_packages", [])
     now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -503,6 +557,10 @@ with st.sidebar:
     st.session_state.selected_view = selected_view
     
     st.divider()
+    st.markdown("#### 🖨️ Universal Export Utility")
+    if st.button("🖨️ Print Desk / Export PDF", use_container_width=True):
+        st.session_state.trigger_print = True
+
     st.markdown("#### 🔒 Active Incident Queue")
     for inc_key, inc_obj in sector["incidents"].items():
         is_sel = inc_key == st.session_state.selected_incident_id
@@ -521,15 +579,24 @@ is_resolved = active_inc.get("status") == "RESOLVED"
 is_dir_signed = active_inc.get("director_signed", False) or is_resolved
 is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
 
+if st.session_state.trigger_print:
+    st.session_state.trigger_print = False
+    components.html("<script>window.parent.print();</script>", height=0, width=0)
+
 # =========================================================
 # 4. VIEW: TIER 1 — CHAIRMAN TACTICAL COMMAND POST
 # =========================================================
 if selected_view == t["tier1_title"]:
-    st.markdown("""
-        <div style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-            ⚡ ACTIVE BUILD: v5.9 | FULL TIER DOCUMENTATION RESTORED (TIERS 2, 3 & 4)
-        </div>
-    """, unsafe_allow_html=True)
+    top_col1, top_col2 = st.columns([4, 1])
+    with top_col1:
+        st.markdown("""
+            <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
+                ⚡ ACTIVE BUILD: v6.0 | UNIVERSAL PRINT ENGINE + FULL FORENSIC DOCUMENTATION
+            </div>
+        """, unsafe_allow_html=True)
+    with top_col2:
+        if st.button("🖨️ Print Tier 1", use_container_width=True):
+            components.html("<script>window.parent.print();</script>", height=0, width=0)
 
     st.title(t["tier1_title"])
     
@@ -821,7 +888,12 @@ if selected_view == t["tier1_title"]:
 # =========================================================
 elif selected_view == t["tier2_title"]:
     first_dir = "Dr. Arthur Pendleton"
-    st.title(t["tier2_title"])
+    top_col1, top_col2 = st.columns([4, 1])
+    with top_col1:
+        st.title(t["tier2_title"])
+    with top_col2:
+        if st.button("🖨️ Print Resolution", use_container_width=True):
+            components.html("<script>window.parent.print();</script>", height=0, width=0)
     inst = active_inc.get("legal_instrument", {})
     st.caption(f"Asset: **{active_sector}** | Cognizant Director: **{first_dir}** | Seat: **Chair, Grid Risk & Technical Integrity** | Statute: **{sector['statute']}**")
     
@@ -895,7 +967,12 @@ elif selected_view == t["tier2_title"]:
 # 6. VIEW: TIER 3 — SITE OPERATIONS DESK (RESTORED)
 # =========================================================
 elif selected_view == t["tier3_title"]:
-    st.title(f"👷 {t['tier3_title']}")
+    top_col1, top_col2 = st.columns([4, 1])
+    with top_col1:
+        st.title(f"👷 {t['tier3_title']}")
+    with top_col2:
+        if st.button("🖨️ Print Work Order", use_container_width=True):
+            components.html("<script>window.parent.print();</script>", height=0, width=0)
     wo = active_inc.get("tier3_work_order", {})
     trap = wo.get("plain_english_trap", {})
     st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
@@ -1019,7 +1096,12 @@ elif selected_view == t["tier3_title"]:
 # 7. VIEW: TIER 4 — FORENSIC RECOVERY VAULT (RESTORED)
 # =========================================================
 elif selected_view == t["tier4_title"]:
-    st.title(f"⚖️ {t['tier4_title']}")
+    top_col1, top_col2 = st.columns([4, 1])
+    with top_col1:
+        st.title(f"⚖️ {t['tier4_title']}")
+    with top_col2:
+        if st.button("🖨️ Print Page (PDF)", use_container_width=True):
+            components.html("<script>window.parent.print();</script>", height=0, width=0)
     st.markdown(f"""
         <div style="background: rgba(227, 179, 65, 0.1); border: 1px solid #e3b341; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div>Target Entity: <strong style="color:#ffffff;">{active_inc.get('counterparty', {}).get('name', 'OEM Vendor')}</strong></div>
@@ -1042,6 +1124,56 @@ elif selected_view == t["tier4_title"]:
     idle_contractor_overhead = int(total_claim_amount * 0.42)
     grid_penalty_exposure = int(total_claim_amount * 0.38)
     capital_cost_carry = total_claim_amount - idle_contractor_overhead - grid_penalty_exposure
+
+    timeline_rows = "".join(
+        f"<tr><td>{event['time']}</td><td>{event['party']}</td><td>{event['event']}</td></tr>"
+        for event in active_inc.get("forensic_timeline", [])
+    )
+    exhibit_rows = "".join(
+        f"<tr><td>{exhibit['code']}</td><td>{exhibit['title']}</td><td>{exhibit['filename']}</td><td><code>{exhibit['sha256']}</code></td></tr>"
+        for exhibit in active_inc.get("exhibits", [])
+    )
+    printable_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Pre-Litigation Cost Recovery Dossier - {active_sector}</title>
+        <style>
+            body {{ font-family: Georgia, serif; margin: 40px; color: #111; }}
+            h1, h2, h3 {{ font-family: sans-serif; }}
+            .card {{ border: 1px solid #333; padding: 16px; margin-bottom: 20px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+            th, td {{ border: 1px solid #999; padding: 8px 12px; text-align: left; }}
+            th {{ background: #eee; }}
+        </style>
+    </head>
+    <body>
+        <h1>CONFIDENTIAL PRE-LITIGATION SETTLEMENT DOSSIER</h1>
+        <p><strong>Asset:</strong> {active_sector} | <strong>Authority:</strong> {sector['statute']} | <strong>Date:</strong> {TODAY_STR}</p>
+        <div class="card">
+            <h3>Liquidated Damages Claim Demand: {curr_sym}{total_claim_amount:,}</h3>
+            <p><strong>Liable Counterparty:</strong> {active_inc.get('counterparty', {}).get('name', 'OEM Vendor')}</p>
+            <p><strong>Breach Clause:</strong> {active_inc.get('counterparty', {}).get('breach_clause', 'Contractual delay provision')}</p>
+        </div>
+        <h2>Forensic Timeline Flight Recorder</h2>
+        <table><tr><th>Timestamp</th><th>Entity</th><th>Event Description</th></tr>{timeline_rows}</table>
+        <h2>Primary Evidentiary Exhibits</h2>
+        <table><tr><th>Exhibit Code</th><th>Title</th><th>Filename</th><th>SHA-256 Hash</th></tr>{exhibit_rows}</table>
+    </body>
+    </html>
+    """
+    export_col1, export_col2 = st.columns([3, 2])
+    with export_col1:
+        st.caption("Export a standalone offline HTML dossier containing the claim, timeline, exhibits, and hashes.")
+    with export_col2:
+        st.download_button(
+            label="📄 Download Dossier (.HTML)",
+            data=printable_html,
+            file_name=f"EVIDENTIARY_DOSSIER_{active_sector.replace(' ', '_')}_{TODAY_STR}.html",
+            mime="text/html",
+            use_container_width=True
+        )
 
     c1, c2, c3 = st.columns(3)
     with c1:
