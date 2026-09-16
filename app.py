@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.3_deferred_state_navigation_sep17_2026"
+APP_BUILD_ID = "v6.4_elevated_signatures_and_governance_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -219,6 +219,14 @@ st.markdown("""
             margin-bottom: 10px;
         }
 
+        .signature-card {
+            background: #11161d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-top: 10px;
+        }
+
         @media print {
             section[data-testid="stSidebar"],
             header,
@@ -383,9 +391,30 @@ SECTORS = {
                         "for contested Clause 14.b claims and authorizes immediate bypass and grid energization."
                     ),
                     "signatories": [
-                        {"role": "Chairman of the Board", "name": "Executive Chairman", "status": "EXECUTED & ATTESTED", "hash": "sha256:7b910e12d4a1"},
-                        {"role": "Cognizant Technical Director", "name": "Dr. Arthur Pendleton", "status": "PENDING DIRECTOR COUNTERSIGNATURE", "hash": "sha256:f48a901c22e9"},
-                        {"role": "Lead Professional Engineer", "name": "Marcus Vance, PE (TX Lic #114902)", "status": "HELD PENDING INDEMNITY", "hash": "sha256:1a8904df88b3"}
+                        {
+                            "role": "Executive Chairman of the Board",
+                            "name": "Executive Chairman",
+                            "seat": "Sovereign Board Prerogative & Capital Defense",
+                            "status": "EXECUTED & ATTESTED",
+                            "hash": "sha256:7b910e12d4a19b882310b14c339a0ef28b123456789abcdef0123456789abcde",
+                            "timestamp": "2026-09-16 00:00:00 UTC"
+                        },
+                        {
+                            "role": "Cognizant Technical Director",
+                            "name": "Dr. Arthur Pendleton",
+                            "seat": "Chair, Grid Risk & Technical Integrity Committee",
+                            "status": "PENDING DIRECTOR COUNTERSIGNATURE",
+                            "hash": "sha256:f48a901c22e987102ce094a318894cb10e4a77e9921004ab12fedcba98765432",
+                            "timestamp": "PENDING BOARD RELIANCE CERTIFICATE"
+                        },
+                        {
+                            "role": "Lead Professional Engineer",
+                            "name": "Marcus Vance, PE (TX Lic #114902)",
+                            "seat": "Signatory Custody / High-Voltage Commissioning Lead",
+                            "status": "HELD PENDING INDEMNITY",
+                            "hash": "sha256:1a8904df88b3cae182049bb110294eec89012bb45601a90ee45109b82144ac90",
+                            "timestamp": "HELD UNDER CONTRACTUAL INTIMIDATION"
+                        }
                     ]
                 },
                 "exhibits": [
@@ -495,8 +524,10 @@ def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: f
     for sig in inst.get("signatories", []):
         if "Director" in sig["role"]:
             sig["status"] = "COUNTERSIGNED & SEALED"
+            sig["timestamp"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
         elif "Engineer" in sig["role"]:
             sig["status"] = "DIGITAL STAMP TRANSMITTED"
+            sig["timestamp"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
             
     append_to_active_package(
         incident,
@@ -520,8 +551,10 @@ def reset_incident_to_neutral(incident: dict):
     for sig in inst.get("signatories", []):
         if "Director" in sig["role"]:
             sig["status"] = "PENDING DIRECTOR COUNTERSIGNATURE"
+            sig["timestamp"] = "PENDING BOARD RELIANCE CERTIFICATE"
         elif "Engineer" in sig["role"]:
             sig["status"] = "HELD PENDING INDEMNITY"
+            sig["timestamp"] = "HELD UNDER CONTRACTUAL INTIMIDATION"
             
     append_to_active_package(
         incident,
@@ -628,7 +661,7 @@ if selected_view == t["tier1_title"]:
     with top_col1:
         st.markdown("""
             <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.2 | PROGRAMMATIC NAVIGATION FIXED
+                ⚡ ACTIVE BUILD: v6.4 | ELEVATED DIGITAL SIGNATURE & GOVERNANCE LEDGER
             </div>
         """, unsafe_allow_html=True)
     with top_col2:
@@ -937,6 +970,23 @@ elif selected_view == t["tier2_title"]:
         
     st.divider()
 
+    if is_dir_signed:
+        st.markdown("""
+            <div style="background: rgba(46, 160, 67, 0.15); border: 2px solid #2ea043; border-radius: 8px; padding: 18px 22px; margin-bottom: 20px;">
+                <div style="font-size:0.9rem; font-weight:800; color:#3fb950; text-transform:uppercase; letter-spacing:0.05em;">Fiduciary Status</div>
+                <div style="font-size:1.8rem; font-weight:900; color:#ffffff; line-height:1.2;">🟢 SAFE HARBOR ACTIVE & SEALED</div>
+                <div style="font-size:1.05rem; color:#c9d1d9; margin-top:4px;">Directorate indemnity formally concurred under Delaware DGCL § 141(e). All field engineers legally held harmless.</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+            <div style="background: rgba(248, 81, 73, 0.15); border: 2px solid #f85149; border-radius: 8px; padding: 18px 22px; margin-bottom: 20px;">
+                <div style="font-size:0.9rem; font-weight:800; color:#f85149; text-transform:uppercase; letter-spacing:0.05em;">Fiduciary Status</div>
+                <div style="font-size:1.8rem; font-weight:900; color:#ffffff; line-height:1.2;">🔴 STATUTORY DEADLOCK (P1 - CRITICAL)</div>
+                <div style="font-size:1.05rem; color:#c9d1d9; margin-top:4px;">Lead PE Marcus Vance is legally exposed under Apex Clause 14.b. Sign-off stalled pending Directorate Hold-Harmless Countersignature.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
     st.markdown("### 🏛️ Full Board of Directors & Governance Roster")
     st.caption("The active bottleneck is pinned to the director with statutory jurisdiction. Select a desk to inspect its reporting cascade.")
     roster = sector.get("board_roster", [])
@@ -991,12 +1041,34 @@ elif selected_view == t["tier2_title"]:
                 <div style="background:rgba(88,166,255,0.08); padding:12px; border-radius:4px; font-weight:bold; margin-bottom:14px;">
                     {inst.get('operative_resolution')}
                 </div>
-                <div style="font-family:-apple-system, sans-serif; font-size:0.9rem; border-top:1px solid #30363d; padding-top:10px;">
-                    <strong style="color:#58a6ff;">EXECUTED DIGITAL SIGNATURES & VERIFICATION HASHES:</strong><br>
-                    {'<br>'.join([f"• <strong>{s['role']}</strong>: {s['name']} — <span style='color:{'#3fb950' if 'EXECUTED' in s['status'] or 'COUNTERSIGNED' in s['status'] or 'TRANSMITTED' in s['status'] else '#e3b341'};'>{s['status']}</span> (<code>{s.get('hash', 'N/A')}</code>)" for s in inst.get('signatories', [])])}
-                </div>
             </div>
         """, unsafe_allow_html=True)
+
+        st.markdown("### 🔏 Executed Digital Signatures & Verification Hashes")
+        st.caption("Cryptographic audit trail anchoring statutory reliance under Delaware DGCL § 141:")
+        for sig in inst.get("signatories", []):
+            is_signed = any(marker in sig["status"] for marker in ("EXECUTED", "COUNTERSIGNED", "TRANSMITTED"))
+            status_color = "#3fb950" if is_signed else "#e3b341"
+            border_color = "#2ea043" if is_signed else "#e3b341"
+            st.markdown(f"""
+                <div class="signature-card" style="border:2px solid {border_color};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <span style="font-size:0.8rem; font-weight:800; color:#8b949e; text-transform:uppercase;">{sig['role']}</span>
+                            <div style="font-size:1.25rem; font-weight:900; color:#ffffff;">{sig['name']}</div>
+                            <div style="font-size:0.9rem; color:#58a6ff;">{sig.get('seat', 'Signatory Custody')}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="background:{status_color}; color:#000000; padding:6px 12px; border-radius:4px; font-weight:900; font-size:0.9rem; display:inline-block;">{sig['status']}</span>
+                            <div style="font-size:0.8rem; color:#c9d1d9; font-family:monospace; margin-top:6px;">Timestamp: {sig.get('timestamp', 'N/A')}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; padding-top:8px; border-top:1px solid #21262d;">
+                        <div style="font-size:0.75rem; color:#8b949e; font-weight:700; text-transform:uppercase;">Cryptographic Hash Receipt (SHA-256)</div>
+                        <code style="color:#58a6ff; font-size:0.88rem; word-break:break-all;">{sig.get('hash', 'N/A')}</code>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
         
         st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
         
@@ -1005,7 +1077,8 @@ elif selected_view == t["tier2_title"]:
                 active_inc["director_signed"] = True
                 for sig in inst.get("signatories", []):
                     if "Director" in sig["role"]:
-                        sig["status"] = "COUNTERSIGNED & RELIED"
+                        sig["status"] = "COUNTERSIGNED & SEALED"
+                        sig["timestamp"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
                         
                 append_to_active_package(
                     active_inc, 
