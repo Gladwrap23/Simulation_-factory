@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.7_chairman_preemption_and_scroll_fix_sep17_2026"
+APP_BUILD_ID = "v6.8_chairman_preemption_and_scroll_fix_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -588,7 +588,7 @@ with st.sidebar:
                 Forensic Claims Engine
             </div>
             <div style="font-size: 0.8rem; color: #8b949e; margin-top: 6px; font-family: monospace;">
-                Pactum Sovereign OS · Build v6.6
+                Pactum Sovereign OS · Build v6.8
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -652,7 +652,7 @@ if selected_view == t["tier1_title"]:
     with top_col1:
         st.markdown("""
             <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.7 | CHAIRMAN PREEMPTION DESK & DOM SCROLL FIX ACTIVE
+                ⚡ ACTIVE BUILD: v6.8 | CHAIRMAN PREEMPTION DESK & DOM SCROLL FIX ACTIVE
             </div>
         """, unsafe_allow_html=True)
     with top_col2:
