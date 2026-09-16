@@ -76,6 +76,23 @@ st.markdown("""
             font-weight: 800 !important;
             border-radius: 6px !important;
         }
+        div[data-testid="stButton"] button > div,
+        div[data-testid="stButton"] button p,
+        div[data-testid="stButton"] button span {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        @media (max-width: 768px) {
+            div[data-testid="stButton"] button {
+                min-height: 48px !important;
+                padding: 9px 10px !important;
+                font-size: 0.92rem !important;
+                line-height: 1.25 !important;
+            }
+        }
 
         .emergency-halt-btn button {
             background-color: #da3633 !important;
