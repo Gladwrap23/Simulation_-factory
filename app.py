@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.0_universal_print_engine_sep17_2026"
+APP_BUILD_ID = "v6.1_operational_cascade_directorate_to_field_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -204,6 +204,21 @@ st.markdown("""
             margin-bottom: 16px;
         }
 
+        .director-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+        }
+        .director-card-pinned {
+            background-color: rgba(248, 81, 73, 0.1);
+            border: 2px solid #f85149;
+            border-radius: 6px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+        }
+
         @media print {
             section[data-testid="stSidebar"],
             header,
@@ -299,6 +314,13 @@ SECTORS = {
         "baseline_docket": "ERCOT IA § 4.2 Interconnection Docket #54219",
         "baseline_date": "16 Sep 2026",
         "statute": "Delaware DGCL § 141 (Business Judgment Rule)",
+        "board_roster": [
+            {"name": "Dr. Arthur Pendleton", "seat": "Chair, Grid Risk & Technical Integrity Committee", "role": "Cognizant Technical Director", "pinned_to_bottleneck": True, "statutory_role": "Delaware DGCL § 141(e) Technical Reliance & Fiduciary Shield Authority", "management_bridge": "Sarah Jenkins (VP, Engineering Operations)", "subordinate_field_lead": "Marcus Vance, PE (Permian HV Field Services LLC)"},
+            {"name": "David Chen (Proxy)", "seat": "Chair, Regulatory & Market Compliance Committee", "role": "Commercial Director", "pinned_to_bottleneck": False, "statutory_role": "PUCT / ERCOT Protocol § 4.2 Market Participant Attestation", "management_bridge": "Thomas Thorne (VP, Interconnection & Regulatory Affairs)", "subordinate_field_lead": "Elena Rostova (SCADA Regulatory Engineer)"},
+            {"name": "Executive Chairman", "seat": "Chairman of the Board of Directors", "role": "Chief Governance Officer", "pinned_to_bottleneck": False, "statutory_role": "Sovereign Board Prerogative & Balance Sheet Capital Allocation", "management_bridge": "General Counsel & Chief Financial Officer", "subordinate_field_lead": "Portfolio Oversight Desk"},
+            {"name": "Eleanor Vance, CPA", "seat": "Chair, Audit & Financial Risk Committee", "role": "Audit Chair", "pinned_to_bottleneck": False, "statutory_role": "SOX Compliance & Demurrage Liquidated Damages Auditor", "management_bridge": "Corporate Controller", "subordinate_field_lead": "Cost Recovery Claims Analyst"},
+            {"name": "Amb. Hiroshi Tanaka", "seat": "Chair, Sovereign Governance & Geopolitical Supply Committee", "role": "Independent Director", "pinned_to_bottleneck": False, "statutory_role": "Critical Infrastructure Supply Chain Covenants (FERC CIP-014)", "management_bridge": "Chief Procurement Officer", "subordinate_field_lead": "OEM Supply Chain Investigator"}
+        ],
         "directors": {
             "Dr. Arthur Pendleton": {"seat": "Chair, Grid Risk & Technical Integrity"},
             "David Chen (Proxy)": {"seat": "Chair, Regulatory & Market Compliance"}
@@ -426,6 +448,9 @@ if "app_state" not in st.session_state:
 
 if "selected_incident_id" not in st.session_state:
     st.session_state.selected_incident_id = "INC-001"
+
+if "selected_director" not in st.session_state:
+    st.session_state.selected_director = "Dr. Arthur Pendleton"
 
 if "conference_focus" not in st.session_state:
     st.session_state.conference_focus = "DEFAULT"
@@ -591,7 +616,7 @@ if selected_view == t["tier1_title"]:
     with top_col1:
         st.markdown("""
             <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.0 | UNIVERSAL PRINT ENGINE + FULL FORENSIC DOCUMENTATION
+                ⚡ ACTIVE BUILD: v6.1 | OPERATIONAL CASCADE ENGINE (TIER 2 ➔ TIER 3 ➔ TIER 4)
             </div>
         """, unsafe_allow_html=True)
     with top_col2:
@@ -902,6 +927,45 @@ elif selected_view == t["tier2_title"]:
         st.rerun()
         
     st.divider()
+
+    st.markdown("### 🏛️ Full Board of Directors & Governance Roster")
+    st.caption("The active bottleneck is pinned to the director with statutory jurisdiction. Select a desk to inspect its reporting cascade.")
+    roster = sector.get("board_roster", [])
+    for director in roster:
+        is_pinned = director.get("pinned_to_bottleneck", False)
+        is_selected = director["name"] == st.session_state.selected_director
+        card_class = "director-card-pinned" if is_pinned else "director-card"
+        status_text = "🔴 ACTIVE BOTTLENECK REMIT" if is_pinned else ("✅ SAFE HARBOR CONCURRED" if is_resolved else "🟢 COMPLIANT / STANDBY")
+        director_col, action_col = st.columns([3, 1])
+        with director_col:
+            st.markdown(f"""
+                <div class="{card_class}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="font-size:1.2rem; color:#ffffff;">{director['name']}</strong>
+                        <span style="font-size:0.82rem; font-weight:800; color:{'#f85149' if is_pinned and not is_dir_signed else '#3fb950'};">{status_text}</span>
+                    </div>
+                    <div style="font-size:0.98rem; color:#58a6ff; font-weight:700; margin:4px 0;">{director['seat']}</div>
+                    <div style="font-size:0.88rem; color:#c9d1d9;">Statutory Role: <em>{director['statutory_role']}</em></div>
+                    <div style="font-size:0.84rem; color:#8b949e; margin-top:4px;">Reporting Line: <strong>{director['management_bridge']}</strong> ➔ <strong>{director['subordinate_field_lead']}</strong></div>
+                </div>
+            """, unsafe_allow_html=True)
+        with action_col:
+            st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
+            if st.button("● Viewing Desk" if is_selected else "🔎 Inspect Remit", key=f"select_director_{director['name']}", use_container_width=True, type="primary" if is_selected else "secondary"):
+                st.session_state.selected_director = director["name"]
+                st.rerun()
+
+    selected_director = next((director for director in roster if director["name"] == st.session_state.selected_director), roster[0])
+    st.markdown(f"### 📡 Operational Cascade: {selected_director['name']}")
+    if selected_director.get("pinned_to_bottleneck"):
+        st.markdown(f"""
+            <div style="background:rgba(88,166,255,0.08); border-left:4px solid #58a6ff; padding:14px 18px; border-radius:4px; margin-bottom:16px;">
+                <div style="font-weight:800; font-size:1.1rem; color:#58a6ff;">DIRECT CASCADE: {selected_director['name']} ➔ {selected_director['management_bridge']} ➔ {selected_director['subordinate_field_lead']}</div>
+                <div style="font-size:0.98rem; color:#c9d1d9; margin-top:4px;">This director owns statutory safe-harbor jurisdiction over INC-001 and can transmit corporate indemnification down to the field stamp.</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info(f"{selected_director['name']} is in passive oversight. No active bottleneck is pinned to this department.")
     
     gov_status = "INDEMNITY CONCURRED & SEALED" if is_dir_signed else "DEADLOCKED"
     st.metric("Governance State", gov_status, "SAFE HARBOR ACTIVE" if is_dir_signed else "P1 - CRITICAL")
@@ -975,6 +1039,12 @@ elif selected_view == t["tier3_title"]:
             components.html("<script>window.parent.print();</script>", height=0, width=0)
     wo = active_inc.get("tier3_work_order", {})
     trap = wo.get("plain_english_trap", {})
+    st.markdown(f"""
+        <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #388bfd; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px;">
+            <div style="font-size:0.9rem; font-weight:800; color:#58a6ff; text-transform:uppercase;">🔒 Scoped Operational Silo: Grid Risk & Technical Integrity</div>
+            <div style="font-size:1.02rem; color:#ffffff; margin-top:2px;">Cognizant Director: <strong>Dr. Arthur Pendleton</strong> ➔ Managing VP: <strong>Sarah Jenkins (VP, Engineering Operations)</strong> ➔ Field Lead: <strong>{wo.get('field_lead', 'Marcus Vance, PE')}</strong></div>
+        </div>
+    """, unsafe_allow_html=True)
     st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
@@ -1198,6 +1268,55 @@ elif selected_view == t["tier4_title"]:
                 <div class="exec-metric-label">Enforcement Instrument</div>
                 <div class="exec-metric-val" style="font-size:1.35rem; color:#58a6ff;">Standby Letter of Credit</div>
                 <div class="exec-metric-sub" style="color:#58a6ff;">Direct Escrow Drawdown Ready</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("### 📦 Modular Evidentiary Bundles (Selective Legal Privilege Safeguard)")
+    st.caption("Each operational silo generates an autonomous evidentiary bundle to limit cross-silo discovery exposure during arbitration.")
+    bundle_a, bundle_b, bundle_c = st.columns(3)
+    with bundle_a:
+        st.markdown(f"""
+            <div style="background:rgba(248,81,73,0.12); border:2px solid #f85149; border-radius:8px; padding:16px; height:100%;">
+                <div style="font-weight:800; font-size:1.12rem; color:#f85149;">Bundle A: Inverter & OEM Hardware</div>
+                <div style="font-size:0.88rem; color:#c9d1d9; margin:4px 0;">Remit: <strong>Dr. Arthur Pendleton</strong> (Tech Integrity)</div>
+                <div style="font-size:0.88rem; color:#ffffff; font-weight:700;">Claim Amount: {curr_sym}{scaled_daily * days_deadlocked:,.0f}</div>
+                <div style="font-size:0.83rem; color:#8b949e; margin-top:8px;">Attached: COMTRADE waveforms, badge logs, Schedule D demurrage.</div>
+                <div style="font-weight:800; color:#3fb950; font-size:0.88rem; margin-top:8px;">● READY FOR DISCLOSURE</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with bundle_b:
+        st.markdown("""
+            <div style="background:rgba(88,166,255,0.08); border:1px solid #30363d; border-radius:8px; padding:16px; height:100%;">
+                <div style="font-weight:800; font-size:1.12rem; color:#58a6ff;">Bundle B: Interconnection Gate</div>
+                <div style="font-size:0.88rem; color:#c9d1d9; margin:4px 0;">Remit: <strong>David Chen</strong> (Market Compliance)</div>
+                <div style="font-size:0.88rem; color:#ffffff; font-weight:700;">Claim Amount: $0 (Nominal)</div>
+                <div style="font-size:0.83rem; color:#8b949e; margin-top:8px;">Attached: ERCOT tariff schedule and utility notice clock logs.</div>
+                <div style="font-weight:800; color:#8b949e; font-size:0.88rem; margin-top:8px;">● STANDBY TRACK</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with bundle_c:
+        st.markdown("""
+            <div style="background:rgba(88,166,255,0.08); border:1px solid #30363d; border-radius:8px; padding:16px; height:100%;">
+                <div style="font-weight:800; font-size:1.12rem; color:#58a6ff;">Bundle C: Balance of Plant / Civil</div>
+                <div style="font-size:0.88rem; color:#c9d1d9; margin:4px 0;">Remit: <strong>Eleanor Vance, CPA</strong> (Audit)</div>
+                <div style="font-size:0.88rem; color:#ffffff; font-weight:700;">Claim Amount: $0 (Passive)</div>
+                <div style="font-size:0.83rem; color:#8b949e; margin-top:8px;">Attached: contractor mobilization sheets and civil sign-offs.</div>
+                <div style="font-weight:800; color:#8b949e; font-size:0.88rem; margin-top:8px;">● PASSIVE TRACK</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### ✍️ Sworn Evidentiary Affidavit (Lead Professional Engineer)")
+    st.caption("Anchored to immutable telemetry timestamps upon review and execution.")
+    with st.container(border=True):
+        st.markdown("""
+            <div style="background:#0d1117; border-left:4px solid #3fb950; padding:14px 18px; font-family:Georgia, serif; font-size:1.02rem; line-height:1.7;">
+                <strong>AFFIDAVIT OF MARCUS VANCE, PE (TX LICENSE #114902)</strong><br>
+                <em>"I, Marcus Vance, PE, in my capacity as Lead High-Voltage Commissioning Engineer for Permian HV Field Services LLC, hereby depose and state under penalty of perjury:</em><br><br>
+                1. On September 9, 2026, at 08:14:02 UTC, Feeder 4A experienced an internal trip sequence on Inverter Bank 2.<br>
+                2. Sub-cycle COMTRADE fault recorder logs (Exhibit A-1) prove voltage remained within IEEE 2800 nominal ride-through thresholds (4.1% THD).<br>
+                3. Badge database extracts (Exhibit B-1) confirm Apex's Commissioning Lead was off-site during the trip.<br>
+                4. Pursuant to the Directorate Indemnity Resolution executed under Delaware DGCL § 141(e), the Corporation has fully absorbed liability under contested Clause 14.b.</em>
             </div>
         """, unsafe_allow_html=True)
 
