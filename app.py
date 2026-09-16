@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v5.5_full_restoration_and_relocated_halt_sep17_2026"
+APP_BUILD_ID = "v5.6_full_sidebar_restored_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1. INDUSTRIAL STYLING & MOBILE-RESPONSIVE FIXES
+# 1. INDUSTRIAL STYLING & MOBILE RESPONSIVENESS
 # =========================================================
 st.markdown("""
     <style>
@@ -71,16 +71,16 @@ st.markdown("""
             border-radius: 8px !important;
         }
         
-        /* PROMINENT FULL-WIDTH RED TAP TO HALT BUTTON */
+        /* DEDICATED FULL-WIDTH TAP TO HALT BUTTON */
         .tap-to-halt-container button {
             background-color: #da3633 !important;
             color: #ffffff !important;
             border: 2px solid #f85149 !important;
-            font-size: 1.3rem !important;
+            font-size: 1.35rem !important;
             font-weight: 900 !important;
-            letter-spacing: 0.03em !important;
-            padding: 16px 20px !important;
-            box-shadow: 0 0 24px rgba(218, 54, 51, 0.6) !important;
+            letter-spacing: 0.04em !important;
+            padding: 18px 24px !important;
+            box-shadow: 0 0 24px rgba(218, 54, 51, 0.55) !important;
             border-radius: 8px !important;
         }
         .tap-to-halt-container button:hover {
@@ -221,7 +221,7 @@ I18N = {
         "active_block": "Active Block",
         "crossover_sub": "↑ Crossover to Total Loss",
         "tap_to_halt_btn": "🛑 TAP TO HALT (PRESS TO ACTIVATE)",
-        "tap_to_halt_desc": "Executing this directive issues an emergency Directorate Hold-Harmless Resolution under statute (Delaware DGCL § 141). It absorbs 100% of warranty liability from Lead PE Marcus Vance onto the corporate balance sheet, authorizes immediate transmission of the digital PE stamp, and halts daily burn to $0.",
+        "tap_to_halt_desc": "Executing this directive issues an emergency Directorate Hold-Harmless Resolution under statute (Delaware DGCL § 141). It absorbs 100% of warranty liability from the Lead PE onto the corporate balance sheet, authorizes immediate transmission of the digital PE stamp, and halts daily burn to $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDED — HOLDING BLEED: $0 / DAY",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
         "what_unblocks": "🟢 2. What Document Unblocks the Gate?",
@@ -275,7 +275,7 @@ SECTORS = {
                         "who_blocks": "Marcus Vance, PE (Lead Engineer) refuses to sign off on Step 4.",
                         "reason": "Apex (Inverter OEM) is threatening to void the plant's multi-million dollar warranty under Clause 14.b if anyone touches the inverter cabinets without their off-site supervisor present.",
                         "consequence": "Signing without protection leaves Marcus personally liable and risks voiding the plant warranty. Not signing burns $87,264 every day.",
-                        "fix": "Clicking the green button executes the Board Indemnity Instrument (Delaware DGCL § 141(e)). This absorbs all liability onto the company balance sheet, legally protects Marcus Vance, and submits his digital PE stamp to ERCOT immediately."
+                        "fix": "Clicking the button executes the Board Indemnity Instrument (Delaware DGCL § 141(e)). This absorbs all liability onto the company balance sheet, legally protects Marcus Vance, and submits his digital PE stamp to ERCOT immediately."
                     },
                     "steps": [
                         {"task": "Rack 4 PE Calibration & Neutral Grounding Sweep", "done": True, "evidence": "Calibration log #PER-409 PASS (Exhibit B-1)"},
@@ -325,7 +325,7 @@ SECTORS = {
                         "filename": "PERMIAN_BESS_GATE_ACCESS_LOGS_SEP09_2026.CSV",
                         "size": "1.8 MB",
                         "sha256": "91ab802eec8912b4501a39d889b7102ce094a318894cb10e4a77e9921004ab12",
-                        "significance": "Proves Apex Commissioning Lead was off-site during sequence."
+                        "significance": "Proves Apex Commissioning Lead was off-site during trip sequence."
                     }
                 ],
                 "forensic_timeline": [
@@ -341,7 +341,11 @@ SECTORS = {
                         "entries": ["DOCKET INGESTION: Baseline verified against ERCOT Docket #54219."]
                     }
                 ]
-            }
+            },
+            "INC-002": {"title": "Substation Step-Up Inrush Damping", "priority": "P2 - HIGH", "base_daily_bleed": 38880},
+            "INC-003": {"title": "SCADA Protocol IEC 61850 Gateway", "priority": "P3 - MODERATE", "base_daily_bleed": 15552},
+            "INC-004": {"title": "BESS Inverter Firmware OTA Patch", "priority": "P4 - MONITORED", "base_daily_bleed": 4320},
+            "INC-005": {"title": "Substation Oil DGA Baseline Sweep", "priority": "P5 - MONITORED", "base_daily_bleed": 6912}
         }
     }
 }
@@ -430,10 +434,28 @@ def reset_incident_to_neutral(incident: dict):
         force_new_package=True
     )
 
+# =========================================================
+# 3. SIDEBAR NAVIGATION: COMPLETE RESTORED LEFT PANEL
+# =========================================================
 with st.sidebar:
     st.markdown("### 🏛️ COMMAND POST")
     t = I18N["English [USA · UK · Australia]"]
-    active_sector = "ERCOT BESS / Grid Storage (USA)"
+    
+    lang_choice = st.selectbox(
+        "Localization / Language Agent Coverage:",
+        list(I18N.keys())
+    )
+    
+    st.markdown("""
+        <div style="background: rgba(88, 166, 255, 0.08); border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.4;">
+            <strong style="color: #58a6ff;">Sovereign Coverage Roster:</strong><br>
+            🇺🇸 USA · 🇬🇧 UK · 🇦🇺 AUS · 🇩🇪 DEU · 🇯🇵 JPN · 🇨🇱 CHL · 🇧🇷 BRA · 🇫🇷 FRA
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown(f"<div style='font-size:0.95rem; color:#c9d1d9; margin-bottom:12px;'>{t['sub_app']}</div>", unsafe_allow_html=True)
+    
+    active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
     sector = st.session_state.app_state[active_sector]
     curr_sym = sector["currency"]
     
@@ -459,6 +481,21 @@ with st.sidebar:
         index=nav_options.index(st.session_state.selected_view)
     )
     st.session_state.selected_view = selected_view
+    
+    # RESTORED: ACTIVE INCIDENT QUEUE ON LEFT PANEL
+    st.divider()
+    st.markdown("#### Active Incident Queue")
+    for inc_key, inc_obj in sector["incidents"].items():
+        is_sel = inc_key == st.session_state.selected_incident_id
+        inc_daily = inc_obj.get("base_daily_bleed", 50000) * scale_factor
+        inc_crossover = round(current_calib_capex / inc_daily, 1) if inc_daily > 0 else 999
+        btn_label = f"{inc_obj.get('priority', 'P1')}: {inc_key}\n{inc_crossover}d Crossover"
+        
+        if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
+            st.session_state.selected_incident_id = inc_key
+            st.session_state.conference_focus = "DEFAULT"
+            st.session_state.selected_view = t["tier1_title"]
+            st.rerun()
 
 active_inc = sector["incidents"]["INC-001"]
 is_resolved = active_inc.get("status") == "RESOLVED"
@@ -471,7 +508,7 @@ is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
 if selected_view == t["tier1_title"]:
     st.markdown("""
         <div style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-            ⚡ ACTIVE BUILD: v5.5 | FULL DETAIL RESTORED (TAP TO HALT BELOW DIAGNOSTIC CONFERENCE)
+            ⚡ ACTIVE BUILD: v5.6 | FULL SIDEBAR QUEUE + RELOCATED TAP TO HALT
         </div>
     """, unsafe_allow_html=True)
 
