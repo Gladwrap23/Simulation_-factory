@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v5.4_tap_to_halt_verified_sep17_2026"
+APP_BUILD_ID = "v5.5_full_restoration_and_relocated_halt_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -471,7 +471,7 @@ is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
 if selected_view == t["tier1_title"]:
     st.markdown("""
         <div style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-            ⚡ ACTIVE BUILD: v5.4 | TAP TO HALT BUTTON POSITIONED BELOW DIAGNOSTIC CONFERENCE
+            ⚡ ACTIVE BUILD: v5.5 | FULL DETAIL RESTORED (TAP TO HALT BELOW DIAGNOSTIC CONFERENCE)
         </div>
     """, unsafe_allow_html=True)
 
