@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.4_elevated_signatures_and_governance_sep17_2026"
+APP_BUILD_ID = "v6.5_unified_scroll_and_elevated_governance_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -292,13 +292,13 @@ I18N = {
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
         "baseline_synced": "PUBLIC BASELINE SYNCHRONIZED",
         "toll_fee": "Toll-Gate Fee (Milestone)",
-        "escrow_desc": "↑ 0.085% CapEx Escrow",
+        "escrow_desc": "0.085% CapEx Escrow",
         "session_window": "Live Session Window",
-        "session_desc": "↑ Cryptographic Epoch Active",
+        "session_desc": "Cryptographic Epoch Active",
         "holding_burn": "Portfolio Holding Burn",
         "cap_under_def": "Capital Under Defense",
         "active_block": "Active Block",
-        "crossover_sub": "↑ Crossover to Total Loss",
+        "crossover_sub": "Crossover to Total Loss",
         "tap_to_halt_btn": "🛑 TAP TO HALT (PRESS TO ACTIVATE)",
         "tap_to_halt_desc": "Executing this directive issues an emergency Directorate Hold-Harmless Resolution under statute (Delaware DGCL § 141). It absorbs 100% of warranty liability from Lead PE Marcus Vance onto the corporate balance sheet, authorizes immediate transmission of the digital PE stamp, and halts daily burn to $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDED — HOLDING BLEED: $0 / DAY",
@@ -308,7 +308,7 @@ I18N = {
         "branches_title": "The Three Cascading Branches & Remedial Levers",
         "pipeline_title": "🔒 Forward Incident Pipeline (Next 4 Bottlenecks)",
         "claim_total_label": "Direct Liquidated Claim Due",
-        "claim_sub": "↑ Reimbursable under Schedule D",
+        "claim_sub": "Reimbursable under Schedule D",
         "audit_title": "Tier 4 | Sealed Cryptographic Job Packages"
     }
 }
@@ -577,6 +577,11 @@ nav_options = [
 
 if "pending_view" in st.session_state:
     st.session_state.nav_desk_selection = st.session_state.pop("pending_view")
+    components.html("""
+        <script>
+            window.parent.scrollTo({top: 0, left: 0, behavior: 'instant'});
+        </script>
+    """, height=0, width=0)
 
 if st.session_state.nav_desk_selection not in nav_options:
     st.session_state.nav_desk_selection = t["tier1_title"]
@@ -661,7 +666,7 @@ if selected_view == t["tier1_title"]:
     with top_col1:
         st.markdown("""
             <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.4 | ELEVATED DIGITAL SIGNATURE & GOVERNANCE LEDGER
+                ⚡ ACTIVE BUILD: v6.5 | SCROLL RESET ACTIVE · ELEVATED SIGNATURES · REMOVED METRIC ARROWS
             </div>
         """, unsafe_allow_html=True)
     with top_col2:
@@ -742,7 +747,7 @@ if selected_view == t["tier1_title"]:
                 <div class="circuit-breaker-card">
                     <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
                     <div class="exec-metric-val" style="color:#f85149;">{curr_sym}{total_burn_wk:,.0f} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
-                    <div class="exec-metric-sub" style="color:#f85149; font-family:monospace; font-size:1.05rem;">↑ {curr_sym}{total_burn_day:,.0f} / Day</div>
+                    <div class="exec-metric-sub" style="color:#f85149; font-family:monospace; font-size:1.05rem;">{curr_sym}{total_burn_day:,.0f} / Day</div>
                 </div>
             """, unsafe_allow_html=True)
         else:
@@ -759,7 +764,7 @@ if selected_view == t["tier1_title"]:
             <div class="exec-metric-card">
                 <div class="exec-metric-label">{t['cap_under_def']}</div>
                 <div class="exec-metric-val">{curr_sym}{parsed_capex:,.0f}</div>
-                <div class="exec-metric-sub" style="color:#3fb950; font-size:1.05rem;">↑ Escrow Intact</div>
+                <div class="exec-metric-sub" style="color:#3fb950; font-size:1.05rem;">Escrow Intact</div>
             </div>
         """, unsafe_allow_html=True)
         
