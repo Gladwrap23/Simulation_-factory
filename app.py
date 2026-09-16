@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.1_operational_cascade_directorate_to_field_sep17_2026"
+APP_BUILD_ID = "v6.2_fixed_programmatic_navigation_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -452,6 +452,9 @@ if "selected_incident_id" not in st.session_state:
 if "selected_director" not in st.session_state:
     st.session_state.selected_director = "Dr. Arthur Pendleton"
 
+if "nav_desk_selection" not in st.session_state:
+    st.session_state.nav_desk_selection = "Tier 1 | Chairman Tactical Command Post (Part One)"
+
 if "conference_focus" not in st.session_state:
     st.session_state.conference_focus = "DEFAULT"
 
@@ -528,8 +531,20 @@ def reset_incident_to_neutral(incident: dict):
     )
 
 # =========================================================
-# 3. SIDEBAR NAVIGATION
+# 3. SIDEBAR NAVIGATION: DIRECT SESSION-STATE BINDING
 # =========================================================
+t = I18N["English [USA · UK · Australia]"]
+
+nav_options = [
+    t["tier1_title"],
+    t["tier2_title"],
+    t["tier3_title"],
+    t["tier4_title"]
+]
+
+if st.session_state.nav_desk_selection not in nav_options:
+    st.session_state.nav_desk_selection = t["tier1_title"]
+
 with st.sidebar:
     st.markdown("""
         <div class="sidebar-brand-card">
@@ -540,12 +555,11 @@ with st.sidebar:
                 Forensic Claims Engine
             </div>
             <div style="font-size: 0.8rem; color: #8b949e; margin-top: 6px; font-family: monospace;">
-                Pactum Sovereign OS · Build v5.9
+                Pactum Sovereign OS · Build v6.2
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    t = I18N["English [USA · UK · Australia]"]
     active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
     sector = st.session_state.app_state[active_sector]
     curr_sym = sector["currency"]
@@ -563,23 +577,12 @@ with st.sidebar:
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
     st.markdown("#### Command Desk")
-    nav_options = [
-        t["tier1_title"], 
-        t["tier2_title"],
-        t["tier3_title"],
-        t["tier4_title"]
-    ]
-    
-    if "selected_view" not in st.session_state or st.session_state.selected_view not in nav_options:
-        st.session_state.selected_view = t["tier1_title"]
-
     selected_view = st.radio(
         "Select Operating Desk:",
         nav_options,
-        index=nav_options.index(st.session_state.selected_view),
+        key="nav_desk_selection",
         label_visibility="collapsed"
     )
-    st.session_state.selected_view = selected_view
     
     st.divider()
     st.markdown("#### 🖨️ Universal Export Utility")
@@ -596,7 +599,7 @@ with st.sidebar:
         if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
-            st.session_state.selected_view = t["tier1_title"]
+            st.session_state.nav_desk_selection = t["tier1_title"]
             st.rerun()
 
 active_inc = sector["incidents"]["INC-001"]
@@ -616,7 +619,7 @@ if selected_view == t["tier1_title"]:
     with top_col1:
         st.markdown("""
             <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.1 | OPERATIONAL CASCADE ENGINE (TIER 2 ➔ TIER 3 ➔ TIER 4)
+                ⚡ ACTIVE BUILD: v6.2 | PROGRAMMATIC NAVIGATION FIXED
             </div>
         """, unsafe_allow_html=True)
     with top_col2:
@@ -883,7 +886,7 @@ if selected_view == t["tier1_title"]:
         """, unsafe_allow_html=True)
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
         if st.button("🏛️ Drill Down to Tier 2: Directorate Governance Desk", use_container_width=True):
-            st.session_state.selected_view = t["tier2_title"]
+            st.session_state.nav_desk_selection = t["tier2_title"]
             st.rerun()
 
     wo = active_inc.get("tier3_work_order", {})
@@ -905,7 +908,7 @@ if selected_view == t["tier1_title"]:
         """, unsafe_allow_html=True)
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
         if st.button("⚡ Drill Down to Tier 3: Operator Remediation Desk", use_container_width=True):
-            st.session_state.selected_view = t["tier3_title"]
+            st.session_state.nav_desk_selection = t["tier3_title"]
             st.rerun()
 
 # =========================================================
@@ -923,7 +926,7 @@ elif selected_view == t["tier2_title"]:
     st.caption(f"Asset: **{active_sector}** | Cognizant Director: **{first_dir}** | Seat: **Chair, Grid Risk & Technical Integrity** | Statute: **{sector['statute']}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        st.session_state.selected_view = t["tier1_title"]
+        st.session_state.nav_desk_selection = t["tier1_title"]
         st.rerun()
         
     st.divider()
@@ -1020,11 +1023,11 @@ elif selected_view == t["tier2_title"]:
             nav_col1, nav_col2 = st.columns(2)
             with nav_col1:
                 if st.button("➔ Advance to Tier 3: Release PE Stamp", use_container_width=True, type="primary"):
-                    st.session_state.selected_view = t["tier3_title"]
+                    st.session_state.nav_desk_selection = t["tier3_title"]
                     st.rerun()
             with nav_col2:
                 if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
-                    st.session_state.selected_view = t["tier1_title"]
+                    st.session_state.nav_desk_selection = t["tier1_title"]
                     st.rerun()
 
 # =========================================================
@@ -1048,7 +1051,7 @@ elif selected_view == t["tier3_title"]:
     st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        st.session_state.selected_view = t["tier1_title"]
+        st.session_state.nav_desk_selection = t["tier1_title"]
         st.rerun()
         
     st.divider()
@@ -1103,7 +1106,7 @@ elif selected_view == t["tier3_title"]:
                 
                 if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
                     execute_unified_circuit_breaker(active_inc, sector["statute"], active_inc.get("base_daily_bleed", 87264))
-                    st.session_state.selected_view = t["tier1_title"]
+                    st.session_state.nav_desk_selection = t["tier1_title"]
                     st.success("PE Stamp sealed. Gate resolved. Auto-routing to Tier 1 Command Post...")
                     st.rerun()
             else:
@@ -1111,11 +1114,11 @@ elif selected_view == t["tier3_title"]:
                 btn_ret, btn_vault = st.columns(2)
                 with btn_ret:
                     if st.button("↩️ Return to Tier 1: Chairman Command Post", use_container_width=True, type="primary"):
-                        st.session_state.selected_view = t["tier1_title"]
+                        st.session_state.nav_desk_selection = t["tier1_title"]
                         st.rerun()
                 with btn_vault:
                     if st.button("➔ Advance to Tier 4: Forensic Vault", use_container_width=True):
-                        st.session_state.selected_view = t["tier4_title"]
+                        st.session_state.nav_desk_selection = t["tier4_title"]
                         st.rerun()
                 
                 st.markdown("---")
@@ -1183,7 +1186,7 @@ elif selected_view == t["tier4_title"]:
     """, unsafe_allow_html=True)
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        st.session_state.selected_view = t["tier1_title"]
+        st.session_state.nav_desk_selection = t["tier1_title"]
         st.rerun()
         
     st.divider()
