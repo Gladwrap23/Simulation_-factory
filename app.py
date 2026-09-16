@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v5.7_restructured_sidebar_branding_sep17_2026"
+APP_BUILD_ID = "v5.8_purged_duplicate_sidebar_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -90,11 +90,11 @@ st.markdown("""
         }
 
         .sidebar-brand-card {
-            background: linear-gradient(180deg, rgba(88, 166, 255, 0.12) 0%, rgba(22, 27, 34, 0.8) 100%);
+            background: linear-gradient(180deg, rgba(88, 166, 255, 0.14) 0%, rgba(22, 27, 34, 0.9) 100%);
             border: 1px solid #388bfd;
             border-radius: 8px;
             padding: 14px 16px;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
         .exec-metric-card {
@@ -476,15 +476,6 @@ with st.sidebar:
         ]
     )
     
-    st.markdown("""
-        <div style="background: rgba(88, 166, 255, 0.08); border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.4;">
-            <strong style="color: #58a6ff;">Sovereign Coverage Roster:</strong><br>
-            🇺🇸 USA · 🇬🇧 UK · 🇦🇺 AUS · 🇩🇪 DEU · 🇯🇵 JPN · 🇨🇱 CHL · 🇧🇷 BRA · 🇫🇷 FRA
-        </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown(f"<div style='font-size:0.95rem; color:#c9d1d9; margin-bottom:12px;'>{t['sub_app']}</div>", unsafe_allow_html=True)
-    
     calib_key = f"capex_override_{active_sector}"
     if calib_key not in st.session_state:
         st.session_state[calib_key] = int(sector["asset_cap"])
@@ -534,7 +525,7 @@ is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
 if selected_view == t["tier1_title"]:
     st.markdown("""
         <div style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-            ⚡ ACTIVE BUILD: v5.7 | BRAND-FIRST HIERARCHY + TAP TO HALT POSITIONED BELOW DIAGNOSTIC CONFERENCE
+            ⚡ ACTIVE BUILD: v5.8 | CLEAN SIDEBAR HIERARCHY (NO DUPLICATE ROSTER)
         </div>
     """, unsafe_allow_html=True)
 
