@@ -4,7 +4,7 @@ import json
 import re
 import streamlit as st
 
-APP_BUILD_ID = "v5.8_purged_duplicate_sidebar_sep17_2026"
+APP_BUILD_ID = "v5.9_full_tier_documentation_restored_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 1. INDUSTRIAL STYLING & MOBILE RESPONSIVENESS
+# 1. INDUSTRIAL STYLING & EVIDENCE CARDS
 # =========================================================
 st.markdown("""
     <style>
@@ -71,7 +71,6 @@ st.markdown("""
             border-radius: 8px !important;
         }
         
-        /* DEDICATED FULL-WIDTH TAP TO HALT BUTTON */
         .tap-to-halt-container button {
             background-color: #da3633 !important;
             color: #ffffff !important;
@@ -87,14 +86,6 @@ st.markdown("""
             background-color: #b62324 !important;
             border-color: #ff7b72 !important;
             box-shadow: 0 0 30px rgba(255, 75, 75, 0.8) !important;
-        }
-
-        .sidebar-brand-card {
-            background: linear-gradient(180deg, rgba(88, 166, 255, 0.14) 0%, rgba(22, 27, 34, 0.9) 100%);
-            border: 1px solid #388bfd;
-            border-radius: 8px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
         }
 
         .exec-metric-card {
@@ -204,11 +195,18 @@ st.markdown("""
             color: #58a6ff;
             margin-bottom: 10px;
         }
+        .sidebar-brand-card {
+            background: linear-gradient(180deg, rgba(88, 166, 255, 0.14) 0%, rgba(22, 27, 34, 0.9) 100%);
+            border: 1px solid #388bfd;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # =========================================================
-# 2. LOCALIZATION DICTIONARY & UNIFIED TIER HIERARCHY
+# 2. LOCALIZATION DICTIONARY & UNIFIED DATA ENGINE
 # =========================================================
 I18N = {
     "English [USA · UK · Australia]": {
@@ -216,7 +214,6 @@ I18N = {
         "tier2_title": "Tier 2 | Directorate Governance Desk",
         "tier3_title": "Tier 3 | Site Operations & Operator Remediation Desk",
         "tier4_title": "Tier 4 | Forensic Cost Recovery Vault (Part Two)",
-        "sub_app": "Autonomous Capital Defense & Forensic Claims Engine",
         "calib_red_header": "COMMAND GATEWAY: ENTER NEW PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
         "baseline_synced": "PUBLIC BASELINE SYNCHRONIZED",
@@ -229,7 +226,7 @@ I18N = {
         "active_block": "Active Block",
         "crossover_sub": "↑ Crossover to Total Loss",
         "tap_to_halt_btn": "🛑 TAP TO HALT (PRESS TO ACTIVATE)",
-        "tap_to_halt_desc": "Executing this directive issues an emergency Directorate Hold-Harmless Resolution under statute (Delaware DGCL § 141). It absorbs 100% of warranty liability from the Lead PE onto the corporate balance sheet, authorizes immediate transmission of the digital PE stamp, and halts daily burn to $0.",
+        "tap_to_halt_desc": "Executing this directive issues an emergency Directorate Hold-Harmless Resolution under statute (Delaware DGCL § 141). It absorbs 100% of warranty liability from Lead PE Marcus Vance onto the corporate balance sheet, authorizes immediate transmission of the digital PE stamp, and halts daily burn to $0.",
         "circuit_defended": "🟢 CAPITAL DEFENDED — HOLDING BLEED: $0 / DAY",
         "why_stalled": "🚨 1. Why is the Fix Stalled?",
         "what_unblocks": "🟢 2. What Document Unblocks the Gate?",
@@ -333,12 +330,23 @@ SECTORS = {
                         "filename": "PERMIAN_BESS_GATE_ACCESS_LOGS_SEP09_2026.CSV",
                         "size": "1.8 MB",
                         "sha256": "91ab802eec8912b4501a39d889b7102ce094a318894cb10e4a77e9921004ab12",
-                        "significance": "Proves Apex Commissioning Lead was off-site during trip sequence."
+                        "significance": "Proves Apex Commissioning Lead was off-site during sequence."
+                    },
+                    {
+                        "code": "EXHIBIT C-1",
+                        "title": "Turnkey EPC Schedule D § 3 Liquidated Demurrage Ledger",
+                        "filename": "EPC_TX9011_SCHEDULE_D_DEMURRAGE_AUDIT.PDF",
+                        "size": "820 KB",
+                        "sha256": "f01948ba9820cae182049bb110294eec89012bb45601a90ee45109b82144ac90",
+                        "significance": "Line-by-line contractual calculation showing $87,264 x 7 days = $610,848 due in delay damages."
                     }
                 ],
                 "forensic_timeline": [
-                    {"time": "2026-09-09 08:14:02.104 UTC", "party": "Grid Physics", "event": "Raw 10 kHz oscillography records grid voltage dip of 4.2%."},
-                    {"time": "2026-09-09 08:14:02.118 UTC", "party": "Apex Inverter OEM", "event": "Inverter Bank 2 trips out prematurely due to threshold miscalibration."}
+                    {"time": "2026-09-09 08:14:02.104 UTC", "party": "Grid Physics", "event": "Raw 10 kHz oscillography records grid voltage dip of 4.2% (nominal IEEE 2800 ride-through envelope)."},
+                    {"time": "2026-09-09 08:14:02.118 UTC", "party": "Apex Inverter OEM", "event": "Inverter Bank 2 trips out prematurely due to internal OEM firmware protection threshold miscalibration."},
+                    {"time": "2026-09-09 09:30:00.000 UTC", "party": "Apex Legal / Field", "event": "Apex invokes Clause 14.b warranty disclaimer, alleging utility surge and refusing attestation sign-off."},
+                    {"time": "2026-09-09 10:15:22.000 UTC", "party": "Security Access Logs", "event": "Turnstile badging records confirm Apex OEM Commissioning Lead was off-site during entire trip sequence."},
+                    {"time": "2026-09-16 00:00:00.000 UTC", "party": "Capital Audit Engine", "event": "Deadlock reaches Day 7. Accrued delay demurrage hits $610,848. Counterparty formal claim compiled."}
                 ],
                 "audit_packages": [
                     {
@@ -346,7 +354,11 @@ SECTORS = {
                         "status": "SEALED & ATTESTED",
                         "sealed_at": "2026-09-16 00:00:00 UTC",
                         "package_hash": "8f3a9e01c4b72e1",
-                        "entries": ["DOCKET INGESTION: Baseline verified against ERCOT Docket #54219."]
+                        "entries": [
+                            "DOCKET INGESTION: Baseline verified against ERCOT Docket #54219.",
+                            "CAPITAL AUDIT: Sovereign capital cap locked at $88,500,000.",
+                            "FIDUCIARY ANCHOR: Delaware DGCL § 141 safe harbor initialized."
+                        ]
                     }
                 ]
             },
@@ -386,12 +398,6 @@ def append_to_active_package(incident: dict, job_title: str, event_text: str, fo
         combined = active_pkg["package_hash"] + event_text
         active_pkg["package_hash"] = hashlib.sha256(combined.encode()).hexdigest()[:15]
 
-def seal_active_package(incident: dict):
-    packages = incident.get("audit_packages", [])
-    if packages and packages[-1]["status"] == "ACTIVE AUDIT IN PROGRESS":
-        packages[-1]["status"] = "SEALED & ATTESTED"
-        packages[-1]["sealed_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-
 def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: float):
     incident["status"] = "RESOLVED"
     incident["director_signed"] = True
@@ -413,7 +419,7 @@ def execute_unified_circuit_breaker(incident: dict, statute: str, daily_bleed: f
     append_to_active_package(
         incident,
         f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Unified Circuit Breaker Directive",
-        f"UNIFIED EXECUTIVE DIRECTIVE: Faced with {daily_bleed:,.0f}/Day holding bleed, burn halted across all branches.",
+        f"UNIFIED EXECUTIVE DIRECTIVE: Faced with {daily_bleed:,.0f}/Day holding bleed, burn halted across Branch 1, Branch 3 ({statute}), and Tier 3.",
         force_new_package=True
     )
 
@@ -438,12 +444,12 @@ def reset_incident_to_neutral(incident: dict):
     append_to_active_package(
         incident,
         f"JOB-{len(incident.get('audit_packages', []))+1:03d}: Neutral Counterfactual Reset",
-        "Executive counterfactual reset executed.",
+        "Executive counterfactual reset executed. Holding burn re-engaged.",
         force_new_package=True
     )
 
 # =========================================================
-# 3. SIDEBAR NAVIGATION: COMPLETE RESTORED LEFT PANEL
+# 3. SIDEBAR NAVIGATION
 # =========================================================
 with st.sidebar:
     st.markdown("""
@@ -455,25 +461,19 @@ with st.sidebar:
                 Forensic Claims Engine
             </div>
             <div style="font-size: 0.8rem; color: #8b949e; margin-top: 6px; font-family: monospace;">
-                Pactum Sovereign OS · Build v5.7
+                Pactum Sovereign OS · Build v5.9
             </div>
         </div>
     """, unsafe_allow_html=True)
-    t = I18N["English [USA · UK · Australia]"]
     
+    t = I18N["English [USA · UK · Australia]"]
     active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
     sector = st.session_state.app_state[active_sector]
     curr_sym = sector["currency"]
-
-    st.selectbox(
+    
+    lang_choice = st.selectbox(
         "Sovereign Legal Jurisdiction:",
-        [
-            "🇺🇸 ERCOT / Delaware (DGCL § 141)",
-            "🇩🇪 EBA / Germany (AktG § 93)",
-            "🇨🇱 CEN / Chile (Art. 72-1)",
-            "🇫🇷 RTE / France (L225-251)",
-            "🇯🇵 METI / Japan (Art. 423)"
-        ]
+        ["🇺🇸 ERCOT / Delaware (DGCL § 141)", "🇩🇪 EBA / Germany (AktG § 93)", "🇨🇱 CEN / Chile (Art. 72-1)", "🇫🇷 RTE / France (L225-251)", "🇯🇵 METI / Japan (Art. 423)"]
     )
     
     calib_key = f"capex_override_{active_sector}"
@@ -482,6 +482,8 @@ with st.sidebar:
     current_calib_capex = st.session_state[calib_key]
     scale_factor = current_calib_capex / sector["asset_cap"]
 
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+    st.markdown("#### Command Desk")
     nav_options = [
         t["tier1_title"], 
         t["tier2_title"],
@@ -493,15 +495,15 @@ with st.sidebar:
         st.session_state.selected_view = t["tier1_title"]
 
     selected_view = st.radio(
-        "Chain of Command & Forensic Vault:",
+        "Select Operating Desk:",
         nav_options,
-        index=nav_options.index(st.session_state.selected_view)
+        index=nav_options.index(st.session_state.selected_view),
+        label_visibility="collapsed"
     )
     st.session_state.selected_view = selected_view
     
-    # RESTORED: ACTIVE INCIDENT QUEUE ON LEFT PANEL
     st.divider()
-    st.markdown("#### Active Incident Queue")
+    st.markdown("#### 🔒 Active Incident Queue")
     for inc_key, inc_obj in sector["incidents"].items():
         is_sel = inc_key == st.session_state.selected_incident_id
         inc_daily = inc_obj.get("base_daily_bleed", 50000) * scale_factor
@@ -525,7 +527,7 @@ is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
 if selected_view == t["tier1_title"]:
     st.markdown("""
         <div style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-            ⚡ ACTIVE BUILD: v5.8 | CLEAN SIDEBAR HIERARCHY (NO DUPLICATE ROSTER)
+            ⚡ ACTIVE BUILD: v5.9 | FULL TIER DOCUMENTATION RESTORED (TIERS 2, 3 & 4)
         </div>
     """, unsafe_allow_html=True)
 
@@ -591,7 +593,7 @@ if selected_view == t["tier1_title"]:
             st.session_state[ts_key] = now_str
             st.rerun()
 
-    # PRIMARY 3-CARD LEVEL ROW (NO SQUEEZED BUTTONS)
+    # PRIMARY 3-CARD LEVEL ROW
     total_burn_day = 87264 * scale_factor if not is_resolved else 0
     total_burn_wk = total_burn_day * 7
     dynamic_crossover_days = round(parsed_capex / total_burn_day, 1) if total_burn_day > 0 else 999.9
@@ -678,7 +680,8 @@ if selected_view == t["tier1_title"]:
             st.markdown("🔴 **Telemetry Agent:** *'Physical telemetry is nominal (THD 4.1% < 5.0%). Marcus Vance refuses sign-off because Apex OEM threatens warranty cancellation under Clause 14.b. Site deadlock is contractual, not physical.'*")
         elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
             inst = active_inc.get("legal_instrument", {})
-            st.markdown(f"🟢 **Fiduciary Shield Agent:** *'The **{inst.get('title', 'Board Resolution')}** pursuant to **{sector['statute']}**.'*")
+            st.markdown(f"🟢 **Fiduciary Shield Agent:** *'The **{inst.get('title', 'Board Resolution')}** pursuant to **Delaware DGCL § 141(e)**.'* \n\n"
+                        f"📄 **Plain-English Document Summary:** The Board executes an emergency resolution absorbing 100% of warranty liability from the Lead PE onto the corporate balance sheet.")
         else:
             st.markdown(f"⚡ **Active Interrogation Standby ({TODAY_STR}):** Agents synchronized with {sector['statute']}. Select an action above or tap the Holding Burn Circuit Breaker below to halt exposure.")
 
@@ -770,7 +773,6 @@ if selected_view == t["tier1_title"]:
     # OPERATIONAL CHAIN OF COMMAND
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
     st.markdown("### 📡 Operational Chain of Command (Single-Line Descending Hierarchy)")
-    st.caption("Inspect and drill directly into Directorate governance and Tier 3 field desks:")
     
     with st.container(border=True):
         st.markdown(f"""
@@ -779,7 +781,7 @@ if selected_view == t["tier1_title"]:
                     <div style="font-weight:800; color:#58a6ff; font-size:1.2rem;">🏛️ Tier 2: Directorate Governance Desk</div>
                     <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">
                         Cognizant Director: <strong style="color:#ffffff;">Dr. Arthur Pendleton</strong> | 
-                        Statutory Shield: <strong style="color:#58a6ff;">{sector['statute']}</strong>
+                        Statutory Shield: <strong style="color:#58a6ff;">Delaware DGCL § 141</strong>
                     </div>
                 </div>
                 <div style="font-size:1.1rem; font-weight:800; color:{'#3fb950' if is_dir_signed else '#e3b341'};">
@@ -814,23 +816,290 @@ if selected_view == t["tier1_title"]:
             st.session_state.selected_view = t["tier3_title"]
             st.rerun()
 
+# =========================================================
+# 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (RESTORED)
+# =========================================================
 elif selected_view == t["tier2_title"]:
+    first_dir = "Dr. Arthur Pendleton"
     st.title(t["tier2_title"])
-    st.info("Tier 2: Directorate Governance Desk Active")
-    if st.button("↩️ Return to Tier 1"):
+    inst = active_inc.get("legal_instrument", {})
+    st.caption(f"Asset: **{active_sector}** | Cognizant Director: **{first_dir}** | Seat: **Chair, Grid Risk & Technical Integrity** | Statute: **{sector['statute']}**")
+    
+    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
         st.session_state.selected_view = t["tier1_title"]
         st.rerun()
+        
+    st.divider()
+    
+    gov_status = "INDEMNITY CONCURRED & SEALED" if is_dir_signed else "DEADLOCKED"
+    st.metric("Governance State", gov_status, "SAFE HARBOR ACTIVE" if is_dir_signed else "P1 - CRITICAL")
+    
+    with st.container(border=True):
+        st.markdown(f"#### Formal Statutory Protection Instrument ({sector['statute']})")
+        st.markdown(f"""
+            <div class="legal-document-box">
+                <div class="legal-header">📜 {inst.get('title')}</div>
+                <p><strong>Statutory Authority:</strong> {inst.get('authority')}</p>
+                <div style="font-style:italic; margin: 12px 0;">
+                    {'<br><br>'.join(inst.get('recitals', []))}
+                </div>
+                <div style="background:rgba(88,166,255,0.08); padding:12px; border-radius:4px; font-weight:bold; margin-bottom:14px;">
+                    {inst.get('operative_resolution')}
+                </div>
+                <div style="font-family:-apple-system, sans-serif; font-size:0.9rem; border-top:1px solid #30363d; padding-top:10px;">
+                    <strong style="color:#58a6ff;">EXECUTED DIGITAL SIGNATURES & VERIFICATION HASHES:</strong><br>
+                    {'<br>'.join([f"• <strong>{s['role']}</strong>: {s['name']} — <span style='color:{'#3fb950' if 'EXECUTED' in s['status'] or 'COUNTERSIGNED' in s['status'] or 'TRANSMITTED' in s['status'] else '#e3b341'};'>{s['status']}</span> (<code>{s.get('hash', 'N/A')}</code>)" for s in inst.get('signatories', [])])}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+        
+        if not is_dir_signed:
+            if st.button(f"✍️ Countersign Directorate Indemnity Resolution ({first_dir})", use_container_width=True, type="primary"):
+                active_inc["director_signed"] = True
+                for sig in inst.get("signatories", []):
+                    if "Director" in sig["role"]:
+                        sig["status"] = "COUNTERSIGNED & RELIED"
+                        
+                append_to_active_package(
+                    active_inc, 
+                    "DIRECTOR CONCURRENCE", 
+                    f"Formal fiduciary concurrence countersigned by {first_dir} under {sector['statute']}. Safe harbor legally active."
+                )
+                st.rerun()
+        else:
+            st.markdown(f"""
+                <div style="background: rgba(46, 160, 67, 0.15); border: 2px solid #2ea043; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+                    <div style="color:#3fb950; font-size:1.2rem; font-weight:800; margin-bottom:4px;">
+                        ✅ DIRECTORATE INDEMNITY COUNTERSIGNED & SEALED
+                    </div>
+                    <div style="color:#f0f6fc; font-size:1.0rem;">
+                        Formal concurrence executed by <strong>{first_dir}</strong> under <strong>{sector['statute']}</strong>. 
+                        Lead PE Marcus Vance is legally protected.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            nav_col1, nav_col2 = st.columns(2)
+            with nav_col1:
+                if st.button("➔ Advance to Tier 3: Release PE Stamp", use_container_width=True, type="primary"):
+                    st.session_state.selected_view = t["tier3_title"]
+                    st.rerun()
+            with nav_col2:
+                if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
+                    st.session_state.selected_view = t["tier1_title"]
+                    st.rerun()
 
+# =========================================================
+# 6. VIEW: TIER 3 — SITE OPERATIONS DESK (RESTORED)
+# =========================================================
 elif selected_view == t["tier3_title"]:
-    st.title(t["tier3_title"])
-    st.info("Tier 3: Site Operations & Remediation Desk Active")
-    if st.button("↩️ Return to Tier 1"):
+    st.title(f"👷 {t['tier3_title']}")
+    wo = active_inc.get("tier3_work_order", {})
+    trap = wo.get("plain_english_trap", {})
+    st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
+    
+    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
         st.session_state.selected_view = t["tier1_title"]
         st.rerun()
+        
+    st.divider()
+    
+    t1, t2, t3 = st.columns(3)
+    t1.metric("Active Work Order", wo.get("id", "N/A"), active_inc.get("priority", "CRITICAL"))
+    t2.metric("Target Regulatory Gate", wo.get("target_gate", "COD Gate"))
+    t3.metric("Hardware Execution Progress", f"{wo.get('progress_pct', 0)}%")
+    
+    col_t, col_m = st.columns([3, 2])
+    with col_t:
+        with st.container(border=True):
+            st.markdown(f"#### Execution Punch List & Sign-Off: {wo.get('title', 'Tasks')}")
+            for idx, step in enumerate(wo.get("steps", [])):
+                st.markdown(f"""
+                    <div style="padding: 10px; border-bottom: 1px solid #30363d;">
+                        <span style="font-size: 1.15rem;">{'✅' if step['done'] else '⏳'}</span>
+                        <strong style="color: #ffffff; font-size: 1.05rem; margin-left: 6px;">Step {idx+1}: {step['task']}</strong>
+                        <div style="color: #8b949e; font-size: 0.95rem; margin-left: 28px;">Evidence: <code>{step.get('evidence', 'Verified')}</code></div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+            if not is_resolved:
+                shield_badge = "🟢 Directorate Indemnity Shield Active" if is_dir_signed else "⚠️ Awaiting Directorate Countersignature"
+                st.markdown(f"""
+                    <div style="background: rgba(248, 81, 73, 0.15); border: 2px solid #f85149; border-radius: 8px; padding: 18px; margin-bottom: 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <div style="color: #f85149; font-size: 1.25rem; font-weight: 800;">
+                                {trap.get('headline', '🚨 Signatory Deadlock Warning')}
+                            </div>
+                            <span style="font-size:0.9rem; font-weight:700; color:{'#3fb950' if is_dir_signed else '#e3b341'}; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px;">
+                                {shield_badge}
+                            </span>
+                        </div>
+                        <div style="font-size: 1.05rem; line-height: 1.6; color: #f0f6fc;">
+                            <p style="margin: 0 0 8px 0;">
+                                👤 <strong>Who is refusing to sign:</strong> <br>
+                                <span style="color: #ffffff; font-weight: 700;">{trap.get('who_blocks', 'Lead PE refuses sign-off.')}</span>
+                            </p>
+                            <p style="margin: 0 0 8px 0;">
+                                ⚠️ <strong>Why they are refusing:</strong> <br>
+                                {trap.get('reason', 'Threat of warranty voidance by vendor.')}
+                            </p>
+                            <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #3fb950; padding: 10px 12px; margin-top: 10px; border-radius: 4px;">
+                                🛡️ <strong>How this button fixes it:</strong> <br>
+                                <span style="color: #e6edf3;">{trap.get('fix', 'Executes board indemnity to absorb liability and clear the gate.')}</span>
+                            </div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
+                    execute_unified_circuit_breaker(active_inc, sector["statute"], active_inc.get("base_daily_bleed", 87264))
+                    st.session_state.selected_view = t["tier1_title"]
+                    st.success("PE Stamp sealed. Gate resolved. Auto-routing to Tier 1 Command Post...")
+                    st.rerun()
+            else:
+                st.success(f"✅ Work order completed at 100%. Professional Engineer stamp transmitted by {wo.get('field_lead', 'Lead PE')}.")
+                btn_ret, btn_vault = st.columns(2)
+                with btn_ret:
+                    if st.button("↩️ Return to Tier 1: Chairman Command Post", use_container_width=True, type="primary"):
+                        st.session_state.selected_view = t["tier1_title"]
+                        st.rerun()
+                with btn_vault:
+                    if st.button("➔ Advance to Tier 4: Forensic Vault", use_container_width=True):
+                        st.session_state.selected_view = t["tier4_title"]
+                        st.rerun()
+                
+                st.markdown("---")
+                if st.button("🔄 Reset Work Order to Neutral (Simulate Re-test)", use_container_width=True):
+                    reset_incident_to_neutral(active_inc)
+                    st.warning("Work order reset to 75% pending state.")
+                    st.rerun()
+                    
+    with col_m:
+        with st.container(border=True):
+            st.markdown("#### Live Site Telemetry Waveform Sweep")
+            for telem in wo.get("telemetry", []):
+                val_col = "#3fb950" if telem["status"] == "NOMINAL" or telem["status"] == "COMPLIANT" else "#e3b341"
+                st.markdown(f"""
+                    <div style="background:#090d13; border:1px solid #30363d; border-radius:6px; padding:10px 14px; margin-bottom:10px;">
+                        <div style="font-size:0.9rem; color:#8b949e; text-transform:uppercase;">{telem['param']}</div>
+                        <div style="font-size:1.4rem; font-weight:800; font-family:monospace; color:{val_col}; margin: 2px 0;">{telem['val']}</div>
+                        <div style="font-size:0.85rem; color:#c9d1d9;">Threshold: <strong>{telem['limit']}</strong></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+            st.markdown("---")
+            st.markdown("#### Hardware Physical Interlock Control")
+            
+            if not is_bypassed:
+                st.markdown("""
+                    <div style="background:#161b22; border:2px solid #e3b341; border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+                        <div style="font-size:0.85rem; color:#8b949e; text-transform:uppercase; font-weight:700;">OEM Cabinet Remote Interlock</div>
+                        <div style="font-size:1.4rem; font-weight:900; font-family:monospace; color:#e3b341; margin: 2px 0;">DISENGAGED</div>
+                        <div style="font-size:0.85rem; color:#c9d1d9;">Status: <strong style="color:#f85149;">Manual PE Bypass Required (Cabinet Locked)</strong></div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button("⚡ Engage Manual PE Hardware Bypass", use_container_width=True, type="secondary"):
+                    active_inc["manual_pe_bypass"] = True
+                    st.success("Manual PE Bypass Engaged. Interlock overridden.")
+                    st.rerun()
+            else:
+                st.markdown("""
+                    <div style="background:rgba(46,160,67,0.15); border:2px solid #2ea043; border-radius:6px; padding:12px 14px; margin-bottom:10px;">
+                        <div style="font-size:0.85rem; color:#8b949e; text-transform:uppercase; font-weight:700;">OEM Cabinet Remote Interlock</div>
+                        <div style="font-size:1.4rem; font-weight:900; font-family:monospace; color:#3fb950; margin: 2px 0;">BYPASSED & ENERGIZED</div>
+                        <div style="font-size:0.85rem; color:#c9d1d9;">Status: <strong style="color:#3fb950;">Hardware Safe (PE Bypass Key Active)</strong></div>
+                    </div>
+                """, unsafe_allow_html=True)
 
+# =========================================================
+# 7. VIEW: TIER 4 — FORENSIC RECOVERY VAULT (RESTORED)
+# =========================================================
 elif selected_view == t["tier4_title"]:
-    st.title(t["tier4_title"])
-    st.info("Tier 4: Forensic Cost Recovery Vault Active")
-    if st.button("↩️ Return to Tier 1"):
+    st.title(f"⚖️ {t['tier4_title']}")
+    st.markdown(f"""
+        <div style="background: rgba(227, 179, 65, 0.1); border: 1px solid #e3b341; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+            <div>Target Entity: <strong style="color:#ffffff;">{active_inc.get('counterparty', {}).get('name', 'OEM Vendor')}</strong></div>
+            <div style="color:#e3b341;">|</div>
+            <div>Governing Contract: <strong style="color:#e3b341;">{active_inc.get('counterparty', {}).get('contract', 'EPC Agreement')}</strong></div>
+            <div style="color:#e3b341;">|</div>
+            <div>Format: <strong style="color:#ffffff;">Pre-Litigation Demand Package & Escrow Notice</strong></div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
         st.session_state.selected_view = t["tier1_title"]
         st.rerun()
+        
+    st.divider()
+
+    days_deadlocked = active_inc.get("days_in_deadlock", 7)
+    scaled_daily = int(round(87264 * scale_factor))
+    total_claim_amount = scaled_daily * days_deadlocked
+    idle_contractor_overhead = int(total_claim_amount * 0.42)
+    grid_penalty_exposure = int(total_claim_amount * 0.38)
+    capital_cost_carry = total_claim_amount - idle_contractor_overhead - grid_penalty_exposure
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f"""
+            <div class="claim-demand-card">
+                <div class="exec-metric-label">{t['claim_total_label']}</div>
+                <div class="exec-metric-val" style="color:#e3b341;">{curr_sym}{total_claim_amount:,.0f}</div>
+                <div class="exec-metric-sub" style="color:#e3b341;">{t['claim_sub']}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""
+            <div class="exec-metric-card">
+                <div class="exec-metric-label">Assigned Liable Party</div>
+                <div class="exec-metric-val" style="font-size:1.35rem; color:#f85149;">Apex Power Conversion Systems</div>
+                <div class="exec-metric-sub" style="color:#f85149;">100% Fault Attribution (Zero Shared Delay)</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"""
+            <div class="exec-metric-card">
+                <div class="exec-metric-label">Enforcement Instrument</div>
+                <div class="exec-metric-val" style="font-size:1.35rem; color:#58a6ff;">Standby Letter of Credit</div>
+                <div class="exec-metric-sub" style="color:#58a6ff;">Direct Escrow Drawdown Ready</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### ⏱️ Forensic Micro-Timeline Flight Recorder")
+    with st.container(border=True):
+        for event in active_inc.get("forensic_timeline", []):
+            st.markdown(f"""
+                <div style="padding: 10px 14px; border-bottom: 1px solid #21262d; display: flex; flex-wrap: wrap; gap: 14px; align-items: baseline;">
+                    <code style="color: #58a6ff; font-weight: 700; font-size: 0.95rem;">{event['time']}</code>
+                    <span style="background: rgba(227, 179, 65, 0.2); color: #e3b341; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.85rem;">{event['party']}</span>
+                    <span style="color: #f0f6fc; font-size: 1.05rem; flex-grow: 1;">{event['event']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 📁 Primary Evidentiary Exhibit Index")
+    for exh in active_inc.get("exhibits", []):
+        with st.container(border=True):
+            e_col1, e_col2 = st.columns([3, 1])
+            with e_col1:
+                st.markdown(f"""
+                    <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">{exh['code']}: {exh['title']}</div>
+                    <div style="font-size:0.95rem; color:#c9d1d9; margin: 4px 0;">File: <code>{exh['filename']}</code> ({exh['size']})</div>
+                    <div style="font-size:0.85rem; color:#8b949e; font-family:monospace;">SHA-256: {exh['sha256']}</div>
+                    <div style="font-size:1.0rem; color:#f0f6fc; margin-top:8px;"><strong>Evidentiary Proof:</strong> {exh['significance']}</div>
+                """, unsafe_allow_html=True)
+            with e_col2:
+                st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+                dummy_bytes = f"AUTHENTICATED EXHIBIT {exh['code']} - {exh['sha256']}".encode()
+                st.download_button(
+                    label=f"⬇️ Download {exh['code']}",
+                    data=dummy_bytes,
+                    file_name=exh['filename'],
+                    mime="application/octet-stream",
+                    use_container_width=True
+                )
