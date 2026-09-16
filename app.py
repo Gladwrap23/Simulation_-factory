@@ -5,7 +5,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.2_fixed_programmatic_navigation_sep17_2026"
+APP_BUILD_ID = "v6.3_deferred_state_navigation_sep17_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -531,7 +531,7 @@ def reset_incident_to_neutral(incident: dict):
     )
 
 # =========================================================
-# 3. SIDEBAR NAVIGATION: DIRECT SESSION-STATE BINDING
+# DEFERRED ROUTER: CONSUMED BEFORE ANY WIDGET INSTANTIATION
 # =========================================================
 t = I18N["English [USA · UK · Australia]"]
 
@@ -542,9 +542,19 @@ nav_options = [
     t["tier4_title"]
 ]
 
+if "pending_view" in st.session_state:
+    st.session_state.nav_desk_selection = st.session_state.pop("pending_view")
+
 if st.session_state.nav_desk_selection not in nav_options:
     st.session_state.nav_desk_selection = t["tier1_title"]
 
+def request_navigation(target_desk):
+    st.session_state.pending_view = target_desk
+    st.rerun()
+
+# =========================================================
+# 3. SIDEBAR NAVIGATION: DIRECT SESSION-STATE BINDING
+# =========================================================
 with st.sidebar:
     st.markdown("""
         <div class="sidebar-brand-card">
@@ -555,7 +565,7 @@ with st.sidebar:
                 Forensic Claims Engine
             </div>
             <div style="font-size: 0.8rem; color: #8b949e; margin-top: 6px; font-family: monospace;">
-                Pactum Sovereign OS · Build v6.2
+                Pactum Sovereign OS · Build v6.3
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -599,8 +609,7 @@ with st.sidebar:
         if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
-            st.session_state.nav_desk_selection = t["tier1_title"]
-            st.rerun()
+            request_navigation(t["tier1_title"])
 
 active_inc = sector["incidents"]["INC-001"]
 is_resolved = active_inc.get("status") == "RESOLVED"
@@ -886,8 +895,7 @@ if selected_view == t["tier1_title"]:
         """, unsafe_allow_html=True)
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
         if st.button("🏛️ Drill Down to Tier 2: Directorate Governance Desk", use_container_width=True):
-            st.session_state.nav_desk_selection = t["tier2_title"]
-            st.rerun()
+            request_navigation(t["tier2_title"])
 
     wo = active_inc.get("tier3_work_order", {})
     with st.container(border=True):
@@ -908,8 +916,7 @@ if selected_view == t["tier1_title"]:
         """, unsafe_allow_html=True)
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
         if st.button("⚡ Drill Down to Tier 3: Operator Remediation Desk", use_container_width=True):
-            st.session_state.nav_desk_selection = t["tier3_title"]
-            st.rerun()
+            request_navigation(t["tier3_title"])
 
 # =========================================================
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (RESTORED)
@@ -926,8 +933,7 @@ elif selected_view == t["tier2_title"]:
     st.caption(f"Asset: **{active_sector}** | Cognizant Director: **{first_dir}** | Seat: **Chair, Grid Risk & Technical Integrity** | Statute: **{sector['statute']}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        st.session_state.nav_desk_selection = t["tier1_title"]
-        st.rerun()
+        request_navigation(t["tier1_title"])
         
     st.divider()
 
@@ -1023,12 +1029,10 @@ elif selected_view == t["tier2_title"]:
             nav_col1, nav_col2 = st.columns(2)
             with nav_col1:
                 if st.button("➔ Advance to Tier 3: Release PE Stamp", use_container_width=True, type="primary"):
-                    st.session_state.nav_desk_selection = t["tier3_title"]
-                    st.rerun()
+                        request_navigation(t["tier3_title"])
             with nav_col2:
                 if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
-                    st.session_state.nav_desk_selection = t["tier1_title"]
-                    st.rerun()
+                        request_navigation(t["tier1_title"])
 
 # =========================================================
 # 6. VIEW: TIER 3 — SITE OPERATIONS DESK (RESTORED)
@@ -1051,8 +1055,7 @@ elif selected_view == t["tier3_title"]:
     st.caption(f"Asset: **{active_sector}** | Assigned Contractor: **{wo.get('contractor', 'Field Lead')}** | Lead PE: **{wo.get('field_lead', 'Engineering Lead')}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        st.session_state.nav_desk_selection = t["tier1_title"]
-        st.rerun()
+        request_navigation(t["tier1_title"])
         
     st.divider()
     
@@ -1106,20 +1109,17 @@ elif selected_view == t["tier3_title"]:
                 
                 if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
                     execute_unified_circuit_breaker(active_inc, sector["statute"], active_inc.get("base_daily_bleed", 87264))
-                    st.session_state.nav_desk_selection = t["tier1_title"]
                     st.success("PE Stamp sealed. Gate resolved. Auto-routing to Tier 1 Command Post...")
-                    st.rerun()
+                    request_navigation(t["tier1_title"])
             else:
                 st.success(f"✅ Work order completed at 100%. Professional Engineer stamp transmitted by {wo.get('field_lead', 'Lead PE')}.")
                 btn_ret, btn_vault = st.columns(2)
                 with btn_ret:
                     if st.button("↩️ Return to Tier 1: Chairman Command Post", use_container_width=True, type="primary"):
-                        st.session_state.nav_desk_selection = t["tier1_title"]
-                        st.rerun()
+                        request_navigation(t["tier1_title"])
                 with btn_vault:
                     if st.button("➔ Advance to Tier 4: Forensic Vault", use_container_width=True):
-                        st.session_state.nav_desk_selection = t["tier4_title"]
-                        st.rerun()
+                        request_navigation(t["tier4_title"])
                 
                 st.markdown("---")
                 if st.button("🔄 Reset Work Order to Neutral (Simulate Re-test)", use_container_width=True):
@@ -1186,8 +1186,7 @@ elif selected_view == t["tier4_title"]:
     """, unsafe_allow_html=True)
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        st.session_state.nav_desk_selection = t["tier1_title"]
-        st.rerun()
+        request_navigation(t["tier1_title"])
         
     st.divider()
 
