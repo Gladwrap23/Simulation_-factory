@@ -253,6 +253,8 @@ I18N = {
         "tier1_title": "Tier 1 | Chairman Tactical Command Post (Part One)",
         "tier2_title": "Tier 2 | Directorate Governance Desk",
         "tier3_title": "Tier 3 | Site Operations & Operator Remediation Desk",
+        "tier3a_title": "Tier 3A | Engineering Operations Command",
+        "tier3b_title": "Tier 3B | Site Execution Desk",
         "tier4_title": "Tier 4 | Forensic Cost Recovery Vault (Part Two)",
         "calib_red_header": "COMMAND GATEWAY: ENTER NEW PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
@@ -361,7 +363,7 @@ SECTORS = {
                     "title": "On-Site IEEE 2800 Harmonic Sweep & Attestation",
                     "target_gate": "Check #6 (COD Attestation Gate)",
                     "contractor": "Permian HV Field Services LLC",
-                    "field_lead": "Marcus Vance, PE (TX Lic #114902)",
+                    "field_lead": "Marcus Vance, PE (TXLIC114902)",
                     "managing_vp": "Sarah Jenkins (VP, Engineering Operations)",
                     "progress_pct": 75,
                     "plain_english_trap": {
@@ -417,7 +419,7 @@ SECTORS = {
                         },
                         {
                             "role": "Lead Professional Engineer",
-                            "name": "Marcus Vance, PE (TX Lic #114902)",
+                            "name": "Marcus Vance, PE (TXLIC114902)",
                             "seat": "Signatory Custody / High-Voltage Commissioning Lead",
                             "status": "HELD PENDING INDEMNITY",
                             "hash": "sha256:1a8904df88b3cae182049bb110294eec89012bb45601a90ee45109b82144ac90",
@@ -436,7 +438,7 @@ SECTORS = {
                     },
                     {
                         "code": "EXHIBIT B-1",
-                        "title": "Site Security Turnstile Badge Database Extract",
+                        "title": "Sworn Field Affidavit & TBPE Seal #TXLIC114902 (Marcus Vance, PE)",
                         "filename": "PERMIAN_BESS_GATE_ACCESS_LOGS_SEP09_2026.CSV",
                         "size": "1.8 MB",
                         "sha256": "91ab802eec8912b4501a39d889b7102ce094a318894cb10e4a77e9921004ab12",
@@ -510,6 +512,14 @@ if "conference_focus" not in st.session_state:
 if "trigger_print" not in st.session_state:
     st.session_state.trigger_print = False
 
+# --- STATE RECONCILIATION BRIDGE ---
+# Ensures legacy work order states map seamlessly into the new 3A/3B flow.
+if "t3a_step2" not in st.session_state:
+    st.session_state.t3a_step2 = st.session_state.get("wo_released", st.session_state.get("work_order_active", False))
+
+if "t3a_step3" not in st.session_state:
+    st.session_state.t3a_step3 = st.session_state.get("t3_completed", False)
+
 # =========================================================
 # DEFERRED ROUTER & JAVASCRIPT SCROLL-TO-TOP RESET
 # =========================================================
@@ -518,7 +528,8 @@ t = I18N["English [USA · UK · Australia]"]
 nav_options = [
     t["tier1_title"], 
     t["tier2_title"],
-    t["tier3_title"],
+    t["tier3a_title"],
+    t["tier3b_title"],
     t["tier4_title"]
 ]
 
@@ -635,7 +646,9 @@ with st.sidebar:
             st.session_state.conference_focus = "DEFAULT"
             request_navigation(t["tier1_title"])
 
-active_inc = sector["incidents"]["INC-001"]
+if st.session_state.selected_incident_id not in sector["incidents"]:
+    st.session_state.selected_incident_id = next(iter(sector["incidents"]))
+active_inc = sector["incidents"][st.session_state.selected_incident_id]
 is_resolved = active_inc.get("status") == "RESOLVED"
 is_dir_signed = active_inc.get("director_signed", False) or is_resolved
 is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
@@ -932,7 +945,7 @@ if selected_view == t["tier1_title"]:
         """, unsafe_allow_html=True)
         st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
         if st.button("⚡ Drill Down to Tier 3: Operator Remediation Desk", use_container_width=True):
-            request_navigation(t["tier3_title"])
+            request_navigation(t["tier3a_title"])
 
 # =========================================================
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
@@ -1108,7 +1121,7 @@ elif selected_view == t["tier2_title"]:
                 nav_col1, nav_col2 = st.columns(2)
                 with nav_col1:
                     if st.button(f"➔ Cascade to Tier 3 Field Desk ({current_d['subordinate_field_lead']})", use_container_width=True, type="primary"):
-                        request_navigation(t["tier3_title"])
+                        request_navigation(t["tier3a_title"])
                 with nav_col2:
                     if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
                         request_navigation(t["tier1_title"])
@@ -1159,15 +1172,128 @@ elif selected_view == t["tier2_title"]:
             st.info("This committee stands ready in support. The primary blocker remains the high-voltage inverter attestation owned by Dr. Arthur Pendleton or the Executive Chairman.")
 
 # =========================================================
-# 6. VIEW: TIER 3 — SITE OPERATIONS & REMEDIATION DESK
+# 6. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
 # =========================================================
-elif selected_view == t["tier3_title"]:
+elif selected_view == t["tier3a_title"]:
+    st.markdown("### Tier 3A | Engineering Operations Command")
+    st.caption("Corporate Risk Absorption & Utility Packaging Desk | VP Sarah Jenkins")
+
+    st.markdown("""
+        <div style="background-color: #111a2e; border-left: 4px solid #00d4ff; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+            <div style="font-size: 0.85rem; color: #00d4ff; font-weight: 700;">CORPORATE INDEMNITY CONVEYANCE GATEWAY</div>
+            <div style="font-size: 0.80rem; color: #a0aec0;">
+                Delegated authority under Delaware DGCL § 141(e) resolution signed by Dr. Arthur Pendleton. Corporate asset owner assumes commercial warranty risk prior to contractor site dispatch.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        step1 = st.checkbox(
+            "Step 1: Countersign Directorate Safe-Harbor Receipt",
+            key="t3a_step1"
+        )
+        step2 = st.checkbox(
+            "Step 2: Release Substation Work Order WO-8821-HARMONIC",
+            key="t3a_step2",
+            disabled=not step1
+        )
+        step3 = st.checkbox(
+            "Step 3: Assemble ERCOT § 4.2 Tariff Interconnection Package",
+            key="t3a_step3",
+            disabled=not step2
+        )
+
+    with c2:
+        st.markdown("**Command Lead Status**")
+        st.write("Officer: **Sarah Jenkins**")
+        st.write("Role: **VP, Engineering Operations**")
+        st.write("Contractor: **Permian HV Field Services**")
+        if step3:
+            st.success("● 3A Gate Cleared: Dispatched to Field Lead")
+            if st.button("Jump to Tier 3B Execution Desk ➔", use_container_width=True):
+                request_navigation(t["tier3b_title"])
+        else:
+            st.warning("○ Awaiting Corporate Handoff Completion")
+
+# =========================================================
+# 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
+# =========================================================
+elif selected_view == t["tier3b_title"]:
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
-        st.title(f"👷 {t['tier3_title']}")
+        st.title(f"👷 {t['tier3b_title']}")
+        st.caption("Specialized Physical Engineering & Statutory Attestation | Marcus Vance, PE (TXLIC114902)")
     with top_col2:
         if st.button("🖨️ Print Work Order", use_container_width=True):
             components.html("<script>window.parent.print();</script>", height=0, width=0)
+
+    t3a_cleared = (
+        st.session_state.get("t3a_step3", False)
+        or st.session_state.get("t3a_step2", False)
+        or st.session_state.get("wo_released", False)
+    )
+    if not t3a_cleared:
+        st.error("⚠️ ACCESS RESTRICTED: Tier 3A Work Order WO-8821-HARMONIC has not been released by Sarah Jenkins.")
+        st.stop()
+
+    st.markdown("""
+        <div style="background-color: #1a1e24; border-left: 4px solid #00ff88; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+            <div style="font-size: 0.85rem; color: #00ff88; font-weight: 700;">STATUTORY PERSONAL LICENSURE SHIELD: ACTIVE</div>
+            <div style="font-size: 0.80rem; color: #a0aec0;">
+                Execution is shielded under Corporate Covenant #COV-8821. Personal statutory liability under Texas Board of Professional Engineers regulations transferred to asset balance sheet.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    b1, b2 = st.columns([2, 1])
+    with b1:
+        f_step1 = st.checkbox(
+            "Step 1: Rack 4 Neutral Grounding & Continuity Sweep (Exhibit B-1)",
+            key="t3b_step1"
+        )
+        f_step2 = st.checkbox(
+            "Step 2: Inverter Bank 1-4 Sub-Cycle Harmonic Sweep (THD 4.1% vs IEEE 2800)",
+            key="t3b_step2",
+            disabled=not f_step1
+        )
+        f_step3 = st.checkbox(
+            "Step 3: Engage Hardware PE Key Interlock Bypass",
+            key="t3b_step3",
+            disabled=not f_step2
+        )
+        f_step4 = st.checkbox(
+            "Step 4: Affix Statutory PE Digital Seal & Transmission Attestation",
+            key="t3b_step4",
+            disabled=not f_step3
+        )
+
+    with b2:
+        st.markdown("**Licensure Credentials**")
+        st.write("Field Lead: **Marcus Vance, PE**")
+        st.write("Jurisdiction: **TBPE Reg #TXLIC114902**")
+        st.write("Execution Hash: `e3b0c44298fc1c149afb...`")
+        if f_step4:
+            st.success("● Physical Attestation Sealed")
+        else:
+            st.info("○ Verification in Progress")
+
+    if f_step4:
+        st.markdown("---")
+        st.markdown("""
+            <div style="background-color: #0e2a1e; border: 1px solid #00ff88; padding: 16px; border-radius: 8px; text-align: center; margin-top: 10px; margin-bottom: 15px;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #00ff88; margin-bottom: 6px;">
+                    FIELD EXECUTION COMPLETE - CHAIN OF CUSTODY SEALED
+                </div>
+                <div style="color: #cbd5e0; font-size: 0.85rem; margin-bottom: 12px;">
+                    Raw oscillography binaries, sworn PE affidavit (TXLIC114902), and Turnkey breach records compiled into the pre-litigation vault.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Proceed to Tier 4: Sealed Pre-Litigation Dossier", use_container_width=True, type="primary"):
+            execute_unified_circuit_breaker(active_inc, 87264 * scale_factor)
+            request_navigation(t["tier4_title"])
 
     wo = active_inc.get("tier3_work_order", {})
     trap = wo.get("plain_english_trap", {})
@@ -1364,7 +1490,7 @@ elif selected_view == t["tier4_title"]:
                     {''.join([f"<tr><td>{ex['code']}</td><td>{ex['title']}</td><td>{ex['filename']}</td><td><code>{ex['sha256']}</code></td></tr>" for ex in active_inc.get('exhibits', [])])}
                 </table>
                 <h2>Sworn Statement of Fact</h2>
-                <p><em>"I, Marcus Vance, PE (TX Lic #114902), attest under penalty of perjury that on 2026-09-09 the inverter trip sequence was strictly internal to Apex firmware threshold limits, as corroborated by IEEE 2800 COMTRADE data."</em></p>
+                <p><em>"I, Marcus Vance, PE (TXLIC114902), attest under penalty of perjury that on 2026-09-09 the inverter trip sequence was strictly internal to Apex firmware threshold limits, as corroborated by IEEE 2800 COMTRADE data."</em></p>
             </body>
             </html>
             """
@@ -1429,7 +1555,7 @@ elif selected_view == t["tier4_title"]:
     with st.container(border=True):
         st.markdown(f"""
             <div style="background:#0d1117; border-left:4px solid #3fb950; padding:14px 18px; font-family:Georgia, serif; font-size:1.05rem; line-height:1.7;">
-                <strong>AFFIDAVIT OF MARCUS VANCE, PE (TX LICENSE #114902)</strong><br>
+                <strong>AFFIDAVIT OF MARCUS VANCE, PE (TXLIC114902)</strong><br>
                 <em>"I, Marcus Vance, PE, in my capacity as Lead High-Voltage Commissioning Engineer for Permian HV Field Services LLC, hereby depose and state under penalty of perjury:</em><br><br>
                 1. On September 9, 2026, at 08:14:02 UTC, Feeder 4A experienced an internal trip sequence on Inverter Bank 2.<br>
                 2. Sub-cycle COMTRADE fault recorder logs (Exhibit A-1) prove voltage remained within IEEE 2800 nominal ride-through thresholds (4.1% THD), refuting Apex's claims of an external utility transient.<br>
