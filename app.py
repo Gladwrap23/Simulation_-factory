@@ -512,6 +512,12 @@ if "conference_focus" not in st.session_state:
 if "trigger_print" not in st.session_state:
     st.session_state.trigger_print = False
 
+if "gate_3a_cleared" not in st.session_state:
+    st.session_state.gate_3a_cleared = False
+
+if "gate_3b_cleared" not in st.session_state:
+    st.session_state.gate_3b_cleared = False
+
 # --- STATE RECONCILIATION BRIDGE ---
 # Ensures legacy work order states map seamlessly into the new 3A/3B flow.
 if "t3a_step2" not in st.session_state:
@@ -1191,25 +1197,32 @@ elif selected_view == t["tier3a_title"]:
     with c1:
         step1 = st.checkbox(
             "Step 1: Countersign Directorate Safe-Harbor Receipt",
-            key="t3a_step1"
+            value=st.session_state.get("gate_3a_step1", False),
+            key="ui_t3a_step1"
         )
+        st.session_state.gate_3a_step1 = step1
         step2 = st.checkbox(
             "Step 2: Release Substation Work Order WO-8821-HARMONIC",
-            key="t3a_step2",
+            value=st.session_state.get("gate_3a_step2", False),
+            key="ui_t3a_step2",
             disabled=not step1
         )
+        st.session_state.gate_3a_step2 = step2
         step3 = st.checkbox(
             "Step 3: Assemble ERCOT § 4.2 Tariff Interconnection Package",
-            key="t3a_step3",
+            value=st.session_state.get("gate_3a_cleared", False),
+            key="ui_t3a_step3",
             disabled=not step2
         )
+        if step3:
+            st.session_state.gate_3a_cleared = True
 
     with c2:
         st.markdown("**Command Lead Status**")
         st.write("Officer: **Sarah Jenkins**")
         st.write("Role: **VP, Engineering Operations**")
         st.write("Contractor: **Permian HV Field Services**")
-        if step3:
+        if st.session_state.gate_3a_cleared:
             st.success("● 3A Gate Cleared: Dispatched to Field Lead")
             if st.button("Jump to Tier 3B Execution Desk ➔", use_container_width=True):
                 request_navigation(t["tier3b_title"])
@@ -1228,13 +1241,10 @@ elif selected_view == t["tier3b_title"]:
         if st.button("🖨️ Print Work Order", use_container_width=True):
             components.html("<script>window.parent.print();</script>", height=0, width=0)
 
-    t3a_cleared = (
-        st.session_state.get("t3a_step3", False)
-        or st.session_state.get("t3a_step2", False)
-        or st.session_state.get("wo_released", False)
-    )
-    if not t3a_cleared:
+    if not st.session_state.gate_3a_cleared:
         st.error("⚠️ ACCESS RESTRICTED: Tier 3A Work Order WO-8821-HARMONIC has not been released by Sarah Jenkins.")
+        if st.button("← Return to Tier 3A to Release Work Order"):
+            request_navigation(t["tier3a_title"])
         st.stop()
 
     st.markdown("""
@@ -1250,35 +1260,44 @@ elif selected_view == t["tier3b_title"]:
     with b1:
         f_step1 = st.checkbox(
             "Step 1: Rack 4 Neutral Grounding & Continuity Sweep (Exhibit B-1)",
-            key="t3b_step1"
+            value=st.session_state.get("gate_3b_step1", False),
+            key="ui_t3b_step1"
         )
+        st.session_state.gate_3b_step1 = f_step1
         f_step2 = st.checkbox(
             "Step 2: Inverter Bank 1-4 Sub-Cycle Harmonic Sweep (THD 4.1% vs IEEE 2800)",
-            key="t3b_step2",
+            value=st.session_state.get("gate_3b_step2", False),
+            key="ui_t3b_step2",
             disabled=not f_step1
         )
+        st.session_state.gate_3b_step2 = f_step2
         f_step3 = st.checkbox(
             "Step 3: Engage Hardware PE Key Interlock Bypass",
-            key="t3b_step3",
+            value=st.session_state.get("gate_3b_step3", False),
+            key="ui_t3b_step3",
             disabled=not f_step2
         )
+        st.session_state.gate_3b_step3 = f_step3
         f_step4 = st.checkbox(
             "Step 4: Affix Statutory PE Digital Seal & Transmission Attestation",
-            key="t3b_step4",
+            value=st.session_state.get("gate_3b_cleared", False),
+            key="ui_t3b_step4",
             disabled=not f_step3
         )
+        if f_step4:
+            st.session_state.gate_3b_cleared = True
 
     with b2:
         st.markdown("**Licensure Credentials**")
         st.write("Field Lead: **Marcus Vance, PE**")
         st.write("Jurisdiction: **TBPE Reg #TXLIC114902**")
         st.write("Execution Hash: `e3b0c44298fc1c149afb...`")
-        if f_step4:
+        if st.session_state.gate_3b_cleared:
             st.success("● Physical Attestation Sealed")
         else:
             st.info("○ Verification in Progress")
 
-    if f_step4:
+    if st.session_state.gate_3b_cleared:
         st.markdown("---")
         st.markdown("""
             <div style="background-color: #0e2a1e; border: 1px solid #00ff88; padding: 16px; border-radius: 8px; text-align: center; margin-top: 10px; margin-bottom: 15px;">
