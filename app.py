@@ -250,12 +250,12 @@ st.markdown("""
 # =========================================================
 I18N = {
     "English [USA · UK · Australia]": {
-        "tier1_title": "Tier 1 | Chairman Tactical Command Post (Part One)",
+        "tier1_title": "Tier 1 | Chairman Tactical Command Post",
         "tier2_title": "Tier 2 | Directorate Governance Desk",
         "tier3_title": "Tier 3 | Site Operations & Operator Remediation Desk",
         "tier3a_title": "Tier 3A | Engineering Operations Command",
         "tier3b_title": "Tier 3B | Site Execution Desk",
-        "tier4_title": "Tier 4 | Forensic Cost Recovery Vault (Part Two)",
+        "tier4_title": "Tier 4 | Forensic Cost Recovery Vault",
         "calib_red_header": "COMMAND GATEWAY: ENTER NEW PROJECT BUDGET / CAPEX AT RISK (TAP TO RE-CALIBRATE)",
         "override_active": "EXECUTIVE OVERRIDE ACTIVE",
         "baseline_synced": "PUBLIC BASELINE SYNCHRONIZED",
@@ -282,6 +282,15 @@ I18N = {
 }
 
 TODAY_STR = "16 Sep 2026"
+
+# --- SIDEBAR DESK SELECTION (CLEAN 5-TIER SPINE) ---
+DESK_OPTIONS = [
+    "Tier 1 | Chairman Tactical Command Post",
+    "Tier 2 | Directorate Governance Desk",
+    "Tier 3A | Engineering Operations Command",
+    "Tier 3B | Site Execution Desk",
+    "Tier 4 | Forensic Recovery Vault"
+]
 
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
@@ -531,16 +540,14 @@ if "t3a_step3" not in st.session_state:
 # =========================================================
 t = I18N["English [USA · UK · Australia]"]
 
-nav_options = [
-    t["tier1_title"], 
-    t["tier2_title"],
-    t["tier3a_title"],
-    t["tier3b_title"],
-    t["tier4_title"]
-]
+nav_options = DESK_OPTIONS
+
+if "active_desk" not in st.session_state or st.session_state.active_desk not in DESK_OPTIONS:
+    st.session_state.active_desk = DESK_OPTIONS[0]
 
 if "pending_view" in st.session_state:
     st.session_state["nav_desk_selection"] = st.session_state.pop("pending_view")
+    st.session_state["active_desk"] = st.session_state["nav_desk_selection"]
     components.html("""
         <script>
             window.parent.scrollTo(0, 0);
@@ -548,7 +555,10 @@ if "pending_view" in st.session_state:
     """, height=0, width=0)
 
 if "nav_desk_selection" not in st.session_state or st.session_state.nav_desk_selection not in nav_options:
-    st.session_state["nav_desk_selection"] = t["tier1_title"]
+    st.session_state["nav_desk_selection"] = st.session_state.active_desk
+
+if "active_desk" not in st.session_state or st.session_state.active_desk not in nav_options:
+    st.session_state["active_desk"] = st.session_state.nav_desk_selection
 
 def request_navigation(target_desk):
     st.session_state["pending_view"] = target_desk
@@ -631,9 +641,10 @@ with st.sidebar:
     selected_view = st.radio(
         "Select Operating Desk:",
         nav_options,
-        key="nav_desk_selection",
+        key="active_desk",
         label_visibility="collapsed"
     )
+    st.session_state["nav_desk_selection"] = st.session_state.active_desk
     
     st.divider()
     st.markdown("#### 🖨️ Universal Export Utility")
@@ -695,50 +706,66 @@ if selected_view == t["tier1_title"]:
     if ts_key not in st.session_state:
         st.session_state[ts_key] = f"{TODAY_STR} 00:00 UTC"
         
-    with st.container(border=True):
-        parsed_current_capex = st.session_state[calib_key]
-        is_overridden = parsed_current_capex != sector["asset_cap"]
-        badge_color = "#e3b341" if is_overridden else "#58a6ff"
-        badge_label = t["override_active"] if is_overridden else t["baseline_synced"]
-        
-        st.markdown(f"""
-            <div style="text-align: center; margin-bottom: 8px;">
-                <div style="font-size: 1.05rem; font-weight: 700; color: #58a6ff; letter-spacing: 0.05em; text-transform: uppercase;">
-                    ⚡ {active_sector} — {sector['baseline_docket']}
+    st.markdown("""
+        <div style="background-color: #0e1e38; border-left: 4px solid #00d4ff; padding: 10px 16px; border-radius: 4px; margin-bottom: 15px;">
+            <div style="font-size: 0.85rem; color: #00d4ff; font-weight: 700; text-transform: uppercase;">
+                ⚡ ERCOT BESS / Grid Storage (USA) — ERCOT IA § 4.2 Interconnection Docket #54219
+            </div>
+            <div style="font-size: 0.80rem; color: #a0aec0;">
+                ● PUBLIC BASELINE SYNCHRONIZED | Effective Audit Epoch: 16 Sep 2026 00:00 UTC | Commercial Deadlock Verified
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    default_capex = 88_500_000.0
+    entered_capex = st.number_input(
+        "COMMAND GATEWAY: CAPITAL AT RISK / CAPEX BASELINE ($ USD)",
+        min_value=1_000_000.0,
+        max_value=2_000_000_000.0,
+        value=st.session_state.get("capex_baseline", default_capex),
+        step=500_000.0,
+        format="%.2f",
+        key="capex_input"
+    )
+    st.session_state.capex_baseline = entered_capex
+    st.session_state[calib_key] = int(entered_capex)
+    parsed_capex = int(st.session_state[calib_key])
+
+    scale_factor = entered_capex / default_capex
+    daily_burn = 87_264.0 * scale_factor
+    weekly_burn = daily_burn * 7.0
+    crossover_days = entered_capex / daily_burn if daily_burn > 0 else 0
+
+    st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #131722 0%, #1a2234 100%); border: 1px solid #ff4b4b; border-radius: 8px; padding: 18px; margin-top: 10px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255, 75, 75, 0.3); padding-bottom: 12px; margin-bottom: 14px;">
+                <div>
+                    <span style="background-color: #ff4b4b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">ACTIVE CONTRACTUAL BREACH CLAIM</span>
+                    <h3 style="margin: 8px 0 0 0; color: #ffffff; font-size: 1.25rem;">Turnkey EPC Agreement #TX-9011 — Schedule D § 3 (Unexcused Demurrage)</h3>
+                    <p style="margin: 4px 0 0 0; color: #a0aec0; font-size: 0.82rem;">Liable Counterparty: <strong style="color: #ffffff;">Apex Power Conversion Systems Corp (OEM)</strong> | Defense Pretext: Clause 14.b Warranty Voidance</p>
                 </div>
-                <div style="font-size: 1.05rem; color: #c9d1d9; margin: 6px 0;">
-                    Statutory Baseline CapEx at Risk: <strong style="color:#ffffff; font-size:1.15rem;">{curr_sym}{sector['asset_cap']:,}</strong> 
-                    <span style="color:#58a6ff;">(Effective: {sector['baseline_date']})</span>
-                </div>
-                <div style="margin-top: 4px; margin-bottom: 14px;">
-                    <span style="font-size: 1.05rem; font-weight: 800; color: {badge_color};">
-                        ● {badge_label}
-                    </span>
-                    <span style="color: #8b949e; font-size: 0.95rem; font-weight: 600; margin-left: 8px;">
-                        (Effective Audit Timestamp: {st.session_state[ts_key]})
-                    </span>
-                </div>
-                <div style="height: 1px; background: #30363d; margin: 12px 0 16px 0;"></div>
-                <div style="color: #ff4b4b; font-size: 1.45rem; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.3;">
-                    🚨 {t['calib_red_header']}
+                <div style="text-align: right;">
+                    <div style="font-size: 0.75rem; color: #ff8080; font-weight: 700; text-transform: uppercase;">Certified Accrued Recovery Demand</div>
+                    <div style="font-size: 1.7rem; font-weight: 900; color: #ff4b4b; line-height: 1.1;">${weekly_burn:,.0f} <span style="font-size: 0.85rem; color: #ffffff;">USD</span></div>
+                    <div style="font-size: 0.78rem; color: #ff8080;">Burn Velocity: ${daily_burn:,.0f} / Day</div>
                 </div>
             </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('<div class="capex-throttle">', unsafe_allow_html=True)
-        raw_input_str = st.text_input(
-            label="Chairman Quick-Calibrator Input",
-            value=f"{st.session_state[calib_key]:,}",
-            label_visibility="collapsed"
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        parsed_capex = int(re.sub(r"[^\d]", "", raw_input_str) or sector["asset_cap"])
-        if parsed_capex != st.session_state[calib_key]:
-            now_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-            st.session_state[calib_key] = parsed_capex
-            st.session_state[ts_key] = now_str
-            st.rerun()
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 0.82rem;">
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
+                    <span style="color: #a0aec0; display: block; font-size: 0.72rem;">STATUTORY DEFENSE PREROGATIVE</span>
+                    <strong style="color: #00d4ff;">Delaware DGCL § 141(e)</strong> Safe Harbor Shield
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
+                    <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CAPITAL UNDER ACTIVE DEFENSE</span>
+                    <strong style="color: #00ff88;">${entered_capex:,.0f} USD</strong> (100% Escrow Intact)
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
+                    <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CROSSOVER TO TOTAL LOSS</span>
+                    <strong style="color: #ffa500;">{crossover_days:,.1f} Days</strong> (At Current Bleed Rate)
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
     total_burn_day = 87264 * scale_factor if not is_resolved else 0
     total_burn_wk = total_burn_day * 7
