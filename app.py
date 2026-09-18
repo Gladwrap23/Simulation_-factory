@@ -1598,6 +1598,84 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
 
     st.markdown("---")
 
+    # --------------------------------------------------------------------------
+    # FORENSIC FLIGHT RECORDER: SYNCHRONIZED MICRO-TIMELINE
+    # --------------------------------------------------------------------------
+    st.markdown("#### ⏱️ Contemporaneous Forensic Flight Recorder (Micro-Timeline)")
+    st.caption("Millisecond-level synchronization of technical trip telemetry to commercial default milestones.")
+
+    timeline_events = [
+        {
+            "time": "08:14:02.104 UTC",
+            "event": "CRITICAL TELEMETRY TRIP: Inverter Bank 2 Harmonic Distortion",
+            "actor": "Substation Relay R-04",
+            "rule": "IEEE 2800 Breach",
+            "detail": "THD spiked to 4.1% against 3.0% threshold. Hardware lockout triggered automatically.",
+            "impact": "Generation halted. Interface trip recorded on COMTRADE bus.",
+            "tag_color": "#ff4b4b"
+        },
+        {
+            "time": "09:30:15.000 UTC",
+            "event": "FORMAL NOTICE DISPATCHED: Schedule D § 3 Cure Demand",
+            "actor": "Project Legal / Sarah Jenkins",
+            "rule": "Turnkey EPC Clause 11.2",
+            "detail": "Automated demand transmitted via EDI/Notice Gateway to Apex Power Systems. 90-minute cure window opened.",
+            "impact": "Notice clock starts. Proof of receipt confirmed by carrier.",
+            "tag_color": "#00d4ff"
+        },
+        {
+            "time": "11:00:44.210 UTC",
+            "event": "COUNTERPARTY DEFAULT: Apex PCS Refuses Site Dispatch",
+            "actor": "Apex PCS OEM Dispatch",
+            "rule": "Anticipatory Repudiation",
+            "detail": "OEM asserts bad-faith Clause 14.b warranty voidance pretext. Refuses firmware patch or field engineer dispatch.",
+            "impact": "Commercial deadlock confirmed. Demurrage accrual commences.",
+            "tag_color": "#ff8080"
+        },
+        {
+            "time": "11:01:00.000 UTC",
+            "event": "LIQUIDATED CLAIM ACCRUAL: Unexcused Standby Demurrage",
+            "actor": "Autonomous Telemetry Engine",
+            "rule": "Schedule D § 3 Demurrage",
+            "detail": f"Holding burn velocity locked at ${daily_burn / 24:,.2f}/hr (${daily_burn:,.2f}/day). Total escrow exposure actively compiling.",
+            "impact": f"Accrual running. Current milestone balance: ${accrued_claim:,.2f} USD.",
+            "tag_color": "#ffa500"
+        },
+        {
+            "time": "14:45:00.000 UTC",
+            "event": "STATUTORY PE BYPASS: Corporate Covenant #COV-8821 Activated",
+            "actor": "Marcus Vance, PE (TXLIC114902)",
+            "rule": "Delaware DGCL § 141(e)",
+            "detail": "Physical engineering bypass of OEM lockouts under corporate board indemnity. Fluke 1775 logs sealed.",
+            "impact": "Field recovery initiated. Chain of custody secured for arbitration.",
+            "tag_color": "#00ff88"
+        }
+    ]
+
+    event_options = [f"{ev['time']} — {ev['event']}" for ev in timeline_events]
+    selected_idx = st.selectbox(
+        "Scrub Flight Recorder Events (Inspect Cryptographic Event Payload):",
+        range(len(timeline_events)),
+        format_func=lambda x: event_options[x]
+    )
+
+    ev = timeline_events[selected_idx]
+
+    st.markdown(f"""
+        <div style="background: #131d2e; border: 2px solid {ev['tag_color']}; border-left: 8px solid {ev['tag_color']}; padding: 18px 20px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px;">
+                <span style="color: {ev['tag_color']}; font-weight: 900; font-size: 1.1rem;">RECORDED TIMESTAMP: {ev['time']}</span>
+                <span style="background: rgba(255,255,255,0.1); color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.85rem;">{ev['rule']}</span>
+            </div>
+            <div style="font-size: 1.2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px;">{ev['event']}</div>
+            <div style="color: #cbd5e0; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px;">{ev['detail']}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                <div><strong style="color: #a0aec0;">Originating Entity / Relay:</strong> <span style="color: #ffffff;">{ev['actor']}</span></div>
+                <div><strong style="color: #a0aec0;">Legal / Financial Consequence:</strong> <span style="color: #00ff88;">{ev['impact']}</span></div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
     st.markdown("#### Master Evidentiary Custodian Package")
     merkle_root = "0x8f4d92a1c674b09e13d58a74e2b091f8c412e690bb3561a09d3b749e7b25c34e" if t3b_sealed else "PENDING_TIER_3B_SEAL"
 
