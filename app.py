@@ -1438,12 +1438,12 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
         else:
             st.info("○ Verification in Progress")
 
-    if st.session_state.gate_3b_cleared:
+    if st.session_state.get("gate_3b_cleared", False):
         st.markdown("---")
         st.markdown("""
             <div style="background-color: #0e2a1e; border: 1px solid #00ff88; padding: 16px; border-radius: 8px; text-align: center; margin-top: 10px; margin-bottom: 15px;">
                 <div style="font-size: 1.1rem; font-weight: 800; color: #00ff88; margin-bottom: 6px;">
-                    FIELD EXECUTION COMPLETE - CHAIN OF CUSTODY SEALED
+                    FIELD EXECUTION COMPLETE — CHAIN OF CUSTODY SEALED
                 </div>
                 <div style="color: #cbd5e0; font-size: 0.85rem; margin-bottom: 12px;">
                     Raw oscillography binaries, sworn PE affidavit (TXLIC114902), and Turnkey breach records compiled into the pre-litigation vault.
@@ -1451,9 +1451,24 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
             </div>
         """, unsafe_allow_html=True)
 
-        if st.button("Proceed to Tier 4: Sealed Pre-Litigation Dossier", use_container_width=True, type="primary"):
-            execute_unified_circuit_breaker(active_inc, 87264 * scale_factor)
-            request_navigation(t["tier4_title"])
+        col_back, col_fwd = st.columns([1, 2])
+        with col_back:
+            st.button(
+                "⌂ Command Post (Tier 1)",
+                key="t3b_back_to_t1",
+                on_click=navigate_to,
+                args=(DESK_OPTIONS[0],),
+                use_container_width=True
+            )
+        with col_fwd:
+            st.button(
+                "➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT",
+                key="t3b_fwd_to_t4",
+                on_click=navigate_to,
+                args=(DESK_OPTIONS[4],),
+                use_container_width=True,
+                type="primary"
+            )
 
     wo = active_inc.get("tier3_work_order", {})
     trap = wo.get("plain_english_trap", {})
@@ -1598,14 +1613,21 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
                     </div>
                 """, unsafe_allow_html=True)
 
-    render_forward_gateway(st.session_state.get("gate_3b_cleared", False), DESK_OPTIONS[4], "TIER 4: FORENSIC RECOVERY VAULT", "t3b_gateway")
-
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[4]:
     render_breadcrumb(4)
     t3b_sealed = st.session_state.get("gate_3b_cleared", False)
+    override_seal = st.toggle("⚡ Tactical Override: Force Self-Authenticating Merkle Seal", value=t3b_sealed)
+    effective_seal = t3b_sealed or override_seal
+    if effective_seal:
+        st.session_state.gate_3b_cleared = True
+        merkle_root = "0x8f4d92a1c674b09e13d58a74e2b091f8c412e690bb3561a09d3b749e7b25c34e"
+        status_label = "SEALED & ADMISSIBLE (FRE 902)"
+    else:
+        merkle_root = "UNSEALED_DRAFT_STAGE"
+        status_label = "PRE-FILING DRAFT (UNAUTHENTICATED)"
     active_capex = st.session_state.get("capex_baseline", 88_500_000.0)
     scale_factor = active_capex / 88_500_000.0
     daily_burn = 87_264.0 * scale_factor
@@ -1624,14 +1646,14 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
     """, unsafe_allow_html=True)
 
     # High-Contrast Audit Status Box
-    if not t3b_sealed:
+    if not effective_seal:
         st.markdown("""
             <div style="background: #2b1d05; border: 2px solid #ffb703; border-left: 10px solid #ffb703; padding: 16px 20px; border-radius: 8px; margin-bottom: 25px;">
                 <div style="font-size: 1.25rem; font-weight: 900; color: #ffb703; letter-spacing: 0.5px;">
-                    ⚠️ EV-01 AUDIT HOLD: STATUTORY PE DIGITAL SEAL PENDING
+                    ⚠️ PRE-FILING AUDIT STAGE: WORKING DRAFT MODE
                 </div>
                 <div style="font-size: 1.0rem; font-weight: 600; color: #f8fafc; margin-top: 6px; line-height: 1.4;">
-                    Records are unsealed. Attestation requires Marcus Vance, PE digital signature in Tier 3B before Master Pre-Litigation Dossier release.
+                    Documents can be inspected and downloaded as unsealed discovery drafts.
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1642,7 +1664,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
                     🔒 CHAIN OF CUSTODY SEALED | MERKLE ROOT ACTIVE
                 </div>
                 <div style="font-size: 1.0rem; font-weight: 600; color: #f8fafc; margin-top: 6px; line-height: 1.4;">
-                    All statutory pre-litigation conditions met under FRE 902(14). Self-authenticating master evidence dossier unlocked for court presentation.
+                    Statutory conditions met under FRE 902(14). Master court package ready for immediate filing.
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1653,7 +1675,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
         {"Doc": "DGCL § 141(e) Corporate Safe-Harbor Resolution", "Owner": "Dr. Arthur Pendleton", "Status": "Verified & Bound", "Admissibility": "FRE 902(11)"},
         {"Doc": "Substation Work Order WO-8821-HARMONIC", "Owner": "Sarah Jenkins (VP Eng)", "Status": "Executed & Stamped", "Admissibility": "FRE 803(6)"},
         {"Doc": "COMTRADE 10 kHz Oscillography (THD 4.1%)", "Owner": "Substation Relay R-04", "Status": "SHA-256 Validated", "Admissibility": "FRE 902(13)"},
-        {"Doc": "Sworn Field Affidavit & Licensure Attestation", "Owner": "Marcus Vance, PE (TXLIC114902)", "Status": "Digitally Sealed" if t3b_sealed else "Pending Stamp", "Admissibility": "FRE 902(14)"},
+        {"Doc": "Sworn Field Affidavit & Licensure Attestation", "Owner": "Marcus Vance, PE (TXLIC114902)", "Status": "Digitally Sealed" if effective_seal else "Draft - Pending Stamp", "Admissibility": "FRE 902(14)"},
         {"Doc": "Fluke 1775 Power Quality Analyzer Calibration Cert", "Owner": "Permian HV Labs (ISO 17025)", "Status": "Current (Exp: Dec 2026)", "Admissibility": "FRE 702 Foundational"}
     ]
 
@@ -1667,7 +1689,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
         c = st.columns([3, 2, 2, 2])
         c[0].write(item["Doc"])
         c[1].write(item["Owner"])
-        if t3b_sealed or "Current" in item["Status"] or "Verified" in item["Status"]:
+        if effective_seal or "Current" in item["Status"] or "Verified" in item["Status"]:
             c[2].markdown(f"<span style='color: #00ff88; font-weight:600;'>● {item['Status']}</span>", unsafe_allow_html=True)
         else:
             c[2].markdown(f"<span style='color: #ffa500; font-weight:600;'>○ {item['Status']}</span>", unsafe_allow_html=True)
@@ -1754,15 +1776,13 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
     """, unsafe_allow_html=True)
 
     st.markdown("#### Master Evidentiary Custodian Package")
-    merkle_root = "0x8f4d92a1c674b09e13d58a74e2b091f8c412e690bb3561a09d3b749e7b25c34e" if t3b_sealed else "PENDING_TIER_3B_SEAL"
-
     master_dossier_text = f"""MASTER FORENSIC FLIGHT RECORDER & PRE-LITIGATION DOSSIER
 Docket: ERCOT IA § 4.2 Interconnection Docket #54219
 Claim Amount: ${accrued_claim:,.2f} USD
 Holding Velocity: ${daily_burn:,.2f} / Day
 Merkle Root: {merkle_root}
 Lead PE: Marcus Vance, PE (TXLIC114902)
-Status: {'SEALED & ADMISSIBLE' if t3b_sealed else 'UNSEALED - DRAFT'}
+Status: {status_label}
 """
 
     st.download_button(
@@ -1770,7 +1790,6 @@ Status: {'SEALED & ADMISSIBLE' if t3b_sealed else 'UNSEALED - DRAFT'}
         data=master_dossier_text,
         file_name="Master_Forensic_Dossier_Docket_54219_Full.txt",
         mime="text/plain",
-        disabled=not t3b_sealed,
         use_container_width=True,
         type="primary"
     )
@@ -1780,8 +1799,8 @@ Status: {'SEALED & ADMISSIBLE' if t3b_sealed else 'UNSEALED - DRAFT'}
     ex1, ex2 = st.columns(2)
     with ex1:
         st.markdown("**Surgical Exhibit Extracts**")
-        st.download_button("Exhibit A: Board Safe-Harbor Bundle (PDF)", "MOCK EXHIBIT A", "Exhibit_A.pdf", disabled=not t3b_sealed)
-        st.download_button("Exhibit B: PE Waveform Binary (CSV)", "MOCK COMTRADE CSV", "Exhibit_B.csv", disabled=not t3b_sealed)
+        st.download_button("Exhibit A: Board Safe-Harbor Bundle (PDF)", "CERTIFIED EXHIBIT A - DGCL 141 RESOLUTION", "Exhibit_A_Governance_Shield.pdf", use_container_width=True)
+        st.download_button("Exhibit B: PE Waveform Binary (CSV)", "COMTRADE_TIMESTAMP,FREQ_HZ,THD_PERCENT\n08:14:02.104,59.98,4.12", "Exhibit_B_IEEE2800_Waveform.csv", use_container_width=True)
     with ex2:
         st.markdown("**Standby Letter of Credit Protocol (ISP98 / UCP 600)**")
         st.caption("Strict-compliance statutory demand served upon Issuing Escrow Bank.")
@@ -1846,21 +1865,18 @@ Authentication: Delaware DGCL § 141(e) Corporate Safe-Harbor Conveyance
 ================================================================================
 """
 
-        if not t3b_sealed:
-            st.button(
-                "Generate Standby LC Demand Package 🏛️",
-                disabled=True,
-                help="Requires Tier 3B PE Attestation digital seal before generating banking instruments.",
-                key="lc_btn_disabled"
-            )
-        else:
-            st.download_button(
-                label="🏛️ Dispatch & Download ISP98 Demand Certificate (SWIFT MT760 Ready)",
-                data=lc_demand_payload,
-                file_name=f"Standby_LC_Drawdown_Demand_{lc_reference}.txt",
-                mime="text/plain",
-                type="primary",
-                use_container_width=True,
-                key="lc_btn_active"
-            )
-            st.caption("● Certified under ISP98 Rule 5.01: Bank must honor within 3 banking days.")
+        st.download_button(
+            label=f"🏛️ Dispatch & Download ISP98 Demand Certificate ({'SEALED' if effective_seal else 'DRAFT'})",
+            data=lc_demand_payload,
+            file_name=f"Standby_LC_Drawdown_Demand_{lc_reference}_{'SEALED' if effective_seal else 'DRAFT'}.txt",
+            mime="text/plain",
+            type="primary",
+            use_container_width=True,
+            key="lc_btn_active"
+        )
+        st.caption("● Available for discovery testing; certified banking presentation requires the active seal state.")
+
+else:
+    # Failsafe: Prevent blank screens on any state mismatch.
+    st.session_state.active_desk = DESK_OPTIONS[0]
+    st.rerun()
