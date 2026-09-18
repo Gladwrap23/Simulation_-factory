@@ -785,24 +785,10 @@ def reset_incident_to_neutral(incident: dict):
 # =========================================================
 # 3. SIDEBAR NAVIGATION
 # =========================================================
-def on_book_change():
-    selected = st.session_state.selected_book
-    config = OPERATING_BOOKS[selected]
-    st.session_state.capex_baseline = config["default_capex"]
-    st.session_state.active_docket = config["docket"]
-    st.session_state.active_counterparty = config["counterparty"]
-    st.session_state.selected_jurisdiction = config["jurisdiction"]
-    st.session_state.active_jurisdiction = config["jurisdiction"]
-    st.session_state.selected_incident_id = "INC-001"
-    st.session_state.selected_director = config["lead_director"]
-    st.session_state.bound_book = selected
-
-if "selected_book" not in st.session_state:
-    st.session_state.selected_book = st.session_state.get("current_book", next(iter(OPERATING_BOOKS)))
-if st.session_state.selected_book not in OPERATING_BOOKS:
-    st.session_state.selected_book = next(iter(OPERATING_BOOKS))
-if "selected_jurisdiction" not in st.session_state:
-    st.session_state.selected_jurisdiction = OPERATING_BOOKS[st.session_state.selected_book]["jurisdiction"]
+if "selected_book_name" not in st.session_state:
+    st.session_state.selected_book_name = st.session_state.get("selected_book", next(iter(OPERATING_BOOKS)))
+if st.session_state.selected_book_name not in OPERATING_BOOKS:
+    st.session_state.selected_book_name = next(iter(OPERATING_BOOKS))
 
 with st.sidebar:
     st.markdown("""
@@ -822,23 +808,28 @@ with st.sidebar:
     selected_book = st.selectbox(
         "Select Active Asset:",
         options=list(OPERATING_BOOKS.keys()),
-        key="selected_book",
-        on_change=on_book_change,
+        key="selected_book_name",
         label_visibility="collapsed"
     )
-    current_cfg = OPERATING_BOOKS[selected_book]
+    active_cfg = OPERATING_BOOKS[selected_book]
+
+    if st.session_state.get("last_loaded_book") != selected_book:
+        st.session_state.capex_baseline = active_cfg["default_capex"]
+        st.session_state.active_docket = active_cfg["docket"]
+        st.session_state.active_counterparty = active_cfg["counterparty"]
+        st.session_state.selected_incident_id = "INC-001"
+        st.session_state.selected_director = active_cfg["lead_director"]
+        st.session_state.last_loaded_book = selected_book
 
     st.markdown("### ⚖️ Sovereign Legal Jurisdiction")
     selected_jurisdiction = st.selectbox(
         "Governing Statutory Shield:",
-        options=current_cfg["jurisdiction_options"],
-        key="selected_jurisdiction",
+        options=active_cfg["jurisdiction_options"],
+        key=f"jurisdiction_{selected_book}",
         label_visibility="collapsed"
     )
     st.session_state.active_jurisdiction = selected_jurisdiction
 
-    if st.session_state.get("bound_book") != selected_book:
-        on_book_change()
     active_sector = selected_book
     sector = build_operating_book(active_sector)
     sector["statute"] = selected_jurisdiction
