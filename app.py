@@ -457,6 +457,26 @@ def render_breadcrumb(active_index):
         unsafe_allow_html=True
     )
 
+
+def render_top_action_bar():
+    """Render executive print and dossier actions beneath the active breadcrumb."""
+    top_col1, top_col2, top_col3 = st.columns([3, 1, 1])
+    with top_col1:
+        st.caption("Active Telemetry Engine: **Pactum Sovereign OS Build v6.8** | Real-Time Docket Audit")
+    with top_col2:
+        if st.button("🖨️ Quick Print / PDF", key="top_quick_print", use_container_width=True):
+            components.html("""<script>window.parent.print();</script>""", height=0)
+    with top_col3:
+        st.download_button(
+            label="📑 Full Case File",
+            data=unified_executive_bundle,
+            file_name=f"Master_Case_File_{active_cfg['docket'].replace(' ', '_').replace('#', '')}.txt",
+            mime="text/plain",
+            key="top_quick_docket",
+            use_container_width=True
+        )
+    st.markdown("---")
+
 def render_forward_gateway(cleared, next_desk, next_label, gateway_key):
     st.markdown("---")
     if cleared:
@@ -1002,6 +1022,7 @@ if st.session_state.trigger_print:
 # =========================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
     render_breadcrumb(0)
+    render_top_action_bar()
     # Ultra-Prominent Tier 1 Header
     st.markdown(f"""
         <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
@@ -1320,6 +1341,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[1]:
     render_breadcrumb(1)
+    render_top_action_bar()
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
         st.title(t["tier2_title"])
@@ -1547,6 +1569,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[2]:
     render_breadcrumb(2)
+    render_top_action_bar()
     st.markdown("### Tier 3A | Engineering Operations Command")
     st.caption("Corporate Risk Absorption & Utility Packaging Desk | VP Sarah Jenkins")
 
@@ -1601,6 +1624,8 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[3]:
+    render_breadcrumb(3)
+    render_top_action_bar()
     st.markdown("""
         <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00ff88; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
             <div style="font-size: 2rem; font-weight: 900; color: #ffffff;">TIER 3B | SITE EXECUTION DESK</div>
@@ -1689,6 +1714,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[4]:
     render_breadcrumb(4)
+    render_top_action_bar()
     t3b_sealed = st.session_state.get("gate_3b_cleared", False)
     override_seal = st.toggle("⚡ Tactical Override: Force Self-Authenticating Merkle Seal", value=t3b_sealed)
     effective_seal = t3b_sealed or override_seal
@@ -1946,6 +1972,35 @@ Authentication: Delaware DGCL § 141(e) Corporate Safe-Harbor Conveyance
             key="lc_btn_active"
         )
         st.caption("● Available for discovery testing; certified banking presentation requires the active seal state.")
+
+    # --------------------------------------------------------------------------
+    # TERMINAL EXPORT & COURT PRESENTATION RUNWAY
+    # --------------------------------------------------------------------------
+    st.markdown("""
+        <div style="background: #1e293b; border: 2px solid #00d4ff; padding: 16px 20px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
+            <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">
+                🏛️ FINAL DISPOSITION: EXPORT COURT & ARBITRATION PACKAGE
+            </div>
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                Produce court-admissible physical filings or generate AirPrint records for Delaware Chancery Court emergency hearings.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    c_exp1, c_exp2 = st.columns(2)
+    with c_exp1:
+        if st.button("🖨️ Print Full Docket View (AirPrint / Save PDF)", key="t4_print_btn", use_container_width=True):
+            components.html("""<script>window.parent.print();</script>""", height=0)
+    with c_exp2:
+        st.download_button(
+            label="📑 Download Complete Master Docket Bundle",
+            data=unified_executive_bundle,
+            file_name=f"Certified_Master_Docket_{active_cfg['docket'].replace(' ', '_').replace('#', '')}.txt",
+            mime="text/plain",
+            key="t4_docket_bundle_btn",
+            use_container_width=True,
+            type="primary"
+        )
 
     # --------------------------------------------------------------------------
     # ADVERSARIAL PREEMPTION & JUDICIAL STRESS-TEST MATRIX
