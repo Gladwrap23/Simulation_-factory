@@ -1373,245 +1373,88 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[3]:
-    render_breadcrumb(3)
-    top_col1, top_col2 = st.columns([4, 1])
-    with top_col1:
-        st.title(f"👷 {t['tier3b_title']}")
-        st.caption("Specialized Physical Engineering & Statutory Attestation | Marcus Vance, PE (TXLIC114902)")
-    with top_col2:
-        if st.button("🖨️ Print Work Order", use_container_width=True):
-            components.html("<script>window.parent.print();</script>", height=0, width=0)
+    st.markdown("""
+        <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00ff88; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-size: 2rem; font-weight: 900; color: #ffffff;">TIER 3B | SITE EXECUTION DESK</div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #00ff88; margin-top: 4px;">
+                SPECIALIZED PHYSICAL ENGINEERING & STATUTORY ATTESTATION | MARCUS VANCE, PE (TXLIC114902)
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    if not st.session_state.gate_3a_cleared:
+    if not st.session_state.get("gate_3a_cleared", False):
         st.error("⚠️ ACCESS RESTRICTED: Tier 3A Work Order WO-8821-HARMONIC has not been released by Sarah Jenkins.")
-        if st.button("← Return to Tier 3A to Release Work Order"):
-            request_navigation(t["tier3a_title"])
+        st.button("← Return to Tier 3A", on_click=navigate_to, args=(DESK_OPTIONS[2],))
         st.stop()
 
-    st.markdown("""
-        <div style="background-color: #1a1e24; border-left: 4px solid #00ff88; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
-            <div style="font-size: 0.85rem; color: #00ff88; font-weight: 700;">STATUTORY PERSONAL LICENSURE SHIELD: ACTIVE</div>
-            <div style="font-size: 0.80rem; color: #a0aec0;">
-                Execution is shielded under Corporate Covenant #COV-8821. Personal statutory liability under Texas Board of Professional Engineers regulations transferred to asset balance sheet.
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    b1, b2 = st.columns([2, 1])
-    with b1:
-        f_step1 = st.checkbox(
-            "Step 1: Rack 4 Neutral Grounding & Continuity Sweep (Exhibit B-1)",
-            value=st.session_state.get("gate_3b_step1", False),
-            key="ui_t3b_step1"
-        )
-        st.session_state.gate_3b_step1 = f_step1
-        f_step2 = st.checkbox(
-            "Step 2: Inverter Bank 1-4 Sub-Cycle Harmonic Sweep (THD 4.1% vs IEEE 2800)",
-            value=st.session_state.get("gate_3b_step2", False),
-            key="ui_t3b_step2",
-            disabled=not f_step1
-        )
-        st.session_state.gate_3b_step2 = f_step2
-        f_step3 = st.checkbox(
-            "Step 3: Engage Hardware PE Key Interlock Bypass",
-            value=st.session_state.get("gate_3b_step3", False),
-            key="ui_t3b_step3",
-            disabled=not f_step2
-        )
-        st.session_state.gate_3b_step3 = f_step3
-        f_step4 = st.checkbox(
-            "Step 4: Affix Statutory PE Digital Seal & Transmission Attestation",
-            value=st.session_state.get("gate_3b_cleared", False),
-            key="ui_t3b_step4",
-            disabled=not f_step3
-        )
-        if f_step4:
-            st.session_state.gate_3b_cleared = True
-
-    with b2:
-        st.markdown("**Licensure Credentials**")
-        st.write("Field Lead: **Marcus Vance, PE**")
-        st.write("Jurisdiction: **TBPE Reg #TXLIC114902**")
-        st.write("Execution Hash: `e3b0c44298fc1c149afb...`")
-        if st.session_state.gate_3b_cleared:
-            st.success("● Physical Attestation Sealed")
-        else:
-            st.info("○ Verification in Progress")
-
-    if st.session_state.get("gate_3b_cleared", False):
-        st.markdown("---")
+    m1, m2, m3 = st.columns(3)
+    with m1:
         st.markdown("""
-            <div style="background-color: #0e2a1e; border: 1px solid #00ff88; padding: 16px; border-radius: 8px; text-align: center; margin-top: 10px; margin-bottom: 15px;">
-                <div style="font-size: 1.1rem; font-weight: 800; color: #00ff88; margin-bottom: 6px;">
-                    FIELD EXECUTION COMPLETE — CHAIN OF CUSTODY SEALED
+            <div style="background: #111a2e; border-top: 3px solid #00d4ff; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.75rem; color: #94a3b8;">ACTIVE WORK ORDER</div>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">WO-8821-HARMONIC</div>
+                <div style="font-size: 0.75rem; color: #ff4b4b; font-weight: 600;">● P1 - CRITICAL BYPASS</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with m2:
+        st.markdown("""
+            <div style="background: #111a2e; border-top: 3px solid #ffa500; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.75rem; color: #94a3b8;">TARGET REGULATORY GATE</div>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">Check #6 (COD Attestation)</div>
+                <div style="font-size: 0.75rem; color: #a0aec0;">ERCOT Docket #54219</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with m3:
+        t3b_sealed = st.session_state.get("gate_3b_cleared", False)
+        st.markdown(f"""
+            <div style="background: #111a2e; border-top: 3px solid {'#00ff88' if t3b_sealed else '#ff4b4b'}; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.75rem; color: #94a3b8;">STATUTORY TBPE STATUS</div>
+                <div style="font-size: 1.1rem; font-weight: 800; color: {'#00ff88' if t3b_sealed else '#ff8080'};">
+                    {'100% SEALED' if t3b_sealed else 'PENDING ATTESTATION'}
                 </div>
-                <div style="color: #cbd5e0; font-size: 0.85rem; margin-bottom: 12px;">
-                    Raw oscillography binaries, sworn PE affidavit (TXLIC114902), and Turnkey breach records compiled into the pre-litigation vault.
-                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">Delaware DGCL § 141 Shield Active</div>
             </div>
         """, unsafe_allow_html=True)
 
-        col_back, col_fwd = st.columns([1, 2])
-        with col_back:
-            st.button(
-                "⌂ Command Post (Tier 1)",
-                key="t3b_back_to_t1",
-                on_click=navigate_to,
-                args=(DESK_OPTIONS[0],),
-                use_container_width=True
-            )
-        with col_fwd:
-            st.button(
-                "➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT",
-                key="t3b_fwd_to_t4",
-                on_click=navigate_to,
-                args=(DESK_OPTIONS[4],),
-                use_container_width=True,
-                type="primary"
-            )
+    st.write("")
+    p_col1, p_col2 = st.columns([3, 2])
+    with p_col1:
+        st.markdown("#### Execution Punch List & Statutory Sign-Off")
+        s1 = st.checkbox("Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep", value=st.session_state.get("t3b_s1", False), key="cb_t3b_s1")
+        st.session_state.t3b_s1 = s1
+        s2 = st.checkbox("Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD 4.1%)", value=st.session_state.get("t3b_s2", False), disabled=not s1, key="cb_t3b_s2")
+        st.session_state.t3b_s2 = s2
+        s3 = st.checkbox("Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)", value=st.session_state.get("t3b_s3", False), disabled=not s2, key="cb_t3b_s3")
+        st.session_state.t3b_s3 = s3
+        s4 = st.checkbox("Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence", value=st.session_state.get("gate_3b_cleared", False), disabled=not s3, key="cb_t3b_s4")
+        st.session_state.gate_3b_cleared = s4
 
-    wo = active_inc.get("tier3_work_order", {})
-    trap = wo.get("plain_english_trap", {})
-    
-    st.markdown(f"""
-        <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid #388bfd; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px;">
-            <div style="font-size:0.9rem; font-weight:800; color:#58a6ff; text-transform:uppercase;">🔒 Scoped Operational Silo: Grid Risk & Technical Integrity</div>
-            <div style="font-size:1.05rem; color:#ffffff; margin-top:2px;">
-                Cognizant Director: <strong>Dr. Arthur Pendleton</strong> ➔ Managing VP: <strong>{wo.get('managing_vp', 'VP Engineering')}</strong> ➔ Field Lead: <strong>{wo.get('field_lead', 'Marcus Vance, PE')}</strong>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        request_navigation(t["tier1_title"])
-        
-    st.divider()
-    
-    t1, t2, t3 = st.columns(3)
-    with t1:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">Active Work Order</div>
-                <div class="exec-metric-val-secondary">{wo.get('id', 'N/A')}</div>
-                <div style="color: #f85149; font-weight: 800; font-size: 0.95rem; margin-top: 4px;">● {active_inc.get('priority', 'CRITICAL')}</div>
+    with p_col2:
+        st.markdown("#### Live Telemetry (Fluke 1775)")
+        st.markdown("""
+            <div style="background: #091322; border: 1px solid #1e293b; padding: 14px; border-radius: 6px; font-family: monospace;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: #94a3b8;">THD HARMONICS:</span><strong style="color: #ff4b4b; font-size: 1.1rem;">4.1%</strong></div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 12px;">Threshold: &lt; 3.0% (IEEE 2800 Breach)</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span style="color: #94a3b8;">INRUSH DAMPING:</span><strong style="color: #00d4ff;">1.18 pu</strong></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">RELAY COMTRADE:</span><strong style="color: #00ff88;">SYNCED (10 kHz)</strong></div>
             </div>
         """, unsafe_allow_html=True)
-    with t2:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">Target Regulatory Gate</div>
-                <div class="exec-metric-val-secondary" style="font-size:1.15rem;">{wo.get('target_gate', 'COD Gate')}</div>
-                <div style="color: #58a6ff; font-weight: 700; font-size: 0.9rem; margin-top: 4px;">ERCOT Docket #54219</div>
+
+    st.markdown("---")
+    if st.session_state.get("gate_3b_cleared", False):
+        st.markdown("""
+            <div style="background: #062b19; border: 2px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="font-size: 1.15rem; font-weight: 900; color: #00ff88;">🔒 FIELD EXECUTION COMPLETE — CHAIN OF CUSTODY SEALED</div>
+                <div style="font-size: 0.9rem; color: #f8fafc; margin-top: 4px;">Raw oscillography binaries and sworn PE affidavit (TXLIC114902) compiled into pre-litigation vault.</div>
             </div>
         """, unsafe_allow_html=True)
-    with t3:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">Execution Progress</div>
-                <div class="exec-metric-val" style="color: {'#3fb950' if is_resolved else '#e3b341'};">{wo.get('progress_pct', 0)}%</div>
-                <div style="color: {'#3fb950' if is_resolved else '#e3b341'}; font-weight: 700; font-size: 0.9rem; margin-top: 4px;">{'COMPLETE' if is_resolved else 'STEP 4 PENDING INDEMNITY'}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    col_t, col_m = st.columns([3, 2])
-    with col_t:
-        with st.container(border=True):
-            st.markdown(f"#### Execution Punch List & Sign-Off: {wo.get('title', 'Tasks')}")
-            for idx, step in enumerate(wo.get("steps", [])):
-                st.markdown(f"""
-                    <div style="padding: 10px; border-bottom: 1px solid #30363d;">
-                        <span style="font-size: 1.15rem;">{'✅' if step['done'] else '⏳'}</span>
-                        <strong style="color: #ffffff; font-size: 1.05rem; margin-left: 6px;">Step {idx+1}: {step['task']}</strong>
-                        <div style="color: #8b949e; font-size: 0.95rem; margin-left: 28px;">Evidence: <code>{step.get('evidence', 'Verified')}</code></div>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            if not is_resolved:
-                shield_badge = "🟢 Directorate Indemnity Shield Active" if is_dir_signed else "⚠️ Awaiting Directorate Countersignature"
-                st.markdown(f"""
-                    <div style="background: rgba(248, 81, 73, 0.15); border: 2px solid #f85149; border-radius: 8px; padding: 18px; margin-bottom: 16px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <div style="color: #f85149; font-size: 1.25rem; font-weight: 800;">
-                                {trap.get('headline', '🚨 Signatory Deadlock Warning')}
-                            </div>
-                            <span style="font-size:0.9rem; font-weight:700; color:{'#3fb950' if is_dir_signed else '#e3b341'}; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px;">
-                                {shield_badge}
-                            </span>
-                        </div>
-                        <div style="font-size: 1.05rem; line-height: 1.6; color: #f0f6fc;">
-                            <p style="margin: 0 0 8px 0;">
-                                👤 <strong>Who is refusing to sign:</strong> <br>
-                                <span style="color: #ffffff; font-weight: 700;">{trap.get('who_blocks', 'Lead PE refuses sign-off.')}</span>
-                            </p>
-                            <p style="margin: 0 0 8px 0;">
-                                ⚠️ <strong>Why they are refusing:</strong> <br>
-                                {trap.get('reason', 'Threat of warranty voidance by vendor.')}
-                            </p>
-                            <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #3fb950; padding: 10px 12px; margin-top: 10px; border-radius: 4px;">
-                                🛡️ <strong>How this button fixes it:</strong> <br>
-                                <span style="color: #e6edf3;">{trap.get('fix', 'Executes board indemnity to absorb liability and clear the gate.')}</span>
-                            </div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("⚡ Transmit Lead PE Attestation Stamp & Seal Gate", use_container_width=True, type="primary"):
-                    execute_unified_circuit_breaker(active_inc, 87264 * scale_factor)
-                    st.success("PE Stamp sealed. Gate resolved. Auto-routing to Tier 1 Command Post...")
-                    request_navigation(t["tier1_title"])
-            else:
-                st.success(f"✅ Work order completed at 100%. Professional Engineer stamp transmitted by {wo.get('field_lead', 'Lead PE')}.")
-                btn_ret, btn_vault = st.columns(2)
-                with btn_ret:
-                    if st.button("↩️ Return to Tier 1: Chairman Command Post", use_container_width=True, type="primary"):
-                        request_navigation(t["tier1_title"])
-                with btn_vault:
-                    if st.button("➔ Advance to Tier 4: Departmental Forensic Vault", use_container_width=True):
-                        request_navigation(t["tier4_title"])
-                
-                st.markdown("---")
-                if st.button("🔄 Reset Work Order to Neutral (Simulate Re-test)", use_container_width=True):
-                    reset_incident_to_neutral(active_inc)
-                    st.rerun()
-                    
-    with col_m:
-        with st.container(border=True):
-            st.markdown("#### Live Site Telemetry Waveform Sweep")
-            for telem in wo.get("telemetry", []):
-                val_col = "#3fb950" if telem["status"] == "NOMINAL" or telem["status"] == "COMPLIANT" else "#e3b341"
-                st.markdown(f"""
-                    <div style="background:#090d13; border:1px solid #30363d; border-radius:6px; padding:10px 14px; margin-bottom:10px;">
-                        <div style="font-size:0.9rem; color:#8b949e; text-transform:uppercase;">{telem['param']}</div>
-                        <div style="font-size:1.4rem; font-weight:800; font-family:monospace; color:{val_col}; margin: 2px 0;">{telem['val']}</div>
-                        <div style="font-size:0.85rem; color:#c9d1d9;">Threshold: <strong>{telem['limit']}</strong></div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-            st.markdown("---")
-            st.markdown("#### Hardware Physical Interlock Control")
-            
-            if not is_bypassed:
-                st.markdown("""
-                    <div style="background:#161b22; border:2px solid #e3b341; border-radius:6px; padding:12px 14px; margin-bottom:10px;">
-                        <div style="font-size:0.85rem; color:#8b949e; text-transform:uppercase; font-weight:700;">OEM Cabinet Remote Interlock</div>
-                        <div style="font-size:1.4rem; font-weight:900; font-family:monospace; color:#e3b341; margin: 2px 0;">DISENGAGED</div>
-                        <div style="font-size:0.85rem; color:#c9d1d9;">Status: <strong style="color:#f85149;">Manual PE Bypass Required (Cabinet Locked)</strong></div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("⚡ Engage Manual PE Hardware Bypass", use_container_width=True, type="secondary"):
-                    active_inc["manual_pe_bypass"] = True
-                    st.success("Manual PE Bypass Engaged. Interlock overridden.")
-                    st.rerun()
-            else:
-                st.markdown("""
-                    <div style="background:rgba(46,160,67,0.15); border:2px solid #2ea043; border-radius:6px; padding:12px 14px; margin-bottom:10px;">
-                        <div style="font-size:0.85rem; color:#8b949e; text-transform:uppercase; font-weight:700;">OEM Cabinet Remote Interlock</div>
-                        <div style="font-size:1.4rem; font-weight:900; font-family:monospace; color:#3fb950; margin: 2px 0;">BYPASSED & ENERGIZED</div>
-                        <div style="font-size:0.85rem; color:#c9d1d9;">Status: <strong style="color:#3fb950;">Hardware Safe (PE Bypass Key Active)</strong></div>
-                    </div>
-                """, unsafe_allow_html=True)
+        b_c1, b_c2 = st.columns([1, 2])
+        with b_c1:
+            st.button("⌂ Command Post (Tier 1)", key="t3b_back_t1", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+        with b_c2:
+            st.button("➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT", key="t3b_fwd_t4", on_click=navigate_to, args=(DESK_OPTIONS[4],), use_container_width=True, type="primary")
+    else:
+        st.button("⌂ Return to Command Post (Tier 1)", key="t3b_back_t1_idle", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
 
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
