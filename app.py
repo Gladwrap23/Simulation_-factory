@@ -811,43 +811,6 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     total_burn_wk = total_burn_day * 7
     dynamic_crossover_days = round(parsed_capex / total_burn_day, 1) if total_burn_day > 0 else 999.9
 
-    k1, k2, k3 = st.columns(3)
-    with k1:
-        if not is_resolved:
-            st.markdown(f"""
-                <div class="circuit-breaker-card">
-                    <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
-                    <div class="exec-metric-val" style="color:#f85149;">{curr_sym}{total_burn_wk:,.0f} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
-                    <div class="exec-metric-sub" style="color:#f85149; font-family:monospace; font-size:1.05rem;">↑ {curr_sym}{total_burn_day:,.0f} / Day</div>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div class="circuit-defended-card">
-                    <div class="exec-metric-label">{t['holding_burn']} ({TODAY_STR})</div>
-                    <div class="exec-metric-val" style="color:#3fb950;">{curr_sym}0 <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">/ wk</span></div>
-                    <div class="exec-metric-sub" style="color:#3fb950; font-family:monospace; font-size:1.05rem;">{t['circuit_defended']}</div>
-                </div>
-            """, unsafe_allow_html=True)
-                
-    with k2:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">{t['cap_under_def']}</div>
-                <div class="exec-metric-val">{curr_sym}{parsed_capex:,.0f}</div>
-                <div class="exec-metric-sub" style="color:#3fb950; font-size:1.05rem;">↑ Escrow Intact</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with k3:
-        st.markdown(f"""
-            <div class="exec-metric-card">
-                <div class="exec-metric-label">{t['active_block']}: INC-001</div>
-                <div class="exec-metric-val" style="color:#e3b341;">{dynamic_crossover_days} <span style="font-size:1.05rem; font-weight:600; color:#c9d1d9;">Days</span></div>
-                <div class="exec-metric-sub" style="color:#e3b341; font-size:1.05rem;">{t['crossover_sub']}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
     calibrated_toll_gate = max(25000, int(round(parsed_capex * 0.00085, -3)))
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
     sub1, sub2 = st.columns(2)
@@ -1707,5 +1670,83 @@ Status: {'SEALED & ADMISSIBLE' if t3b_sealed else 'UNSEALED - DRAFT'}
         st.download_button("Exhibit B: PE Waveform Binary (CSV)", "MOCK COMTRADE CSV", "Exhibit_B.csv", disabled=not t3b_sealed)
     with ex2:
         st.markdown("**Standby Letter of Credit Protocol (ISP98 / UCP 600)**")
-        if st.button("Generate & Dispatch Standby LC Demand Certificate 🏛️", disabled=not t3b_sealed):
-            st.success(f"Demand certificate generated for ${accrued_claim:,.2f} USD against Issuing Bank Escrow.")
+        st.caption("Strict-compliance statutory demand served upon Issuing Escrow Bank.")
+
+        lc_reference = "LC-TX-9011-APEX-DEMURRAGE"
+        issuing_bank = "JPMorgan Chase Bank, N.A. / Global Infrastructure Escrow"
+        applicant = "Apex Power Conversion Systems Corp"
+        beneficiary = "Pactum Sovereign Escrow Holdings LLC"
+
+        lc_demand_payload = f"""================================================================================
+FORMAL DEMAND FOR PAYMENT UNDER STANDBY LETTER OF CREDIT
+GOVERNING RULES: INTERNATIONAL STANDBY PRACTICES 1998 (ICC PUBLICATION NO. 590 - ISP98)
+SUBJECT TO UNIFORM CUSTOMS AND PRACTICE FOR DOCUMENTARY CREDITS (UCP 600)
+================================================================================
+
+TO:      {issuing_bank}
+         Global Trade & Escrow Services Desk
+DATE:    18 September 2026
+REF NO:  {lc_reference}
+
+APPLICANT:   {applicant}
+BENEFICIARY: {beneficiary}
+AMOUNT:      ${accrued_claim:,.2f} USD
+
+I. STATUTORY DEMAND STATEMENT
+--------------------------------------------------------------------------------
+The undersigned Authorized Officer of {beneficiary} ("Beneficiary")
+hereby certifies under penalty of perjury that:
+
+1. DEFAULT EVENT:
+   The Applicant, {applicant}, has defaulted under Turnkey EPC
+   Agreement #TX-9011, Schedule D § 3 (Unexcused Commercial Demurrage) by failing
+   to cure harmonic compliance trips exceeding IEEE 2800 limits (THD 4.1%).
+
+2. UNPAID LIQUIDATED DAMAGES:
+   The sum of ${accrued_claim:,.2f} USD represents accrued, certified, and
+   unpaid liquidated delay damages due from Applicant as confirmed by contemporaneous
+   relational flight recorder telemetry Docket #54219.
+
+3. NOTICE COMPLIANCE:
+   Beneficiary has served formal notice of default and cure demand pursuant to
+   Clause 11.2 of the Turnkey Agreement. All contractual cure periods have lapsed
+   without remediation or engineer site dispatch by Applicant.
+
+4. DRAW CONDITION SATISFACTION:
+   Beneficiary demands payment in full within three (3) banking days of receipt
+   of this presentation pursuant to ISP98 Rule 5.01.
+
+II. SETTLEMENT WIRE INSTRUCTIONS
+--------------------------------------------------------------------------------
+Bank:          Pactum Commercial Escrow Trust
+Routing / ABA: 021000021
+Swift Code:    CHASUS33XXX
+Account No:    9011-ERCOT-54219-CAPDEF
+Special Inst:  Hold for Settlement of Docket #54219 Demurrage Burn
+
+III. STATUTORY DIGITAL ATTESTATION
+--------------------------------------------------------------------------------
+Seal Hash:      {merkle_root}
+Signatory:      Marcus Vance, PE (TXLIC114902) — Chief Attestation Engineer
+Authentication: Delaware DGCL § 141(e) Corporate Safe-Harbor Conveyance
+================================================================================
+"""
+
+        if not t3b_sealed:
+            st.button(
+                "Generate Standby LC Demand Package 🏛️",
+                disabled=True,
+                help="Requires Tier 3B PE Attestation digital seal before generating banking instruments.",
+                key="lc_btn_disabled"
+            )
+        else:
+            st.download_button(
+                label="🏛️ Dispatch & Download ISP98 Demand Certificate (SWIFT MT760 Ready)",
+                data=lc_demand_payload,
+                file_name=f"Standby_LC_Drawdown_Demand_{lc_reference}.txt",
+                mime="text/plain",
+                type="primary",
+                use_container_width=True,
+                key="lc_btn_active"
+            )
+            st.caption("● Certified under ISP98 Rule 5.01: Bank must honor within 3 banking days.")
