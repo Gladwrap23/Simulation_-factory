@@ -940,48 +940,86 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         vel_txt = "Bleed: $0 / Day" if is_resolved else f"Bleed: ${total_burn_day:,.0f} / Day"
         st.markdown(render_branch_card("Branch 3: Fiduciary / Capital", "Balance Sheet Gate | Liability Escrow", "Executive Board Chair", "Fiduciary Shield Agent", s_badge, vel_txt, c_type), unsafe_allow_html=True)
 
-    st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
-    st.markdown("### 📡 Operational Chain of Command (Single-Line Descending Hierarchy)")
-    
-    with st.container(border=True):
-        st.markdown(f"""
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                <div>
-                    <div style="font-weight:800; color:#58a6ff; font-size:1.2rem;">🏛️ Tier 2: Directorate Governance Desk</div>
-                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">
-                        Cognizant Director: <strong style="color:#ffffff;">Dr. Arthur Pendleton</strong> | 
-                        Statutory Shield: <strong style="color:#58a6ff;">Delaware DGCL § 141</strong>
-                    </div>
-                </div>
-                <div style="font-size:1.1rem; font-weight:800; color:{'#3fb950' if is_dir_signed else '#e3b341'};">
-                    ● {'DIRECTORATE INDEMNITY SEALED' if is_dir_signed else 'AWAITING DIRECTOR COUNTERSIGNATURE'}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-        if st.button("🏛️ Drill Down to Tier 2: Directorate Governance Desk", use_container_width=True):
-            request_navigation(t["tier2_title"])
+    # --------------------------------------------------------------------------
+    # OPERATIONAL CHAIN OF COMMAND (5-TIER SYNCHRONIZED HIERARCHY)
+    # --------------------------------------------------------------------------
+    st.markdown("#### ⚖️ Operational Chain of Command (Single-Line Descending Hierarchy)")
 
-    wo = active_inc.get("tier3_work_order", {})
-    with st.container(border=True):
-        st.markdown(f"""
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                <div>
-                    <div style="font-weight:800; color:#e3b341; font-size:1.2rem;">👷 Tier 3: Site Operations & Remediation Desk</div>
-                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">
-                        Work Order: <strong style="color:#ffffff;">WO-8821-HARMONIC</strong> | 
-                        Lead PE: <strong style="color:#ffffff;">Marcus Vance, PE</strong> |
-                        Progress: <strong style="color:#ffffff;">{wo.get('progress_pct', 75)}% Completed</strong>
-                    </div>
-                </div>
-                <div style="font-size:1.1rem; font-weight:800; color:{'#3fb950' if is_resolved else '#da3633'};">
-                    ● {'PE DIGITAL STAMP TRANSMITTED' if is_resolved else 'BLOCKED BEHIND CLAUSE 14.b'}
-                </div>
+    st.markdown("""
+        <div style="background: #111a2e; border-left: 4px solid #00d4ff; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: #ffffff; font-size: 1.05rem;">🏛️ Tier 2: Directorate Governance Desk</strong>
+                <span style="color: #00d4ff; font-weight: 700; font-size: 0.8rem;">SAFE HARBOR ACTIVE</span>
             </div>
-        """, unsafe_allow_html=True)
-        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-        if st.button("⚡ Drill Down to Tier 3: Operator Remediation Desk", use_container_width=True):
-            request_navigation(t["tier3a_title"])
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                Cognizant Director: <strong>Dr. Arthur Pendleton</strong> | Statutory Shield: <strong>Delaware DGCL § 141(e)</strong>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button("➔ Drill Down to Tier 2: Directorate Governance Desk", key="cmd_jump_t2", use_container_width=True):
+        st.session_state.active_desk = DESK_OPTIONS[1]
+        st.rerun()
+
+    st.write("")
+
+    t3a_cleared = st.session_state.get("gate_3a_cleared", False)
+    t3a_status_color = "#00ff88" if t3a_cleared else "#ffa500"
+    t3a_status_text = "WORK ORDER DISPATCHED" if t3a_cleared else "AWAITING UTILITY PACKAGING"
+
+    st.markdown(f"""
+        <div style="background: #111a2e; border-left: 4px solid {t3a_status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: #ffffff; font-size: 1.05rem;">⚡ Tier 3A: Engineering Operations Command</strong>
+                <span style="color: {t3a_status_color}; font-weight: 700; font-size: 0.8rem;">{t3a_status_text}</span>
+            </div>
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                Officer: <strong>Sarah Jenkins (VP Eng Ops)</strong> | Instrument: <strong>Work Order WO-8821-HARMONIC</strong>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button("➔ Drill Down to Tier 3A: Engineering Operations Command", key="cmd_jump_t3a", use_container_width=True):
+        st.session_state.active_desk = DESK_OPTIONS[2]
+        st.rerun()
+
+    st.write("")
+
+    t3b_cleared = st.session_state.get("gate_3b_cleared", False)
+    t3b_status_color = "#00ff88" if t3b_cleared else "#ff4b4b"
+    t3b_status_text = "TBPE DIGITAL SEAL ACTIVE" if t3b_cleared else "ACCESS HELD (CLAUSE 14.b)"
+
+    st.markdown(f"""
+        <div style="background: #111a2e; border-left: 4px solid {t3b_status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: #ffffff; font-size: 1.05rem;">👷 Tier 3B: Site Execution Desk</strong>
+                <span style="color: {t3b_status_color}; font-weight: 700; font-size: 0.8rem;">{t3b_status_text}</span>
+            </div>
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                Field Lead: <strong>Marcus Vance, PE (TXLIC114902)</strong> | Protocol: <strong>IEEE 2800 Sub-Cycle Bypass</strong>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button("➔ Drill Down to Tier 3B: Site Execution Desk", key="cmd_jump_t3b", use_container_width=True):
+        st.session_state.active_desk = DESK_OPTIONS[3]
+        st.rerun()
+
+    st.write("")
+
+    vault_status_color = "#00ff88" if t3b_cleared else "#94a3b8"
+    vault_status_text = "DOSSIER SEALED" if t3b_cleared else "AUDIT BUFFER ACTIVE"
+    st.markdown(f"""
+        <div style="background: #111a2e; border-left: 4px solid {vault_status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: #ffffff; font-size: 1.05rem;">🏛️ Tier 4: Forensic Recovery Vault</strong>
+                <span style="color: {vault_status_color}; font-weight: 700; font-size: 0.8rem;">{vault_status_text}</span>
+            </div>
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
+                Evidence Custodian: <strong>Pactum Sovereign OS</strong> | Standby LC: <strong>ISP98 / UCP 600 Package</strong>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button("➔ Drill Down to Tier 4: Forensic Recovery Vault", key="cmd_jump_t4", use_container_width=True):
+        st.session_state.active_desk = DESK_OPTIONS[4]
+        st.rerun()
 
 # =========================================================
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
