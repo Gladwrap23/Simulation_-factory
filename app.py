@@ -338,6 +338,15 @@ DESK_OPTIONS = [
 if "active_desk" not in st.session_state:
     st.session_state.active_desk = DESK_OPTIONS[0]
 
+# --- SAFE NAVIGATION HANDLER ---
+def navigate_to(target_desk):
+    st.session_state.active_desk = target_desk
+    if "nav_radio" in st.session_state:
+        st.session_state.nav_radio = target_desk
+
+def on_sidebar_change():
+    st.session_state.active_desk = st.session_state.nav_radio
+
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
         "currency": "$",
@@ -684,10 +693,12 @@ with st.sidebar:
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
     st.markdown("#### Command Desk")
     
-    selected_view = st.radio(
-        "Select Operating Desk:",
-        nav_options,
-        key="active_desk",
+    selected_desk = st.radio(
+        "Command Desk:",
+        DESK_OPTIONS,
+        index=DESK_OPTIONS.index(st.session_state.active_desk) if st.session_state.active_desk in DESK_OPTIONS else 0,
+        key="nav_radio",
+        on_change=on_sidebar_change,
         label_visibility="collapsed"
     )
     st.session_state["nav_desk_selection"] = st.session_state.active_desk
@@ -956,9 +967,13 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         </div>
     """, unsafe_allow_html=True)
-    if st.button("➔ Drill Down to Tier 2: Directorate Governance Desk", key="cmd_jump_t2", use_container_width=True):
-        st.session_state.active_desk = DESK_OPTIONS[1]
-        st.rerun()
+    st.button(
+        "➔ Drill Down to Tier 2: Directorate Governance Desk",
+        key="cmd_jump_t2",
+        on_click=navigate_to,
+        args=(DESK_OPTIONS[1],),
+        use_container_width=True
+    )
 
     st.write("")
 
@@ -977,9 +992,13 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         </div>
     """, unsafe_allow_html=True)
-    if st.button("➔ Drill Down to Tier 3A: Engineering Operations Command", key="cmd_jump_t3a", use_container_width=True):
-        st.session_state.active_desk = DESK_OPTIONS[2]
-        st.rerun()
+    st.button(
+        "➔ Drill Down to Tier 3A: Engineering Operations Command",
+        key="cmd_jump_t3a",
+        on_click=navigate_to,
+        args=(DESK_OPTIONS[2],),
+        use_container_width=True
+    )
 
     st.write("")
 
@@ -998,9 +1017,13 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         </div>
     """, unsafe_allow_html=True)
-    if st.button("➔ Drill Down to Tier 3B: Site Execution Desk", key="cmd_jump_t3b", use_container_width=True):
-        st.session_state.active_desk = DESK_OPTIONS[3]
-        st.rerun()
+    st.button(
+        "➔ Drill Down to Tier 3B: Site Execution Desk",
+        key="cmd_jump_t3b",
+        on_click=navigate_to,
+        args=(DESK_OPTIONS[3],),
+        use_container_width=True
+    )
 
     st.write("")
 
@@ -1017,9 +1040,13 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         </div>
     """, unsafe_allow_html=True)
-    if st.button("➔ Drill Down to Tier 4: Forensic Recovery Vault", key="cmd_jump_t4", use_container_width=True):
-        st.session_state.active_desk = DESK_OPTIONS[4]
-        st.rerun()
+    st.button(
+        "➔ Drill Down to Tier 4: Forensic Recovery Vault",
+        key="cmd_jump_t4",
+        on_click=navigate_to,
+        args=(DESK_OPTIONS[4],),
+        use_container_width=True
+    )
 
 # =========================================================
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
