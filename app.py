@@ -347,6 +347,44 @@ def navigate_to(target_desk):
 def on_sidebar_change():
     st.session_state.active_desk = st.session_state.nav_radio
 
+def render_breadcrumb(active_index):
+    stages = [
+        "Tier 1: Command",
+        "Tier 2: Governance",
+        "Tier 3A: Eng Ops",
+        "Tier 3B: Field PE",
+        "Tier 4: Vault"
+    ]
+    trail = []
+    for index, stage in enumerate(stages):
+        color = "#00ff88" if index < active_index else ("#00d4ff" if index == active_index else "#64748b")
+        weight = "900" if index == active_index else "700"
+        trail.append(f"<span style='color:{color}; font-weight:{weight};'>{stage}</span>")
+    st.markdown(
+        "<div style='display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#0b1220; border:1px solid #26354d; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-size:0.82rem;'>"
+        + " <span style='color:#64748b;'>➔</span> ".join(trail)
+        + "</div>",
+        unsafe_allow_html=True
+    )
+
+def render_forward_gateway(cleared, next_desk, next_label, gateway_key):
+    st.markdown("---")
+    if cleared:
+        st.markdown("""
+            <div style="background:#062b19; border:2px solid #00ff88; padding:16px 20px; border-radius:8px; margin-bottom:15px;">
+                <div style="font-size:1.15rem; font-weight:900; color:#00ff88;">✅ FORWARD EXECUTION GATE CLEARED</div>
+                <div style="font-size:0.9rem; color:#f8fafc; margin-top:4px;">Prerequisites verified. Downstream operational authority is ready.</div>
+            </div>
+        """, unsafe_allow_html=True)
+        nav_c1, nav_c2 = st.columns([1, 2])
+        with nav_c1:
+            st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+        with nav_c2:
+            st.button(f"➔ PROCEED TO {next_label}", key=f"{gateway_key}_forward", on_click=navigate_to, args=(next_desk,), use_container_width=True, type="primary")
+    else:
+        st.info("ℹ️ Complete the required controls above to unlock the next operational tier.")
+        st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back_incomplete", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
         "currency": "$",
@@ -735,6 +773,7 @@ if st.session_state.trigger_print:
 # 4. VIEW: TIER 1 — CHAIRMAN TACTICAL COMMAND POST
 # =========================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
+    render_breadcrumb(0)
     # Ultra-Prominent Tier 1 Header
     st.markdown("""
         <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
@@ -1052,6 +1091,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[1]:
+    render_breadcrumb(1)
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
         st.title(t["tier2_title"])
@@ -1272,10 +1312,13 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
             """, unsafe_allow_html=True)
             st.info("This committee stands ready in support. The primary blocker remains the high-voltage inverter attestation owned by Dr. Arthur Pendleton or the Executive Chairman.")
 
+    render_forward_gateway(is_dir_signed, DESK_OPTIONS[2], "TIER 3A: ENGINEERING OPERATIONS", "t2_gateway")
+
 # =========================================================
 # 6. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[2]:
+    render_breadcrumb(2)
     st.markdown("### Tier 3A | Engineering Operations Command")
     st.caption("Corporate Risk Absorption & Utility Packaging Desk | VP Sarah Jenkins")
 
@@ -1324,10 +1367,13 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
         else:
             st.warning("○ Awaiting Corporate Handoff Completion")
 
+    render_forward_gateway(st.session_state.get("gate_3a_cleared", False), DESK_OPTIONS[3], "TIER 3B: SITE EXECUTION", "t3a_gateway")
+
 # =========================================================
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[3]:
+    render_breadcrumb(3)
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
         st.title(f"👷 {t['tier3b_title']}")
@@ -1552,10 +1598,13 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
                     </div>
                 """, unsafe_allow_html=True)
 
+    render_forward_gateway(st.session_state.get("gate_3b_cleared", False), DESK_OPTIONS[4], "TIER 4: FORENSIC RECOVERY VAULT", "t3b_gateway")
+
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[4]:
+    render_breadcrumb(4)
     t3b_sealed = st.session_state.get("gate_3b_cleared", False)
     active_capex = st.session_state.get("capex_baseline", 88_500_000.0)
     scale_factor = active_capex / 88_500_000.0
