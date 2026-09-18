@@ -18,6 +18,49 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- HIGH-VISIBILITY COMMAND STYLING (TABLET / TACTICAL DISPLAY) ---
+st.markdown("""
+<style>
+    /* Global Page Headings */
+    h1, h2, h3 {
+        color: #ffffff !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    /* Global Streamlit Primary Buttons (Jump to Tier / Dispatch) */
+    div.stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0072ff 0%, #00d4ff 100%) !important;
+        color: #000000 !important;
+        font-weight: 900 !important;
+        font-size: 1.15rem !important;
+        border: 2px solid #ffffff !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1.5rem !important;
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4) !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.7) !important;
+    }
+
+    /* Secondary Navigation Buttons (Jump / Preset Selectors) */
+    div.stButton > button[kind="secondary"] {
+        background: #1e293b !important;
+        color: #00ff88 !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        border: 1.5px solid #00ff88 !important;
+        border-radius: 6px !important;
+    }
+    div.stButton > button[kind="secondary"]:hover {
+        background: #00ff88 !important;
+        color: #000000 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # =========================================================
 # 1. INDUSTRIAL STYLING & PRINT STYLESHEET (@media print)
 # =========================================================
@@ -681,15 +724,17 @@ if st.session_state.trigger_print:
 # 4. VIEW: TIER 1 — CHAIRMAN TACTICAL COMMAND POST
 # =========================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
-    st.markdown("## Tier 1 | Chairman Tactical Command Post")
-    
+    # Ultra-Prominent Tier 1 Header
     st.markdown("""
-        <div style="background-color: #0e1e38; border-left: 4px solid #00d4ff; padding: 10px 16px; border-radius: 4px; margin-bottom: 15px;">
-            <div style="font-size: 0.85rem; color: #00d4ff; font-weight: 700; text-transform: uppercase;">
-                ⚡ ERCOT BESS / Grid Storage (USA) — ERCOT IA § 4.2 Interconnection Docket #54219
+        <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+            <div style="font-size: 2.2rem; font-weight: 900; color: #ffffff; line-height: 1.2;">
+                TIER 1 | CHAIRMAN TACTICAL COMMAND POST
             </div>
-            <div style="font-size: 0.80rem; color: #a0aec0;">
-                ● PUBLIC BASELINE SYNCHRONIZED | Effective Audit Epoch: 16 Sep 2026 00:00 UTC | Commercial Deadlock Verified
+            <div style="font-size: 1.15rem; font-weight: 800; color: #00d4ff; margin-top: 6px; letter-spacing: 0.5px;">
+                ⚡ ERCOT BESS / GRID STORAGE (USA) — INTERCONNECTION DOCKET #54219
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8; margin-top: 4px;">
+                ● PUBLIC BASELINE SYNCHRONIZED | AUDIT EPOCH: 16 SEP 2026 00:00 UTC | COMMERCIAL DEADLOCK ACTIVE
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -1483,23 +1528,44 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[4]:
-    st.markdown("### Tier 4 | Forensic Recovery Vault")
-    st.caption("Immutable Pre-Litigation Dossier & Evidence Custodian Agent | FRE 902 / ISP98 Compliant")
-
     t3b_sealed = st.session_state.get("gate_3b_cleared", False)
     active_capex = st.session_state.get("capex_baseline", 88_500_000.0)
     scale_factor = active_capex / 88_500_000.0
     daily_burn = 87_264.0 * scale_factor
     accrued_claim = daily_burn * 7.0
 
+    # Prominent Tier 4 Vault Title Banner
+    st.markdown("""
+        <div style="background: linear-gradient(90deg, #091e3a 0%, #102a45 100%); border-left: 8px solid #00ff88; padding: 20px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
+            <div style="font-size: 2.2rem; font-weight: 900; color: #ffffff; line-height: 1.2;">
+                TIER 4 | FORENSIC RECOVERY VAULT
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #00ff88; margin-top: 6px;">
+                IMMUTABLE PRE-LITIGATION DOSSIER & EVIDENCE CUSTODIAN AGENT (FRE 902 / ISP98)
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # High-Contrast Audit Status Box
     if not t3b_sealed:
-        st.warning("⚠️ EV-01 AUDIT NOTICE: Statutory PE Digital Seal is pending in Tier 3B. Evidence records are currently UNSEALED.")
+        st.markdown("""
+            <div style="background: #2b1d05; border: 2px solid #ffb703; border-left: 10px solid #ffb703; padding: 16px 20px; border-radius: 8px; margin-bottom: 25px;">
+                <div style="font-size: 1.25rem; font-weight: 900; color: #ffb703; letter-spacing: 0.5px;">
+                    ⚠️ EV-01 AUDIT HOLD: STATUTORY PE DIGITAL SEAL PENDING
+                </div>
+                <div style="font-size: 1.0rem; font-weight: 600; color: #f8fafc; margin-top: 6px; line-height: 1.4;">
+                    Records are unsealed. Attestation requires Marcus Vance, PE digital signature in Tier 3B before Master Pre-Litigation Dossier release.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
     else:
         st.markdown("""
-            <div style="background-color: #0e2a1e; border-left: 4px solid #00ff88; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
-                <div style="font-size: 0.85rem; color: #00ff88; font-weight: 700;">CHAIN OF CUSTODY SEALED | MERKLE ROOT ACTIVE</div>
-                <div style="font-size: 0.80rem; color: #cbd5e0;">
-                    All statutory pre-litigation conditions met under FRE 902(14). Self-authenticating master evidence dossier compiled.
+            <div style="background: #062b19; border: 2px solid #00ff88; border-left: 10px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 25px;">
+                <div style="font-size: 1.25rem; font-weight: 900; color: #00ff88; letter-spacing: 0.5px;">
+                    🔒 CHAIN OF CUSTODY SEALED | MERKLE ROOT ACTIVE
+                </div>
+                <div style="font-size: 1.0rem; font-weight: 600; color: #f8fafc; margin-top: 6px; line-height: 1.4;">
+                    All statutory pre-litigation conditions met under FRE 902(14). Self-authenticating master evidence dossier unlocked for court presentation.
                 </div>
             </div>
         """, unsafe_allow_html=True)
