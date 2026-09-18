@@ -78,6 +78,39 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- NATIVE PRINT & PDF EXPORT STYLING ---
+st.markdown("""
+<style>
+@media print {
+    section[data-testid="stSidebar"],
+    header,
+    footer,
+    div.stButton,
+    div[data-testid="stToolbar"],
+    .stSelectbox,
+    .stSlider {
+        display: none !important;
+    }
+
+    body, .stApp {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    div[style*="background"] {
+        background: #ffffff !important;
+        border: 1px solid #000000 !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }
+
+    h1, h2, h3, h4, span, div, strong {
+        color: #000000 !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # --- GLOBAL OPERATING BOOKS REGISTRY ---
 OPERATING_BOOKS = {
     "ERCOT BESS / Grid Storage (USA)": {
@@ -869,9 +902,77 @@ with st.sidebar:
     st.session_state["nav_desk_selection"] = st.session_state.active_desk
     
     st.divider()
-    st.markdown("#### 🖨️ Universal Export Utility")
-    if st.button("🖨️ Print Desk / Export PDF", use_container_width=True):
-        st.session_state.trigger_print = True
+    st.markdown("""
+        <div style="font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
+            🖨️ UNIVERSAL EXPORT UTILITY
+        </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🖨️ Print Desk / Save as PDF", key="btn_trigger_print", use_container_width=True):
+        components.html("""
+            <script>
+                window.parent.print();
+            </script>
+        """, height=0)
+
+    export_incident = sector["incidents"].get(
+        st.session_state.selected_incident_id,
+        next(iter(sector["incidents"].values()))
+    )
+    active_capex = st.session_state.get("capex_baseline", active_cfg["default_capex"])
+    scale_factor = active_capex / sector["asset_cap"]
+    daily_burn = export_incident.get("base_daily_bleed", active_cfg["daily_burn_base"]) * scale_factor
+    accrued_claim = daily_burn * 7.0
+    t3b_sealed = st.session_state.get("gate_3b_cleared", False)
+    merkle_root = "0x8f4d92a1c674b09e13d58a74e2b091f8c412e690bb3561a09d3b749e7b25c34e" if t3b_sealed else "UNSEALED_PRE_LITIGATION_DRAFT"
+    active_vector = st.session_state.get("active_defense_vector", "Vector 1: Warranty Spoliation Pretext (Clause 14.b)")
+    unified_executive_bundle = f"""================================================================================
+PACTUM SOVEREIGN ASSET DEFENSE SYSTEM — MASTER DOCKET BRIEF
+CERTIFIED COURT & ARBITRATION FILING DOSSIER
+================================================================================
+DISPUTE DOCKET:    {active_cfg['docket']}
+ASSET / BOOK:      {selected_book}
+JURISDICTION:      {selected_jurisdiction}
+COUNTERPARTY:      {active_cfg['counterparty']}
+CONTRACT BASELINE: {active_cfg['contract']}
+
+I. CAPITAL EXPOSURE & CERTIFIED LIQUIDATED DAMAGES
+--------------------------------------------------------------------------------
+CapEx Under Defense:        ${active_capex:,.2f} USD
+Daily Burn Holding Rate:    ${daily_burn:,.2f} USD / Day
+Accrued Delay Demurrage:    ${accrued_claim:,.2f} USD (7-Day Baseline)
+Crossover to Total Loss:    {active_capex / daily_burn if daily_burn > 0 else 0:,.1f} Operating Days
+
+II. STATUTORY CHAIN OF COMMAND & FIDUCIARY GOVERNANCE
+--------------------------------------------------------------------------------
+Tier 1 Executive Chairman:  Capital Allocation Recalibration Active
+Lead Director:              {active_cfg['lead_director']}
+Statutory Reliance Shield:  {selected_jurisdiction}
+Active Work Order:          WO-8821-HARMONIC Dispatched
+
+III. PHYSICAL FORENSICS & PROFESSIONAL ENGINEER ATTESTATION
+--------------------------------------------------------------------------------
+Lead Field PE:              {active_cfg['lead_pe']}
+Technical Standard:         {active_cfg['tech_standard']}
+Cryptographic Merkle Root:  {merkle_root}
+
+IV. ACTIVE PREEMPTIVE ADVERSARIAL COUNTER-MEASURE
+--------------------------------------------------------------------------------
+Active Defense Vector:      {active_vector}
+Remedy Demanded:            Immediate Escrow Release / ISP98 Standby LC Drawdown
+
+CERTIFIED UNDER STATUTORY CORPORATE COVENANT.
+================================================================================
+"""
+
+    st.download_button(
+        label="📑 Download Full Master Docket File",
+        data=unified_executive_bundle,
+        file_name=f"Master_Docket_Filing_{active_cfg['docket'].replace(' ', '_').replace('#', '')}.txt",
+        mime="text/plain",
+        key="btn_download_full_docket",
+        use_container_width=True
+    )
 
     st.markdown("#### 🔒 Active Incident Queue")
     for inc_key, inc_obj in sector["incidents"].items():
