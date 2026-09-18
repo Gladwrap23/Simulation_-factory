@@ -1886,11 +1886,46 @@ Authentication: Delaware DGCL § 141(e) Corporate Safe-Harbor Conveyance
         }
     }
 
-    selected_vector_name = st.selectbox(
-        "Select Anticipated Counterparty Defense Vector:",
-        options=list(defense_vectors.keys()),
-        key="adversarial_vector_select"
-    )
+    vec_keys = list(defense_vectors.keys())
+    if "active_defense_vector" not in st.session_state or st.session_state.active_defense_vector not in vec_keys:
+        st.session_state.active_defense_vector = vec_keys[0]
+
+    st.markdown("""
+        <div style="font-size: 0.9rem; font-weight: 800; color: #ffb703; margin-top: 15px; margin-bottom: 10px; text-transform: uppercase;">
+            ⚠️ TACTICAL INJECT: Tap an adversarial attack vector below to load the statutory counter-measure
+        </div>
+    """, unsafe_allow_html=True)
+
+    v_col1, v_col2, v_col3 = st.columns(3)
+    with v_col1:
+        if st.button(
+            "1️⃣ Warranty Spoliation",
+            type="primary" if st.session_state.active_defense_vector == vec_keys[0] else "secondary",
+            use_container_width=True,
+            key="defense_vector_1"
+        ):
+            st.session_state.active_defense_vector = vec_keys[0]
+            st.rerun()
+    with v_col2:
+        if st.button(
+            "2️⃣ Digital Hearsay (FRE 802)",
+            type="primary" if st.session_state.active_defense_vector == vec_keys[1] else "secondary",
+            use_container_width=True,
+            key="defense_vector_2"
+        ):
+            st.session_state.active_defense_vector = vec_keys[1]
+            st.rerun()
+    with v_col3:
+        if st.button(
+            "3️⃣ Notice Precondition",
+            type="primary" if st.session_state.active_defense_vector == vec_keys[2] else "secondary",
+            use_container_width=True,
+            key="defense_vector_3"
+        ):
+            st.session_state.active_defense_vector = vec_keys[2]
+            st.rerun()
+
+    selected_vector_name = st.session_state.active_defense_vector
     vec = defense_vectors[selected_vector_name]
 
     st.markdown(f"""
