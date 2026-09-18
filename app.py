@@ -83,6 +83,7 @@ OPERATING_BOOKS = {
     "ERCOT BESS / Grid Storage (USA)": {
         "docket": "ERCOT IA § 4.2 Docket #54219",
         "jurisdiction": "ERCOT / Delaware (DGCL § 141)",
+        "jurisdiction_options": ["ERCOT / Delaware (DGCL § 141)", "FERC / PJM Interconnection", "NYISO / New York Law"],
         "counterparty": "Apex Power Conversion Systems Corp (OEM)",
         "contract": "Turnkey EPC Agreement #TX-9011 — Schedule D § 3",
         "default_capex": 88_500_000.0,
@@ -93,7 +94,8 @@ OPERATING_BOOKS = {
     },
     "UK BESS / National Grid (UK)": {
         "docket": "Ofgem Grid Code Compliance Ref #UK-88301",
-        "jurisdiction": "England & Wales (Companies Act 2006 § 172)",
+        "jurisdiction": "National Grid / England & Wales (Companies Act 2006 § 172)",
+        "jurisdiction_options": ["National Grid / England & Wales (Companies Act 2006 § 172)", "Ofgem / Scots Law (Arbitration Act)"],
         "counterparty": "Vanguard Inverter Systems Ltd",
         "contract": "FIDIC Silver Book EPC #UK-BESS-04",
         "default_capex": 62_000_000.0,
@@ -104,7 +106,8 @@ OPERATING_BOOKS = {
     },
     "NEM BESS / Hornsdale Expansion (Australia)": {
         "docket": "AEMO GPS Connection Agreement #NEM-5512",
-        "jurisdiction": "New South Wales (Corporations Act 2001 § 180)",
+        "jurisdiction": "AEMO NEM / New South Wales (Corporations Act 2001 § 180)",
+        "jurisdiction_options": ["AEMO NEM / New South Wales (Corporations Act 2001 § 180)", "WEM / Western Australia Law"],
         "counterparty": "Australis Power Dynamics Pty",
         "contract": "AS 4300-1995 Turnkey EPC Annexure E",
         "default_capex": 115_000_000.0,
@@ -783,18 +786,23 @@ def reset_incident_to_neutral(incident: dict):
 # 3. SIDEBAR NAVIGATION
 # =========================================================
 def on_book_change():
-    selected = st.session_state.current_book
+    selected = st.session_state.selected_book
     config = OPERATING_BOOKS[selected]
     st.session_state.capex_baseline = config["default_capex"]
     st.session_state.active_docket = config["docket"]
     st.session_state.active_counterparty = config["counterparty"]
+    st.session_state.selected_jurisdiction = config["jurisdiction"]
     st.session_state.active_jurisdiction = config["jurisdiction"]
     st.session_state.selected_incident_id = "INC-001"
     st.session_state.selected_director = config["lead_director"]
     st.session_state.bound_book = selected
 
-if "current_book" not in st.session_state or st.session_state.current_book not in OPERATING_BOOKS:
-    st.session_state.current_book = next(iter(OPERATING_BOOKS))
+if "selected_book" not in st.session_state:
+    st.session_state.selected_book = st.session_state.get("current_book", next(iter(OPERATING_BOOKS)))
+if st.session_state.selected_book not in OPERATING_BOOKS:
+    st.session_state.selected_book = next(iter(OPERATING_BOOKS))
+if "selected_jurisdiction" not in st.session_state:
+    st.session_state.selected_jurisdiction = OPERATING_BOOKS[st.session_state.selected_book]["jurisdiction"]
 
 with st.sidebar:
     st.markdown("""
@@ -811,25 +819,34 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
     
-    active_sector = st.selectbox(
-        "Operating Book (Global Assets):",
+    selected_book = st.selectbox(
+        "Select Active Asset:",
         options=list(OPERATING_BOOKS.keys()),
-        key="current_book",
-        on_change=on_book_change
+        key="selected_book",
+        on_change=on_book_change,
+        label_visibility="collapsed"
     )
-    if st.session_state.get("bound_book") != active_sector:
+    current_cfg = OPERATING_BOOKS[selected_book]
+
+    st.markdown("### ⚖️ Sovereign Legal Jurisdiction")
+    selected_jurisdiction = st.selectbox(
+        "Governing Statutory Shield:",
+        options=current_cfg["jurisdiction_options"],
+        key="selected_jurisdiction",
+        label_visibility="collapsed"
+    )
+    st.session_state.active_jurisdiction = selected_jurisdiction
+
+    if st.session_state.get("bound_book") != selected_book:
         on_book_change()
+    active_sector = selected_book
     sector = build_operating_book(active_sector)
+    sector["statute"] = selected_jurisdiction
     book_config = sector["operating_book"]
     curr_sym = sector["currency"]
     st.caption(f"Docket: {book_config['docket']}")
-    st.caption(f"Law: {book_config['jurisdiction']}")
+    st.caption(f"Law: {selected_jurisdiction}")
     st.caption(f"Counterparty: {book_config['counterparty']}")
-    
-    lang_choice = st.selectbox(
-        "Sovereign Legal Jurisdiction:",
-        ["🇺🇸 ERCOT / Delaware (DGCL § 141)", "🇩🇪 EBA / Germany (AktG § 93)", "🇨🇱 CEN / Chile (Art. 72-1)", "🇫🇷 RTE / France (L225-251)", "🇯🇵 METI / Japan (Art. 423)"]
-    )
     
     calib_key = f"capex_override_{active_sector}"
     if calib_key not in st.session_state:
@@ -893,7 +910,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
                 ⚡ {active_sector.upper()} — {sector['baseline_docket']}
             </div>
             <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8; margin-top: 4px;">
-                ● PUBLIC BASELINE SYNCHRONIZED | AUDIT EPOCH: 16 SEP 2026 00:00 UTC | COMMERCIAL DEADLOCK ACTIVE
+                ● STATUTORY REGIME: {selected_jurisdiction} | COUNTERPARTY: {book_config['counterparty']}
             </div>
         </div>
     """, unsafe_allow_html=True)
