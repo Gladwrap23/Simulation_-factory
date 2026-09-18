@@ -804,9 +804,15 @@ with st.sidebar:
             </div>
         </div>
     """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <div style="font-size: 0.85rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+            📁 OPERATING BOOK (GLOBAL DISPUTED ASSETS)
+        </div>
+    """, unsafe_allow_html=True)
     
     selected_book = st.selectbox(
-        "Select Active Asset:",
+        "Operating Book:",
         options=list(OPERATING_BOOKS.keys()),
         key="selected_book_name",
         label_visibility="collapsed"
@@ -821,9 +827,13 @@ with st.sidebar:
         st.session_state.selected_director = active_cfg["lead_director"]
         st.session_state.last_loaded_book = selected_book
 
-    st.markdown("### ⚖️ Sovereign Legal Jurisdiction")
+    st.markdown("""
+        <div style="font-size: 0.85rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-top: 14px; margin-bottom: 6px; letter-spacing: 0.5px;">
+            ⚖️ SOVEREIGN LEGAL JURISDICTION
+        </div>
+    """, unsafe_allow_html=True)
     selected_jurisdiction = st.selectbox(
-        "Governing Statutory Shield:",
+        "Governing Jurisdiction:",
         options=active_cfg["jurisdiction_options"],
         key=f"jurisdiction_{selected_book}",
         label_visibility="collapsed"
