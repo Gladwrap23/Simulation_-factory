@@ -283,7 +283,7 @@ I18N = {
 
 TODAY_STR = "16 Sep 2026"
 
-# --- SIDEBAR DESK SELECTION (CLEAN 5-TIER SPINE) ---
+# --- STRICT DESK TAXONOMY ---
 DESK_OPTIONS = [
     "Tier 1 | Chairman Tactical Command Post",
     "Tier 2 | Directorate Governance Desk",
@@ -291,6 +291,9 @@ DESK_OPTIONS = [
     "Tier 3B | Site Execution Desk",
     "Tier 4 | Forensic Recovery Vault"
 ]
+
+if "active_desk" not in st.session_state:
+    st.session_state.active_desk = DESK_OPTIONS[0]
 
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
@@ -677,35 +680,9 @@ if st.session_state.trigger_print:
 # =========================================================
 # 4. VIEW: TIER 1 — CHAIRMAN TACTICAL COMMAND POST
 # =========================================================
-if selected_view == t["tier1_title"]:
-    top_col1, top_col2 = st.columns([4, 1])
-    with top_col1:
-        st.markdown("""
-            <div class="active-build-banner" style="background: #1f6feb; color: #ffffff; padding: 6px 12px; border-radius: 4px; font-weight: 800; font-size: 0.9rem; margin-bottom: 12px; text-align: center;">
-                ⚡ ACTIVE BUILD: v6.8 | CHAIRMAN PREEMPTION DESK & DOM SCROLL FIX ACTIVE
-            </div>
-        """, unsafe_allow_html=True)
-    with top_col2:
-        if st.button("🖨️ Print Tier 1", use_container_width=True):
-            components.html("<script>window.parent.print();</script>", height=0, width=0)
-
-    st.title(t["tier1_title"])
+if st.session_state.active_desk == DESK_OPTIONS[0]:
+    st.markdown("## Tier 1 | Chairman Tactical Command Post")
     
-    if is_resolved:
-        st.markdown(f"""
-            <div style="background: rgba(46, 160, 67, 0.2); border: 2px solid #2ea043; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="color: #3fb950; font-size: 1.15rem;">⚡ ATTESTATION CONFIRMED:</strong> 
-                    <span style="color: #ffffff; font-size: 1.05rem; margin-left: 6px;">Lead PE digital stamp received. Holding burn halted to <strong>$0/day</strong>.</span>
-                </div>
-                <div style="color: #3fb950; font-weight: 800; font-size: 1.0rem;">SAFE HARBOR ACTIVE</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    ts_key = f"capex_ts_{active_sector}"
-    if ts_key not in st.session_state:
-        st.session_state[ts_key] = f"{TODAY_STR} 00:00 UTC"
-        
     st.markdown("""
         <div style="background-color: #0e1e38; border-left: 4px solid #00d4ff; padding: 10px 16px; border-radius: 4px; margin-bottom: 15px;">
             <div style="font-size: 0.85rem; color: #00d4ff; font-weight: 700; text-transform: uppercase;">
@@ -717,27 +694,45 @@ if selected_view == t["tier1_title"]:
         </div>
     """, unsafe_allow_html=True)
 
-    default_capex = 88_500_000.0
-    entered_capex = st.number_input(
-        "COMMAND GATEWAY: CAPITAL AT RISK / CAPEX BASELINE ($ USD)",
-        min_value=1_000_000.0,
-        max_value=2_000_000_000.0,
-        value=st.session_state.get("capex_baseline", default_capex),
-        step=500_000.0,
-        format="%.2f",
-        key="capex_input"
-    )
-    st.session_state.capex_baseline = entered_capex
-    st.session_state[calib_key] = int(entered_capex)
-    parsed_capex = int(st.session_state[calib_key])
+    # Touch-Friendly CapEx Controller for iPad
+    st.markdown("#### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
+    
+    if "capex_baseline" not in st.session_state:
+        st.session_state.capex_baseline = 88_500_000.0
 
-    scale_factor = entered_capex / default_capex
+    b_col1, b_col2, b_col3, b_col4 = st.columns(4)
+    if b_col1.button("Set $50M Mini-Build"):
+        st.session_state.capex_baseline = 50_000_000.0
+        st.rerun()
+    if b_col2.button("Set $88.5M (Active Baseline)"):
+        st.session_state.capex_baseline = 88_500_000.0
+        st.rerun()
+    if b_col3.button("Set $150M Utility Scale"):
+        st.session_state.capex_baseline = 150_000_000.0
+        st.rerun()
+    if b_col4.button("Set $300M Giga-Facility"):
+        st.session_state.capex_baseline = 300_000_000.0
+        st.rerun()
+
+    slider_capex = st.slider(
+        "Fine CapEx Recalibration ($ USD):",
+        min_value=10_000_000.0,
+        max_value=500_000_000.0,
+        value=float(st.session_state.capex_baseline),
+        step=2_500_000.0,
+        format="$%.0f"
+    )
+    st.session_state.capex_baseline = slider_capex
+    parsed_capex = int(slider_capex)
+
+    default_base = 88_500_000.0
+    scale_factor = slider_capex / default_base
     daily_burn = 87_264.0 * scale_factor
     weekly_burn = daily_burn * 7.0
-    crossover_days = entered_capex / daily_burn if daily_burn > 0 else 0
+    crossover_days = slider_capex / daily_burn if daily_burn > 0 else 0
 
     st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #131722 0%, #1a2234 100%); border: 1px solid #ff4b4b; border-radius: 8px; padding: 18px; margin-top: 10px; margin-bottom: 20px;">
+        <div style="background: linear-gradient(135deg, #131722 0%, #1a2234 100%); border: 1px solid #ff4b4b; border-radius: 8px; padding: 18px; margin-top: 15px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255, 75, 75, 0.3); padding-bottom: 12px; margin-bottom: 14px;">
                 <div>
                     <span style="background-color: #ff4b4b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">ACTIVE CONTRACTUAL BREACH CLAIM</span>
@@ -757,7 +752,7 @@ if selected_view == t["tier1_title"]:
                 </div>
                 <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
                     <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CAPITAL UNDER ACTIVE DEFENSE</span>
-                    <strong style="color: #00ff88;">${entered_capex:,.0f} USD</strong> (100% Escrow Intact)
+                    <strong style="color: #00ff88;">${slider_capex:,.0f} USD</strong> (100% Escrow Intact)
                 </div>
                 <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
                     <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CROSSOVER TO TOTAL LOSS</span>
@@ -983,7 +978,7 @@ if selected_view == t["tier1_title"]:
 # =========================================================
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
 # =========================================================
-elif selected_view == t["tier2_title"]:
+elif st.session_state.active_desk == DESK_OPTIONS[1]:
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
         st.title(t["tier2_title"])
@@ -1207,7 +1202,7 @@ elif selected_view == t["tier2_title"]:
 # =========================================================
 # 6. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
 # =========================================================
-elif selected_view == t["tier3a_title"]:
+elif st.session_state.active_desk == DESK_OPTIONS[2]:
     st.markdown("### Tier 3A | Engineering Operations Command")
     st.caption("Corporate Risk Absorption & Utility Packaging Desk | VP Sarah Jenkins")
 
@@ -1259,7 +1254,7 @@ elif selected_view == t["tier3a_title"]:
 # =========================================================
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
 # =========================================================
-elif selected_view == t["tier3b_title"]:
+elif st.session_state.active_desk == DESK_OPTIONS[3]:
     top_col1, top_col2 = st.columns([4, 1])
     with top_col1:
         st.title(f"👷 {t['tier3b_title']}")
@@ -1487,160 +1482,86 @@ elif selected_view == t["tier3b_title"]:
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
-elif selected_view == t["tier4_title"]:
-    top_col1, top_col2 = st.columns([3, 2])
-    with top_col1:
-        st.title(f"⚖️ {t['tier4_title']}")
-    with top_col2:
-        btn_p1, btn_p2 = st.columns(2)
-        with btn_p1:
-            if st.button("🖨️ Print Page (PDF)", use_container_width=True):
-                components.html("<script>window.parent.print();</script>", height=0, width=0)
-        with btn_p2:
-            days_deadlocked = active_inc.get("days_in_deadlock", 7)
-            scaled_daily = int(round(87264 * scale_factor))
-            total_claim_amount = scaled_daily * days_deadlocked
-            
-            printable_html = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <title>Pre-Litigation Cost Recovery Dossier - {active_sector}</title>
-                <style>
-                    body {{ font-family: Georgia, serif; margin: 40px; color: #111; line-height: 1.6; }}
-                    h1, h2, h3 {{ font-family: -apple-system, sans-serif; }}
-                    .card {{ border: 1px solid #333; padding: 16px; margin-bottom: 20px; }}
-                    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-                    th, td {{ border: 1px solid #999; padding: 8px 12px; text-align: left; }}
-                    th {{ background: #eee; }}
-                </style>
-            </head>
-            <body>
-                <h1>CONFIDENTIAL PRE-LITIGATION SETTLEMENT DOSSIER</h1>
-                <p><strong>Asset:</strong> {active_sector} | <strong>Authority:</strong> {sector['statute']} | <strong>Date:</strong> {TODAY_STR}</p>
-                <div class="card">
-                    <h3>Liquidated Damages Claim Demand: ${total_claim_amount:,} USD</h3>
-                    <p><strong>Liable Counterparty:</strong> Apex Power Conversion Systems Corp (OEM)</p>
-                    <p><strong>Breach Clause:</strong> Schedule D § 3 (Unexcused Commissioning Demurrage)</p>
-                    <p><strong>Department Scope:</strong> High-Voltage Inverter & Commissioning (Dr. Arthur Pendleton Remit)</p>
+elif st.session_state.active_desk == DESK_OPTIONS[4]:
+    st.markdown("### Tier 4 | Forensic Recovery Vault")
+    st.caption("Immutable Pre-Litigation Dossier & Evidence Custodian Agent | FRE 902 / ISP98 Compliant")
+
+    t3b_sealed = st.session_state.get("gate_3b_cleared", False)
+    active_capex = st.session_state.get("capex_baseline", 88_500_000.0)
+    scale_factor = active_capex / 88_500_000.0
+    daily_burn = 87_264.0 * scale_factor
+    accrued_claim = daily_burn * 7.0
+
+    if not t3b_sealed:
+        st.warning("⚠️ EV-01 AUDIT NOTICE: Statutory PE Digital Seal is pending in Tier 3B. Evidence records are currently UNSEALED.")
+    else:
+        st.markdown("""
+            <div style="background-color: #0e2a1e; border-left: 4px solid #00ff88; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+                <div style="font-size: 0.85rem; color: #00ff88; font-weight: 700;">CHAIN OF CUSTODY SEALED | MERKLE ROOT ACTIVE</div>
+                <div style="font-size: 0.80rem; color: #cbd5e0;">
+                    All statutory pre-litigation conditions met under FRE 902(14). Self-authenticating master evidence dossier compiled.
                 </div>
-                <h2>Forensic Timeline Flight Recorder</h2>
-                <table>
-                    <tr><th>Timestamp</th><th>Entity</th><th>Event Description</th></tr>
-                    {''.join([f"<tr><td>{e['time']}</td><td>{e['party']}</td><td>{e['event']}</td></tr>" for e in active_inc.get('forensic_timeline', [])])}
-                </table>
-                <h2>Primary Evidentiary Exhibits</h2>
-                <table>
-                    <tr><th>Exhibit Code</th><th>Title</th><th>Filename</th><th>SHA-256 Hash</th></tr>
-                    {''.join([f"<tr><td>{ex['code']}</td><td>{ex['title']}</td><td>{ex['filename']}</td><td><code>{ex['sha256']}</code></td></tr>" for ex in active_inc.get('exhibits', [])])}
-                </table>
-                <h2>Sworn Statement of Fact</h2>
-                <p><em>"I, Marcus Vance, PE (TXLIC114902), attest under penalty of perjury that on 2026-09-09 the inverter trip sequence was strictly internal to Apex firmware threshold limits, as corroborated by IEEE 2800 COMTRADE data."</em></p>
-            </body>
-            </html>
-            """
-            st.download_button(
-                label="📄 Download Dossier (.HTML)",
-                data=printable_html,
-                file_name=f"EVIDENTIARY_DOSSIER_{active_sector.replace(' ', '_')}_{TODAY_STR}.html",
-                mime="text/html",
-                use_container_width=True
-            )
-
-    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        request_navigation(t["tier1_title"])
-        
-    st.divider()
-
-    st.markdown("### 📦 Modular Evidentiary Bundles (Selective Legal Privilege Safeguard)")
-    st.caption("Each operational silo generates an autonomous evidentiary bundle to prevent cross-silo discovery exposure during arbitration:")
-
-    b_col1, b_col2, b_col3 = st.columns(3)
-    with b_col1:
-        st.markdown(f"""
-            <div style="background:rgba(248,81,73,0.12); border:2px solid #f85149; border-radius:8px; padding:16px; height:100%;">
-                <div style="font-weight:800; font-size:1.15rem; color:#f85149;">Bundle A: Inverter & OEM Hardware</div>
-                <div style="font-size:0.9rem; color:#c9d1d9; margin:4px 0;">Remit: <strong>Dr. Arthur Pendleton</strong> (Tech Integrity)</div>
-                <div style="font-size:0.9rem; color:#ffffff; font-weight:700;">Claim Amount: ${87264*7*scale_factor:,.0f} USD</div>
-                <div style="font-size:0.85rem; color:#8b949e; margin-top:8px;">
-                    Attached: COMTRADE Raw Waveforms, Badge Logs, Schedule D Demurrage.
-                </div>
-                <div style="font-weight:800; color:#3fb950; font-size:0.9rem; margin-top:8px;">● READY FOR DISCLOSURE</div>
             </div>
         """, unsafe_allow_html=True)
-    with b_col2:
-        st.markdown(f"""
-            <div style="background:rgba(88,166,255,0.08); border:1px solid #30363d; border-radius:8px; padding:16px; height:100%;">
-                <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">Bundle B: Interconnection Gate</div>
-                <div style="font-size:0.9rem; color:#c9d1d9; margin:4px 0;">Remit: <strong>David Chen</strong> (Market Compliance)</div>
-                <div style="font-size:0.9rem; color:#ffffff; font-weight:700;">Claim Amount: $0 USD (Nominal)</div>
-                <div style="font-size:0.85rem; color:#8b949e; margin-top:8px;">
-                    Attached: ERCOT Tariff Schedule, Utility Notice Clock Logs.
-                </div>
-                <div style="font-weight:800; color:#8b949e; font-size:0.9rem; margin-top:8px;">● STANDBY TRACK</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with b_col3:
-        st.markdown(f"""
-            <div style="background:rgba(88,166,255,0.08); border:1px solid #30363d; border-radius:8px; padding:16px; height:100%;">
-                <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">Bundle C: Balance of Plant / Civil</div>
-                <div style="font-size:0.9rem; color:#c9d1d9; margin:4px 0;">Remit: <strong>Eleanor Vance, CPA</strong> (Audit)</div>
-                <div style="font-size:0.9rem; color:#ffffff; font-weight:700;">Claim Amount: $0 USD (Passive)</div>
-                <div style="font-size:0.85rem; color:#8b949e; margin-top:8px;">
-                    Attached: Contractor Mobilization Sheets, Substation Civil Sign-Offs.
-                </div>
-                <div style="font-weight:800; color:#8b949e; font-size:0.9rem; margin-top:8px;">● PASSIVE TRACK</div>
-            </div>
-        """, unsafe_allow_html=True)
+
+    st.markdown("#### Evidentiary Completeness Audit (Self-Authenticating Rule 902 Baseline)")
+    
+    evidence_items = [
+        {"Doc": "DGCL § 141(e) Corporate Safe-Harbor Resolution", "Owner": "Dr. Arthur Pendleton", "Status": "Verified & Bound", "Admissibility": "FRE 902(11)"},
+        {"Doc": "Substation Work Order WO-8821-HARMONIC", "Owner": "Sarah Jenkins (VP Eng)", "Status": "Executed & Stamped", "Admissibility": "FRE 803(6)"},
+        {"Doc": "COMTRADE 10 kHz Oscillography (THD 4.1%)", "Owner": "Substation Relay R-04", "Status": "SHA-256 Validated", "Admissibility": "FRE 902(13)"},
+        {"Doc": "Sworn Field Affidavit & Licensure Attestation", "Owner": "Marcus Vance, PE (TXLIC114902)", "Status": "Digitally Sealed" if t3b_sealed else "Pending Stamp", "Admissibility": "FRE 902(14)"},
+        {"Doc": "Fluke 1775 Power Quality Analyzer Calibration Cert", "Owner": "Permian HV Labs (ISO 17025)", "Status": "Current (Exp: Dec 2026)", "Admissibility": "FRE 702 Foundational"}
+    ]
+
+    cols = st.columns([3, 2, 2, 2])
+    cols[0].markdown("**Contemporaneous Instrument**")
+    cols[1].markdown("**Originating Authority**")
+    cols[2].markdown("**Audit Clearance**")
+    cols[3].markdown("**Rules of Evidence**")
+
+    for item in evidence_items:
+        c = st.columns([3, 2, 2, 2])
+        c[0].write(item["Doc"])
+        c[1].write(item["Owner"])
+        if t3b_sealed or "Current" in item["Status"] or "Verified" in item["Status"]:
+            c[2].markdown(f"<span style='color: #00ff88; font-weight:600;'>● {item['Status']}</span>", unsafe_allow_html=True)
+        else:
+            c[2].markdown(f"<span style='color: #ffa500; font-weight:600;'>○ {item['Status']}</span>", unsafe_allow_html=True)
+        c[3].write(item["Admissibility"])
 
     st.markdown("---")
-    st.markdown("### ✍️ Sworn Evidentiary Affidavit (Lead Professional Engineer)")
-    st.caption("Anchored automatically to immutable telemetry timestamps upon execution:")
 
-    with st.container(border=True):
-        st.markdown(f"""
-            <div style="background:#0d1117; border-left:4px solid #3fb950; padding:14px 18px; font-family:Georgia, serif; font-size:1.05rem; line-height:1.7;">
-                <strong>AFFIDAVIT OF MARCUS VANCE, PE (TXLIC114902)</strong><br>
-                <em>"I, Marcus Vance, PE, in my capacity as Lead High-Voltage Commissioning Engineer for Permian HV Field Services LLC, hereby depose and state under penalty of perjury:</em><br><br>
-                1. On September 9, 2026, at 08:14:02 UTC, Feeder 4A experienced an internal trip sequence on Inverter Bank 2.<br>
-                2. Sub-cycle COMTRADE fault recorder logs (Exhibit A-1) prove voltage remained within IEEE 2800 nominal ride-through thresholds (4.1% THD), refuting Apex's claims of an external utility transient.<br>
-                3. Badge database extracts (Exhibit B-1) confirm Apex's Commissioning Lead was off-site during the trip, disproving vendor claims of unauthorized on-site interference.<br>
-                4. Pursuant to Directorate Indemnity Resolution executed under Delaware DGCL § 141(e), the Corporation has fully absorbed all liability under contested Clause 14.b."
-            </div>
-        """, unsafe_allow_html=True)
+    st.markdown("#### Master Evidentiary Custodian Package")
+    merkle_root = "0x8f4d92a1c674b09e13d58a74e2b091f8c412e690bb3561a09d3b749e7b25c34e" if t3b_sealed else "PENDING_TIER_3B_SEAL"
 
-    st.markdown("---")
-    st.markdown("### ⏱️ Forensic Micro-Timeline Flight Recorder")
-    with st.container(border=True):
-        for event in active_inc.get("forensic_timeline", []):
-            st.markdown(f"""
-                <div style="padding: 10px 14px; border-bottom: 1px solid #21262d; display: flex; flex-wrap: wrap; gap: 14px; align-items: baseline;">
-                    <code style="color: #58a6ff; font-weight: 700; font-size: 0.95rem;">{event['time']}</code>
-                    <span style="background: rgba(227, 179, 65, 0.2); color: #e3b341; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.85rem;">{event['party']}</span>
-                    <span style="color: #f0f6fc; font-size: 1.05rem; flex-grow: 1;">{event['event']}</span>
-                </div>
-            """, unsafe_allow_html=True)
+    master_dossier_text = f"""MASTER FORENSIC FLIGHT RECORDER & PRE-LITIGATION DOSSIER
+Docket: ERCOT IA § 4.2 Interconnection Docket #54219
+Claim Amount: ${accrued_claim:,.2f} USD
+Holding Velocity: ${daily_burn:,.2f} / Day
+Merkle Root: {merkle_root}
+Lead PE: Marcus Vance, PE (TXLIC114902)
+Status: {'SEALED & ADMISSIBLE' if t3b_sealed else 'UNSEALED - DRAFT'}
+"""
+
+    st.download_button(
+        label="📥 Download Complete Master Forensic Flight Recorder Dossier (Full Job)",
+        data=master_dossier_text,
+        file_name="Master_Forensic_Dossier_Docket_54219_Full.txt",
+        mime="text/plain",
+        disabled=not t3b_sealed,
+        use_container_width=True,
+        type="primary"
+    )
 
     st.markdown("---")
-    st.markdown("### 📁 Primary Evidentiary Exhibit Index")
-    for exh in active_inc.get("exhibits", []):
-        with st.container(border=True):
-            e_col1, e_col2 = st.columns([3, 1])
-            with e_col1:
-                st.markdown(f"""
-                    <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">{exh['code']}: {exh['title']}</div>
-                    <div style="font-size:0.95rem; color:#c9d1d9; margin: 4px 0;">File: <code>{exh['filename']}</code> ({exh['size']})</div>
-                    <div style="font-size:0.85rem; color:#8b949e; font-family:monospace;">SHA-256: {exh['sha256']}</div>
-                    <div style="font-size:1.0rem; color:#f0f6fc; margin-top:8px;"><strong>Evidentiary Proof:</strong> {exh['significance']}</div>
-                """, unsafe_allow_html=True)
-            with e_col2:
-                st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
-                dummy_bytes = f"AUTHENTICATED EXHIBIT {exh['code']} - {exh['sha256']}".encode()
-                st.download_button(
-                    label=f"⬇️ Download {exh['code']}",
-                    data=dummy_bytes,
-                    file_name=exh['filename'],
-                    mime="application/octet-stream",
-                    use_container_width=True
-                )
+
+    ex1, ex2 = st.columns(2)
+    with ex1:
+        st.markdown("**Surgical Exhibit Extracts**")
+        st.download_button("Exhibit A: Board Safe-Harbor Bundle (PDF)", "MOCK EXHIBIT A", "Exhibit_A.pdf", disabled=not t3b_sealed)
+        st.download_button("Exhibit B: PE Waveform Binary (CSV)", "MOCK COMTRADE CSV", "Exhibit_B.csv", disabled=not t3b_sealed)
+    with ex2:
+        st.markdown("**Standby Letter of Credit Protocol (ISP98 / UCP 600)**")
+        if st.button("Generate & Dispatch Standby LC Demand Certificate 🏛️", disabled=not t3b_sealed):
+            st.success(f"Demand certificate generated for ${accrued_claim:,.2f} USD against Issuing Bank Escrow.")
