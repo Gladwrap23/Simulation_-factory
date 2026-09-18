@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import re
+from copy import deepcopy
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -60,6 +61,59 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# iPad Safari needs an explicit scrolling surface for Streamlit's sidebar.
+st.markdown("""
+<style>
+    section[data-testid="stSidebar"] > div {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-height: 100vh !important;
+    }
+
+    div[data-baseweb="select"] ul {
+        max-height: 280px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- GLOBAL OPERATING BOOKS REGISTRY ---
+OPERATING_BOOKS = {
+    "ERCOT BESS / Grid Storage (USA)": {
+        "docket": "ERCOT IA § 4.2 Docket #54219",
+        "jurisdiction": "ERCOT / Delaware (DGCL § 141)",
+        "counterparty": "Apex Power Conversion Systems Corp (OEM)",
+        "contract": "Turnkey EPC Agreement #TX-9011 — Schedule D § 3",
+        "default_capex": 88_500_000.0,
+        "daily_burn_base": 87_264.0,
+        "lead_pe": "Marcus Vance, PE (TXLIC114902)",
+        "lead_director": "Dr. Arthur Pendleton",
+        "tech_standard": "IEEE 2800 Harmonic Breach (4.1% THD)"
+    },
+    "UK BESS / National Grid (UK)": {
+        "docket": "Ofgem Grid Code Compliance Ref #UK-88301",
+        "jurisdiction": "England & Wales (Companies Act 2006 § 172)",
+        "counterparty": "Vanguard Inverter Systems Ltd",
+        "contract": "FIDIC Silver Book EPC #UK-BESS-04",
+        "default_capex": 62_000_000.0,
+        "daily_burn_base": 61_500.0,
+        "lead_pe": "Alastair Finch, CEng",
+        "lead_director": "Dame Eleanor Cross",
+        "tech_standard": "Engineering Recommendation G99 Sub-Cycle Trip"
+    },
+    "NEM BESS / Hornsdale Expansion (Australia)": {
+        "docket": "AEMO GPS Connection Agreement #NEM-5512",
+        "jurisdiction": "New South Wales (Corporations Act 2001 § 180)",
+        "counterparty": "Australis Power Dynamics Pty",
+        "contract": "AS 4300-1995 Turnkey EPC Annexure E",
+        "default_capex": 115_000_000.0,
+        "daily_burn_base": 112_800.0,
+        "lead_pe": "Cameron Ross, FIEAust CPEng",
+        "lead_director": "Marcus Thorne",
+        "tech_standard": "NER S5.2.5.5 Voltage Support Non-Compliance"
+    }
+}
 
 # =========================================================
 # 1. INDUSTRIAL STYLING & PRINT STYLESHEET (@media print)
@@ -599,6 +653,36 @@ for director in SECTORS["ERCOT BESS / Grid Storage (USA)"]["board_roster"]:
     director["remedy_title"] = remedy_title
     director["remedy_description"] = remedy_description
 
+
+def build_operating_book(book_name):
+    """Overlay a selected global book onto the existing tiered workflow template."""
+    config = OPERATING_BOOKS[book_name]
+    template = SECTORS["ERCOT BESS / Grid Storage (USA)"]
+    active_sector = deepcopy(template)
+    active_sector["asset_cap"] = config["default_capex"]
+    active_sector["baseline_docket"] = config["docket"]
+    active_sector["statute"] = config["jurisdiction"]
+    active_sector["operating_book"] = config
+
+    for incident in active_sector["incidents"].values():
+        incident["base_daily_bleed"] = config["daily_burn_base"]
+        incident["director_seat"] = config["lead_director"]
+        counterparty = incident.get("counterparty", {})
+        counterparty["name"] = config["counterparty"]
+        counterparty["contract"] = config["contract"]
+        work_order = incident.get("tier3_work_order", {})
+        work_order["field_lead"] = config["lead_pe"]
+        for telemetry in work_order.get("telemetry", []):
+            if telemetry["param"] == "THD Harmonics (IEEE 2800)":
+                telemetry["param"] = config["tech_standard"]
+
+    for director in active_sector["board_roster"]:
+        if director.get("role") == "Cognizant Technical Director":
+            director["name"] = config["lead_director"]
+        if director.get("subordinate_field_lead"):
+            director["subordinate_field_lead"] = config["lead_pe"]
+    return active_sector
+
 if "app_state" not in st.session_state:
     st.session_state.app_state = SECTORS
 
@@ -698,6 +782,20 @@ def reset_incident_to_neutral(incident: dict):
 # =========================================================
 # 3. SIDEBAR NAVIGATION
 # =========================================================
+def on_book_change():
+    selected = st.session_state.current_book
+    config = OPERATING_BOOKS[selected]
+    st.session_state.capex_baseline = config["default_capex"]
+    st.session_state.active_docket = config["docket"]
+    st.session_state.active_counterparty = config["counterparty"]
+    st.session_state.active_jurisdiction = config["jurisdiction"]
+    st.session_state.selected_incident_id = "INC-001"
+    st.session_state.selected_director = config["lead_director"]
+    st.session_state.bound_book = selected
+
+if "current_book" not in st.session_state or st.session_state.current_book not in OPERATING_BOOKS:
+    st.session_state.current_book = next(iter(OPERATING_BOOKS))
+
 with st.sidebar:
     st.markdown("""
         <div class="sidebar-brand-card">
@@ -713,9 +811,20 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
     
-    active_sector = st.selectbox("Operating Book (Global Assets):", list(st.session_state.app_state.keys()))
-    sector = st.session_state.app_state[active_sector]
+    active_sector = st.selectbox(
+        "Operating Book (Global Assets):",
+        options=list(OPERATING_BOOKS.keys()),
+        key="current_book",
+        on_change=on_book_change
+    )
+    if st.session_state.get("bound_book") != active_sector:
+        on_book_change()
+    sector = build_operating_book(active_sector)
+    book_config = sector["operating_book"]
     curr_sym = sector["currency"]
+    st.caption(f"Docket: {book_config['docket']}")
+    st.caption(f"Law: {book_config['jurisdiction']}")
+    st.caption(f"Counterparty: {book_config['counterparty']}")
     
     lang_choice = st.selectbox(
         "Sovereign Legal Jurisdiction:",
@@ -775,13 +884,13 @@ if st.session_state.trigger_print:
 if st.session_state.active_desk == DESK_OPTIONS[0]:
     render_breadcrumb(0)
     # Ultra-Prominent Tier 1 Header
-    st.markdown("""
+    st.markdown(f"""
         <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
             <div style="font-size: 2.2rem; font-weight: 900; color: #ffffff; line-height: 1.2;">
                 TIER 1 | CHAIRMAN TACTICAL COMMAND POST
             </div>
             <div style="font-size: 1.15rem; font-weight: 800; color: #00d4ff; margin-top: 6px; letter-spacing: 0.5px;">
-                ⚡ ERCOT BESS / GRID STORAGE (USA) — INTERCONNECTION DOCKET #54219
+                ⚡ {active_sector.upper()} — {sector['baseline_docket']}
             </div>
             <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8; margin-top: 4px;">
                 ● PUBLIC BASELINE SYNCHRONIZED | AUDIT EPOCH: 16 SEP 2026 00:00 UTC | COMMERCIAL DEADLOCK ACTIVE
@@ -793,14 +902,14 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     st.markdown("#### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
     
     if "capex_baseline" not in st.session_state:
-        st.session_state.capex_baseline = 88_500_000.0
+        st.session_state.capex_baseline = sector["asset_cap"]
 
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
     if b_col1.button("Set $50M Mini-Build"):
         st.session_state.capex_baseline = 50_000_000.0
         st.rerun()
-    if b_col2.button("Set $88.5M (Active Baseline)"):
-        st.session_state.capex_baseline = 88_500_000.0
+    if b_col2.button("Set Active Book Baseline"):
+        st.session_state.capex_baseline = sector["asset_cap"]
         st.rerun()
     if b_col3.button("Set $150M Utility Scale"):
         st.session_state.capex_baseline = 150_000_000.0
@@ -820,9 +929,9 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     st.session_state.capex_baseline = slider_capex
     parsed_capex = int(slider_capex)
 
-    default_base = 88_500_000.0
+    default_base = sector["asset_cap"]
     scale_factor = slider_capex / default_base
-    daily_burn = 87_264.0 * scale_factor
+    daily_burn = active_inc.get("base_daily_bleed", 87_264.0) * scale_factor
     weekly_burn = daily_burn * 7.0
     crossover_days = slider_capex / daily_burn if daily_burn > 0 else 0
 
@@ -831,8 +940,8 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255, 75, 75, 0.3); padding-bottom: 12px; margin-bottom: 14px;">
                 <div>
                     <span style="background-color: #ff4b4b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">ACTIVE CONTRACTUAL BREACH CLAIM</span>
-                    <h3 style="margin: 8px 0 0 0; color: #ffffff; font-size: 1.25rem;">Turnkey EPC Agreement #TX-9011 — Schedule D § 3 (Unexcused Demurrage)</h3>
-                    <p style="margin: 4px 0 0 0; color: #a0aec0; font-size: 0.82rem;">Liable Counterparty: <strong style="color: #ffffff;">Apex Power Conversion Systems Corp (OEM)</strong> | Defense Pretext: Clause 14.b Warranty Voidance</p>
+                    <h3 style="margin: 8px 0 0 0; color: #ffffff; font-size: 1.25rem;">{book_config['contract']}</h3>
+                    <p style="margin: 4px 0 0 0; color: #a0aec0; font-size: 0.82rem;">Liable Counterparty: <strong style="color: #ffffff;">{book_config['counterparty']}</strong> | Governing Law: {book_config['jurisdiction']}</p>
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 0.75rem; color: #ff8080; font-weight: 700; text-transform: uppercase;">Certified Accrued Recovery Demand</div>
@@ -843,7 +952,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 0.82rem;">
                 <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
                     <span style="color: #a0aec0; display: block; font-size: 0.72rem;">STATUTORY DEFENSE PREROGATIVE</span>
-                    <strong style="color: #00d4ff;">Delaware DGCL § 141(e)</strong> Safe Harbor Shield
+                    <strong style="color: #00d4ff;">{book_config['jurisdiction']}</strong> Statutory Shield
                 </div>
                 <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
                     <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CAPITAL UNDER ACTIVE DEFENSE</span>
@@ -857,7 +966,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         </div>
     """, unsafe_allow_html=True)
 
-    total_burn_day = 87264 * scale_factor if not is_resolved else 0
+    total_burn_day = active_inc.get("base_daily_bleed", 87_264.0) * scale_factor if not is_resolved else 0
     total_burn_wk = total_burn_day * 7
     dynamic_crossover_days = round(parsed_capex / total_burn_day, 1) if total_burn_day > 0 else 999.9
 
@@ -1471,9 +1580,9 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
     else:
         merkle_root = "UNSEALED_DRAFT_STAGE"
         status_label = "PRE-FILING DRAFT (UNAUTHENTICATED)"
-    active_capex = st.session_state.get("capex_baseline", 88_500_000.0)
-    scale_factor = active_capex / 88_500_000.0
-    daily_burn = 87_264.0 * scale_factor
+    active_capex = st.session_state.get("capex_baseline", sector["asset_cap"])
+    scale_factor = active_capex / sector["asset_cap"]
+    daily_burn = active_inc.get("base_daily_bleed", 87_264.0) * scale_factor
     accrued_claim = daily_burn * 7.0
 
     # Prominent Tier 4 Vault Title Banner
