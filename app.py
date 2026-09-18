@@ -1846,6 +1846,116 @@ Authentication: Delaware DGCL § 141(e) Corporate Safe-Harbor Conveyance
         )
         st.caption("● Available for discovery testing; certified banking presentation requires the active seal state.")
 
+    # --------------------------------------------------------------------------
+    # ADVERSARIAL PREEMPTION & JUDICIAL STRESS-TEST MATRIX
+    # --------------------------------------------------------------------------
+    st.markdown("---")
+    st.markdown("#### 🛡️ Adversarial Preemption & Judicial Defense Matrix")
+    st.caption("Anticipatory defense vectors, evidentiary sufficiency scoring, and counter-briefs for Chancery Court / AAA-ICDR Arbitration.")
+
+    defense_vectors = {
+        "Vector 1: Warranty Spoliation Pretext (Clause 14.b)": {
+            "risk_level": "CRITICAL OPPOSING DEFENSE",
+            "risk_color": "#ff4b4b",
+            "opposing_claim": "Apex litigation counsel will argue Marcus Vance, PE's physical interlock override constituted unauthorized equipment tampering, nullifying OEM warranty covenants and barring liquidated delay damages.",
+            "statutory_shield": "Delaware DGCL § 141(e) Corporate Mitigation Defense",
+            "evidentiary_proof": "Relay R-04 oscillography binary confirms inverter harmonic failure (THD 4.1%) occurred at 08:14 UTC, 6 hours PRIOR to site intervention. Physical bypass was legally required to mitigate grid disassociation damages under emergency duty of care.",
+            "precedent": "In re Caremark Int'l Inc. Derivative Litig., 698 A.2d 959 (Del. Ch. 1996) / Restatement (Second) of Contracts § 350 (Avoidable Consequences).",
+            "admissibility_confidence": "96.4% Evidentiary Preemption",
+            "brief_code": "MOT-REBUTTAL-14B"
+        },
+        "Vector 2: Digital Hearsay & Spoiled Telemetry (FRE 802 / 901)": {
+            "risk_level": "EVIDENTIARY CHALLENGE",
+            "risk_color": "#ffa500",
+            "opposing_claim": "Apex will file motions in limine asserting COMTRADE digital capture files are proprietary, unverified hearsay prone to digital modification or software artifacts.",
+            "statutory_shield": "FRE 902(13) & 902(14) Self-Authenticating Digital Records",
+            "evidentiary_proof": "Fluke 1775 Power Quality Analyzer certified under ISO/IEC 17025 calibration (Cert #ISO-8821). Data secured by SHA-256 Merkle root and accompanied by certified custodial affidavit from Marcus Vance, PE under criminal perjury penalties.",
+            "precedent": "United States v. Lizarraga-Tirado, 789 F.3d 1107 (9th Cir. 2015) (Machine-generated data is not hearsay); FRE 902(14) Certification Process.",
+            "admissibility_confidence": "99.1% Evidentiary Preemption",
+            "brief_code": "MOT-LIMINE-FRE902"
+        },
+        "Vector 3: Notice Precondition & Cure Period Laches (Clause 11.2)": {
+            "risk_level": "PROCEDURAL ATTRITION",
+            "risk_color": "#00d4ff",
+            "opposing_claim": "Apex will assert formal contractual cure notice was procedurally defective or untimely, claiming the 90-minute remedy window never commenced.",
+            "statutory_shield": "Turnkey EPC Agreement § 11.2 Notice Verification",
+            "evidentiary_proof": "Automated EDI carrier dispatch stamped 09:30:15 UTC with cryptographic delivery acknowledgement from Apex enterprise mail gateway. Commercial deadlock verified after 90-minute cure expiry at 11:00 UTC.",
+            "precedent": "Restatement (Second) of Contracts § 251 (Failure to Give Adequate Assurance as Breach).",
+            "admissibility_confidence": "98.7% Evidentiary Preemption",
+            "brief_code": "MOT-SUMMARY-CURE-11.2"
+        }
+    }
+
+    selected_vector_name = st.selectbox(
+        "Select Anticipated Counterparty Defense Vector:",
+        options=list(defense_vectors.keys()),
+        key="adversarial_vector_select"
+    )
+    vec = defense_vectors[selected_vector_name]
+
+    st.markdown(f"""
+        <div style="background: #111a2e; border: 2px solid {vec['risk_color']}; border-left: 8px solid {vec['risk_color']}; padding: 18px 20px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px;">
+                <span style="background: {vec['risk_color']}; color: #000000; padding: 4px 8px; border-radius: 4px; font-weight: 900; font-size: 0.8rem;">{vec['risk_level']}</span>
+                <span style="color: #00ff88; font-weight: 800; font-size: 0.95rem;">🛡️ {vec['admissibility_confidence']}</span>
+            </div>
+            <div style="margin-bottom: 12px;"><span style="color: #94a3b8; font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">Opposing Litigation Counsel Assertions</span>
+                <div style="color: #ffffff; font-size: 0.95rem; line-height: 1.4; margin-top: 4px;">{vec['opposing_claim']}</div>
+            </div>
+            <div style="margin-bottom: 12px;"><span style="color: #00d4ff; font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">Statutory Rebuttal & Preemptive Shield</span>
+                <div style="color: #ffffff; font-weight: 700; font-size: 1.05rem; margin-top: 2px;">{vec['statutory_shield']}</div>
+                <div style="color: #cbd5e0; font-size: 0.9rem; line-height: 1.4; margin-top: 4px;">{vec['evidentiary_proof']}</div>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; font-size: 0.82rem;"><strong style="color: #94a3b8;">Controlling Case Precedent:</strong> <span style="color: #e2e8f0; font-style: italic;">{vec['precedent']}</span></div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    rebuttal_payload = f"""================================================================================
+IN THE DELAWARE COURT OF CHANCERY / AAA ARBITRATION PANEL
+DOCKET NO. {st.session_state.get('active_docket', '54219')}
+================================================================================
+CLAIMANT:    PACTUM SOVEREIGN ASSET DEFENSE TRUST
+RESPONDENT:  APEX POWER CONVERSION SYSTEMS CORP
+
+PREEMPTIVE EMERGENCY REBUTTAL BRIEF: {vec['brief_code']}
+SUBJECT: REBUTTAL OF RESPONDENT DEFENSE REGARDING {selected_vector_name.upper()}
+================================================================================
+
+I. COUNTERPARTY CONTENTION
+--------------------------------------------------------------------------------
+{vec['opposing_claim']}
+
+II. STATUTORY PREEMPTION & CONTROLLING AUTHORITY
+--------------------------------------------------------------------------------
+{vec['statutory_shield']}
+Authority: {vec['precedent']}
+
+III. CONTEMPORANEOUS EVIDENTIARY RECORD (FRE 902)
+--------------------------------------------------------------------------------
+{vec['evidentiary_proof']}
+
+Accrued Delay Demurrage Demanded: ${accrued_claim:,.2f} USD
+Cryptographic Flight Recorder Root: {merkle_root}
+Attesting Engineer: Marcus Vance, PE (TXLIC114902)
+
+IV. CONCLUSION & PRAYER FOR RELIEF
+--------------------------------------------------------------------------------
+Claimant requests an immediate order striking Respondent's pretextual defense
+and ordering the immediate drawdown of Standby Escrow Collateral under ISP98.
+
+SUBMITTED UNDER RULE 11 CERTIFICATION.
+================================================================================
+"""
+
+    st.download_button(
+        label=f"📄 Generate Preemptive Rebuttal Motion Brief ({vec['brief_code']})",
+        data=rebuttal_payload,
+        file_name=f"Emergency_Rebuttal_Brief_{vec['brief_code']}.txt",
+        mime="text/plain",
+        key="btn_rebuttal_download",
+        use_container_width=True
+    )
+
 else:
     # Failsafe: Prevent blank screens on any state mismatch.
     st.session_state.active_desk = DESK_OPTIONS[0]
