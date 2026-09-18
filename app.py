@@ -464,11 +464,11 @@ def render_top_action_bar():
     with top_col1:
         st.caption("Active Telemetry Engine: **Pactum Sovereign OS Build v6.8** | Real-Time Docket Audit")
     with top_col2:
-        if st.button("🖨️ Quick Print / PDF", key="top_quick_print", use_container_width=True):
+        if st.button("🖨️ Print / PDF", key="top_quick_print", use_container_width=True):
             components.html("""<script>window.parent.print();</script>""", height=0)
     with top_col3:
         st.download_button(
-            label="📑 Full Case File",
+            label="📑 Case File",
             data=unified_executive_bundle,
             file_name=f"Master_Case_File_{active_cfg['docket'].replace(' ', '_').replace('#', '')}.txt",
             mime="text/plain",
