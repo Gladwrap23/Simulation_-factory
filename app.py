@@ -418,8 +418,10 @@ TODAY_STR = "16 Sep 2026"
 
 # --- STRICT DESK TAXONOMY ---
 DESK_OPTIONS = [
-    "Tier 1 | Chairman Tactical Command Post",
-    "Tier 2 | Directorate Governance Desk",
+    "Tier 1A | Chairman Tactical Command Post",
+    "Tier 1B | General Counsel Legal Chambers",
+    "Tier 2A | Chairman Directorate Governance",
+    "Tier 2B | Legal Counsel Governance Desk",
     "Tier 3A | Engineering Operations Command",
     "Tier 3B | Site Execution Desk",
     "Tier 4 | Forensic Recovery Vault"
@@ -439,21 +441,26 @@ if "inception_timestamp" not in st.session_state:
     st.session_state.inception_timestamp = None
 if "inception_hash" not in st.session_state:
     st.session_state.inception_hash = None
+if "gate_2a_cleared" not in st.session_state:
+    st.session_state.gate_2a_cleared = False
+if "gate_2b_cleared" not in st.session_state:
+    st.session_state.gate_2b_cleared = False
+if "legal_identity" not in st.session_state:
+    st.session_state.legal_identity = "General Counsel & CLO"
 
 def toggle_chairman_key():
     st.session_state.key_chairman_armed = not st.session_state.key_chairman_armed
-    _check_dual_key_seal()
+    _evaluate_dual_seal()
 
 def toggle_counsel_key():
     st.session_state.key_counsel_armed = not st.session_state.key_counsel_armed
-    _check_dual_key_seal()
+    _evaluate_dual_seal()
 
-def _check_dual_key_seal():
+def _evaluate_dual_seal():
     if st.session_state.key_chairman_armed and st.session_state.key_counsel_armed:
-        if not st.session_state.docket_inception_sealed:
-            st.session_state.docket_inception_sealed = True
-            st.session_state.inception_timestamp = "21 Sept 2026 14:00:00 UTC"
-            st.session_state.inception_hash = "sha256:7a9e8841c30f4d89a2b1011894cf9983de092bbfca31998e104928fe88102abc"
+        st.session_state.docket_inception_sealed = True
+        st.session_state.inception_timestamp = "21 Sept 2026 14:45:00 UTC"
+        st.session_state.inception_hash = "sha256:7a9e8841c30f4d89a2b1011894cf9983de092bbfca31998e104928fe88102abc"
     else:
         st.session_state.docket_inception_sealed = False
 
@@ -1045,7 +1052,7 @@ CERTIFIED UNDER STATUTORY CORPORATE COVENANT.
         if st.button(btn_label, key=f"sb_{inc_key}", use_container_width=True, type="primary" if is_sel else "secondary"):
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
-            request_navigation(t["tier1_title"])
+            request_navigation(DESK_OPTIONS[0])
 
 if st.session_state.selected_incident_id not in sector["incidents"]:
     st.session_state.selected_incident_id = next(iter(sector["incidents"]))
@@ -1130,7 +1137,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     st.divider()
     if is_sealed:
         st.success("DUAL-KEY AUTHORIZATION COMPLETE: PROCEED TO GOVERNANCE DESK")
-        st.button("PROCEED TO TIER 2: DIRECTORATE GOVERNANCE DESK", key="inception_to_t2", on_click=navigate_to, args=(DESK_OPTIONS[1],), use_container_width=True, type="primary")
+        st.button("PROCEED TO TIER 2: DIRECTORATE GOVERNANCE DESK", key="inception_to_t2", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True, type="primary")
     else:
         st.info("Downstream physical execution desks remain locked. Arm both keys to instantiate the active docket.")
 
@@ -1388,7 +1395,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         "➔ Drill Down to Tier 2: Directorate Governance Desk",
         key="cmd_jump_t2",
         on_click=navigate_to,
-        args=(DESK_OPTIONS[1],),
+        args=(DESK_OPTIONS[2],),
         use_container_width=True
     )
 
@@ -1413,7 +1420,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         "➔ Drill Down to Tier 3A: Engineering Operations Command",
         key="cmd_jump_t3a",
         on_click=navigate_to,
-        args=(DESK_OPTIONS[2],),
+        args=(DESK_OPTIONS[4],),
         use_container_width=True
     )
 
@@ -1438,7 +1445,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         "➔ Drill Down to Tier 3B: Site Execution Desk",
         key="cmd_jump_t3b",
         on_click=navigate_to,
-        args=(DESK_OPTIONS[3],),
+        args=(DESK_OPTIONS[5],),
         use_container_width=True
     )
 
@@ -1461,14 +1468,67 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         "➔ Drill Down to Tier 4: Forensic Recovery Vault",
         key="cmd_jump_t4",
         on_click=navigate_to,
-        args=(DESK_OPTIONS[4],),
+        args=(DESK_OPTIONS[6],),
         use_container_width=True
     )
 
 # =========================================================
-# 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
+# 5. VIEW: TIER 1B — GENERAL COUNSEL LEGAL CHAMBERS
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[1]:
+    is_sealed = st.session_state.docket_inception_sealed
+    st.markdown("""
+        <div style="background:linear-gradient(90deg,#130f26 0%,#1e1b4b 100%);border-left:8px solid #a855f7;padding:18px 24px;border-radius:8px;margin-bottom:20px;">
+            <div style="font-size:1.6rem;font-weight:900;color:#fff;">TIER 1B | GENERAL COUNSEL LEGAL CHAMBERS</div>
+            <div style="color:#c084fc;font-size:.9rem;font-weight:700;margin-top:2px;">PRIVILEGE QUARANTINE, STATUTORY PROOF AUDIT & LITIGATION INCEPTION</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    legal_roles = [
+        "General Counsel & CLO",
+        "Lead External Litigation Counsel",
+        "Regulatory & Grid Counsel",
+        "Forensic Evidence Custodian",
+    ]
+    st.session_state.legal_identity = st.selectbox(
+        "Active Legal Seat:",
+        legal_roles,
+        index=legal_roles.index(st.session_state.legal_identity),
+        key="sel_legal_role",
+    )
+    st.markdown("#### Statutory-to-Evidence Sufficiency Ledger")
+    st.markdown("""
+    | Statutory pillar | Required artifact | Custodial status |
+    | --- | --- | --- |
+    | DGCL Section 141(e) | Board technical reliance and safe-harbor minute | Verified and ready |
+    | FRE 803(6) | Work Order WO-8821-HARMONIC | Stamped |
+    | FRE 902(13) and (14) | COMTRADE binary and Fluke calibration certificate | Pending field PE seal |
+    | Turnkey Clause 11.2 | EDI gateway and 90-minute cure receipt | Pre-staged |
+    """)
+    st.markdown("#### Key 2: General Counsel Statutory & Privilege Release")
+    st.button(
+        "DISARM KEY 2" if st.session_state.key_counsel_armed else "ENGAGE KEY 2: ISSUE LITIGATION HOLD",
+        key="t1b_counsel_key",
+        on_click=toggle_counsel_key,
+        type="primary",
+        use_container_width=True,
+    )
+    if st.session_state.key_counsel_armed:
+        st.success("KEY 2 ARMED: Enterprise litigation hold active and discovery wall sealed.")
+    st.write("")
+    nav_col1, nav_col2 = st.columns(2)
+    with nav_col1:
+        st.button("Return to Chairman Command Post (Tier 1A)", key="t1b_to_t1a", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+    with nav_col2:
+        if is_sealed:
+            st.button("Proceed to Legal Governance Desk (Tier 2B)", key="t1b_to_t2b", on_click=navigate_to, args=(DESK_OPTIONS[3],), use_container_width=True, type="primary")
+        else:
+            st.button("Tier 2B Locked (Requires Dual-Key Inception)", key="t1b_locked", disabled=True, use_container_width=True)
+
+# =========================================================
+# 6. VIEW: TIER 2A — DIRECTORATE GOVERNANCE DESK
+# =========================================================
+elif st.session_state.active_desk == DESK_OPTIONS[2]:
     render_inception_guard()
     render_breadcrumb(1)
     render_top_action_bar()
@@ -1482,7 +1542,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
     st.caption(f"Asset: **{active_sector}** | Governing Authority: **{sector['statute']}** | Effective: **{TODAY_STR}**")
     
     if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        request_navigation(t["tier1_title"])
+        request_navigation(DESK_OPTIONS[0])
         
     st.divider()
 
@@ -1642,10 +1702,10 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
                 nav_col1, nav_col2 = st.columns(2)
                 with nav_col1:
                     if st.button(f"➔ Cascade to Tier 3 Field Desk ({current_d['subordinate_field_lead']})", use_container_width=True, type="primary"):
-                        request_navigation(t["tier3a_title"])
+                        request_navigation(DESK_OPTIONS[4])
                 with nav_col2:
                     if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
-                        request_navigation(t["tier1_title"])
+                        request_navigation(DESK_OPTIONS[0])
     else:
         if current_d["name"] == "Executive Chairman":
             st.markdown("### ⚡ Sovereign Board Preemption Desk: Executive Chairman")
@@ -1670,7 +1730,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
                 elif is_resolved:
                     st.success("Chairman Preemption is active. Capital defended to $0/day.")
                     if st.button("➔ Advance to Tier 4: Departmental Forensic Vault", use_container_width=True, type="primary"):
-                        request_navigation(t["tier4_title"])
+                        request_navigation(DESK_OPTIONS[6])
         elif current_d["name"] == "Eleanor Vance, CPA":
             st.markdown("### 📊 Audit & Demurrage Recovery Desk: Eleanor Vance, CPA")
             st.markdown(f"""
@@ -1681,7 +1741,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
                 <div class="legal-document-box"><strong>Certified Liquidated Demurrage Total:</strong> <span style="color:#e3b341; font-size:1.4rem;">${87264 * 7 * scale_factor:,.0f} USD</span><br><br>{current_d['remedy_description']}</div>
             """, unsafe_allow_html=True)
             if st.button("➔ Inspect Full Forensic Demurrage Ledger (Tier 4)", use_container_width=True, type="primary"):
-                request_navigation(t["tier4_title"])
+                request_navigation(DESK_OPTIONS[6])
         else:
             st.markdown(f"### 🌐 Committee Remit: {current_d['name']}")
             st.markdown(f"""
@@ -1692,12 +1752,55 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
             """, unsafe_allow_html=True)
             st.info("This committee stands ready in support. The primary blocker remains the high-voltage inverter attestation owned by Dr. Arthur Pendleton or the Executive Chairman.")
 
-    render_forward_gateway(is_dir_signed, DESK_OPTIONS[2], "TIER 3A: ENGINEERING OPERATIONS", "t2_gateway")
+    st.markdown("#### Board Ratification Gate")
+    if not st.session_state.gate_2a_cleared:
+        if st.button("RATIFY BOARD DIRECTIVE & CONVEY FIDUCIARY CONSENSUS", key="btn_vote_2a", type="primary", use_container_width=True):
+            st.session_state.gate_2a_cleared = True
+            st.rerun()
+    else:
+        st.success("BOARD CONSENSUS RATIFIED: DGCL Section 141(a) shield active.")
+
+    render_forward_gateway(
+        is_dir_signed and st.session_state.gate_2a_cleared and st.session_state.gate_2b_cleared,
+        DESK_OPTIONS[4],
+        "TIER 3A: ENGINEERING OPERATIONS",
+        "t2_gateway",
+    )
 
 # =========================================================
-# 6. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
+# 7. VIEW: TIER 2B — LEGAL COUNSEL GOVERNANCE & SECRETARIAL DESK
 # =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[2]:
+elif st.session_state.active_desk == DESK_OPTIONS[3]:
+    st.markdown("""
+        <div style="background:linear-gradient(90deg,#130f26 0%,#1e1b4b 100%);border-left:8px solid #a855f7;padding:18px 24px;border-radius:8px;margin-bottom:20px;">
+            <div style="font-size:1.6rem;font-weight:900;color:#fff;">TIER 2B | LEGAL GOVERNANCE & SECRETARIAL DESK</div>
+            <div style="color:#c084fc;font-size:.9rem;font-weight:700;margin-top:2px;">DGCL SECTION 141(e) STATUTORY RELIANCE & DEED OF INDEMNIFICATION</div>
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("#### Statutory Indemnity Deed: Field Professional Engineer")
+    st.markdown("To shield the lead field engineer from individual liability, this deed absorbs execution risk onto the corporate balance sheet under DGCL Section 145.")
+    if not st.session_state.gate_2b_cleared:
+        st.warning("EXECUTION PENDING: Marcus Vance, PE remains restrained from physical intervention until the deed is sealed.")
+        if st.button("EXECUTE & ENTER DEED OF INDEMNITY INTO CORPORATE MINUTE BOOK", key="btn_seal_2b", type="primary", use_container_width=True):
+            st.session_state.gate_2b_cleared = True
+            st.session_state.gate_2_cleared = True
+            st.rerun()
+    else:
+        st.success("DEED OF INDEMNITY EXECUTED & SEALED.")
+        st.code("sha256:f48a901c22e987102ce094a318894cb10e4a77e9921004ab12fedcba98765432", language="text")
+    nav_col1, nav_col2 = st.columns(2)
+    with nav_col1:
+        st.button("View Chairman Boardroom (Tier 2A)", key="t2b_to_t2a", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True)
+    with nav_col2:
+        if st.session_state.gate_2a_cleared and st.session_state.gate_2b_cleared:
+            st.button("PROCEED TO TIER 3A: OPERATIONS DISPATCH", key="t2b_to_t3a", on_click=navigate_to, args=(DESK_OPTIONS[4],), use_container_width=True, type="primary")
+        else:
+            st.info("Both Board Ratification (2A) and Legal Indemnity Deed (2B) must be sealed before dispatch.")
+
+# =========================================================
+# 8. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
+# =========================================================
+elif st.session_state.active_desk == DESK_OPTIONS[4]:
     render_inception_guard()
     render_breadcrumb(2)
     render_top_action_bar()
@@ -1745,16 +1848,16 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
         if st.session_state.gate_3a_cleared:
             st.success("● 3A Gate Cleared: Dispatched to Field Lead")
             if st.button("Jump to Tier 3B Execution Desk ➔", use_container_width=True):
-                request_navigation(t["tier3b_title"])
+                request_navigation(DESK_OPTIONS[5])
         else:
             st.warning("○ Awaiting Corporate Handoff Completion")
 
-    render_forward_gateway(st.session_state.get("gate_3a_cleared", False), DESK_OPTIONS[3], "TIER 3B: SITE EXECUTION", "t3a_gateway")
+    render_forward_gateway(st.session_state.get("gate_3a_cleared", False), DESK_OPTIONS[5], "TIER 3B: SITE EXECUTION", "t3a_gateway")
 
 # =========================================================
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
 # =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[3]:
+elif st.session_state.active_desk == DESK_OPTIONS[5]:
     render_inception_guard()
     render_breadcrumb(3)
     render_top_action_bar()
@@ -1769,7 +1872,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
 
     if not st.session_state.get("gate_3a_cleared", False):
         st.error("⚠️ ACCESS RESTRICTED: Tier 3A Work Order WO-8821-HARMONIC has not been released by Sarah Jenkins.")
-        st.button("← Return to Tier 3A", on_click=navigate_to, args=(DESK_OPTIONS[2],))
+        st.button("← Return to Tier 3A", on_click=navigate_to, args=(DESK_OPTIONS[4],))
         st.stop()
 
     m1, m2, m3 = st.columns(3)
@@ -1837,14 +1940,14 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
         with b_c1:
             st.button("⌂ Command Post (Tier 1)", key="t3b_back_t1", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
         with b_c2:
-            st.button("➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT", key="t3b_fwd_t4", on_click=navigate_to, args=(DESK_OPTIONS[4],), use_container_width=True, type="primary")
+            st.button("➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT", key="t3b_fwd_t4", on_click=navigate_to, args=(DESK_OPTIONS[6],), use_container_width=True, type="primary")
     else:
         st.button("⌂ Return to Command Post (Tier 1)", key="t3b_back_t1_idle", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
 
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[4]:
+elif st.session_state.active_desk == DESK_OPTIONS[6]:
     render_inception_guard()
     render_breadcrumb(4)
     render_top_action_bar()
