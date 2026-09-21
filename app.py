@@ -1077,7 +1077,6 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     scale = active_capex / book_config["default_capex"]
     live_burn = book_config["daily_burn_base"] * scale
     accrued_demurrage = 0 if st.session_state.get("burn_halted", False) else live_burn * 7.0
-
     if is_sealed:
         st.markdown(f"""
             <div style="background:#062b19;border:2px solid #00ff88;border-left:8px solid #00ff88;padding:18px 22px;border-radius:8px;margin-bottom:20px;">
@@ -1588,43 +1587,40 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
     roster = sector.get("board_roster", [])
     for d in roster:
         is_pinned = d.get("pinned_to_bottleneck", False)
-        is_selected = d["name"] == st.session_state.selected_director
-        
-        card_class = "director-card-pinned" if is_pinned else "director-card"
-        border_status = "🔴 ACTIVE BOTTLENECK REMIT" if is_pinned and not is_dir_signed else ("✅ SAFE HARBOR CONCURRED" if is_dir_signed and is_pinned else "🟢 COMPLIANT / STANDBY")
-        
-        col_d1, col_d2 = st.columns([3, 1])
-        with col_d1:
-            st.markdown(f"""
-                <div class="{card_class}">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="font-size:1.3rem; color:#ffffff;">{d['name']}</strong>
-                        <span style="font-size:0.85rem; font-weight:800; color:{'#f85149' if is_pinned and not is_dir_signed else '#3fb950'}; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:4px;">
-                            {border_status}
-                        </span>
+        is_done = is_dir_signed if is_pinned else True
+        status_color = "#00ff88" if is_done else "#ef4444"
+        status_label = "✓ RESOLUTION EXECUTED" if is_done and is_pinned else ("🔴 ACTIVE BOTTLENECK" if is_pinned else "🟢 COMPLIANT / STANDBY")
+        st.markdown(f"""
+            <div class="{'director-card-pinned' if is_pinned else 'director-card'}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div>
+                        <strong style="font-size:1.2rem;color:#ffffff;">{d['name']}</strong>
+                        <div style="color:#60a5fa;font-size:.85rem;font-weight:700;margin-top:3px;">{d['seat']}</div>
+                        <div style="color:#94a3b8;font-size:.78rem;margin-top:3px;">Statutory Authority: {d['statutory_role']}</div>
                     </div>
-                    <div style="font-size:1.05rem; color:#58a6ff; font-weight:700; margin: 4px 0;">{d['seat']}</div>
-                    <div style="font-size:0.95rem; color:#c9d1d9;">Statutory Role: <em>{d['statutory_role']}</em></div>
-                    <div style="font-size:0.9rem; color:#8b949e; margin-top:6px;">
-                        Reporting Line: <strong>{d['management_bridge']}</strong> ➔ <strong>{d['subordinate_field_lead']}</strong>
-                    </div>
+                    <span style="background:{status_color};color:{'#04101e' if is_done else '#ffffff'};font-size:.75rem;font-weight:900;padding:3px 8px;border-radius:4px;white-space:nowrap;">{status_label}</span>
                 </div>
-            """, unsafe_allow_html=True)
-        with col_d2:
-            st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
-            if is_selected:
-                st.markdown("""
-                    <div style="background: rgba(46, 160, 67, 0.2); border: 2px solid #2ea043; border-radius: 6px; padding: 12px; text-align: center; font-weight: 800; color: #3fb950; font-size: 0.95rem;">
-                        ✓ ACTIVE DESK VIEW
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                if st.button("➔ Switch to Desk", key=f"sel_dir_{d['name']}", use_container_width=True, type="secondary"):
-                    st.session_state.selected_director = d["name"]
-                    st.rerun()
+                <div style="margin-top:12px;background:#0b1120;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:4px;">
+                    <strong style="color:#93c5fd;font-size:.82rem;">WHAT HAS BEEN DONE:</strong>
+                    <div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">{('Directorate resolution entered into the Corporate Minute Book and field reliance chain prepared.' if is_pinned and is_done else 'Committee remit verified, historical actions logged, and standby controls audited.')}</div>
+                </div>
+                <div style="margin-top:8px;background:{'#0b1c18' if is_done else '#1c1114'};border-left:4px solid {status_color};padding:10px 14px;border-radius:4px;">
+                    <strong style="color:{'#86efac' if is_done else '#fca5a5'};font-size:.82rem;">WHAT NEEDS TO BE DONE:</strong>
+                    <div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">{('Maintain executive oversight and certify the legal secretarial deed.' if is_pinned and is_done else 'Execute DGCL Section 141(e) technical reliance resolution to authorize physical field intervention.' if is_pinned else 'Remain on standby for a regulatory or financial escalation trigger.')}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if is_pinned and not is_dir_signed:
+            if st.button("EXECUTE DR. PENDLETON DGCL SECTION 141(e) RELIANCE RESOLUTION", key="btn_exec_pendleton_inline", type="primary", use_container_width=True):
+                active_inc["director_signed"] = True
+                for sig in active_inc.get("legal_instrument", {}).get("signatories", []):
+                    if "Director" in sig["role"]:
+                        sig["status"] = "COUNTERSIGNED & SEALED"
+                        sig["timestamp"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+                st.rerun()
 
     st.markdown("---")
-    current_d = next((x for x in roster if x["name"] == st.session_state.selected_director), roster[0])
+    current_d = next((x for x in roster if x.get("pinned_to_bottleneck")), roster[0])
     
     if current_d.get("pinned_to_bottleneck"):
         st.markdown(f"### 📜 Formal Fiduciary Protection Instrument ({sector['statute']})")
@@ -1690,14 +1686,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
             
             st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
             if not is_dir_signed:
-                if st.button(f"✍️ Countersign Directorate Indemnity Resolution ({current_d['name']})", use_container_width=True, type="primary"):
-                    active_inc["director_signed"] = True
-                    for sig in inst.get("signatories", []):
-                        if "Director" in sig["role"]:
-                            sig["status"] = "COUNTERSIGNED & SEALED"
-                            sig["timestamp"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-                    st.success("Director concurrence executed. Advancing downward to Tier 3 field desk...")
-                    st.rerun()
+                st.info("Execute the active bottleneck resolution from Dr. Pendleton's inline governance card above.")
             else:
                 nav_col1, nav_col2 = st.columns(2)
                 with nav_col1:
@@ -1771,28 +1760,42 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
 # 7. VIEW: TIER 2B — LEGAL COUNSEL GOVERNANCE & SECRETARIAL DESK
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[3]:
+    is_sealed = st.session_state.docket_inception_sealed
+    g2a = st.session_state.gate_2a_cleared
+    g2b = st.session_state.gate_2b_cleared
     st.markdown("""
         <div style="background:linear-gradient(90deg,#130f26 0%,#1e1b4b 100%);border-left:8px solid #a855f7;padding:18px 24px;border-radius:8px;margin-bottom:20px;">
-            <div style="font-size:1.6rem;font-weight:900;color:#fff;">TIER 2B | LEGAL GOVERNANCE & SECRETARIAL DESK</div>
-            <div style="color:#c084fc;font-size:.9rem;font-weight:700;margin-top:2px;">DGCL SECTION 141(e) STATUTORY RELIANCE & DEED OF INDEMNIFICATION</div>
+            <div style="font-size:1.6rem;font-weight:900;color:#fff;">TIER 2B | LEGAL COUNSEL GOVERNANCE DESK</div>
+            <div style="color:#c084fc;font-size:.9rem;font-weight:700;margin-top:2px;">CORPORATE MINUTE BOOK AUDIT, STATUTORY RELIANCE & DEED OF INDEMNIFICATION</div>
         </div>
     """, unsafe_allow_html=True)
-    st.markdown("#### Statutory Indemnity Deed: Field Professional Engineer")
-    st.markdown("To shield the lead field engineer from individual liability, this deed absorbs execution risk onto the corporate balance sheet under DGCL Section 145.")
+    if not is_sealed:
+        st.warning("SIMULATION NOTICE: Active docket is disarmed. Resolutions remain non-binding until Tier 1 dual-key inception is sealed.")
+    st.markdown("#### Corporate Minute Registry & Statutory Fiduciary Audit")
+    st.markdown(f"""
+    | Committee / Seat | Statutory authority | Legal reliance defense | Minute book status |
+    | --- | --- | --- | --- |
+    | Dr. Arthur Pendleton | Delaware DGCL Section 141(e) | Technical expert reliance shield | {'CERTIFIED' if g2a else 'PENDING RATIFICATION'} |
+    | David Chen (Proxy) | PUCT Protocol Section 4.2 | Regulatory standstill compliance | STANDBY AUDITED |
+    | Eleanor Vance, CPA | ISP98 Rule 5.01 | Letter of credit default mechanics | STANDBY AUDITED |
+    | Executive Chairman | Delaware DGCL Section 141(a) | Business Judgment Rule | COMMITTED |
+    """)
+    st.markdown("#### Binding Indemnity Deed: Field Professional Engineer")
+    st.markdown("To insulate Marcus Vance, PE from contractor spoliation claims or licensing complaints, General Counsel must execute the corporate indemnification agreement under DGCL Section 145.")
     if not st.session_state.gate_2b_cleared:
-        st.warning("EXECUTION PENDING: Marcus Vance, PE remains restrained from physical intervention until the deed is sealed.")
-        if st.button("EXECUTE & ENTER DEED OF INDEMNITY INTO CORPORATE MINUTE BOOK", key="btn_seal_2b", type="primary", use_container_width=True):
+        st.warning("SECRETARIAL ACTION REQUIRED: Marcus Vance, PE cannot be dispatched until this corporate indemnity deed is executed.")
+        if st.button("EXECUTE & SEAL DEED OF INDEMNITY (DGCL SECTION 145)", key="btn_seal_2b", type="primary", use_container_width=True):
             st.session_state.gate_2b_cleared = True
             st.session_state.gate_2_cleared = True
             st.rerun()
     else:
-        st.success("DEED OF INDEMNITY EXECUTED & SEALED.")
+        st.success("DEED OF INDEMNITY EXECUTED & SEALED. Corporate liability shield active.")
         st.code("sha256:f48a901c22e987102ce094a318894cb10e4a77e9921004ab12fedcba98765432", language="text")
     nav_col1, nav_col2 = st.columns(2)
     with nav_col1:
         st.button("View Chairman Boardroom (Tier 2A)", key="t2b_to_t2a", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True)
     with nav_col2:
-        if st.session_state.gate_2a_cleared and st.session_state.gate_2b_cleared:
+        if g2a and g2b:
             st.button("PROCEED TO TIER 3A: OPERATIONS DISPATCH", key="t2b_to_t3a", on_click=navigate_to, args=(DESK_OPTIONS[4],), use_container_width=True, type="primary")
         else:
             st.info("Both Board Ratification (2A) and Legal Indemnity Deed (2B) must be sealed before dispatch.")
