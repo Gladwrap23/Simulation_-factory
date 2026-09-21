@@ -1060,7 +1060,6 @@ active_inc = sector["incidents"][st.session_state.selected_incident_id]
 is_resolved = active_inc.get("status") == "RESOLVED"
 is_dir_signed = active_inc.get("director_signed", False) or is_resolved
 is_bypassed = active_inc.get("manual_pe_bypass", False) or is_resolved
-
 if st.session_state.trigger_print:
     st.session_state.trigger_print = False
     components.html("<script>window.parent.print();</script>", height=0, width=0)
@@ -1071,18 +1070,29 @@ if st.session_state.trigger_print:
 if st.session_state.active_desk == DESK_OPTIONS[0]:
     cfg = book_config
 
-    # Ensure capex state exists
+    # 1. State Synchronization Callbacks
     if "capex_baseline" not in st.session_state:
         st.session_state.capex_baseline = float(cfg["default_capex"])
+    if "slider_chair_capex" not in st.session_state:
+        st.session_state.slider_chair_capex = float(st.session_state.capex_baseline)
     if "burn_halted" not in st.session_state:
         st.session_state.burn_halted = False
+
+    def set_capex_preset(target_amount):
+        """Forces both the baseline state and slider state to update simultaneously."""
+        st.session_state.capex_baseline = float(target_amount)
+        st.session_state.slider_chair_capex = float(target_amount)
+
+    def on_slider_move():
+        """Updates baseline whenever the slider is manually dragged."""
+        st.session_state.capex_baseline = float(st.session_state.slider_chair_capex)
 
     is_sealed = st.session_state.get("docket_inception_sealed", False)
     k1 = st.session_state.get("key_chairman_armed", False)
     k2 = st.session_state.get("key_counsel_armed", False)
     current_capex = float(st.session_state.capex_baseline)
 
-    # 1. COMMAND STATUS HUD BANNER
+    # 2. STATUS BANNER
     if is_sealed:
         st.markdown(f"""
             <div style="background: #062b19; border: 2px solid #00ff88; border-left: 8px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -1091,8 +1101,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
                     <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">ARMED & BOUND</span>
                 </div>
                 <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
-                    Dual-Key Interlock satisfied. Balance sheet floor locked at <strong>${current_capex:,.0f} USD</strong>. 
-                    Inception Merkle Root: <code>{st.session_state.get('inception_hash', '')[:28]}...</code>
+                    Dual-Key satisfied. Balance sheet committed at <strong>${current_capex:,.0f} USD</strong>.
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1104,7 +1113,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
                     <span style="background: #ffa500; color: #000; font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">SANDBOX</span>
                 </div>
                 <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
-                    Recalibrate capital exposure and holding burn velocity below. Arming Key 1 commits this balance-sheet floor to the formal court filing.
+                    Recalibrate capital exposure below. Turning Key 1 binds this balance-sheet floor to the court docket.
                 </div>
                 <div style="display: flex; gap: 20px; margin-top: 8px; font-size: 0.82rem; font-weight: 800;">
                     <span style="color: {'#00ff88' if k1 else '#ff4b4b'};">{'✓' if k1 else '○'} KEY 1 (CHAIRMAN): {'ARMED & COMMITTED' if k1 else 'PENDING AUTHORIZATION'}</span>
@@ -1113,47 +1122,31 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         """, unsafe_allow_html=True)
 
-    # 2. CAPEX RECALIBRATION PRESETS (NATIVE REACTIVE BUTTONS)
+    # 3. CAPEX PRESETS WITH DIRECT ON_CLICK CALLBACKS
     st.markdown("#### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
-    
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         base_val = float(cfg["default_capex"])
-        is_active_base = (current_capex == base_val)
-        if st.button(f"⭐ Reset Base (${base_val/1e6:,.1f}M)", key="btn_capex_base", use_container_width=True, type="primary" if is_active_base else "secondary"):
-            st.session_state.capex_baseline = base_val
-            st.rerun()
+        st.button(f"⭐ Reset Base (${base_val/1e6:,.1f}M)", key="btn_px_base", on_click=set_capex_preset, args=(base_val,), use_container_width=True)
     with c2:
-        is_50m = (current_capex == 50_000_000.0)
-        if st.button("$50M Mini-Build", key="btn_capex_50m", use_container_width=True, type="primary" if is_50m else "secondary"):
-            st.session_state.capex_baseline = 50_000_000.0
-            st.rerun()
+        st.button("$50M Mini-Build", key="btn_px_50m", on_click=set_capex_preset, args=(50_000_000.0,), use_container_width=True)
     with c3:
-        is_150m = (current_capex == 150_000_000.0)
-        if st.button("$150M Utility-Scale", key="btn_capex_150m", use_container_width=True, type="primary" if is_150m else "secondary"):
-            st.session_state.capex_baseline = 150_000_000.0
-            st.rerun()
+        st.button("$150M Utility-Scale", key="btn_px_150m", on_click=set_capex_preset, args=(150_000_000.0,), use_container_width=True)
     with c4:
-        is_300m = (current_capex == 300_000_000.0)
-        if st.button("$300M Giga-Facility", key="btn_capex_300m", use_container_width=True, type="primary" if is_300m else "secondary"):
-            st.session_state.capex_baseline = 300_000_000.0
-            st.rerun()
+        st.button("$300M Giga-Facility", key="btn_px_300m", on_click=set_capex_preset, args=(300_000_000.0,), use_container_width=True, type="primary" if current_capex == 300_000_000.0 else "secondary")
 
-    # Fine Adjustment Slider
-    new_slider_val = st.slider(
+    # 4. SLIDER BOUND DIRECTLY TO ON_CHANGE
+    st.slider(
         "Fine CapEx Recalibration ($ USD):",
         min_value=25_000_000.0,
         max_value=500_000_000.0,
-        value=current_capex,
         step=5_000_000.0,
         format="$%d",
-        key="slider_chair_capex"
+        key="slider_chair_capex",
+        on_change=on_slider_move
     )
-    if new_slider_val != current_capex:
-        st.session_state.capex_baseline = new_slider_val
-        st.rerun()
 
-    # 3. DYNAMIC BURN & DEMURRAGE CALCULATIONS
+    # 5. DYNAMIC BURN CALCULATIONS
     scale_factor = current_capex / float(cfg["default_capex"])
     daily_burn = float(cfg["daily_burn_base"]) * scale_factor
     accrued_7day = daily_burn * 7.0
@@ -1169,7 +1162,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         m2.metric("Daily Holding Burn", f"${daily_burn:,.2f} / day")
         m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}")
 
-    # 4. COMMERCIAL STANDSTILL BREAKER (NATIVE TOGGLE BUTTON)
+    # 6. STANDSTILL CIRCUIT BREAKER
     st.write("")
     if not st.session_state.burn_halted:
         if st.button("🛑 ENGAGE COMMERCIAL STANDSTILL (FREEZE DEMURRAGE ACCRUAL)", key="btn_standstill_t1a", use_container_width=True):
@@ -1181,7 +1174,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             st.session_state.burn_halted = False
             st.rerun()
 
-    # 5. KEY 1: CHAIRMAN COMMERCIAL RELEASE (NATIVE REACTIVE BUTTON)
+    # 7. KEY 1 CONTROL
     st.markdown("---")
     st.markdown("#### 🔑 Key 1: Executive Chairman Commercial Release")
     if not k1:
@@ -1202,7 +1195,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             _evaluate_dual_seal()
             st.rerun()
 
-    # 6. DUAL INTERLOCK GATEWAY TO DOWNSTREAM DESKS
+    # 8. DOWNSTREAM NAVIGATION
     st.write("")
     nav_c1, nav_c2 = st.columns(2)
     with nav_c1:
