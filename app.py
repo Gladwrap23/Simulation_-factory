@@ -323,7 +323,7 @@ st.markdown("""
             border-radius: 8px;
             padding: 14px 16px;
             margin-bottom: 16px;
-        }
+        
 
         .director-card {
             background-color: #161b22;
@@ -1062,6 +1062,78 @@ if st.session_state.trigger_print:
 # 4. VIEW: TIER 1 — CHAIRMAN TACTICAL COMMAND POST
 # =========================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
+    # Strategic inception command layer.
+    is_sealed = st.session_state.docket_inception_sealed
+    k1 = st.session_state.key_chairman_armed
+    k2 = st.session_state.key_counsel_armed
+    active_capex = st.session_state.get("capex_baseline", book_config["default_capex"])
+    scale = active_capex / book_config["default_capex"]
+    live_burn = book_config["daily_burn_base"] * scale
+    accrued_demurrage = 0 if st.session_state.get("burn_halted", False) else live_burn * 7.0
+
+    if is_sealed:
+        st.markdown(f"""
+            <div style="background:#062b19;border:2px solid #00ff88;border-left:8px solid #00ff88;padding:18px 22px;border-radius:8px;margin-bottom:20px;">
+                <strong style="font-size:1.15rem;color:#00ff88;">LOCKED DOCKET INCEPTION CHARTER // ACTIVE LITIGATION REGIME</strong>
+                <div style="color:#cbd5e0;font-size:.88rem;margin-top:6px;">Dual-Key Interlock satisfied. Balance sheet baseline locked at <strong style="color:#fff;">${active_capex:,.2f} USD</strong>. Privilege wall dropped at <strong>{st.session_state.inception_timestamp}</strong>. Contractual cure clock running against {book_config['counterparty']}.</div>
+                <div style="font-family:monospace;font-size:.75rem;color:#94a3b8;margin-top:6px;">Immutable Inception Merkle Root: {st.session_state.inception_hash}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+            <div style="background:#1c1408;border:2px solid #ffa500;border-left:8px solid #ffa500;padding:18px 22px;border-radius:8px;margin-bottom:20px;">
+                <strong style="font-size:1.15rem;color:#ffa500;">STRATEGIC SANDBOX MODE // NON-BINDING SCENARIO MODELING</strong>
+                <div style="color:#cbd5e0;font-size:.88rem;margin-top:6px;">Exploratory balance-sheet scenarios are active. Downstream physical execution remains on hold pending dual-key authorization.</div>
+                <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;font-size:.82rem;font-weight:800;">
+                    <span style="color:{'#00ff88' if k1 else '#ff4b4b'};">{'✓' if k1 else '○'} KEY 1 CHAIRMAN: {'ARMED' if k1 else 'PENDING'}</span>
+                    <span style="color:{'#00ff88' if k2 else '#ff4b4b'};">{'✓' if k2 else '○'} KEY 2 COUNSEL: {'ARMED' if k2 else 'PENDING'}</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    tab_chair, tab_counsel = st.tabs(["CHAIRMAN COMMERCIAL COMMAND", "GENERAL COUNSEL LEGAL CHAMBERS"])
+    with tab_chair:
+        st.markdown(f"**COMMERCIAL EXPOSURE RECALIBRATION:** {book_config['docket']}")
+        preset_cols = st.columns(4)
+        presets = [("Reset Base", book_config["default_capex"]), ("$50M Mini-Build", 50_000_000.0), ("$150M Utility-Scale", 150_000_000.0), ("$300M Giga-Facility", 300_000_000.0)]
+        for preset_col, (label, value) in zip(preset_cols, presets):
+            if preset_col.button(label, key=f"inception_{value}", use_container_width=True):
+                st.session_state.capex_baseline = value
+                st.rerun()
+        selected_capex = st.slider("Certified Capital at Risk ($ USD)", 25_000_000.0, 500_000_000.0, float(active_capex), 5_000_000.0, format="$%.0f", key="inception_capex")
+        if selected_capex != active_capex:
+            st.session_state.capex_baseline = selected_capex
+            st.rerun()
+        metric_cols = st.columns(3)
+        metric_cols[0].metric("Balance Sheet CapEx", f"${selected_capex:,.0f}")
+        metric_cols[1].metric("Unexcused Daily Burn", f"${live_burn:,.2f}/day")
+        metric_cols[2].metric("7-Day Accrued Demurrage", f"${accrued_demurrage:,.2f}")
+        if not st.session_state.get("burn_halted", False):
+            st.button("ENGAGE COMMERCIAL STANDSTILL", key="inception_halt", use_container_width=True, on_click=lambda: st.session_state.update(burn_halted=True))
+        else:
+            st.button("RESUME LIVE UNEXCUSED ACCRUAL", key="inception_resume", use_container_width=True, on_click=lambda: st.session_state.update(burn_halted=False))
+        st.markdown("#### Key 1: Executive Chairman Commercial Release")
+        st.button("DISARM KEY 1" if k1 else "ENGAGE KEY 1: COMMIT BALANCE SHEET", key="inception_key1", on_click=toggle_chairman_key, type="primary", use_container_width=True)
+    with tab_counsel:
+        st.markdown(f"**PRIVILEGE CURTAIN & STATUTORY RELIANCE LEDGER**  \nGoverning law: **{selected_jurisdiction}**")
+        st.markdown("""
+        | Statutory pillar | Required artifact | Custodial status |
+        | --- | --- | --- |
+        | DGCL Section 141(e) | Board technical reliance resolution | Verified and ready |
+        | FRE 803(6) | Contemporaneous work order WO-8821-HARMONIC | Logged and stamped |
+        | FRE 902(13) and (14) | COMTRADE oscillography and calibration certificate | Pending field PE seal |
+        | Turnkey EPC Clause 11.2 | EDI transmission and cure receipt | Pre-staged |
+        """)
+        st.markdown("#### Key 2: General Counsel Statutory & Privilege Release")
+        st.button("DISARM KEY 2" if k2 else "ENGAGE KEY 2: DROP PRIVILEGE WALL", key="inception_key2", on_click=toggle_counsel_key, type="primary", use_container_width=True)
+
+    st.divider()
+    if is_sealed:
+        st.success("DUAL-KEY AUTHORIZATION COMPLETE: PROCEED TO GOVERNANCE DESK")
+        st.button("PROCEED TO TIER 2: DIRECTORATE GOVERNANCE DESK", key="inception_to_t2", on_click=navigate_to, args=(DESK_OPTIONS[1],), use_container_width=True, type="primary")
+    else:
+        st.info("Downstream physical execution desks remain locked. Arm both keys to instantiate the active docket.")
+
     render_breadcrumb(0)
     render_top_action_bar()
     st.markdown("#### 🔐 Dual-Key Inception Interlock")
