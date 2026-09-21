@@ -428,6 +428,47 @@ DESK_OPTIONS = [
 if "active_desk" not in st.session_state:
     st.session_state.active_desk = DESK_OPTIONS[0]
 
+# --- DUAL-KEY INCEPTION INTERLOCK STATE ---
+if "key_chairman_armed" not in st.session_state:
+    st.session_state.key_chairman_armed = False
+if "key_counsel_armed" not in st.session_state:
+    st.session_state.key_counsel_armed = False
+if "docket_inception_sealed" not in st.session_state:
+    st.session_state.docket_inception_sealed = False
+if "inception_timestamp" not in st.session_state:
+    st.session_state.inception_timestamp = None
+if "inception_hash" not in st.session_state:
+    st.session_state.inception_hash = None
+
+def toggle_chairman_key():
+    st.session_state.key_chairman_armed = not st.session_state.key_chairman_armed
+    _check_dual_key_seal()
+
+def toggle_counsel_key():
+    st.session_state.key_counsel_armed = not st.session_state.key_counsel_armed
+    _check_dual_key_seal()
+
+def _check_dual_key_seal():
+    if st.session_state.key_chairman_armed and st.session_state.key_counsel_armed:
+        if not st.session_state.docket_inception_sealed:
+            st.session_state.docket_inception_sealed = True
+            st.session_state.inception_timestamp = "21 Sept 2026 14:00:00 UTC"
+            st.session_state.inception_hash = "sha256:7a9e8841c30f4d89a2b1011894cf9983de092bbfca31998e104928fe88102abc"
+    else:
+        st.session_state.docket_inception_sealed = False
+
+def render_inception_guard():
+    if not st.session_state.get("docket_inception_sealed", False):
+        st.markdown("""
+            <div style="background: #1c1408; border: 1px solid #ffa500; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px;">
+                <strong style="color: #ffa500;">⚠️ SIMULATION / READ-ONLY NOTICE:</strong>
+                <span style="color: #cbd5e0; font-size: 0.88rem;">
+                    The active docket has not been formally instated under the Dual-Key Protocol.
+                    Actions taken here remain non-binding simulations.
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+
 # --- SAFE NAVIGATION HANDLER ---
 def navigate_to(target_desk):
     st.session_state.active_desk = target_desk
@@ -1023,6 +1064,22 @@ if st.session_state.trigger_print:
 if st.session_state.active_desk == DESK_OPTIONS[0]:
     render_breadcrumb(0)
     render_top_action_bar()
+    st.markdown("#### 🔐 Dual-Key Inception Interlock")
+    key_col1, key_col2 = st.columns(2)
+    with key_col1:
+        chairman_label = "🔓 DISARM CHAIRMAN KEY" if st.session_state.key_chairman_armed else "🔒 ARM CHAIRMAN KEY"
+        st.button(chairman_label, key="toggle_chairman_key", on_click=toggle_chairman_key, use_container_width=True, type="primary" if st.session_state.key_chairman_armed else "secondary")
+        st.caption("Chairman console: " + ("ARMED" if st.session_state.key_chairman_armed else "DISARMED"))
+    with key_col2:
+        counsel_label = "🔓 DISARM COUNSEL KEY" if st.session_state.key_counsel_armed else "🔒 ARM COUNSEL KEY"
+        st.button(counsel_label, key="toggle_counsel_key", on_click=toggle_counsel_key, use_container_width=True, type="primary" if st.session_state.key_counsel_armed else "secondary")
+        st.caption("Counsel console: " + ("ARMED" if st.session_state.key_counsel_armed else "DISARMED"))
+
+    if st.session_state.docket_inception_sealed:
+        st.success(f"DOCKET INCEPTION SEALED | {st.session_state.inception_timestamp} | {st.session_state.inception_hash}")
+    else:
+        st.warning("WORKING SANDBOX: Arm both consoles to formally instate the active docket.")
+
     # Ultra-Prominent Tier 1 Header
     st.markdown(f"""
         <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
@@ -1340,6 +1397,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
 # 5. VIEW: TIER 2 — DIRECTORATE GOVERNANCE DESK (ELEVATED)
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[1]:
+    render_inception_guard()
     render_breadcrumb(1)
     render_top_action_bar()
     top_col1, top_col2 = st.columns([4, 1])
@@ -1568,6 +1626,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
 # 6. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[2]:
+    render_inception_guard()
     render_breadcrumb(2)
     render_top_action_bar()
     st.markdown("### Tier 3A | Engineering Operations Command")
@@ -1624,6 +1683,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[3]:
+    render_inception_guard()
     render_breadcrumb(3)
     render_top_action_bar()
     st.markdown("""
@@ -1713,6 +1773,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
 elif st.session_state.active_desk == DESK_OPTIONS[4]:
+    render_inception_guard()
     render_breadcrumb(4)
     render_top_action_bar()
     t3b_sealed = st.session_state.get("gate_3b_cleared", False)
