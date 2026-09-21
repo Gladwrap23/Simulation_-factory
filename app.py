@@ -430,6 +430,12 @@ DESK_OPTIONS = [
 if "active_desk" not in st.session_state:
     st.session_state.active_desk = DESK_OPTIONS[0]
 
+# --- DUAL-TRACK GROUPING (COMMERCIAL/OPS vs LEGAL/STATUTORY) ---
+TRACK_COMMERCIAL = "👔 Commercial & Operations Track"
+TRACK_LEGAL = "⚖️ Legal & Statutory Track"
+COMMERCIAL_DESKS = [DESK_OPTIONS[0], DESK_OPTIONS[2], DESK_OPTIONS[4], DESK_OPTIONS[5]]
+LEGAL_DESKS = [DESK_OPTIONS[1], DESK_OPTIONS[3], DESK_OPTIONS[6]]
+
 # --- DUAL-KEY INCEPTION INTERLOCK STATE ---
 if "key_chairman_armed" not in st.session_state:
     st.session_state.key_chairman_armed = False
@@ -481,6 +487,15 @@ def navigate_to(target_desk):
     st.session_state.active_desk = target_desk
     if "nav_radio" in st.session_state:
         st.session_state.nav_radio = target_desk
+    # Keep the dual-track sidebar radios in lockstep with cross-track jumps.
+    if target_desk in LEGAL_DESKS:
+        st.session_state.active_track_selector = TRACK_LEGAL
+        if "radio_legal_desks" in st.session_state:
+            st.session_state.radio_legal_desks = target_desk
+    else:
+        st.session_state.active_track_selector = TRACK_COMMERCIAL
+        if "radio_commercial_desks" in st.session_state:
+            st.session_state.radio_commercial_desks = target_desk
 
 def on_sidebar_change():
     st.session_state.active_desk = st.session_state.nav_radio
@@ -957,18 +972,46 @@ with st.sidebar:
     scale_factor = current_calib_capex / sector["asset_cap"]
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-    st.markdown("#### Command Desk")
-    
-    selected_desk = st.radio(
-        "Command Desk:",
-        DESK_OPTIONS,
-        index=DESK_OPTIONS.index(st.session_state.active_desk) if st.session_state.active_desk in DESK_OPTIONS else 0,
-        key="nav_radio",
-        on_change=on_sidebar_change,
-        label_visibility="collapsed"
+
+    # ==============================================================================
+    # SIDEBAR: DUAL-TRACK NAVIGATION ENGINE
+    # ==============================================================================
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🎛️ Command Desk")
+
+    # Top-level Track Selector
+    track_selection = st.sidebar.radio(
+        "Select Operating Track:",
+        [TRACK_COMMERCIAL, TRACK_LEGAL],
+        key="active_track_selector"
     )
+
+    if track_selection == TRACK_COMMERCIAL:
+        if st.session_state.get("active_desk") not in COMMERCIAL_DESKS:
+            st.session_state.active_desk = COMMERCIAL_DESKS[0]
+
+        selected_desk = st.sidebar.radio(
+            "Commercial Hierarchy:",
+            COMMERCIAL_DESKS,
+            index=COMMERCIAL_DESKS.index(st.session_state.active_desk),
+            key="radio_commercial_desks"
+        )
+        st.session_state.active_desk = selected_desk
+
+    else:
+        if st.session_state.get("active_desk") not in LEGAL_DESKS:
+            st.session_state.active_desk = LEGAL_DESKS[0]
+
+        selected_desk = st.sidebar.radio(
+            "Legal Hierarchy:",
+            LEGAL_DESKS,
+            index=LEGAL_DESKS.index(st.session_state.active_desk),
+            key="radio_legal_desks"
+        )
+        st.session_state.active_desk = selected_desk
+
     st.session_state["nav_desk_selection"] = st.session_state.active_desk
-    
+
     st.divider()
     st.markdown("""
         <div style="font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">
@@ -1069,7 +1112,6 @@ if st.session_state.trigger_print:
 # ==============================================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
     cfg = book_config
-
     # 1. State Synchronization Callbacks
     if "capex_baseline" not in st.session_state:
         st.session_state.capex_baseline = float(cfg["default_capex"])
