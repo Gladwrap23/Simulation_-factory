@@ -1204,49 +1204,47 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         m2.metric("Daily Holding Burn", f"${daily_burn:,.2f} / day")
         m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}")
 
-    # 6. STANDSTILL CIRCUIT BREAKER
+    # 6. Standstill Callbacks
+    def toggle_standstill_on():
+        st.session_state.burn_halted = True
+
+    def toggle_standstill_off():
+        st.session_state.burn_halted = False
+
+    # Reactive Standstill Controls
     st.write("")
     if not st.session_state.burn_halted:
-        if st.button("🛑 ENGAGE COMMERCIAL STANDSTILL (FREEZE DEMURRAGE ACCRUAL)", key="btn_standstill_t1a", use_container_width=True):
-            st.session_state.burn_halted = True
-            st.rerun()
+        st.button("🛑 ENGAGE COMMERCIAL STANDSTILL (FREEZE DEMURRAGE ACCRUAL)",
+                  key="btn_halt_burn", on_click=toggle_standstill_on, use_container_width=True)
     else:
-        st.warning("⏸️ Commercial Standstill is currently ACTIVE. Holding bleed has been stopped for commercial negotiations.")
-        if st.button("▶️ RESUME LIVE DEMURRAGE ACCRUAL (LIFT STANDSTILL)", key="btn_resume_t1a", use_container_width=True, type="primary"):
-            st.session_state.burn_halted = False
-            st.rerun()
+        st.warning("⏸️ Commercial Standstill ACTIVE: Accrual frozen.")
+        st.button("▶️ RESUME LIVE DEMURRAGE ACCRUAL (LIFT STANDSTILL)",
+                  key="btn_run_burn", on_click=toggle_standstill_off, type="primary", use_container_width=True)
 
-    # 7. KEY 1 CONTROL
+    # Key 1 Action
     st.markdown("---")
     st.markdown("#### 🔑 Key 1: Executive Chairman Commercial Release")
     if not k1:
-        if st.button("⚡ ENGAGE KEY 1: COMMIT BALANCE SHEET & AUTHORIZE DISPUTE FILING", key="btn_arm_k1", type="primary", use_container_width=True):
-            st.session_state.key_chairman_armed = True
-            _evaluate_dual_seal()
-            st.rerun()
-        st.caption(f"Authorizes formal liquidated damages demand against {cfg['counterparty']} and commits ${current_capex:,.0f} USD baseline to docket.")
+        st.button("⚡ ENGAGE KEY 1: COMMIT BALANCE SHEET & ADVANCE",
+                  key="btn_arm_k1", on_click=toggle_chairman_key, type="primary", use_container_width=True)
     else:
-        st.markdown(f"""
-            <div style="background: #062b19; border: 1px solid #00ff88; padding: 14px 18px; border-radius: 6px; margin-bottom: 10px;">
-                <span style="color: #00ff88; font-weight: 800;">✓ KEY 1 COMMITTED:</span> 
-                <span style="color: #ffffff;">Executive Chairman authority executed. Balance-sheet floor locked at <strong>${current_capex:,.0f} USD</strong>.</span>
-            </div>
-        """, unsafe_allow_html=True)
-        if st.button("🔓 Disarm Key 1 (Return to Uncommitted Sandbox)", key="btn_disarm_k1", use_container_width=True):
-            st.session_state.key_chairman_armed = False
-            _evaluate_dual_seal()
-            st.rerun()
+        st.markdown(f'<div style="background: #062b19; border: 1px solid #00ff88; padding: 12px; border-radius: 6px; color: #00ff88; font-weight: 800;">✓ KEY 1 COMMITTED (${current_capex:,.0f} USD)</div>', unsafe_allow_html=True)
+        st.button("🔓 Disarm Key 1 (Return to Sandbox)", key="btn_disarm_k1", on_click=toggle_chairman_key, use_container_width=True)
 
-    # 8. DOWNSTREAM NAVIGATION
+    # COLOR-CODED LINEAR DESCENT GATEWAY
     st.write("")
-    nav_c1, nav_c2 = st.columns(2)
-    with nav_c1:
-        st.button("➔ Inspect General Counsel Chambers (Tier 1B)", key="btn_goto_t1b", on_click=navigate_to, args=(DESK_OPTIONS[1],), use_container_width=True)
-    with nav_c2:
-        if is_sealed:
-            st.button("➔ PROCEED TO DIRECTORATE GOVERNANCE (TIER 2A)", key="btn_goto_t2a_ready", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True, type="primary")
-        else:
-            st.button("🔒 Tier 2A Locked (Requires Dual-Key Seal in Tier 1B)", key="btn_goto_t2a_locked", disabled=True, use_container_width=True)
+    st.markdown("---")
+    if k1:
+        # Key 1 is committed: Light up green and enable immediate descent into Tier 2A
+        st.button("🟢 PROCEED TO TIER 2A: DIRECTORATE GOVERNANCE ➔",
+                  key="btn_advance_to_t2a",
+                  on_click=navigate_to,
+                  args=(COMMERCIAL_DESKS[1],),
+                  type="primary",
+                  use_container_width=True)
+    else:
+        st.button("🔴 TIER 2A LOCKED (Engage Key 1 Above to Proceed)",
+                  key="btn_locked_t2a", disabled=True, use_container_width=True)
 
 # =========================================================
 # 5. VIEW: TIER 1B — GENERAL COUNSEL LEGAL CHAMBERS
