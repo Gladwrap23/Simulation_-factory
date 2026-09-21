@@ -323,7 +323,7 @@ st.markdown("""
             border-radius: 8px;
             padding: 14px 16px;
             margin-bottom: 16px;
-        
+        }
 
         .director-card {
             background-color: #161b22;
@@ -1065,411 +1065,153 @@ if st.session_state.trigger_print:
     st.session_state.trigger_print = False
     components.html("<script>window.parent.print();</script>", height=0, width=0)
 
-# =========================================================
-# 4. VIEW: TIER 1 — CHAIRMAN TACTICAL COMMAND POST
-# =========================================================
+# ==============================================================================
+# TIER 1A: CHAIRMAN TACTICAL COMMAND POST (COMMERCIAL PREROGATIVE)
+# ==============================================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
-    # Strategic inception command layer.
-    is_sealed = st.session_state.docket_inception_sealed
-    k1 = st.session_state.key_chairman_armed
-    k2 = st.session_state.key_counsel_armed
-    active_capex = st.session_state.get("capex_baseline", book_config["default_capex"])
-    scale = active_capex / book_config["default_capex"]
-    live_burn = book_config["daily_burn_base"] * scale
-    accrued_demurrage = 0 if st.session_state.get("burn_halted", False) else live_burn * 7.0
+    cfg = book_config
+
+    # Ensure capex state exists
+    if "capex_baseline" not in st.session_state:
+        st.session_state.capex_baseline = float(cfg["default_capex"])
+    if "burn_halted" not in st.session_state:
+        st.session_state.burn_halted = False
+
+    is_sealed = st.session_state.get("docket_inception_sealed", False)
+    k1 = st.session_state.get("key_chairman_armed", False)
+    k2 = st.session_state.get("key_counsel_armed", False)
+    current_capex = float(st.session_state.capex_baseline)
+
+    # 1. COMMAND STATUS HUD BANNER
     if is_sealed:
         st.markdown(f"""
-            <div style="background:#062b19;border:2px solid #00ff88;border-left:8px solid #00ff88;padding:18px 22px;border-radius:8px;margin-bottom:20px;">
-                <strong style="font-size:1.15rem;color:#00ff88;">LOCKED DOCKET INCEPTION CHARTER // ACTIVE LITIGATION REGIME</strong>
-                <div style="color:#cbd5e0;font-size:.88rem;margin-top:6px;">Dual-Key Interlock satisfied. Balance sheet baseline locked at <strong style="color:#fff;">${active_capex:,.2f} USD</strong>. Privilege wall dropped at <strong>{st.session_state.inception_timestamp}</strong>. Contractual cure clock running against {book_config['counterparty']}.</div>
-                <div style="font-family:monospace;font-size:.75rem;color:#94a3b8;margin-top:6px;">Immutable Inception Merkle Root: {st.session_state.inception_hash}</div>
+            <div style="background: #062b19; border: 2px solid #00ff88; border-left: 8px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.1rem; font-weight: 900; color: #00ff88;">🔒 DOCKET INCEPTION CHARTER SEALED // COMMERCIALLY BOUND</span>
+                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">ARMED & BOUND</span>
+                </div>
+                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
+                    Dual-Key Interlock satisfied. Balance sheet floor locked at <strong>${current_capex:,.0f} USD</strong>. 
+                    Inception Merkle Root: <code>{st.session_state.get('inception_hash', '')[:28]}...</code>
+                </div>
             </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
-            <div style="background:#1c1408;border:2px solid #ffa500;border-left:8px solid #ffa500;padding:18px 22px;border-radius:8px;margin-bottom:20px;">
-                <strong style="font-size:1.15rem;color:#ffa500;">STRATEGIC SANDBOX MODE // NON-BINDING SCENARIO MODELING</strong>
-                <div style="color:#cbd5e0;font-size:.88rem;margin-top:6px;">Exploratory balance-sheet scenarios are active. Downstream physical execution remains on hold pending dual-key authorization.</div>
-                <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;font-size:.82rem;font-weight:800;">
-                    <span style="color:{'#00ff88' if k1 else '#ff4b4b'};">{'✓' if k1 else '○'} KEY 1 CHAIRMAN: {'ARMED' if k1 else 'PENDING'}</span>
-                    <span style="color:{'#00ff88' if k2 else '#ff4b4b'};">{'✓' if k2 else '○'} KEY 2 COUNSEL: {'ARMED' if k2 else 'PENDING'}</span>
+            <div style="background: #1c1408; border: 2px solid #ffa500; border-left: 8px solid #ffa500; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.1rem; font-weight: 900; color: #ffa500;">⚠️ STRATEGIC SANDBOX MODE // NON-BINDING SCENARIO MODELING</span>
+                    <span style="background: #ffa500; color: #000; font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">SANDBOX</span>
+                </div>
+                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
+                    Recalibrate capital exposure and holding burn velocity below. Arming Key 1 commits this balance-sheet floor to the formal court filing.
+                </div>
+                <div style="display: flex; gap: 20px; margin-top: 8px; font-size: 0.82rem; font-weight: 800;">
+                    <span style="color: {'#00ff88' if k1 else '#ff4b4b'};">{'✓' if k1 else '○'} KEY 1 (CHAIRMAN): {'ARMED & COMMITTED' if k1 else 'PENDING AUTHORIZATION'}</span>
+                    <span style="color: {'#00ff88' if k2 else '#ffa500'};">{'✓' if k2 else '○'} KEY 2 (GENERAL COUNSEL): {'ARMED' if k2 else 'PENDING LEGAL CHAMBERS'}</span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-    tab_chair, tab_counsel = st.tabs(["CHAIRMAN COMMERCIAL COMMAND", "GENERAL COUNSEL LEGAL CHAMBERS"])
-    with tab_chair:
-        st.markdown(f"**COMMERCIAL EXPOSURE RECALIBRATION:** {book_config['docket']}")
-        preset_cols = st.columns(4)
-        presets = [("Reset Base", book_config["default_capex"]), ("$50M Mini-Build", 50_000_000.0), ("$150M Utility-Scale", 150_000_000.0), ("$300M Giga-Facility", 300_000_000.0)]
-        for preset_col, (label, value) in zip(preset_cols, presets):
-            if preset_col.button(label, key=f"inception_{value}", use_container_width=True):
-                st.session_state.capex_baseline = value
-                st.rerun()
-        selected_capex = st.slider("Certified Capital at Risk ($ USD)", 25_000_000.0, 500_000_000.0, float(active_capex), 5_000_000.0, format="$%.0f", key="inception_capex")
-        if selected_capex != active_capex:
-            st.session_state.capex_baseline = selected_capex
-            st.rerun()
-        metric_cols = st.columns(3)
-        metric_cols[0].metric("Balance Sheet CapEx", f"${selected_capex:,.0f}")
-        metric_cols[1].metric("Unexcused Daily Burn", f"${live_burn:,.2f}/day")
-        metric_cols[2].metric("7-Day Accrued Demurrage", f"${accrued_demurrage:,.2f}")
-        if not st.session_state.get("burn_halted", False):
-            st.button("ENGAGE COMMERCIAL STANDSTILL", key="inception_halt", use_container_width=True, on_click=lambda: st.session_state.update(burn_halted=True))
-        else:
-            st.button("RESUME LIVE UNEXCUSED ACCRUAL", key="inception_resume", use_container_width=True, on_click=lambda: st.session_state.update(burn_halted=False))
-        st.markdown("#### Key 1: Executive Chairman Commercial Release")
-        st.button("DISARM KEY 1" if k1 else "ENGAGE KEY 1: COMMIT BALANCE SHEET", key="inception_key1", on_click=toggle_chairman_key, type="primary", use_container_width=True)
-    with tab_counsel:
-        st.markdown(f"**PRIVILEGE CURTAIN & STATUTORY RELIANCE LEDGER**  \nGoverning law: **{selected_jurisdiction}**")
-        st.markdown("""
-        | Statutory pillar | Required artifact | Custodial status |
-        | --- | --- | --- |
-        | DGCL Section 141(e) | Board technical reliance resolution | Verified and ready |
-        | FRE 803(6) | Contemporaneous work order WO-8821-HARMONIC | Logged and stamped |
-        | FRE 902(13) and (14) | COMTRADE oscillography and calibration certificate | Pending field PE seal |
-        | Turnkey EPC Clause 11.2 | EDI transmission and cure receipt | Pre-staged |
-        """)
-        st.markdown("#### Key 2: General Counsel Statutory & Privilege Release")
-        st.button("DISARM KEY 2" if k2 else "ENGAGE KEY 2: DROP PRIVILEGE WALL", key="inception_key2", on_click=toggle_counsel_key, type="primary", use_container_width=True)
-
-    st.divider()
-    if is_sealed:
-        st.success("DUAL-KEY AUTHORIZATION COMPLETE: PROCEED TO GOVERNANCE DESK")
-        st.button("PROCEED TO TIER 2: DIRECTORATE GOVERNANCE DESK", key="inception_to_t2", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True, type="primary")
-    else:
-        st.info("Downstream physical execution desks remain locked. Arm both keys to instantiate the active docket.")
-
-    render_breadcrumb(0)
-    render_top_action_bar()
-    st.markdown("#### 🔐 Dual-Key Inception Interlock")
-    key_col1, key_col2 = st.columns(2)
-    with key_col1:
-        chairman_label = "🔓 DISARM CHAIRMAN KEY" if st.session_state.key_chairman_armed else "🔒 ARM CHAIRMAN KEY"
-        st.button(chairman_label, key="toggle_chairman_key", on_click=toggle_chairman_key, use_container_width=True, type="primary" if st.session_state.key_chairman_armed else "secondary")
-        st.caption("Chairman console: " + ("ARMED" if st.session_state.key_chairman_armed else "DISARMED"))
-    with key_col2:
-        counsel_label = "🔓 DISARM COUNSEL KEY" if st.session_state.key_counsel_armed else "🔒 ARM COUNSEL KEY"
-        st.button(counsel_label, key="toggle_counsel_key", on_click=toggle_counsel_key, use_container_width=True, type="primary" if st.session_state.key_counsel_armed else "secondary")
-        st.caption("Counsel console: " + ("ARMED" if st.session_state.key_counsel_armed else "DISARMED"))
-
-    if st.session_state.docket_inception_sealed:
-        st.success(f"DOCKET INCEPTION SEALED | {st.session_state.inception_timestamp} | {st.session_state.inception_hash}")
-    else:
-        st.warning("WORKING SANDBOX: Arm both consoles to formally instate the active docket.")
-
-    # Ultra-Prominent Tier 1 Header
-    st.markdown(f"""
-        <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-            <div style="font-size: 2.2rem; font-weight: 900; color: #ffffff; line-height: 1.2;">
-                TIER 1 | CHAIRMAN TACTICAL COMMAND POST
-            </div>
-            <div style="font-size: 1.15rem; font-weight: 800; color: #00d4ff; margin-top: 6px; letter-spacing: 0.5px;">
-                ⚡ {active_sector.upper()} — {sector['baseline_docket']}
-            </div>
-            <div style="font-size: 0.95rem; font-weight: 600; color: #94a3b8; margin-top: 4px;">
-                ● STATUTORY REGIME: {selected_jurisdiction} | COUNTERPARTY: {book_config['counterparty']}
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Touch-Friendly CapEx Controller for iPad
+    # 2. CAPEX RECALIBRATION PRESETS (NATIVE REACTIVE BUTTONS)
     st.markdown("#### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
     
-    if "capex_baseline" not in st.session_state:
-        st.session_state.capex_baseline = sector["asset_cap"]
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        base_val = float(cfg["default_capex"])
+        is_active_base = (current_capex == base_val)
+        if st.button(f"⭐ Reset Base (${base_val/1e6:,.1f}M)", key="btn_capex_base", use_container_width=True, type="primary" if is_active_base else "secondary"):
+            st.session_state.capex_baseline = base_val
+            st.rerun()
+    with c2:
+        is_50m = (current_capex == 50_000_000.0)
+        if st.button("$50M Mini-Build", key="btn_capex_50m", use_container_width=True, type="primary" if is_50m else "secondary"):
+            st.session_state.capex_baseline = 50_000_000.0
+            st.rerun()
+    with c3:
+        is_150m = (current_capex == 150_000_000.0)
+        if st.button("$150M Utility-Scale", key="btn_capex_150m", use_container_width=True, type="primary" if is_150m else "secondary"):
+            st.session_state.capex_baseline = 150_000_000.0
+            st.rerun()
+    with c4:
+        is_300m = (current_capex == 300_000_000.0)
+        if st.button("$300M Giga-Facility", key="btn_capex_300m", use_container_width=True, type="primary" if is_300m else "secondary"):
+            st.session_state.capex_baseline = 300_000_000.0
+            st.rerun()
 
-    b_col1, b_col2, b_col3, b_col4 = st.columns(4)
-    if b_col1.button("Set $50M Mini-Build"):
-        st.session_state.capex_baseline = 50_000_000.0
-        st.rerun()
-    if b_col2.button("Set Active Book Baseline"):
-        st.session_state.capex_baseline = sector["asset_cap"]
-        st.rerun()
-    if b_col3.button("Set $150M Utility Scale"):
-        st.session_state.capex_baseline = 150_000_000.0
-        st.rerun()
-    if b_col4.button("Set $300M Giga-Facility"):
-        st.session_state.capex_baseline = 300_000_000.0
-        st.rerun()
-
-    slider_capex = st.slider(
+    # Fine Adjustment Slider
+    new_slider_val = st.slider(
         "Fine CapEx Recalibration ($ USD):",
-        min_value=10_000_000.0,
+        min_value=25_000_000.0,
         max_value=500_000_000.0,
-        value=float(st.session_state.capex_baseline),
-        step=2_500_000.0,
-        format="$%.0f"
+        value=current_capex,
+        step=5_000_000.0,
+        format="$%d",
+        key="slider_chair_capex"
     )
-    st.session_state.capex_baseline = slider_capex
-    parsed_capex = int(slider_capex)
+    if new_slider_val != current_capex:
+        st.session_state.capex_baseline = new_slider_val
+        st.rerun()
 
-    default_base = sector["asset_cap"]
-    scale_factor = slider_capex / default_base
-    daily_burn = active_inc.get("base_daily_bleed", 87_264.0) * scale_factor
-    weekly_burn = daily_burn * 7.0
-    crossover_days = slider_capex / daily_burn if daily_burn > 0 else 0
+    # 3. DYNAMIC BURN & DEMURRAGE CALCULATIONS
+    scale_factor = current_capex / float(cfg["default_capex"])
+    daily_burn = float(cfg["daily_burn_base"]) * scale_factor
+    accrued_7day = daily_burn * 7.0
 
-    st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #131722 0%, #1a2234 100%); border: 1px solid #ff4b4b; border-radius: 8px; padding: 18px; margin-top: 15px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255, 75, 75, 0.3); padding-bottom: 12px; margin-bottom: 14px;">
-                <div>
-                    <span style="background-color: #ff4b4b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">ACTIVE CONTRACTUAL BREACH CLAIM</span>
-                    <h3 style="margin: 8px 0 0 0; color: #ffffff; font-size: 1.25rem;">{book_config['contract']}</h3>
-                    <p style="margin: 4px 0 0 0; color: #a0aec0; font-size: 0.82rem;">Liable Counterparty: <strong style="color: #ffffff;">{book_config['counterparty']}</strong> | Governing Law: {book_config['jurisdiction']}</p>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.75rem; color: #ff8080; font-weight: 700; text-transform: uppercase;">Certified Accrued Recovery Demand</div>
-                    <div style="font-size: 1.7rem; font-weight: 900; color: #ff4b4b; line-height: 1.1;">${weekly_burn:,.0f} <span style="font-size: 0.85rem; color: #ffffff;">USD</span></div>
-                    <div style="font-size: 0.78rem; color: #ff8080;">Burn Velocity: ${daily_burn:,.0f} / Day</div>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 0.82rem;">
-                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
-                    <span style="color: #a0aec0; display: block; font-size: 0.72rem;">STATUTORY DEFENSE PREROGATIVE</span>
-                    <strong style="color: #00d4ff;">{book_config['jurisdiction']}</strong> Statutory Shield
-                </div>
-                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
-                    <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CAPITAL UNDER ACTIVE DEFENSE</span>
-                    <strong style="color: #00ff88;">${slider_capex:,.0f} USD</strong> (100% Escrow Intact)
-                </div>
-                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;">
-                    <span style="color: #a0aec0; display: block; font-size: 0.72rem;">CROSSOVER TO TOTAL LOSS</span>
-                    <strong style="color: #ffa500;">{crossover_days:,.1f} Days</strong> (At Current Bleed Rate)
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.write("")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Balance Sheet CapEx", f"${current_capex:,.0f}")
+    
+    if st.session_state.burn_halted:
+        m2.metric("Daily Holding Burn", "$0.00 / day", delta="STANDSTILL ACTIVE", delta_color="inverse")
+        m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}", delta="ACCRUAL FROZEN", delta_color="off")
+    else:
+        m2.metric("Daily Holding Burn", f"${daily_burn:,.2f} / day")
+        m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}")
 
-    total_burn_day = active_inc.get("base_daily_bleed", 87_264.0) * scale_factor if not is_resolved else 0
-    total_burn_wk = total_burn_day * 7
-    dynamic_crossover_days = round(parsed_capex / total_burn_day, 1) if total_burn_day > 0 else 999.9
+    # 4. COMMERCIAL STANDSTILL BREAKER (NATIVE TOGGLE BUTTON)
+    st.write("")
+    if not st.session_state.burn_halted:
+        if st.button("🛑 ENGAGE COMMERCIAL STANDSTILL (FREEZE DEMURRAGE ACCRUAL)", key="btn_standstill_t1a", use_container_width=True):
+            st.session_state.burn_halted = True
+            st.rerun()
+    else:
+        st.warning("⏸️ Commercial Standstill is currently ACTIVE. Holding bleed has been stopped for commercial negotiations.")
+        if st.button("▶️ RESUME LIVE DEMURRAGE ACCRUAL (LIFT STANDSTILL)", key="btn_resume_t1a", use_container_width=True, type="primary"):
+            st.session_state.burn_halted = False
+            st.rerun()
 
-    calibrated_toll_gate = max(25000, int(round(parsed_capex * 0.00085, -3)))
-    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-    sub1, sub2 = st.columns(2)
-    with sub1:
+    # 5. KEY 1: CHAIRMAN COMMERCIAL RELEASE (NATIVE REACTIVE BUTTON)
+    st.markdown("---")
+    st.markdown("#### 🔑 Key 1: Executive Chairman Commercial Release")
+    if not k1:
+        if st.button("⚡ ENGAGE KEY 1: COMMIT BALANCE SHEET & AUTHORIZE DISPUTE FILING", key="btn_arm_k1", type="primary", use_container_width=True):
+            st.session_state.key_chairman_armed = True
+            _evaluate_dual_seal()
+            st.rerun()
+        st.caption(f"Authorizes formal liquidated damages demand against {cfg['counterparty']} and commits ${current_capex:,.0f} USD baseline to docket.")
+    else:
         st.markdown(f"""
-            <div class="exec-metric-card-secondary">
-                <div class="exec-metric-label" style="font-size:0.8rem; margin-bottom:2px;">{t['toll_fee']}</div>
-                <div class="exec-metric-val-secondary">{curr_sym}{calibrated_toll_gate:,}</div>
-                <div style="color:#3fb950; font-size:0.85rem; font-weight:600;">{t['escrow_desc']}</div>
+            <div style="background: #062b19; border: 1px solid #00ff88; padding: 14px 18px; border-radius: 6px; margin-bottom: 10px;">
+                <span style="color: #00ff88; font-weight: 800;">✓ KEY 1 COMMITTED:</span> 
+                <span style="color: #ffffff;">Executive Chairman authority executed. Balance-sheet floor locked at <strong>${current_capex:,.0f} USD</strong>.</span>
             </div>
         """, unsafe_allow_html=True)
-    with sub2:
-        st.markdown(f"""
-            <div class="exec-metric-card-secondary">
-                <div class="exec-metric-label" style="font-size:0.8rem; margin-bottom:2px;">{t['session_window']}</div>
-                <div class="exec-metric-val-secondary">09:42</div>
-                <div style="color:#3fb950; font-size:0.85rem; font-weight:600;">{t['session_desc']}</div>
-            </div>
-        """, unsafe_allow_html=True)
+        if st.button("🔓 Disarm Key 1 (Return to Uncommitted Sandbox)", key="btn_disarm_k1", use_container_width=True):
+            st.session_state.key_chairman_armed = False
+            _evaluate_dual_seal()
+            st.rerun()
 
-    st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
-    with st.container(border=True):
-        st.markdown("### 🎙️ Instant Diagnostic Agent Conference")
-        diag_col1, diag_col2, diag_col3 = st.columns([1, 1, 2])
-        with diag_col1:
-            if st.button(t["why_stalled"], use_container_width=True, type="primary" if st.session_state.conference_focus == "WHY_STALLED" else "secondary"):
-                st.session_state.conference_focus = "WHY_STALLED"
-                st.rerun()
-        with diag_col2:
-            if st.button(t["what_unblocks"], use_container_width=True, type="primary" if st.session_state.conference_focus == "WHAT_UNBLOCKS" else "secondary"):
-                st.session_state.conference_focus = "WHAT_UNBLOCKS"
-                st.rerun()
-        with diag_col3:
-            custom_query = st.text_input("3. Custom Interrogation Query", placeholder=t["interrogate_hint"], label_visibility="collapsed")
-            if custom_query:
-                st.session_state.conference_focus = "CUSTOM"
-                st.session_state.custom_query_text = custom_query
-            
-        st.markdown("---")
-        if st.session_state.conference_focus == "WHY_STALLED":
-            st.markdown("🔴 **Telemetry Agent:** *'Physical telemetry is nominal (THD 4.1% < 5.0%). Marcus Vance refuses sign-off because Apex OEM threatens warranty cancellation under Clause 14.b. Deadlock is contractual, not physical.'*")
-        elif st.session_state.conference_focus == "WHAT_UNBLOCKS":
-            inst = active_inc.get("legal_instrument", {})
-            st.markdown(f"🟢 **Fiduciary Shield Agent:** *'The **Directorate Indemnity & Statutory Hold-Harmless Resolution** pursuant to **Delaware DGCL § 141(e)**.'* \n\n"
-                        f"📄 **Plain-English Document Summary:** Dr. Arthur Pendleton countersigns the reliance certificate, absorbing personal liability from Lead PE Marcus Vance onto the corporate balance sheet.")
+    # 6. DUAL INTERLOCK GATEWAY TO DOWNSTREAM DESKS
+    st.write("")
+    nav_c1, nav_c2 = st.columns(2)
+    with nav_c1:
+        st.button("➔ Inspect General Counsel Chambers (Tier 1B)", key="btn_goto_t1b", on_click=navigate_to, args=(DESK_OPTIONS[1],), use_container_width=True)
+    with nav_c2:
+        if is_sealed:
+            st.button("➔ PROCEED TO DIRECTORATE GOVERNANCE (TIER 2A)", key="btn_goto_t2a_ready", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True, type="primary")
         else:
-            st.markdown(f"⚡ **Active Interrogation Standby ({TODAY_STR}):** Agents synchronized with Delaware DGCL § 141. Select an action above or tap the Holding Burn Circuit Breaker below to halt exposure.")
-
-    st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
-    with st.container(border=True):
-        if not is_resolved:
-            st.markdown(f"""
-                <div style="background: rgba(248, 81, 73, 0.12); border: 2px solid #f85149; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px;">
-                    <div style="color: #f85149; font-weight: 900; font-size: 1.25rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;">
-                        ⚡ HOLDING BURN CIRCUIT BREAKER
-                    </div>
-                    <div style="color: #f0f6fc; font-size: 1.05rem; line-height: 1.6;">
-                        {t['tap_to_halt_desc']}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown('<div class="tap-to-halt-container">', unsafe_allow_html=True)
-            if st.button(t['tap_to_halt_btn'], use_container_width=True):
-                execute_unified_circuit_breaker(active_inc, total_burn_day)
-                st.session_state.conference_focus = "DEFAULT"
-                st.success("Executive directive executed. Capital defended across all branches.")
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div style="background: rgba(46, 160, 67, 0.15); border: 2px solid #2ea043; border-radius: 8px; padding: 18px 20px; text-align: center; margin-bottom: 10px;">
-                    <div style="color: #3fb950; font-weight: 900; font-size: 1.35rem; margin-bottom: 6px;">
-                        {t['circuit_defended']}
-                    </div>
-                    <div style="color: #f0f6fc; font-size: 1.05rem;">
-                        Directive is sealed. Lead PE Marcus Vance is protected under Delaware DGCL § 141. Work order completed at 100%.
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            if st.button("↩️ Revert to Neutral (Simulate Exposure)", use_container_width=True):
-                reset_incident_to_neutral(active_inc)
-                st.rerun()
-
-    st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
-    st.markdown(f"### {t['branches_title']}")
-    b_col1, b_col2, b_col3 = st.columns(3)
-
-    def render_branch_card(title, domain, director_name, agent_name, status_badge, metric_txt, card_type):
-        border_col = "#2ea043" if card_type == "green" else ("#e3b341" if card_type == "amber" else "#da3633")
-        bg_col = "rgba(46, 160, 67, 0.18)" if card_type == "green" else ("rgba(227, 179, 65, 0.18)" if card_type == "amber" else "rgba(218, 54, 51, 0.18)")
-        
-        return f"""
-        <div style="background-color: {bg_col}; border: 2px solid {border_col}; border-radius: 8px; padding: 22px; height: 100%; display: flex; flex-direction: column; gap: 14px;">
-            <h3 style="margin:0; color:#ffffff; font-size:1.4rem; font-weight:800;">{title}</h3>
-            <div style="color:#ffffff; font-size:1.15rem; font-weight:700; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 4px;">
-                {domain}
-            </div>
-            <div style="font-size:1.0rem; color:#c9d1d9;">
-                Cognizant Director: <br>
-                <strong style="color:#ffffff; font-size:1.3rem; display:inline-block; margin-top:4px;">{director_name}</strong>
-            </div>
-            <div style="font-size:1.0rem; color:#c9d1d9;">
-                Embedded Agent: <br>
-                <code style="color:#a5d6ff; background:rgba(56,139,253,0.25); padding:4px 8px; font-size:1.0rem; border-radius:4px; display:inline-block; margin-top:4px;">{agent_name}</code>
-            </div>
-            <div style="font-weight:700; font-size:1.2rem; padding: 14px 16px; background: rgba(0,0,0,0.4); border-radius: 6px; border-left: 6px solid {border_col}; color:#ffffff; margin-top:4px;">
-                {status_badge}
-            </div>
-            <div style="font-family:ui-monospace, monospace; color:#ffffff; font-size:1.1rem; font-weight:600; margin-top: auto; padding-top: 10px;">
-                {metric_txt}
-            </div>
-        </div>
-        """
-
-    with b_col1:
-        c_type = "green" if is_resolved else "red"
-        s_badge = "🟢 CLEARED: Field access granted." if is_resolved else "🔴 OUTSTANDING: Field access locked."
-        st.markdown(render_branch_card("Branch 1: Physical / Field", "Hardware Gate | Plant & Crews", "Dr. Arthur Pendleton", "Site Telemetry Agent", s_badge, "Work Order: WO-8821-HARMONIC", c_type), unsafe_allow_html=True)
-    with b_col2:
-        c_type = "green" if is_resolved else "amber"
-        s_badge = "🟢 CLEARED: Grid filing secured." if is_resolved else "🟡 COLLATERAL: 48h Window Expiring."
-        st.markdown(render_branch_card("Branch 2: Regulatory / Market", "Commercial Gate | Interconnection", "David Chen (Proxy)", "Market Surveillance Agent", s_badge, "Handshake Status: Latency Validated", c_type), unsafe_allow_html=True)
-    with b_col3:
-        c_type = "green" if is_resolved else "red"
-        s_badge = "🟢 CLEARED: Capital defended." if is_resolved else f"🔴 OUTSTANDING: Crossover in {dynamic_crossover_days}d."
-        vel_txt = "Bleed: $0 / Day" if is_resolved else f"Bleed: ${total_burn_day:,.0f} / Day"
-        st.markdown(render_branch_card("Branch 3: Fiduciary / Capital", "Balance Sheet Gate | Liability Escrow", "Executive Board Chair", "Fiduciary Shield Agent", s_badge, vel_txt, c_type), unsafe_allow_html=True)
-
-    # --------------------------------------------------------------------------
-    # OPERATIONAL CHAIN OF COMMAND (5-TIER SYNCHRONIZED HIERARCHY)
-    # --------------------------------------------------------------------------
-    st.markdown("#### ⚖️ Operational Chain of Command (Single-Line Descending Hierarchy)")
-
-    st.markdown("""
-        <div style="background: #111a2e; border-left: 4px solid #00d4ff; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: #ffffff; font-size: 1.05rem;">🏛️ Tier 2: Directorate Governance Desk</strong>
-                <span style="color: #00d4ff; font-weight: 700; font-size: 0.8rem;">SAFE HARBOR ACTIVE</span>
-            </div>
-            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
-                Cognizant Director: <strong>Dr. Arthur Pendleton</strong> | Statutory Shield: <strong>Delaware DGCL § 141(e)</strong>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    st.button(
-        "➔ Drill Down to Tier 2: Directorate Governance Desk",
-        key="cmd_jump_t2",
-        on_click=navigate_to,
-        args=(DESK_OPTIONS[2],),
-        use_container_width=True
-    )
-
-    st.write("")
-
-    t3a_cleared = st.session_state.get("gate_3a_cleared", False)
-    t3a_status_color = "#00ff88" if t3a_cleared else "#ffa500"
-    t3a_status_text = "WORK ORDER DISPATCHED" if t3a_cleared else "AWAITING UTILITY PACKAGING"
-
-    st.markdown(f"""
-        <div style="background: #111a2e; border-left: 4px solid {t3a_status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: #ffffff; font-size: 1.05rem;">⚡ Tier 3A: Engineering Operations Command</strong>
-                <span style="color: {t3a_status_color}; font-weight: 700; font-size: 0.8rem;">{t3a_status_text}</span>
-            </div>
-            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
-                Officer: <strong>Sarah Jenkins (VP Eng Ops)</strong> | Instrument: <strong>Work Order WO-8821-HARMONIC</strong>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    st.button(
-        "➔ Drill Down to Tier 3A: Engineering Operations Command",
-        key="cmd_jump_t3a",
-        on_click=navigate_to,
-        args=(DESK_OPTIONS[4],),
-        use_container_width=True
-    )
-
-    st.write("")
-
-    t3b_cleared = st.session_state.get("gate_3b_cleared", False)
-    t3b_status_color = "#00ff88" if t3b_cleared else "#ff4b4b"
-    t3b_status_text = "TBPE DIGITAL SEAL ACTIVE" if t3b_cleared else "ACCESS HELD (CLAUSE 14.b)"
-
-    st.markdown(f"""
-        <div style="background: #111a2e; border-left: 4px solid {t3b_status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: #ffffff; font-size: 1.05rem;">👷 Tier 3B: Site Execution Desk</strong>
-                <span style="color: {t3b_status_color}; font-weight: 700; font-size: 0.8rem;">{t3b_status_text}</span>
-            </div>
-            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
-                Field Lead: <strong>Marcus Vance, PE (TXLIC114902)</strong> | Protocol: <strong>IEEE 2800 Sub-Cycle Bypass</strong>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    st.button(
-        "➔ Drill Down to Tier 3B: Site Execution Desk",
-        key="cmd_jump_t3b",
-        on_click=navigate_to,
-        args=(DESK_OPTIONS[5],),
-        use_container_width=True
-    )
-
-    st.write("")
-
-    vault_status_color = "#00ff88" if t3b_cleared else "#94a3b8"
-    vault_status_text = "DOSSIER SEALED" if t3b_cleared else "AUDIT BUFFER ACTIVE"
-    st.markdown(f"""
-        <div style="background: #111a2e; border-left: 4px solid {vault_status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: #ffffff; font-size: 1.05rem;">🏛️ Tier 4: Forensic Recovery Vault</strong>
-                <span style="color: {vault_status_color}; font-weight: 700; font-size: 0.8rem;">{vault_status_text}</span>
-            </div>
-            <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
-                Evidence Custodian: <strong>Pactum Sovereign OS</strong> | Standby LC: <strong>ISP98 / UCP 600 Package</strong>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    st.button(
-        "➔ Drill Down to Tier 4: Forensic Recovery Vault",
-        key="cmd_jump_t4",
-        on_click=navigate_to,
-        args=(DESK_OPTIONS[6],),
-        use_container_width=True
-    )
+            st.button("🔒 Tier 2A Locked (Requires Dual-Key Seal in Tier 1B)", key="btn_goto_t2a_locked", disabled=True, use_container_width=True)
 
 # =========================================================
 # 5. VIEW: TIER 1B — GENERAL COUNSEL LEGAL CHAMBERS
@@ -1585,39 +1327,62 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
     st.caption("The system automatically pins and illuminates the director possessing statutory jurisdiction over the active bottleneck:")
 
     roster = sector.get("board_roster", [])
+    if not st.session_state.get("gate_2a_cleared", False):
+        st.markdown("""
+            <div style="background: #141c2e; border: 2px solid #ef4444; border-radius: 8px; padding: 18px 20px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Dr. Arthur Pendleton</div>
+                        <div style="color: #60a5fa; font-size: 0.85rem; font-weight: 700;">Chair, Grid Risk & Technical Integrity Committee</div>
+                        <div style="color: #94a3b8; font-size: 0.78rem;">Statutory Authority: Delaware DGCL § 141(e) Technical Reliance</div>
+                    </div>
+                    <span style="background: #ef4444; color: #ffffff; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">🔴 ACTIVE BOTTLENECK</span>
+                </div>
+                <div style="margin-top: 14px; background: #0b1120; border-left: 4px solid #3b82f6; padding: 10px 14px; border-radius: 4px;">
+                    <strong style="color: #93c5fd; font-size: 0.82rem;">WHAT HAS BEEN DONE:</strong>
+                    <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 2px;">• Substation Work Order WO-8821 received and logged under FRE 803(6).<br>• Preliminary Fluke 1775 waveform capture verified showing unexcused 4.1% THD harmonic breach.</div>
+                </div>
+                <div style="margin-top: 10px; background: #1c1114; border-left: 4px solid #ef4444; padding: 10px 14px; border-radius: 4px;">
+                    <strong style="color: #fca5a5; font-size: 0.82rem;">WHAT NEEDS TO BE DONE:</strong>
+                    <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 2px;">• Execute DGCL § 141(e) Statutory Technical Reliance Resolution to shield field engineers and authorize physical switchyard intervention.</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("✍️ EXECUTE DR. PENDLETON DGCL SECTION 141(e) RELIANCE RESOLUTION", key="btn_exec_pendleton", type="primary", use_container_width=True):
+            st.session_state.gate_2a_cleared = True
+            st.session_state.gate_2_cleared = True
+            st.rerun()
+    else:
+        st.markdown("""
+            <div style="background: #0b1c18; border: 1px solid #00ff88; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Dr. Arthur Pendleton</div>
+                        <div style="color: #00ff88; font-size: 0.85rem; font-weight: 700;">Chair, Grid Risk & Technical Integrity Committee</div>
+                    </div>
+                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">✓ RESOLUTION EXECUTED</span>
+                </div>
+                <div style="margin-top: 10px; color: #cbd5e0; font-size: 0.82rem;"><strong>COMPLETED:</strong> Resolution entered into Corporate Minute Book. DGCL § 141(e) statutory reliance established. Marcus Vance, PE granted operational authority.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
     for d in roster:
-        is_pinned = d.get("pinned_to_bottleneck", False)
-        is_done = is_dir_signed if is_pinned else True
-        status_color = "#00ff88" if is_done else "#ef4444"
-        status_label = "✓ RESOLUTION EXECUTED" if is_done and is_pinned else ("🔴 ACTIVE BOTTLENECK" if is_pinned else "🟢 COMPLIANT / STANDBY")
+        if d.get("pinned_to_bottleneck", False):
+            continue
         st.markdown(f"""
-            <div class="{'director-card-pinned' if is_pinned else 'director-card'}">
+            <div class="director-card">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
                     <div>
                         <strong style="font-size:1.2rem;color:#ffffff;">{d['name']}</strong>
                         <div style="color:#60a5fa;font-size:.85rem;font-weight:700;margin-top:3px;">{d['seat']}</div>
                         <div style="color:#94a3b8;font-size:.78rem;margin-top:3px;">Statutory Authority: {d['statutory_role']}</div>
                     </div>
-                    <span style="background:{status_color};color:{'#04101e' if is_done else '#ffffff'};font-size:.75rem;font-weight:900;padding:3px 8px;border-radius:4px;white-space:nowrap;">{status_label}</span>
+                    <span style="background:#00ff88;color:#04101e;font-size:.75rem;font-weight:900;padding:3px 8px;border-radius:4px;white-space:nowrap;">🟢 COMPLIANT / STANDBY</span>
                 </div>
-                <div style="margin-top:12px;background:#0b1120;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:4px;">
-                    <strong style="color:#93c5fd;font-size:.82rem;">WHAT HAS BEEN DONE:</strong>
-                    <div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">{('Directorate resolution entered into the Corporate Minute Book and field reliance chain prepared.' if is_pinned and is_done else 'Committee remit verified, historical actions logged, and standby controls audited.')}</div>
-                </div>
-                <div style="margin-top:8px;background:{'#0b1c18' if is_done else '#1c1114'};border-left:4px solid {status_color};padding:10px 14px;border-radius:4px;">
-                    <strong style="color:{'#86efac' if is_done else '#fca5a5'};font-size:.82rem;">WHAT NEEDS TO BE DONE:</strong>
-                    <div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">{('Maintain executive oversight and certify the legal secretarial deed.' if is_pinned and is_done else 'Execute DGCL Section 141(e) technical reliance resolution to authorize physical field intervention.' if is_pinned else 'Remain on standby for a regulatory or financial escalation trigger.')}</div>
-                </div>
+                <div style="margin-top:12px;background:#0b1120;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:4px;"><strong style="color:#93c5fd;font-size:.82rem;">WHAT HAS BEEN DONE:</strong><div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">Committee remit verified, historical actions logged, and standby controls audited.</div></div>
+                <div style="margin-top:8px;background:#0b1c18;border-left:4px solid #00ff88;padding:10px 14px;border-radius:4px;"><strong style="color:#86efac;font-size:.82rem;">WHAT NEEDS TO BE DONE:</strong><div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">Remain on standby for a regulatory or financial escalation trigger.</div></div>
             </div>
         """, unsafe_allow_html=True)
-        if is_pinned and not is_dir_signed:
-            if st.button("EXECUTE DR. PENDLETON DGCL SECTION 141(e) RELIANCE RESOLUTION", key="btn_exec_pendleton_inline", type="primary", use_container_width=True):
-                active_inc["director_signed"] = True
-                for sig in active_inc.get("legal_instrument", {}).get("signatories", []):
-                    if "Director" in sig["role"]:
-                        sig["status"] = "COUNTERSIGNED & SEALED"
-                        sig["timestamp"] = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-                st.rerun()
 
     st.markdown("---")
     current_d = next((x for x in roster if x.get("pinned_to_bottleneck")), roster[0])
