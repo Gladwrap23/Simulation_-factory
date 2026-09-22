@@ -1421,7 +1421,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
     # --------------------------------------------------------------------------
     # LEGAL OFFICER: JONATHAN STERLING, ESQ. (CORPORATE SECRETARY)
     # --------------------------------------------------------------------------
-    st.markdown("### ⚖️ Legal Officer Execution & Coporate Seal")
+    st.markdown("### ⚖️ Legal Officer Execution & Cporate Seal")
 
     if not g2b:
         st.markdown("""
