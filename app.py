@@ -433,7 +433,7 @@ if "active_desk" not in st.session_state:
 # --- DUAL-TRACK GROUPING (COMMERCIAL/OPS vs LEGAL/STATUTORY) ---
 TRACK_COMMERCIAL = "👔 Commercial & Operations Track"
 TRACK_LEGAL = "⚖️ Legal & Statutory Track"
-COMMERCIAL_DESKS = [DESK_OPTIONS[0], DESK_OPTIONS[2], DESK_OPTIONS[4], DESK_OPTIONS[5]]
+COMMERCIAL_DESKS = [DESK_OPTIONS[0], DESK_OPTIONS[2], DESK_OPTIONS[4], DESK_OPTIONS[5], DESK_OPTIONS[6]]
 LEGAL_TIER3_LABEL = "Tier 3 | Regulatory & Interconnection Audit"
 LEGAL_TIER4_LABEL = "Tier 4 | Legal Evidence & Collateral Vault"
 LEGAL_DESKS = [DESK_OPTIONS[1], DESK_OPTIONS[3], LEGAL_TIER3_LABEL, LEGAL_TIER4_LABEL]
@@ -1582,7 +1582,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
     # --------------------------------------------------------------------------
     # LEGAL OFFICER: JONATHAN STERLING, ESQ. (CORPORATE SECRETARY)
     # --------------------------------------------------------------------------
-    st.markdown("### ⚖️ Legal Officer Execution & Corporate Seal")
+    st.markdown("### ⚖️ Legal Officer Execution & Coporate Seal")
 
     if not g2b:
         st.markdown("""
