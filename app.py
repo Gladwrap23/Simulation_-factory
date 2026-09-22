@@ -434,7 +434,9 @@ if "active_desk" not in st.session_state:
 TRACK_COMMERCIAL = "👔 Commercial & Operations Track"
 TRACK_LEGAL = "⚖️ Legal & Statutory Track"
 COMMERCIAL_DESKS = [DESK_OPTIONS[0], DESK_OPTIONS[2], DESK_OPTIONS[4], DESK_OPTIONS[5]]
-LEGAL_DESKS = [DESK_OPTIONS[1], DESK_OPTIONS[3], DESK_OPTIONS[6]]
+LEGAL_TIER3_LABEL = "Tier 3 | Regulatory & Interconnection Audit"
+LEGAL_TIER4_LABEL = "Tier 4 | Legal Evidence & Collateral Vault"
+LEGAL_DESKS = [DESK_OPTIONS[1], DESK_OPTIONS[3], LEGAL_TIER3_LABEL, LEGAL_TIER4_LABEL]
 
 # --- DUAL-KEY INCEPTION INTERLOCK STATE ---
 if "key_chairman_armed" not in st.session_state:
@@ -836,9 +838,9 @@ if "t3a_step3" not in st.session_state:
 # =========================================================
 t = I18N["English [USA · UK · Australia]"]
 
-nav_options = DESK_OPTIONS
+nav_options = DESK_OPTIONS + [LEGAL_TIER3_LABEL, LEGAL_TIER4_LABEL]
 
-if "active_desk" not in st.session_state or st.session_state.active_desk not in DESK_OPTIONS:
+if "active_desk" not in st.session_state or st.session_state.active_desk not in nav_options:
     st.session_state.active_desk = DESK_OPTIONS[0]
 
 if "pending_view" in st.session_state:
@@ -1207,7 +1209,6 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     # 6. Standstill Callbacks
     def toggle_standstill_on():
         st.session_state.burn_halted = True
-
     def toggle_standstill_off():
         st.session_state.burn_halted = False
 
@@ -1578,17 +1579,66 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
     | Eleanor Vance, CPA | ISP98 Rule 5.01 | Letter of credit default mechanics | STANDBY AUDITED |
     | Executive Chairman | Delaware DGCL Section 141(a) | Business Judgment Rule | COMMITTED |
     """)
-    st.markdown("#### Binding Indemnity Deed: Field Professional Engineer")
-    st.markdown("To insulate Marcus Vance, PE from contractor spoliation claims or licensing complaints, General Counsel must execute the corporate indemnification agreement under DGCL Section 145.")
-    if not st.session_state.gate_2b_cleared:
-        st.warning("SECRETARIAL ACTION REQUIRED: Marcus Vance, PE cannot be dispatched until this corporate indemnity deed is executed.")
-        if st.button("EXECUTE & SEAL DEED OF INDEMNITY (DGCL SECTION 145)", key="btn_seal_2b", type="primary", use_container_width=True):
+    # --------------------------------------------------------------------------
+    # LEGAL OFFICER: JONATHAN STERLING, ESQ. (CORPORATE SECRETARY)
+    # --------------------------------------------------------------------------
+    st.markdown("### ⚖️ Legal Officer Execution & Corporate Seal")
+
+    if not g2b:
+        st.markdown("""
+            <div style="background: #141c2e; border: 2px solid #a855f7; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Jonathan Sterling, Esq.</div>
+                        <div style="color: #c084fc; font-size: 0.85rem; font-weight: 700;">Corporate Secretary & Governance Counsel</div>
+                        <div style="color: #94a3b8; font-size: 0.78rem;">Statutory Authority: Delaware DGCL § 145 / Corporate Minute Custody (DE Bar #44109)</div>
+                    </div>
+                    <span style="background: #a855f7; color: #ffffff; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                        🔴 PENDING CORPORATE SEAL
+                    </span>
+                </div>
+                <div style="margin-top: 14px; background: #0b1120; border-left: 4px solid #3b82f6; padding: 10px 14px; border-radius: 4px;">
+                    <strong style="color: #93c5fd; font-size: 0.82rem;">WHAT HAS BEEN DONE:</strong>
+                    <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 2px;">
+                        • Dr. Arthur Pendleton's DGCL § 141(e) Technical Reliance attested into minute book.<br>
+                        • Binding corporate indemnification covenant drafted to absorb switchyard liabilities under DGCL § 145.
+                    </div>
+                </div>
+                <div style="margin-top: 10px; background: #1c1114; border-left: 4px solid #ef4444; padding: 10px 14px; border-radius: 4px;">
+                    <strong style="color: #fca5a5; font-size: 0.82rem;">WHAT NEEDS TO BE DONE:</strong>
+                    <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 2px;">
+                        • Affix Corporate Seal to execute the Deed of Indemnity, insulating Marcus Vance, PE before field dispatch.
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("✍️ JONATHAN STERLING: EXECUTE & SEAL DEED OF INDEMNITY (DGCL § 145)", key="btn_seal_2b_sterling", type="primary", use_container_width=True):
             st.session_state.gate_2b_cleared = True
             st.session_state.gate_2_cleared = True
             st.rerun()
     else:
-        st.success("DEED OF INDEMNITY EXECUTED & SEALED. Corporate liability shield active.")
-        st.code("sha256:f48a901c22e987102ce094a318894cb10e4a77e9921004ab12fedcba98765432", language="text")
+        st.markdown("""
+            <div style="background: #0b1c18; border: 1px solid #00ff88; border-radius: 8px; padding: 16px 20px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Jonathan Sterling, Esq.</div>
+                        <div style="color: #00ff88; font-size: 0.85rem; font-weight: 700;">Corporate Secretary & Governance Counsel</div>
+                        <div style="color: #94a3b8; font-size: 0.78rem;">Delaware Bar #44109 // Corporate Seal Affixed</div>
+                    </div>
+                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                        ✓ DEED SEALED
+                    </span>
+                </div>
+                <div style="margin-top: 10px; color: #cbd5e0; font-size: 0.82rem;">
+                    <strong>COMPLETED:</strong> Deed of Indemnity executed under DGCL § 145 and entered into the Corporate Minute Registry. Corporate liability shield active for Marcus Vance, PE.
+                </div>
+                <div style="font-family: monospace; font-size: 0.75rem; color: #00d4ff; margin-top: 6px;">
+                    Minute Seal: sha256:f48a901c22e987102ce094ab10e4a77e9921004ab12fedcba98765432
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
     nav_col1, nav_col2 = st.columns(2)
     with nav_col1:
         st.button("View Chairman Boardroom (Tier 2A)", key="t2b_to_t2a", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True)
@@ -1748,7 +1798,33 @@ elif st.session_state.active_desk == DESK_OPTIONS[5]:
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
 # =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[6]:
+elif st.session_state.active_desk == LEGAL_TIER3_LABEL:
+    render_inception_guard()
+    render_breadcrumb(3)
+    render_top_action_bar()
+    st.markdown("""
+        <div style="background: linear-gradient(90deg, #130f26 0%, #1e1b4b 100%); border-left: 8px solid #a855f7; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-size: 1.6rem; font-weight: 900; color: #fff;">TIER 3 | REGULATORY & INTERCONNECTION AUDIT</div>
+            <div style="color: #c084fc; font-size: .9rem; font-weight: 700; margin-top: 2px;">GRID CODE COMPLIANCE, TARIFF FILING INTEGRITY & COUNTERPARTY NOTICE AUDIT</div>
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("#### Interconnection Docket & Notice Compliance Ledger")
+    st.markdown(f"""
+    | Regulatory instrument | Governing authority | Compliance status |
+    | --- | --- | --- |
+    | Interconnection Agreement | {book_config['docket']} | ACTIVE / UNDER AUDIT |
+    | Grid Code Harmonics Filing | {book_config['tech_standard']} | 4.1% THD CERTIFIED COMPLIANT |
+    | Cure Notice Dispatch | Turnkey EPC Clause 11.2 | TRANSMITTED & RECEIPT CONFIRMED |
+    | Market Participant Attestation | {selected_jurisdiction} | STANDBY / DAVID CHEN PROXY |
+    """)
+    st.info("This desk audits the regulatory paper trail supporting the liquidated demurrage claim before it is escalated to the Forensic Recovery Vault.")
+    nav_col1, nav_col2 = st.columns(2)
+    with nav_col1:
+        st.button("Return to Tier 2B Governance Desk", key="t3leg_to_t2b", on_click=navigate_to, args=(DESK_OPTIONS[3],), use_container_width=True)
+    with nav_col2:
+        st.button("PROCEED TO TIER 4: LEGAL EVIDENCE VAULT", key="t3leg_to_t4", on_click=navigate_to, args=(LEGAL_TIER4_LABEL,), use_container_width=True, type="primary")
+
+elif st.session_state.active_desk in (DESK_OPTIONS[6], LEGAL_TIER4_LABEL):
     render_inception_guard()
     render_breadcrumb(4)
     render_top_action_bar()
