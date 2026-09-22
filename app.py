@@ -1888,8 +1888,95 @@ elif st.session_state.active_desk == LEGAL_TIER3_LABEL:
     with nav_col2:
         st.button("PROCEED TO TIER 4: LEGAL EVIDENCE VAULT", key="t3leg_to_t4", on_click=go_to_desk, args=(LEGAL_TIER4_LABEL,), use_container_width=True, type="primary")
 
-elif st.session_state.active_desk in (DESK_OPTIONS[6], LEGAL_TIER4_LABEL):
-    render_executive_dual_signoff()
+elif st.session_state.active_desk in [COMMERCIAL_DESKS[4], LEGAL_DESKS[3]]:
+    # 1. State Initializations
+    if "chair_final_signed" not in st.session_state:
+        st.session_state.chair_final_signed = False
+    if "clo_final_signed" not in st.session_state:
+        st.session_state.clo_final_signed = False
+
+    # 2. Dynamic Values
+    cfg = book_config
+    current_capex = float(st.session_state.get("capex_baseline", cfg["default_capex"]))
+    scale_factor = current_capex / float(cfg["default_capex"])
+    daily_burn = float(cfg["daily_burn_base"]) * scale_factor
+    accrued_demurrage = daily_burn * 7.0
+
+    # 3. Header Banner
+    st.markdown("""
+        <div style="background: linear-gradient(90deg, #091e3a 0%, #102a45 100%); border-left: 8px solid #00ff88; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">STAGE 04 | EXECUTIVE DUAL SIGN-OFF DOCKET</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #00ff88; margin-top: 4px;">FORENSIC EVIDENCE VAULT & SOVEREIGN COLLATERAL RECOVERY</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 4. Two Independent Executive Sign-Off Columns
+    col_chair, col_clo = st.columns(2)
+    with col_chair:
+        st.markdown(f"""
+            <div style="background: #0d1526; border: 2px solid #1e3a8a; border-radius: 8px; padding: 18px; margin-bottom: 14px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #60a5fa; text-transform: uppercase;">COMMERCIAL AUTHORITY</div>
+                <div style="font-size: 1.2rem; font-weight: 900; color: #ffffff; margin-top: 2px;">Executive Chairman</div>
+                <div style="color: #94a3b8; font-size: 0.78rem; margin-bottom: 12px;">Mandate: Capital Recovery & Bank Guarantee Enforcement</div>
+                <div style="background: #08101d; padding: 10px; border-radius: 4px; font-size: 0.8rem; color: #cbd5e0; line-height: 1.6;">
+                    • CapEx Baseline: <strong>${current_capex:,.0f} USD</strong><br>
+                    • Accrued Demurrage: <strong>${accrued_demurrage:,.2f} USD</strong><br>
+                    • Substation Status: <strong>WO-8821 Executed & Verified</strong>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if not st.session_state.chair_final_signed:
+            def sign_chair_final():
+                st.session_state.chair_final_signed = True
+            st.button("✍️ CHAIRMAN: SIGN DEMURRAGE DEMAND & LC CALL", key="btn_sign_chair_final", on_click=sign_chair_final, type="primary", use_container_width=True)
+        else:
+            st.success("✓ EXECUTIVE CHAIRMAN SIGNATURE AFFIXED")
+
+    with col_clo:
+        st.markdown("""
+            <div style="background: #14132b; border: 2px solid #7c3aed; border-radius: 8px; padding: 18px; margin-bottom: 14px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #c084fc; text-transform: uppercase;">STATUTORY AUTHORITY</div>
+                <div style="font-size: 1.2rem; font-weight: 900; color: #ffffff; margin-top: 2px;">Katherine Ross, Esq. (CLO)</div>
+                <div style="color: #94a3b8; font-size: 0.78rem; margin-bottom: 12px;">Mandate: Chancery Injunction & Evidentiary Admissibility</div>
+                <div style="background: #0d0c1c; padding: 10px; border-radius: 4px; font-size: 0.8rem; color: #cbd5e0; line-height: 1.6;">
+                    • Fiduciary Reliance: <strong>DGCL § 141(e) Affirmed</strong><br>
+                    • Regulatory Compliance: <strong>ERCOT § 4.2 / Cl. 11.2 Notice Filed</strong><br>
+                    • Admissibility: <strong>FRE 902(14) Forensic Hash Sealed</strong>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if not st.session_state.clo_final_signed:
+            def sign_clo_final():
+                st.session_state.clo_final_signed = True
+            st.button("✍️ CLO: SIGN EMERGENCY CHANCERY COMPLAINT", key="btn_sign_clo_final", on_click=sign_clo_final, type="primary", use_container_width=True)
+        else:
+            st.success("✓ CHIEF LEGAL OFFICER SIGNATURE AFFIXED")
+
+    # 5. Collective Instigation Trigger
+    st.write("")
+    st.markdown("---")
+    if st.session_state.chair_final_signed and st.session_state.clo_final_signed:
+        st.markdown(f"""
+            <div style="background: #062b19; border: 2px solid #00ff88; border-radius: 8px; padding: 22px; text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 900; color: #00ff88;">🏆 COLLECTIVE ACTION INSTIGATED: DISPUTE DOCKET SEALED</div>
+                <div style="color: #cbd5e0; font-size: 0.9rem; margin-top: 8px; line-height: 1.6;">
+                    1. Emergency Injunction & TRO electronically served on Delaware Court of Chancery.<br>
+                    2. ISP98 Standby Letter of Credit Draw (${accrued_demurrage:,.2f} USD) transmitted to JPMorgan Chase.<br>
+                    3. FRE 902(14) chain-of-custody archive permanently sealed. Zero spoliation exposure.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info("🔒 **Collective Action Gate:** Both department heads must independently affix their signatures above to instigate the simultaneous court filing and bank collateral drawdown.")
+
+    # 6. Return Navigation
+    st.write("")
+    c_ret1, c_ret2 = st.columns(2)
+    with c_ret1:
+        st.button("△ Return to Chairman Command Post (Tier 1A)", key="btn_t4_ret_comm", on_click=go_to_desk, args=(COMMERCIAL_DESKS[0],), use_container_width=True)
+    with c_ret2:
+        st.button("△ Return to Legal Chambers (Tier 1B)", key="btn_t4_ret_legal", on_click=go_to_desk, args=(LEGAL_DESKS[0],), use_container_width=True)
+
     '''
     render_inception_guard()
     render_breadcrumb(4)
