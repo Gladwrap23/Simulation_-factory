@@ -484,20 +484,46 @@ def render_inception_guard():
             </div>
         """, unsafe_allow_html=True)
 
-# --- SAFE NAVIGATION HANDLER ---
-def navigate_to(target_desk):
+# ==============================================================================
+# UNIFIED NAVIGATION ENGINE (SYNCHRONIZES SIDEBAR + IN-PAGE BUTTONS)
+# ==============================================================================
+def go_to_desk(target_desk):
+    """Safely update the active desk and both sidebar navigation widgets."""
     st.session_state.active_desk = target_desk
-    if "nav_radio" in st.session_state:
-        st.session_state.nav_radio = target_desk
-    # Keep the dual-track sidebar radios in lockstep with cross-track jumps.
-    if target_desk in LEGAL_DESKS:
-        st.session_state.active_track_selector = TRACK_LEGAL
-        if "radio_legal_desks" in st.session_state:
-            st.session_state.radio_legal_desks = target_desk
-    else:
+
+    if target_desk in COMMERCIAL_DESKS:
         st.session_state.active_track_selector = TRACK_COMMERCIAL
-        if "radio_commercial_desks" in st.session_state:
-            st.session_state.radio_commercial_desks = target_desk
+        st.session_state.radio_commercial_desks = target_desk
+        st.session_state.track_selector_widget = TRACK_COMMERCIAL
+        st.session_state.radio_comm_desks = target_desk
+    elif target_desk in LEGAL_DESKS:
+        st.session_state.active_track_selector = TRACK_LEGAL
+        st.session_state.radio_legal_desks = target_desk
+        st.session_state.track_selector_widget = TRACK_LEGAL
+        st.session_state.radio_leg_desks = target_desk
+
+
+def reset_entire_incident():
+    """Wipe gate progression back to an uncommitted, pristine state."""
+    keys_to_clear = [
+        "key_chairman_armed", "key_counsel_armed", "docket_inception_sealed",
+        "gate_2a_cleared", "gate_2b_cleared", "gate_2_cleared",
+        "gate_3a_cleared", "burn_halted"
+    ]
+    for key in keys_to_clear:
+        st.session_state[key] = False
+
+    selected_book = st.session_state.get("selected_book_name", next(iter(OPERATING_BOOKS)))
+    default_capex = float(OPERATING_BOOKS[selected_book]["default_capex"])
+    st.session_state.capex_baseline = default_capex
+    st.session_state.slider_chair_capex = default_capex
+    go_to_desk(COMMERCIAL_DESKS[0])
+
+
+st.sidebar.markdown("---")
+if st.sidebar.button("🔄 Reset Incident / Clean Run", use_container_width=True):
+    reset_entire_incident()
+    st.rerun()
 
 def on_sidebar_change():
     st.session_state.active_desk = st.session_state.nav_radio
@@ -553,12 +579,12 @@ def render_forward_gateway(cleared, next_desk, next_label, gateway_key):
         """, unsafe_allow_html=True)
         nav_c1, nav_c2 = st.columns([1, 2])
         with nav_c1:
-            st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+            st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
         with nav_c2:
-            st.button(f"➔ PROCEED TO {next_label}", key=f"{gateway_key}_forward", on_click=navigate_to, args=(next_desk,), use_container_width=True, type="primary")
+            st.button(f"➔ PROCEED TO {next_label}", key=f"{gateway_key}_forward", on_click=go_to_desk, args=(next_desk,), use_container_width=True, type="primary")
     else:
         st.info("ℹ️ Complete the required controls above to unlock the next operational tier.")
-        st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back_incomplete", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+        st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back_incomplete", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
 
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
@@ -1287,10 +1313,10 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
     st.write("")
     nav_col1, nav_col2 = st.columns(2)
     with nav_col1:
-        st.button("Return to Chairman Command Post (Tier 1A)", key="t1b_to_t1a", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+        st.button("Return to Chairman Command Post (Tier 1A)", key="t1b_to_t1a", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
     with nav_col2:
         if is_sealed:
-            st.button("Proceed to Legal Governance Desk (Tier 2B)", key="t1b_to_t2b", on_click=navigate_to, args=(DESK_OPTIONS[3],), use_container_width=True, type="primary")
+            st.button("Proceed to Legal Governance Desk (Tier 2B)", key="t1b_to_t2b", on_click=go_to_desk, args=(DESK_OPTIONS[3],), use_container_width=True, type="primary")
         else:
             st.button("Tier 2B Locked (Requires Dual-Key Inception)", key="t1b_locked", disabled=True, use_container_width=True)
 
@@ -1384,7 +1410,7 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[1]:
     if g2a:
         st.button("🟢 PROCEED TO TIER 3A: OPERATIONS DISPATCH ➔",
                   key="btn_t2a_advance_clean",
-                  on_click=navigate_to,
+                  on_click=go_to_desk,
                   args=(COMMERCIAL_DESKS[2],),
                   type="primary",
                   use_container_width=True)
@@ -1480,10 +1506,10 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
 
     nav_col1, nav_col2 = st.columns(2)
     with nav_col1:
-        st.button("View Chairman Boardroom (Tier 2A)", key="t2b_to_t2a", on_click=navigate_to, args=(DESK_OPTIONS[2],), use_container_width=True)
+        st.button("View Chairman Boardroom (Tier 2A)", key="t2b_to_t2a", on_click=go_to_desk, args=(DESK_OPTIONS[2],), use_container_width=True)
     with nav_col2:
         if g2a and g2b:
-            st.button("PROCEED TO TIER 3A: OPERATIONS DISPATCH", key="t2b_to_t3a", on_click=navigate_to, args=(DESK_OPTIONS[4],), use_container_width=True, type="primary")
+            st.button("PROCEED TO TIER 3A: OPERATIONS DISPATCH", key="t2b_to_t3a", on_click=go_to_desk, args=(DESK_OPTIONS[4],), use_container_width=True, type="primary")
         else:
             st.info("Both Board Ratification (2A) and Legal Indemnity Deed (2B) must be sealed before dispatch.")
 
@@ -1556,14 +1582,14 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[2]:
     with col_back:
         st.button("△ Return to Directorate (Tier 2A)",
                   key="btn_t3a_back",
-                  on_click=navigate_to,
+                  on_click=go_to_desk,
                   args=(COMMERCIAL_DESKS[1],),
                   use_container_width=True)
     with col_fwd:
         if st.session_state.gate_3a_cleared:
             st.button("🟢 PROCEED TO TIER 3B: SITE EXECUTION ➔",
                       key="btn_t3a_to_t3b",
-                      on_click=navigate_to,
+                      on_click=go_to_desk,
                       args=(COMMERCIAL_DESKS[3],),
                       type="primary",
                       use_container_width=True)
@@ -1591,7 +1617,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[5]:
 
     if not st.session_state.get("gate_3a_cleared", False):
         st.error("⚠️ ACCESS RESTRICTED: Tier 3A Work Order WO-8821-HARMONIC has not been released by Sarah Jenkins.")
-        st.button("← Return to Tier 3A", on_click=navigate_to, args=(DESK_OPTIONS[4],))
+        st.button("← Return to Tier 3A", on_click=go_to_desk, args=(DESK_OPTIONS[4],))
         st.stop()
 
     m1, m2, m3 = st.columns(3)
@@ -1657,11 +1683,11 @@ elif st.session_state.active_desk == DESK_OPTIONS[5]:
         """, unsafe_allow_html=True)
         b_c1, b_c2 = st.columns([1, 2])
         with b_c1:
-            st.button("⌂ Command Post (Tier 1)", key="t3b_back_t1", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+            st.button("⌂ Command Post (Tier 1)", key="t3b_back_t1", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
         with b_c2:
-            st.button("➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT", key="t3b_fwd_t4", on_click=navigate_to, args=(DESK_OPTIONS[6],), use_container_width=True, type="primary")
+            st.button("➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT", key="t3b_fwd_t4", on_click=go_to_desk, args=(DESK_OPTIONS[6],), use_container_width=True, type="primary")
     else:
-        st.button("⌂ Return to Command Post (Tier 1)", key="t3b_back_t1_idle", on_click=navigate_to, args=(DESK_OPTIONS[0],), use_container_width=True)
+        st.button("⌂ Return to Command Post (Tier 1)", key="t3b_back_t1_idle", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
 
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
@@ -1688,9 +1714,9 @@ elif st.session_state.active_desk == LEGAL_TIER3_LABEL:
     st.info("This desk audits the regulatory paper trail supporting the liquidated demurrage claim before it is escalated to the Forensic Recovery Vault.")
     nav_col1, nav_col2 = st.columns(2)
     with nav_col1:
-        st.button("Return to Tier 2B Governance Desk", key="t3leg_to_t2b", on_click=navigate_to, args=(DESK_OPTIONS[3],), use_container_width=True)
+        st.button("Return to Tier 2B Governance Desk", key="t3leg_to_t2b", on_click=go_to_desk, args=(DESK_OPTIONS[3],), use_container_width=True)
     with nav_col2:
-        st.button("PROCEED TO TIER 4: LEGAL EVIDENCE VAULT", key="t3leg_to_t4", on_click=navigate_to, args=(LEGAL_TIER4_LABEL,), use_container_width=True, type="primary")
+        st.button("PROCEED TO TIER 4: LEGAL EVIDENCE VAULT", key="t3leg_to_t4", on_click=go_to_desk, args=(LEGAL_TIER4_LABEL,), use_container_width=True, type="primary")
 
 elif st.session_state.active_desk in (DESK_OPTIONS[6], LEGAL_TIER4_LABEL):
     render_inception_guard()
