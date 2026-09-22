@@ -1300,91 +1300,70 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
         else:
             st.button("Tier 2B Locked (Requires Dual-Key Inception)", key="t1b_locked", disabled=True, use_container_width=True)
 
-# =========================================================
-# 6. VIEW: TIER 2A — DIRECTORATE GOVERNANCE DESK
-# =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[2]:
-    render_inception_guard()
-    render_breadcrumb(1)
-    render_top_action_bar()
-    top_col1, top_col2 = st.columns([4, 1])
-    with top_col1:
-        st.title(t["tier2_title"])
-    with top_col2:
-        if st.button("🖨️ Print Resolution", use_container_width=True):
-            components.html("<script>window.parent.print();</script>", height=0, width=0)
+# ==============================================================================
+# TIER 2A: CHAIRMAN DIRECTORATE GOVERNANCE (UNIFIED NO-LOOP COCKPIT)
+# ==============================================================================
+elif st.session_state.active_desk == COMMERCIAL_DESKS[1]:
+    g2a = st.session_state.get("gate_2a_cleared", False)
+    g2b = st.session_state.get("gate_2b_cleared", False)
 
-    st.caption(f"Asset: **{active_sector}** | Governing Authority: **{sector['statute']}** | Effective: **{TODAY_STR}**")
-    
-    if st.button("↩️ Return to Tier 1: Chairman Command Post", type="secondary"):
-        request_navigation(DESK_OPTIONS[0])
-        
-    st.divider()
+    st.markdown("""
+        <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">TIER 2A | CHAIRMAN DIRECTORATE GOVERNANCE</div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: #00d4ff; margin-top: 2px;">
+                BOARD OF DIRECTORS RATIFICATION & TECHNICAL RELIANCE REPOSITORY
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # LARGE HIGH-CONTRAST GOVERNANCE BANNER (NO UP ARROWS)
-    if is_dir_signed:
-        st.markdown("""
-            <div style="background: rgba(46, 160, 67, 0.15); border: 2px solid #2ea043; border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                    <div>
-                        <div style="font-size: 0.9rem; font-weight: 800; color: #3fb950; text-transform: uppercase; letter-spacing: 0.05em;">Statutory Fiduciary Status</div>
-                        <div style="font-size: 1.9rem; font-weight: 900; color: #ffffff; line-height: 1.2; margin: 4px 0;">🟢 SAFE HARBOR ACTIVE & SEALED</div>
-                        <div style="font-size: 1.05rem; color: #c9d1d9;">
-                            Directorate Indemnity concurred under Delaware DGCL § 141(e). All field engineers legally held harmless.
-                        </div>
-                    </div>
-                    <div style="background: #2ea043; color: #ffffff; padding: 10px 18px; border-radius: 6px; font-weight: 900; font-size: 1.05rem;">
-                        LEGAL SHIELD: SEALED
-                    </div>
+    # 1. STATUS HEADER
+    if not g2a:
+        st.markdown(f"""
+            <div style="background: #1e1114; border: 2px solid #ef4444; border-left: 8px solid #ef4444; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #f87171;">STATUTORY FIDUCIARY STATUS</div>
+                <div style="font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-top: 2px;">
+                    🔴 GOVERNANCE DEADLOCK: TECHNICAL RELIANCE REQUIRED
+                </div>
+                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 6px;">
+                    Marcus Vance, PE cannot perform the hardware bypass until Dr. Arthur Pendleton executes the DGCL § 141(e) reliance resolution.
                 </div>
             </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-            <div style="background: rgba(248, 81, 73, 0.15); border: 2px solid #f85149; border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                    <div>
-                        <div style="font-size: 0.9rem; font-weight: 800; color: #f85149; text-transform: uppercase; letter-spacing: 0.05em;">Statutory Fiduciary Status</div>
-                        <div style="font-size: 1.9rem; font-weight: 900; color: #ffffff; line-height: 1.2; margin: 4px 0;">🔴 GOVERNANCE DEADLOCK (P1 - CRITICAL)</div>
-                        <div style="font-size: 1.05rem; color: #c9d1d9;">
-                            Marcus Vance, PE is exposed to personal liability under Clause 14.b. Attestation held pending Directorate Countersignature.
-                        </div>
-                    </div>
-                    <div style="background: #da3633; color: #ffffff; padding: 10px 18px; border-radius: 6px; font-weight: 900; font-size: 1.05rem;">
-                        BLEED: $87,264 / DAY
-                    </div>
+            <div style="background: #062b19; border: 2px solid #00ff88; border-left: 8px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #00ff88;">STATUTORY FIDUCIARY STATUS</div>
+                <div style="font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-top: 2px;">
+                    🟢 FIDUCIARY CONSENSUS RATIFIED // DGCL § 141(a) ACTIVE
+                </div>
+                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 6px;">
+                    Dr. Arthur Pendleton has executed technical reliance. Business Judgment Rule shield is active.
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("### 🏛️ Full Board of Directors & Governance Roster")
-    st.caption("The system automatically pins and illuminates the director possessing statutory jurisdiction over the active bottleneck:")
-
-    roster = sector.get("board_roster", [])
-    if not st.session_state.get("gate_2a_cleared", False):
+    # 2. DR. PENDLETON ACTION CARD
+    if not g2a:
         st.markdown("""
             <div style="background: #141c2e; border: 2px solid #ef4444; border-radius: 8px; padding: 18px 20px; margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Dr. Arthur Pendleton</div>
                         <div style="color: #60a5fa; font-size: 0.85rem; font-weight: 700;">Chair, Grid Risk & Technical Integrity Committee</div>
-                        <div style="color: #94a3b8; font-size: 0.78rem;">Statutory Authority: Delaware DGCL § 141(e) Technical Reliance</div>
+                        <div style="color: #94a3b8; font-size: 0.78rem;">Delaware DGCL § 141(e) Technical Reliance Authority</div>
                     </div>
-                    <span style="background: #ef4444; color: #ffffff; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">🔴 ACTIVE BOTTLENECK</span>
+                    <span style="background: #ef4444; color: #ffffff; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                        🔴 ACTIVE BOTTLENECK
+                    </span>
                 </div>
-                <div style="margin-top: 14px; background: #0b1120; border-left: 4px solid #3b82f6; padding: 10px 14px; border-radius: 4px;">
-                    <strong style="color: #93c5fd; font-size: 0.82rem;">WHAT HAS BEEN DONE:</strong>
-                    <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 2px;">• Substation Work Order WO-8821 received and logged under FRE 803(6).<br>• Preliminary Fluke 1775 waveform capture verified showing unexcused 4.1% THD harmonic breach.</div>
-                </div>
-                <div style="margin-top: 10px; background: #1c1114; border-left: 4px solid #ef4444; padding: 10px 14px; border-radius: 4px;">
-                    <strong style="color: #fca5a5; font-size: 0.82rem;">WHAT NEEDS TO BE DONE:</strong>
-                    <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 2px;">• Execute DGCL § 141(e) Statutory Technical Reliance Resolution to shield field engineers and authorize physical switchyard intervention.</div>
+                <div style="margin-top: 12px; font-size: 0.85rem; color: #cbd5e0;">
+                    <strong>Action Required:</strong> Formally attest to the 4.1% THD harmonic breach from Work Order WO-8821 to absorb personal liability onto the corporate balance sheet.
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("✍️ EXECUTE DR. PENDLETON DGCL SECTION 141(e) RELIANCE RESOLUTION", key="btn_exec_pendleton", type="primary", use_container_width=True):
+
+        if st.button("✍️ EXECUTE DR. PENDLETON DGCL SECTION 141(e) RELIANCE RESOLUTION", key="btn_exec_pendleton_final", type="primary", use_container_width=True):
             st.session_state.gate_2a_cleared = True
-            st.session_state.gate_2_cleared = True
             st.rerun()
     else:
         st.markdown("""
@@ -1394,166 +1373,32 @@ elif st.session_state.active_desk == DESK_OPTIONS[2]:
                         <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Dr. Arthur Pendleton</div>
                         <div style="color: #00ff88; font-size: 0.85rem; font-weight: 700;">Chair, Grid Risk & Technical Integrity Committee</div>
                     </div>
-                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">✓ RESOLUTION EXECUTED</span>
+                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                        ✓ SIGNED & RATIFIED
+                    </span>
                 </div>
-                <div style="margin-top: 10px; color: #cbd5e0; font-size: 0.82rem;"><strong>COMPLETED:</strong> Resolution entered into Corporate Minute Book. DGCL § 141(e) statutory reliance established. Marcus Vance, PE granted operational authority.</div>
+                <div style="margin-top: 8px; color: #cbd5e0; font-size: 0.82rem;">
+                    Resolution entered into Minute Book. Fiduciary shield fully established.
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-    for d in roster:
-        if d.get("pinned_to_bottleneck", False):
-            continue
-        st.markdown(f"""
-            <div class="director-card">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-                    <div>
-                        <strong style="font-size:1.2rem;color:#ffffff;">{d['name']}</strong>
-                        <div style="color:#60a5fa;font-size:.85rem;font-weight:700;margin-top:3px;">{d['seat']}</div>
-                        <div style="color:#94a3b8;font-size:.78rem;margin-top:3px;">Statutory Authority: {d['statutory_role']}</div>
-                    </div>
-                    <span style="background:#00ff88;color:#04101e;font-size:.75rem;font-weight:900;padding:3px 8px;border-radius:4px;white-space:nowrap;">🟢 COMPLIANT / STANDBY</span>
-                </div>
-                <div style="margin-top:12px;background:#0b1120;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:4px;"><strong style="color:#93c5fd;font-size:.82rem;">WHAT HAS BEEN DONE:</strong><div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">Committee remit verified, historical actions logged, and standby controls audited.</div></div>
-                <div style="margin-top:8px;background:#0b1c18;border-left:4px solid #00ff88;padding:10px 14px;border-radius:4px;"><strong style="color:#86efac;font-size:.82rem;">WHAT NEEDS TO BE DONE:</strong><div style="color:#cbd5e0;font-size:.82rem;margin-top:2px;">Remain on standby for a regulatory or financial escalation trigger.</div></div>
-            </div>
-        """, unsafe_allow_html=True)
-
+    # 3. DIRECT LINEAR DESCENT GATEWAY
+    st.write("")
     st.markdown("---")
-    current_d = next((x for x in roster if x.get("pinned_to_bottleneck")), roster[0])
-    
-    if current_d.get("pinned_to_bottleneck"):
-        st.markdown(f"### 📜 Formal Fiduciary Protection Instrument ({sector['statute']})")
-        st.markdown(f"""
-            <div style="background:rgba(88,166,255,0.08); border-left:4px solid #58a6ff; padding:14px 18px; border-radius:4px; margin-bottom:16px;">
-                <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">OPERATIONAL CASCADE: {current_d['name']} ➔ {current_d['management_bridge']} ➔ {current_d['subordinate_field_lead']}</div>
-                <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">
-                    This director possesses statutory safe-harbor jurisdiction over <strong>INC-001 (Harmonic Attestation Deadlock)</strong>. 
-                    Executing countersignature transmits corporate indemnification to <strong>VP Sarah Jenkins</strong> and authorizes <strong>Marcus Vance, PE</strong> to stamp the ERCOT filing.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        inst = active_inc.get("legal_instrument", {})
-        with st.container(border=True):
-            st.markdown(f"""
-                <div class="legal-document-box">
-                    <div class="legal-header">🏛️ Primary Legal Document: {inst.get('title')}</div>
-                    <div style="font-size:1.0rem; color:#8b949e; margin-bottom:14px;">
-                        Statutory Authority: <strong style="color:#ffffff;">{inst.get('authority')}</strong> | Effective: <strong style="color:#58a6ff;">{inst.get('effective_date')}</strong>
-                    </div>
-                    <div style="font-style:italic; margin: 12px 0; font-size:1.05rem;">
-                        {'<br><br>'.join(inst.get('recitals', []))}
-                    </div>
-                    <div style="background:rgba(88,166,255,0.08); padding:16px; border-radius:6px; font-weight:bold; margin-bottom:16px; font-size:1.1rem;">
-                        {inst.get('operative_resolution')}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("---")
-            st.markdown("### 🔏 Executed Digital Signatures & Verification Hashes")
-            st.caption("Cryptographic audit trail anchoring statutory reliance under Delaware DGCL § 141:")
 
-            for sig in inst.get("signatories", []):
-                is_signed = "EXECUTED" in sig["status"] or "COUNTERSIGNED" in sig["status"] or "TRANSMITTED" in sig["status"]
-                status_badge_col = "#3fb950" if is_signed else "#e3b341"
-                card_border = "#2ea043" if is_signed else "#e3b341"
-                
-                st.markdown(f"""
-                    <div style="background:#090d13; border:2px solid {card_border}; border-radius:8px; padding:18px 20px; margin-bottom:12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                            <div>
-                                <span style="font-size:0.85rem; font-weight:800; color:#8b949e; text-transform:uppercase;">{sig['role']}</span>
-                                <div style="font-size:1.35rem; font-weight:900; color:#ffffff; margin:2px 0;">{sig['name']}</div>
-                                <div style="font-size:0.95rem; color:#58a6ff; font-weight:600;">{sig['seat']}</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <span style="background:{status_badge_col}; color:#000000; padding:6px 12px; border-radius:4px; font-weight:900; font-size:0.95rem; display:inline-block;">
-                                    {sig['status']}
-                                </span>
-                                <div style="font-size:0.85rem; color:#c9d1d9; font-family:monospace; margin-top:6px;">Timestamp: {sig['timestamp']}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top:12px; padding-top:10px; border-top:1px solid #21262d;">
-                            <div style="font-size:0.8rem; color:#8b949e; font-weight:700; text-transform:uppercase;">Cryptographic Hash Receipt (SHA-256):</div>
-                            <code style="color:#58a6ff; font-size:0.95rem; font-weight:700; background:rgba(88,166,255,0.1); padding:4px 8px; border-radius:4px; display:inline-block; margin-top:4px; word-break:break-all;">
-                                {sig.get('hash', 'N/A')}
-                            </code>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
-            if not is_dir_signed:
-                st.info("Execute the active bottleneck resolution from Dr. Pendleton's inline governance card above.")
-            else:
-                nav_col1, nav_col2 = st.columns(2)
-                with nav_col1:
-                    if st.button(f"➔ Cascade to Tier 3 Field Desk ({current_d['subordinate_field_lead']})", use_container_width=True, type="primary"):
-                        request_navigation(DESK_OPTIONS[4])
-                with nav_col2:
-                    if st.button("↩️ Return to Tier 1: Tactical Command Post", use_container_width=True):
-                        request_navigation(DESK_OPTIONS[0])
+    if g2a:
+        st.button("🟢 PROCEED TO TIER 3A: OPERATIONS DISPATCH ➔",
+                  key="btn_t2a_advance_clean",
+                  on_click=navigate_to,
+                  args=(COMMERCIAL_DESKS[2],),
+                  type="primary",
+                  use_container_width=True)
     else:
-        if current_d["name"] == "Executive Chairman":
-            st.markdown("### ⚡ Sovereign Board Preemption Desk: Executive Chairman")
-            st.markdown(f"""
-                <div style="background:rgba(218,54,51,0.12); border-left:4px solid #da3633; padding:16px 20px; border-radius:4px; margin-bottom:18px;">
-                    <div style="font-weight:900; font-size:1.2rem; color:#ff4b4b;">PLENARY SOVEREIGN OVERRIDE (DELAWARE DGCL § 141)</div>
-                    <div style="font-size:1.05rem; color:#f0f6fc; margin-top:6px; line-height:1.6;">The Chairman may preempt committee delay, absorb vendor warranty liability, and order immediate energization when holding bleed threatens the balance sheet.</div>
-                </div>
-            """, unsafe_allow_html=True)
-            with st.container(border=True):
-                st.markdown(f"""
-                    <div class="legal-document-box" style="border-left-color:#da3633;">
-                        <div class="legal-header" style="color:#da3633;">🏛️ CHAIRMAN'S EMERGENCY PREEMPTION & ENERGIZATION WARRANT</div>
-                        <p><strong>Authority:</strong> Delaware General Corporation Law § 141(a) & Corporate Charter Plenary Powers</p>
-                        <p><strong>Operative Order:</strong> Immediate transmission of the PE attestation stamp to ERCOT with complete corporate indemnity for Marcus Vance, PE and Permian HV Field Services LLC under Contract #TX-9011.</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                if not is_resolved and st.button("🛑 EXECUTE CHAIRMAN'S PREEMPTION WARRANT (STOP CAPITAL BLEED)", use_container_width=True, type="primary"):
-                    execute_unified_circuit_breaker(active_inc, 87264 * scale_factor)
-                    st.success("Chairman's Preemption Warrant executed. Capital bleed stopped.")
-                    st.rerun()
-                elif is_resolved:
-                    st.success("Chairman Preemption is active. Capital defended to $0/day.")
-                    if st.button("➔ Advance to Tier 4: Departmental Forensic Vault", use_container_width=True, type="primary"):
-                        request_navigation(DESK_OPTIONS[6])
-        elif current_d["name"] == "Eleanor Vance, CPA":
-            st.markdown("### 📊 Audit & Demurrage Recovery Desk: Eleanor Vance, CPA")
-            st.markdown(f"""
-                <div style="background:rgba(227,179,65,0.1); border-left:4px solid #e3b341; padding:14px 18px; border-radius:4px; margin-bottom:16px;">
-                    <div style="font-weight:800; font-size:1.15rem; color:#e3b341;">SOX COMPLIANCE & LIQUIDATED DAMAGES AUDIT</div>
-                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">Every 24 hours of vendor stall adds $87,264 to the certified Schedule D claim ledger.</div>
-                </div>
-                <div class="legal-document-box"><strong>Certified Liquidated Demurrage Total:</strong> <span style="color:#e3b341; font-size:1.4rem;">${87264 * 7 * scale_factor:,.0f} USD</span><br><br>{current_d['remedy_description']}</div>
-            """, unsafe_allow_html=True)
-            if st.button("➔ Inspect Full Forensic Demurrage Ledger (Tier 4)", use_container_width=True, type="primary"):
-                request_navigation(DESK_OPTIONS[6])
-        else:
-            st.markdown(f"### 🌐 Committee Remit: {current_d['name']}")
-            st.markdown(f"""
-                <div style="background:rgba(88,166,255,0.08); border-left:4px solid #58a6ff; padding:14px 18px; border-radius:4px; margin-bottom:16px;">
-                    <div style="font-weight:800; font-size:1.15rem; color:#58a6ff;">{current_d['remedy_title']}</div>
-                    <div style="font-size:1.0rem; color:#c9d1d9; margin-top:4px;">{current_d['remedy_description']}</div>
-                </div>
-            """, unsafe_allow_html=True)
-            st.info("This committee stands ready in support. The primary blocker remains the high-voltage inverter attestation owned by Dr. Arthur Pendleton or the Executive Chairman.")
-
-    st.markdown("#### Board Ratification Gate")
-    if not st.session_state.gate_2a_cleared:
-        if st.button("RATIFY BOARD DIRECTIVE & CONVEY FIDUCIARY CONSENSUS", key="btn_vote_2a", type="primary", use_container_width=True):
-            st.session_state.gate_2a_cleared = True
-            st.rerun()
-    else:
-        st.success("BOARD CONSENSUS RATIFIED: DGCL Section 141(a) shield active.")
-
-    render_forward_gateway(
-        is_dir_signed and st.session_state.gate_2a_cleared and st.session_state.gate_2b_cleared,
-        DESK_OPTIONS[4],
-        "TIER 3A: ENGINEERING OPERATIONS",
-        "t2_gateway",
-    )
+        st.button("🔴 TIER 3A LOCKED (Execute Pendleton Resolution Above to Proceed)",
+                  key="btn_t2a_locked_clean",
+                  disabled=True,
+                  use_container_width=True)
 
 # =========================================================
 # 7. VIEW: TIER 2B — LEGAL COUNSEL GOVERNANCE & SECRETARIAL DESK
