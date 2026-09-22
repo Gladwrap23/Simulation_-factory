@@ -1190,7 +1190,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         on_change=on_slider_move
     )
 
-    # 5. DYNAMIC BURN CALCULATIONS
+    # --- METRICS & STANDSTILL CONTROL (COMPACT UTILITY) ---
     scale_factor = current_capex / float(cfg["default_capex"])
     daily_burn = float(cfg["daily_burn_base"]) * scale_factor
     accrued_7day = daily_burn * 7.0
@@ -1198,54 +1198,48 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     st.write("")
     m1, m2, m3 = st.columns(3)
     m1.metric("Balance Sheet CapEx", f"${current_capex:,.0f}")
-    
+
     if st.session_state.burn_halted:
         m2.metric("Daily Holding Burn", "$0.00 / day", delta="STANDSTILL ACTIVE", delta_color="inverse")
-        m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}", delta="ACCRUAL FROZEN", delta_color="off")
+        m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}", delta="FROZEN", delta_color="off")
     else:
         m2.metric("Daily Holding Burn", f"${daily_burn:,.2f} / day")
         m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}")
 
-    # 6. Standstill Callbacks
+    # Compact Standstill Toggle (Tucked neatly under metrics)
     def toggle_standstill_on():
         st.session_state.burn_halted = True
+
     def toggle_standstill_off():
         st.session_state.burn_halted = False
 
-    # Reactive Standstill Controls
-    st.write("")
-    if not st.session_state.burn_halted:
-        st.button("🛑 ENGAGE COMMERCIAL STANDSTILL (FREEZE DEMURRAGE ACCRUAL)",
-                  key="btn_halt_burn", on_click=toggle_standstill_on, use_container_width=True)
-    else:
-        st.warning("⏸️ Commercial Standstill ACTIVE: Accrual frozen.")
-        st.button("▶️ RESUME LIVE DEMURRAGE ACCRUAL (LIFT STANDSTILL)",
-                  key="btn_run_burn", on_click=toggle_standstill_off, type="primary", use_container_width=True)
+    col_standstill, _ = st.columns([2, 1])
+    with col_standstill:
+        if not st.session_state.burn_halted:
+            st.button("⏸️ Freeze Demurrage (Commercial Standstill)",
+                      key="btn_halt_burn", on_click=toggle_standstill_on)
+        else:
+            st.button("▶️ Resume Demurrage Accrual",
+                      key="btn_run_burn", on_click=toggle_standstill_off, type="primary")
 
-    # Key 1 Action
+    # --- KEY 1: SINGLE-ACTION COMMIT & ADVANCE ---
     st.markdown("---")
     st.markdown("#### 🔑 Key 1: Executive Chairman Commercial Release")
-    if not k1:
-        st.button("⚡ ENGAGE KEY 1: COMMIT BALANCE SHEET & ADVANCE",
-                  key="btn_arm_k1", on_click=toggle_chairman_key, type="primary", use_container_width=True)
-    else:
-        st.markdown(f'<div style="background: #062b19; border: 1px solid #00ff88; padding: 12px; border-radius: 6px; color: #00ff88; font-weight: 800;">✓ KEY 1 COMMITTED (${current_capex:,.0f} USD)</div>', unsafe_allow_html=True)
-        st.button("🔓 Disarm Key 1 (Return to Sandbox)", key="btn_disarm_k1", on_click=toggle_chairman_key, use_container_width=True)
+    st.caption(f"Authorizes formal liquidated damages demand against {cfg['counterparty']} and commits ${current_capex:,.0f} USD baseline to docket.")
 
-    # COLOR-CODED LINEAR DESCENT GATEWAY
-    st.write("")
-    st.markdown("---")
-    if k1:
-        # Key 1 is committed: Light up green and enable immediate descent into Tier 2A
-        st.button("🟢 PROCEED TO TIER 2A: DIRECTORATE GOVERNANCE ➔",
-                  key="btn_advance_to_t2a",
-                  on_click=navigate_to,
-                  args=(COMMERCIAL_DESKS[1],),
-                  type="primary",
-                  use_container_width=True)
-    else:
-        st.button("🔴 TIER 2A LOCKED (Engage Key 1 Above to Proceed)",
-                  key="btn_locked_t2a", disabled=True, use_container_width=True)
+    def commit_and_advance_to_t2a():
+        st.session_state.key_chairman_armed = True
+        _evaluate_dual_seal()
+        st.session_state.active_desk = COMMERCIAL_DESKS[1]  # Instantly advance to Tier 2A
+
+    # ONE CLEAN ACTION: No duplicate buttons, no locked placeholders
+    st.button(
+        "⚡ ENGAGE KEY 1: COMMIT BALANCE SHEET & PROCEED TO TIER 2A ➔",
+        key="btn_arm_and_advance_k1",
+        on_click=commit_and_advance_to_t2a,
+        type="primary",
+        use_container_width=True
+    )
 
 # =========================================================
 # 5. VIEW: TIER 1B — GENERAL COUNSEL LEGAL CHAMBERS
