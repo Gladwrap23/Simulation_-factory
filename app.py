@@ -1720,9 +1720,6 @@ elif st.session_state.active_desk == DESK_OPTIONS[5]:
 # LEGAL TIER 3: REGULATORY & INTERCONNECTION AUDIT (RACHEL RAMOS)
 # ==============================================================================
 elif st.session_state.active_desk == LEGAL_DESKS[2]:
-    if "gate_leg3_cleared" not in st.session_state:
-        st.session_state.gate_leg3_cleared = False
-
     st.markdown("""
         <div style="background: linear-gradient(90deg, #130f26 0%, #1e1b4b 100%); border-left: 8px solid #a855f7; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
             <div style="font-size: 1.4rem; font-weight: 900; color: #ffffff;">LEGAL TIER 3 | REGULATORY & INTERCONNECTION AUDIT</div>
@@ -1733,52 +1730,50 @@ elif st.session_state.active_desk == LEGAL_DESKS[2]:
     """, unsafe_allow_html=True)
 
     st.markdown("""
-        <div style="background: #141c2e; border: 2px solid #a855f7; border-radius: 8px; padding: 16px 18px; margin-bottom: 14px;">
+        <div style="background: #141c2e; border: 2px solid #a855f7; border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Rachel Ramos, Esq.</div>
                     <div style="color: #c084fc; font-size: 0.82rem; font-weight: 700;">Regulatory & Interconnection Counsel</div>
                     <div style="color: #94a3b8; font-size: 0.75rem;">PUCT Substantive Rules § 25.101 // ERCOT Protocol § 4.2 Lead</div>
                 </div>
-                <span style="background: #a855f7; color: #ffffff; font-size: 0.72rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">STATUTORY AUDIT</span>
+                <span style="background: #a855f7; color: #ffffff; font-size: 0.72rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                    STATUTORY AUDIT
+                </span>
             </div>
-            <div style="margin-top: 12px; background: #0b1120; border-left: 3px solid #3b82f6; padding: 8px 12px; border-radius: 4px;">
-                <strong style="color: #93c5fd; font-size: 0.78rem;">CONDITIONS PRECEDENT VERIFIED:</strong>
-                <div style="color: #cbd5e0; font-size: 0.78rem; margin-top: 2px;">
+            <div style="margin-top: 12px; background: #0b1120; border-left: 3px solid #3b82f6; padding: 10px 14px; border-radius: 4px;">
+                <strong style="color: #93c5fd; font-size: 0.8rem;">CONDITIONS PRECEDENT VERIFIED:</strong>
+                <div style="color: #cbd5e0; font-size: 0.8rem; margin-top: 4px; line-height: 1.6;">
                     • Turnkey EPC Clause 11.2 default notice served via certified EDI/SMTP.<br>
                     • 90-minute cure clock logged without OEM cure response.<br>
-                    • Substation bypass logged as an emergency grid reliability event under ERCOT § 4.2.
+                    • Substation bypass logged as emergency grid reliability event under ERCOT § 4.2.
                 </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    if not st.session_state.gate_leg3_cleared:
-        def certify_legal_default():
-            st.session_state.gate_leg3_cleared = True
+    def certify_default_and_advance():
+        st.session_state.gate_leg3_cleared = True
+        go_to_desk(LEGAL_DESKS[3])
+        st.rerun()
 
-        st.button("⚖️ CERTIFY CONTRACTUAL DEFAULT & AUTHORIZE EVIDENCE SEALING",
-                  key="btn_cert_default_ramos",
-                  on_click=certify_legal_default,
-                  type="primary",
-                  use_container_width=True)
-    else:
-        st.success("✅ Default Notice certified under PUCT / ERCOT rules. Chain of custody unlocked.")
+    st.button(
+        "⚖️ CERTIFY CONTRACTUAL DEFAULT & PROCEED TO LEGAL TIER 4 (VAULT) ➔",
+        key="btn_cert_and_advance_leg3",
+        on_click=certify_default_and_advance,
+        type="primary",
+        use_container_width=True
+    )
 
+    st.write("")
     st.markdown("---")
-    c_back, c_next = st.columns([1, 2])
-    with c_back:
-        st.button("△ Return to Governance (Tier 2B)", key="btn_leg3_back", on_click=go_to_desk, args=(LEGAL_DESKS[1],), use_container_width=True)
-    with c_next:
-        if st.session_state.gate_leg3_cleared:
-            st.button("🟢 PROCEED TO LEGAL TIER 4: EVIDENCE & COLLATERAL VAULT ➔",
-                      key="btn_leg3_to_leg4",
-                      on_click=go_to_desk,
-                      args=(LEGAL_DESKS[3],),
-                      type="primary",
-                      use_container_width=True)
-        else:
-            st.button("🔴 TIER 4 LOCKED (Certify Default Above)", key="btn_leg3_locked", disabled=True, use_container_width=True)
+    st.button(
+        "△ Return to Governance Desk (Tier 2B)",
+        key="btn_leg3_back_clean",
+        on_click=go_to_desk,
+        args=(LEGAL_DESKS[1],),
+        use_container_width=True
+    )
 
 # ==============================================================================
 # LEGAL TIER 4: LEGAL EVIDENCE & COLLATERAL VAULT (TARIQ AL-MANSOOR)
