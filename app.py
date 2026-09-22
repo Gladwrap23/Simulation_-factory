@@ -581,6 +581,68 @@ def render_forward_gateway(cleared, next_desk, next_label, gateway_key):
         st.info("ℹ️ Complete the required controls above to unlock the next operational tier.")
         st.button("⌂ Return to Command Post (Tier 1)", key=f"{gateway_key}_back_incomplete", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
 
+
+def render_executive_dual_signoff():
+    st.markdown("""
+        <div style="background: linear-gradient(90deg, #0b1728 0%, #1e1b4b 100%); border-left: 8px solid #00ff88; padding: 20px 24px; border-radius: 8px; margin-bottom: 24px;">
+            <div style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">STAGE 04 | EXECUTIVE DUAL SIGN-OFF DOCKET</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #00ff88; margin-top: 4px;">SYNTHESIS OF COMMERCIAL LIQUIDATION & STATUTORY CHANCERY FILING</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if "chair_final_signed" not in st.session_state:
+        st.session_state.chair_final_signed = False
+    if "clo_final_signed" not in st.session_state:
+        st.session_state.clo_final_signed = False
+
+    col_comm, col_legal = st.columns(2)
+    with col_comm:
+        st.markdown("""
+            <div style="background: #0d1526; border: 1px solid #1e3a8a; border-radius: 8px; padding: 18px; margin-bottom: 16px;">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #60a5fa; text-transform: uppercase;">COMMERCIAL AUTHORITY</div>
+                <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-top: 2px;">Executive Chairman</div>
+                <div style="color: #94a3b8; font-size: 0.78rem; margin-bottom: 12px;">Mandate: Capital Recovery & Collateral Call</div>
+                <div style="background: #08101d; padding: 10px; border-radius: 4px; font-size: 0.8rem; color: #cbd5e0; line-height: 1.6;">
+                    • CapEx Baseline: <strong>$300,000,000 USD</strong><br>
+                    • Accrued Demurrage: <strong>$2,070,671.19 USD</strong><br>
+                    • Field Execution: <strong>IEEE 2800 Bypass Certified (Marcus Vance, PE)</strong>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if not st.session_state.chair_final_signed:
+            def sign_chair_final():
+                st.session_state.chair_final_signed = True
+            st.button("✍️ EXECUTIVE CHAIRMAN: SIGN COMMERCIAL DEMAND & LC DRAW", key="btn_sign_chair_final", on_click=sign_chair_final, type="primary", use_container_width=True)
+        else:
+            st.success("✓ EXECUTIVE CHAIRMAN SIGNATURE AFFIXED")
+
+    with col_legal:
+        st.markdown("""
+            <div style="background: #14132b; border: 1px solid #7c3aed; border-radius: 8px; padding: 18px; margin-bottom: 16px;">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #c084fc; text-transform: uppercase;">STATUTORY AUTHORITY</div>
+                <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-top: 2px;">Katherine Ross, Esq. (CLO)</div>
+                <div style="color: #94a3b8; font-size: 0.78rem; margin-bottom: 12px;">Mandate: Sovereign Court Injunction & Privilege Custody</div>
+                <div style="background: #0d0c1c; padding: 10px; border-radius: 4px; font-size: 0.8rem; color: #cbd5e0; line-height: 1.6;">
+                    • Fiduciary Attestation: <strong>DGCL § 141(e) Signed (Pendleton)</strong><br>
+                    • Regulatory Default: <strong>ERCOT § 4.2 / Cl. 11.2 Notice Audited</strong><br>
+                    • Admissibility: <strong>FRE 902(14) SHA-256 Binary Sealed</strong>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if not st.session_state.clo_final_signed:
+            def sign_clo_final():
+                st.session_state.clo_final_signed = True
+            st.button("✍️ CHIEF LEGAL OFFICER: SIGN CHANCERY COMPLAINT & INJUNCTION", key="btn_sign_clo_final", on_click=sign_clo_final, type="primary", use_container_width=True)
+        else:
+            st.success("✓ CHIEF LEGAL OFFICER SIGNATURE AFFIXED")
+
+    st.write("")
+    st.markdown("---")
+    if st.session_state.chair_final_signed and st.session_state.clo_final_signed:
+        st.success("🏆 COLLECTIVE EXECUTIVE SOVEREIGN SEAL AFFIXED\n\nVerified complaint and emergency TRO served; ISP98 standby letter of credit draw presented; case docket permanently sealed.")
+    else:
+        st.info("🔒 **Collective Action Gate:** Both the Executive Chairman and Chief Legal Officer must independently affix their signatures above to instigate the formal filing and collateral drawdown.")
+
 SECTORS = {
     "ERCOT BESS / Grid Storage (USA)": {
         "currency": "$",
@@ -1448,19 +1510,35 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
     """, unsafe_allow_html=True)
     if not is_sealed:
         st.warning("SIMULATION NOTICE: Active docket is disarmed. Resolutions remain non-binding until Tier 1 dual-key inception is sealed.")
-    st.markdown("#### Corporate Minute Registry & Statutory Fiduciary Audit")
-    st.markdown(f"""
-    | Committee / Seat | Statutory authority | Legal reliance defense | Minute book status |
-    | --- | --- | --- | --- |
-    | Dr. Arthur Pendleton | Delaware DGCL Section 141(e) | Technical expert reliance shield | {'CERTIFIED' if g2a else 'PENDING RATIFICATION'} |
-    | David Chen (Proxy) | PUCT Protocol Section 4.2 | Regulatory standstill compliance | STANDBY AUDITED |
-    | Eleanor Vance, CPA | ISP98 Rule 5.01 | Letter of credit default mechanics | STANDBY AUDITED |
-    | Executive Chairman | Delaware DGCL Section 141(a) | Business Judgment Rule | COMMITTED |
-    """)
+    # --------------------------------------------------------------------------
+    # CORPORATE MINUTE REGISTRY TABLE (DYNAMIC REAL-TIME BINDING)
+    # --------------------------------------------------------------------------
+    st.markdown("### Corporate Minute Registry & Statutory Fiduciary Audit")
+    pendleton_status = "CERTIFIED / RATIFIED" if st.session_state.get("gate_2a_cleared", False) else "PENDING RATIFICATION"
+    pendleton_color = "#00ff88" if st.session_state.get("gate_2a_cleared", False) else "#f59e0b"
+    table_html = f"""
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 20px; background: #0e1726; border-radius: 6px; overflow: hidden;">
+        <thead>
+            <tr style="background: #1e293b; color: #94a3b8; text-align: left;">
+                <th style="padding: 10px 14px;">Committee / Seat</th>
+                <th style="padding: 10px 14px;">Statutory Authority</th>
+                <th style="padding: 10px 14px;">Legal Reliance Defense</th>
+                <th style="padding: 10px 14px;">Minute Book Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 10px 14px; font-weight: 700; color: #ffffff;">Dr. Arthur Pendleton</td><td style="padding: 10px 14px; color: #cbd5e0;">Delaware DGCL Section 141(e)</td><td style="padding: 10px 14px; color: #cbd5e0;">Technical expert reliance shield</td><td style="padding: 10px 14px; font-weight: 800; color: {pendleton_color};">{pendleton_status}</td></tr>
+            <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 10px 14px; font-weight: 700; color: #ffffff;">David Chen (Proxy)</td><td style="padding: 10px 14px; color: #cbd5e0;">PUCT Protocol Section 4.2</td><td style="padding: 10px 14px; color: #cbd5e0;">Regulatory standstill compliance</td><td style="padding: 10px 14px; font-weight: 800; color: #60a5fa;">STANDBY AUDITED</td></tr>
+            <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 10px 14px; font-weight: 700; color: #ffffff;">Eleanor Vance, CPA</td><td style="padding: 10px 14px; color: #cbd5e0;">ISP98 Rule 5.01</td><td style="padding: 10px 14px; color: #cbd5e0;">Letter of credit default mechanics</td><td style="padding: 10px 14px; font-weight: 800; color: #60a5fa;">STANDBY AUDITED</td></tr>
+            <tr><td style="padding: 10px 14px; font-weight: 700; color: #ffffff;">Executive Chairman</td><td style="padding: 10px 14px; color: #cbd5e0;">Delaware DGCL Section 141(a)</td><td style="padding: 10px 14px; color: #cbd5e0;">Business Judgment Rule</td><td style="padding: 10px 14px; font-weight: 800; color: #00ff88;">COMMITTED</td></tr>
+        </tbody>
+    </table>
+    """
+    st.markdown(table_html, unsafe_allow_html=True)
     # --------------------------------------------------------------------------
     # LEGAL OFFICER: JONATHAN STERLING, ESQ. (CORPORATE SECRETARY)
     # --------------------------------------------------------------------------
-    st.markdown("### ⚖️ Legal Officer Execution & Cporate Seal")
+    st.markdown("### ⚖️ Legal Officer Execution & Corporate Seal")
 
     if not g2b:
         st.markdown("""
@@ -1779,29 +1857,7 @@ elif st.session_state.active_desk == LEGAL_DESKS[2]:
 # LEGAL TIER 4: LEGAL EVIDENCE & COLLATERAL VAULT (TARIQ AL-MANSOOR)
 # ==============================================================================
 elif st.session_state.active_desk == LEGAL_DESKS[3]:
-    st.markdown("""
-        <div style="background: linear-gradient(90deg, #130f26 0%, #1e1b4b 100%); border-left: 8px solid #00ff88; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
-            <div style="font-size: 1.4rem; font-weight: 900; color: #ffffff;">LEGAL TIER 4 | EVIDENCE & COLLATERAL VAULT</div>
-            <div style="font-size: 0.85rem; font-weight: 700; color: #00ff88; margin-top: 2px;">
-                FRE 902(14) DIGITAL SELF-AUTHENTICATION & ISP98 LETTER OF CREDIT ENFORCEMENT // TARIQ AL-MANSOOR
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <div style="background: #062b19; border: 2px solid #00ff88; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px;">
-            <div style="color: #00ff88; font-weight: 900; font-size: 1.1rem;">EVIDENTIARY VAULT SEALED // ARTIFACTS COURT-READY</div>
-            <div style="color: #cbd5e0; font-size: 0.82rem; margin-top: 6px;">
-                • Fluke 1775 10 kHz COMTRADE capture digested under FRE 902(13)/(14).<br>
-                • ISO 17025 NIST Calibration Cert #FLK-882190-TX linked to telemetry.<br>
-                • ISP98 standby letter of credit default notice pre-drafted against OEM guarantor.
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.info("🏆 **Dispute Lifecycle Complete:** Both Commercial and Legal tracks have fully descended and synthesized. Court exhibits and draw demands are locked.")
-    st.markdown("---")
-    st.button("🔄 Return to Legal Chambers (Tier 1B)", key="btn_leg4_to_t1b", on_click=go_to_desk, args=(LEGAL_DESKS[0],), use_container_width=True)
+    render_executive_dual_signoff()
 
 # =========================================================
 # 7. VIEW: TIER 4 — FORENSIC VAULT
@@ -1833,6 +1889,8 @@ elif st.session_state.active_desk == LEGAL_TIER3_LABEL:
         st.button("PROCEED TO TIER 4: LEGAL EVIDENCE VAULT", key="t3leg_to_t4", on_click=go_to_desk, args=(LEGAL_TIER4_LABEL,), use_container_width=True, type="primary")
 
 elif st.session_state.active_desk in (DESK_OPTIONS[6], LEGAL_TIER4_LABEL):
+    render_executive_dual_signoff()
+    '''
     render_inception_guard()
     render_breadcrumb(4)
     render_top_action_bar()
@@ -2267,6 +2325,7 @@ SUBMITTED UNDER RULE 11 CERTIFICATION.
         key="btn_rebuttal_download",
         use_container_width=True
     )
+    '''
 
 else:
     # Failsafe: Prevent blank screens on any state mismatch.
