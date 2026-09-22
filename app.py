@@ -1496,7 +1496,7 @@ elif st.session_state.active_desk == DESK_OPTIONS[3]:
 # =========================================================
 # 8. VIEW: TIER 3A — ENGINEERING OPERATIONS COMMAND
 # =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[4]:
+elif st.session_state.active_desk == COMMERCIAL_DESKS[2]:
     render_inception_guard()
     render_breadcrumb(2)
     render_top_action_bar()
@@ -1536,19 +1536,48 @@ elif st.session_state.active_desk == DESK_OPTIONS[4]:
         if step3:
             st.session_state.gate_3a_cleared = True
 
+    # Inside Sarah Jenkins' Lead Status Column:
     with c2:
-        st.markdown("**Command Lead Status**")
-        st.write("Officer: **Sarah Jenkins**")
-        st.write("Role: **VP, Engineering Operations**")
-        st.write("Contractor: **Permian HV Field Services**")
-        if st.session_state.gate_3a_cleared:
-            st.success("● 3A Gate Cleared: Dispatched to Field Lead")
-            if st.button("Jump to Tier 3B Execution Desk ➔", use_container_width=True):
-                request_navigation(DESK_OPTIONS[5])
-        else:
+        st.markdown(f"""
+            <div style="background: #0d1526; border: 1px solid #1e293b; padding: 14px; border-radius: 6px;">
+                <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Command Lead Status</div>
+                <div style="color: #ffffff; font-weight: 900; font-size: 1rem; margin-top: 2px;">Officer: Sarah Jenkins</div>
+                <div style="color: #60a5fa; font-size: 0.8rem; margin-top: 2px;">Role: VP, Engineering Operations</div>
+                <div style="color: #94a3b8; font-size: 0.8rem;">Contractor: Permian HV Field Services</div>
+                {"" if not st.session_state.gate_3a_cleared else '''
+                <div style="background: #062b19; border: 1px solid #00ff88; color: #00ff88; font-size: 0.75rem; font-weight: 800; padding: 4px 8px; border-radius: 4px; margin-top: 8px; display: inline-block;">
+                    ● 3A Gate Cleared: Dispatched to Field Lead
+                </div>
+                '''}
+            </div>
+        """, unsafe_allow_html=True)
+        if not st.session_state.gate_3a_cleared:
             st.warning("○ Awaiting Corporate Handoff Completion")
 
-    render_forward_gateway(st.session_state.get("gate_3a_cleared", False), DESK_OPTIONS[5], "TIER 3B: SITE EXECUTION", "t3a_gateway")
+    # Bottom Linear Descent Gateway (The Single Source of Truth)
+    st.write("")
+    st.markdown("---")
+
+    col_back, col_fwd = st.columns([1, 2])
+    with col_back:
+        st.button("△ Return to Directorate (Tier 2A)",
+                  key="btn_t3a_back",
+                  on_click=navigate_to,
+                  args=(COMMERCIAL_DESKS[1],),
+                  use_container_width=True)
+    with col_fwd:
+        if st.session_state.gate_3a_cleared:
+            st.button("🟢 PROCEED TO TIER 3B: SITE EXECUTION ➔",
+                      key="btn_t3a_to_t3b",
+                      on_click=navigate_to,
+                      args=(COMMERCIAL_DESKS[3],),
+                      type="primary",
+                      use_container_width=True)
+        else:
+            st.button("🔴 TIER 3B LOCKED (Complete Steps 1-3 Above to Proceed)",
+                      key="btn_t3a_locked",
+                      disabled=True,
+                      use_container_width=True)
 
 # =========================================================
 # 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
