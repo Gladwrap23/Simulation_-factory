@@ -520,11 +520,6 @@ def reset_entire_incident():
     go_to_desk(COMMERCIAL_DESKS[0])
 
 
-st.sidebar.markdown("---")
-if st.sidebar.button("🔄 Reset Incident / Clean Run", use_container_width=True):
-    reset_entire_incident()
-    st.rerun()
-
 def on_sidebar_change():
     st.session_state.active_desk = st.session_state.nav_radio
 
@@ -1002,41 +997,62 @@ with st.sidebar:
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
     # ==============================================================================
-    # SIDEBAR: DUAL-TRACK NAVIGATION ENGINE
+    # SIDEBAR: SYNCHRONIZED DUAL-TRACK NAVIGATION (COLLISION-FREE)
     # ==============================================================================
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🎛️ Command Desk")
 
-    # Top-level Track Selector
-    track_selection = st.sidebar.radio(
+    COMMERCIAL_DESKS = [
+        "Tier 1A | Chairman Tactical Command Post",
+        "Tier 2A | Chairman Directorate Governance",
+        "Tier 3A | Engineering Operations Command",
+        "Tier 3B | Site Execution Desk",
+        "Tier 4 | Forensic Recovery Vault"
+    ]
+
+    LEGAL_DESKS = [
+        "Tier 1B | General Counsel Legal Chambers",
+        "Tier 2B | Legal Counsel Governance Desk",
+        "Tier 3 | Regulatory & Interconnection Audit",
+        "Tier 4 | Legal Evidence & Collateral Vault"
+    ]
+
+    if "active_desk" not in st.session_state:
+        st.session_state.active_desk = COMMERCIAL_DESKS[0]
+
+    current_track_idx = 1 if st.session_state.active_desk in LEGAL_DESKS else 0
+    selected_track = st.sidebar.radio(
         "Select Operating Track:",
         [TRACK_COMMERCIAL, TRACK_LEGAL],
-        key="active_track_selector"
+        index=current_track_idx,
+        key="nav_track_selector"
     )
 
-    if track_selection == TRACK_COMMERCIAL:
-        if st.session_state.get("active_desk") not in COMMERCIAL_DESKS:
+    if selected_track == TRACK_COMMERCIAL:
+        if st.session_state.active_desk not in COMMERCIAL_DESKS:
             st.session_state.active_desk = COMMERCIAL_DESKS[0]
-
-        selected_desk = st.sidebar.radio(
+        current_comm_idx = COMMERCIAL_DESKS.index(st.session_state.active_desk)
+        st.session_state.active_desk = st.sidebar.radio(
             "Commercial Hierarchy:",
             COMMERCIAL_DESKS,
-            index=COMMERCIAL_DESKS.index(st.session_state.active_desk),
-            key="radio_commercial_desks"
+            index=current_comm_idx
         )
-        st.session_state.active_desk = selected_desk
-
     else:
-        if st.session_state.get("active_desk") not in LEGAL_DESKS:
+        if st.session_state.active_desk not in LEGAL_DESKS:
             st.session_state.active_desk = LEGAL_DESKS[0]
-
-        selected_desk = st.sidebar.radio(
+        current_leg_idx = LEGAL_DESKS.index(st.session_state.active_desk)
+        st.session_state.active_desk = st.sidebar.radio(
             "Legal Hierarchy:",
             LEGAL_DESKS,
-            index=LEGAL_DESKS.index(st.session_state.active_desk),
-            key="radio_legal_desks"
+            index=current_leg_idx
         )
-        st.session_state.active_desk = selected_desk
+
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🔄 Reset Incident / Clean Run", use_container_width=True):
+        reset_entire_incident()
+        st.session_state.capex_baseline = float(active_cfg["default_capex"])
+        st.session_state.slider_chair_capex = float(active_cfg["default_capex"])
+        st.rerun()
 
     st.session_state["nav_desk_selection"] = st.session_state.active_desk
 
@@ -1248,24 +1264,21 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             st.button("▶️ Resume Demurrage Accrual",
                       key="btn_run_burn", on_click=toggle_standstill_off, type="primary")
 
-    # --- KEY 1: SINGLE-ACTION COMMIT & ADVANCE ---
+    # --- KEY 1: COMMIT BALANCE SHEET AND ADVANCE DIRECTLY ---
     st.markdown("---")
     st.markdown("#### 🔑 Key 1: Executive Chairman Commercial Release")
     st.caption(f"Authorizes formal liquidated damages demand against {cfg['counterparty']} and commits ${current_capex:,.0f} USD baseline to docket.")
 
-    def commit_and_advance_to_t2a():
-        st.session_state.key_chairman_armed = True
-        _evaluate_dual_seal()
-        st.session_state.active_desk = COMMERCIAL_DESKS[1]  # Instantly advance to Tier 2A
-
-    # ONE CLEAN ACTION: No duplicate buttons, no locked placeholders
-    st.button(
+    if st.button(
         "⚡ ENGAGE KEY 1: COMMIT BALANCE SHEET & PROCEED TO TIER 2A ➔",
         key="btn_arm_and_advance_k1",
-        on_click=commit_and_advance_to_t2a,
         type="primary",
         use_container_width=True
-    )
+    ):
+        st.session_state.key_chairman_armed = True
+        _evaluate_dual_seal()
+        go_to_desk(COMMERCIAL_DESKS[1])
+        st.rerun()
 
 # =========================================================
 # 5. VIEW: TIER 1B — GENERAL COUNSEL LEGAL CHAMBERS
