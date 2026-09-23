@@ -1510,13 +1510,11 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[1]:
     cfg = book_config
     
     # 1. Pull dynamic variables from active scenario config
-    tech_lead = cfg["stakeholders"].get("technical_director_name", "Dr. Arthur Pendleton")
-    reliance_statute = cfg["jurisdiction"].get("statute_board_reliance", "Delaware DGCL § 141(e)")
-    pe_lead = cfg["stakeholders"].get("lead_pe_name", "Marcus Vance, PE")
-    breach_val = cfg["technical_breach"].get("breach_value", 4.1)
-    breach_unit = cfg["technical_breach"].get("unit_of_measure", "% THD")
-    breach_metric = cfg["technical_breach"].get("metric_name", "Total Harmonic Distortion (THD)")
-    wo_code = cfg["technical_breach"].get("hardware_work_order", "WO-8821")
+    tech_lead = cfg["stakeholders"]["technical_director_name"]
+    reliance_statute = cfg["jurisdiction"]["statute_board_reliance"]
+    pe_lead = cfg["stakeholders"]["lead_pe_name"]
+    breach_phrase = f'{cfg["technical_breach"]["breach_value"]} {cfg["technical_breach"]["unit_of_measure"]} {cfg["technical_breach"]["metric_name"]}'
+    wo_code = cfg["technical_breach"]["hardware_work_order"]
 
     # 2. Header Status Banner
     st.markdown(f"""
@@ -1544,7 +1542,7 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[1]:
             </div>
             <div style="margin-top: 12px; background: #0b1120; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 4px;">
                 <div style="color: #cbd5e0; font-size: 0.8rem;">
-                    <strong>Action Required:</strong> Formally attest to the <strong>{breach_val} {breach_unit} {breach_metric}</strong> breach from Work Order <strong>{wo_code}</strong> to absorb personal liability onto the corporate balance sheet.
+                    <strong>Action Required:</strong> Formally attest to the <strong>{breach_phrase}</strong> breach from Work Order <strong>{wo_code}</strong> to absorb personal liability onto the corporate balance sheet.
                 </div>
             </div>
         </div>
