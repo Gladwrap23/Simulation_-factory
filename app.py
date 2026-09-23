@@ -1504,104 +1504,75 @@ elif st.session_state.active_desk == DESK_OPTIONS[1]:
             st.button("Tier 2B Locked (Requires Dual-Key Inception)", key="t1b_locked", disabled=True, use_container_width=True)
 
 # ==============================================================================
-# TIER 2A: CHAIRMAN DIRECTORATE GOVERNANCE (UNIFIED NO-LOOP COCKPIT)
+# TIER 2A: DIRECTORATE GOVERNANCE & STATUTORY RELIANCE
 # ==============================================================================
 elif st.session_state.active_desk == COMMERCIAL_DESKS[1]:
-    g2a = st.session_state.get("gate_2a_cleared", False)
-    g2b = st.session_state.get("gate_2b_cleared", False)
+    cfg = book_config
+    
+    # 1. Pull dynamic variables from active scenario config
+    tech_lead = cfg["stakeholders"].get("technical_director_name", "Dr. Arthur Pendleton")
+    reliance_statute = cfg["jurisdiction"].get("statute_board_reliance", "Delaware DGCL § 141(e)")
+    pe_lead = cfg["stakeholders"].get("lead_pe_name", "Marcus Vance, PE")
+    breach_val = cfg["technical_breach"].get("breach_value", 4.1)
+    breach_unit = cfg["technical_breach"].get("unit_of_measure", "% THD")
+    breach_metric = cfg["technical_breach"].get("metric_name", "Total Harmonic Distortion (THD)")
+    wo_code = cfg["technical_breach"].get("hardware_work_order", "WO-8821")
 
-    st.markdown("""
-        <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00d4ff; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
-            <div style="font-size: 1.5rem; font-weight: 900; color: #ffffff;">TIER 2A | CHAIRMAN DIRECTORATE GOVERNANCE</div>
-            <div style="font-size: 0.9rem; font-weight: 700; color: #00d4ff; margin-top: 2px;">
-                BOARD OF DIRECTORS RATIFICATION & TECHNICAL RELIANCE REPOSITORY
+    # 2. Header Status Banner
+    st.markdown(f"""
+        <div style="background: #1e1114; border: 2px solid #ef4444; border-left: 8px solid #ef4444; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #f87171; text-transform: uppercase;">STATUTORY FIDUCIARY STATUS</div>
+            <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-top: 2px;">GOVERNANCE DEADLOCK: TECHNICAL RELIANCE REQUIRED</div>
+            <div style="color: #cbd5e0; font-size: 0.8rem; margin-top: 4px;">
+                {pe_lead} cannot perform the hardware bypass until {tech_lead} executes the {reliance_statute} reliance resolution.
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # 1. STATUS HEADER
-    if not g2a:
-        st.markdown(f"""
-            <div style="background: #1e1114; border: 2px solid #ef4444; border-left: 8px solid #ef4444; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="font-size: 0.8rem; font-weight: 800; color: #f87171;">STATUTORY FIDUCIARY STATUS</div>
-                <div style="font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-top: 2px;">
-                    🔴 GOVERNANCE DEADLOCK: TECHNICAL RELIANCE REQUIRED
+    # 3. Dynamic Technical Director Card
+    st.markdown(f"""
+        <div style="background: #141c2e; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 1.2rem; font-weight: 900; color: #ffffff;">{tech_lead}</div>
+                    <div style="color: #60a5fa; font-size: 0.82rem; font-weight: 700;">Chair, Technical Integrity & Risk Committee</div>
+                    <div style="color: #94a3b8; font-size: 0.75rem;">{reliance_statute} Statutory Reliance Authority</div>
                 </div>
-                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 6px;">
-                    Marcus Vance, PE cannot perform the hardware bypass until Dr. Arthur Pendleton executes the DGCL § 141(e) reliance resolution.
+                <span style="background: #ef4444; color: #ffffff; font-size: 0.72rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                    ACTIVE BOTTLENECK
+                </span>
+            </div>
+            <div style="margin-top: 12px; background: #0b1120; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 4px;">
+                <div style="color: #cbd5e0; font-size: 0.8rem;">
+                    <strong>Action Required:</strong> Formally attest to the <strong>{breach_val} {breach_unit} {breach_metric}</strong> breach from Work Order <strong>{wo_code}</strong> to absorb personal liability onto the corporate balance sheet.
                 </div>
             </div>
-        """, unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 4. Single-Action Execution Button
+    def execute_director_reliance():
+        st.session_state.gate_2a_cleared = True
+        go_to_desk(COMMERCIAL_DESKS[2])
+        st.rerun()
+
+    if not st.session_state.get("gate_2a_cleared", False):
+        st.button(
+            f"⚡ EXECUTE {tech_lead.upper()} {reliance_statute.upper()} RELIANCE RESOLUTION ➔",
+            key="btn_exec_reliance_dyn",
+            on_click=execute_director_reliance,
+            type="primary",
+            use_container_width=True
+        )
     else:
-        st.markdown("""
-            <div style="background: #062b19; border: 2px solid #00ff88; border-left: 8px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="font-size: 0.8rem; font-weight: 800; color: #00ff88;">STATUTORY FIDUCIARY STATUS</div>
-                <div style="font-size: 1.3rem; font-weight: 900; color: #ffffff; margin-top: 2px;">
-                    🟢 FIDUCIARY CONSENSUS RATIFIED // DGCL § 141(a) ACTIVE
-                </div>
-                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 6px;">
-                    Dr. Arthur Pendleton has executed technical reliance. Business Judgment Rule shield is active.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.success(f"✓ {reliance_statute} Reliance Attestation sealed by {tech_lead}.")
+        st.button("🟢 PROCEED TO TIER 3A: ENGINEERING OPERATIONS COMMAND ➔", 
+                  key="btn_t2a_to_t3a", on_click=go_to_desk, args=(COMMERCIAL_DESKS[2],), type="primary", use_container_width=True)
 
-    # 2. DR. PENDLETON ACTION CARD
-    if not g2a:
-        st.markdown("""
-            <div style="background: #141c2e; border: 2px solid #ef4444; border-radius: 8px; padding: 18px 20px; margin-bottom: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Dr. Arthur Pendleton</div>
-                        <div style="color: #60a5fa; font-size: 0.85rem; font-weight: 700;">Chair, Grid Risk & Technical Integrity Committee</div>
-                        <div style="color: #94a3b8; font-size: 0.78rem;">Delaware DGCL § 141(e) Technical Reliance Authority</div>
-                    </div>
-                    <span style="background: #ef4444; color: #ffffff; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
-                        🔴 ACTIVE BOTTLENECK
-                    </span>
-                </div>
-                <div style="margin-top: 12px; font-size: 0.85rem; color: #cbd5e0;">
-                    <strong>Action Required:</strong> Formally attest to the 4.1% THD harmonic breach from Work Order WO-8821 to absorb personal liability onto the corporate balance sheet.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("✍️ EXECUTE DR. PENDLETON DGCL SECTION 141(e) RELIANCE RESOLUTION", key="btn_exec_pendleton_final", type="primary", use_container_width=True):
-            st.session_state.gate_2a_cleared = True
-            st.rerun()
-    else:
-        st.markdown("""
-            <div style="background: #0b1c18; border: 1px solid #00ff88; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Dr. Arthur Pendleton</div>
-                        <div style="color: #00ff88; font-size: 0.85rem; font-weight: 700;">Chair, Grid Risk & Technical Integrity Committee</div>
-                    </div>
-                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
-                        ✓ SIGNED & RATIFIED
-                    </span>
-                </div>
-                <div style="margin-top: 8px; color: #cbd5e0; font-size: 0.82rem;">
-                    Resolution entered into Minute Book. Fiduciary shield fully established.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # 3. DIRECT LINEAR DESCENT GATEWAY
+    # Return Navigation
     st.write("")
     st.markdown("---")
-
-    if g2a:
-        st.button("🟢 PROCEED TO TIER 3A: OPERATIONS DISPATCH ➔",
-                  key="btn_t2a_advance_clean",
-                  on_click=go_to_desk,
-                  args=(COMMERCIAL_DESKS[2],),
-                  type="primary",
-                  use_container_width=True)
-    else:
-        st.button("🔴 TIER 3A LOCKED (Execute Pendleton Resolution Above to Proceed)",
-                  key="btn_t2a_locked_clean",
-                  disabled=True,
-                  use_container_width=True)
+    st.button("△ Return to Tactical Command Post (Tier 1A)", key="btn_t2a_back", on_click=go_to_desk, args=(COMMERCIAL_DESKS[0],), use_container_width=True)
 
 # =========================================================
 # 7. VIEW: TIER 2B — LEGAL COUNSEL GOVERNANCE & SECRETARIAL DESK
