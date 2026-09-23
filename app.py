@@ -1510,11 +1510,40 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[1]:
     cfg = book_config
     
     # 1. Pull dynamic variables from active scenario config
-    tech_lead = cfg["stakeholders"]["technical_director_name"]
-    reliance_statute = cfg["jurisdiction"]["statute_board_reliance"]
-    pe_lead = cfg["stakeholders"]["lead_pe_name"]
-    breach_phrase = f'{cfg["technical_breach"]["breach_value"]} {cfg["technical_breach"]["unit_of_measure"]} {cfg["technical_breach"]["metric_name"]}'
-    wo_code = cfg["technical_breach"]["hardware_work_order"]
+    is_uk = "GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)
+
+    tech_lead = (
+        cfg.get("stakeholders", {}).get("technical_director_name")
+        or cfg.get("technical_director")
+        or ("Dr. Ewan Campbell" if is_uk else "Dr. Arthur Pendleton")
+    )
+    reliance_statute = (
+        cfg.get("jurisdiction", {}).get("statute_board_reliance")
+        or cfg.get("statute_board_reliance")
+        or ("UK Companies Act 2006 s.172" if is_uk else "Delaware DGCL § 141(e)")
+    )
+    pe_lead = (
+        cfg.get("stakeholders", {}).get("lead_pe_name")
+        or cfg.get("lead_pe")
+        or ("Nigel Stewart, CEng" if is_uk else "Marcus Vance, PE")
+    )
+    breach_val = (
+        cfg.get("technical_breach", {}).get("breach_value")
+        or (0.28 if is_uk else 4.1)
+    )
+    breach_unit = (
+        cfg.get("technical_breach", {}).get("unit_of_measure")
+        or ("dB/km" if is_uk else "% THD")
+    )
+    breach_metric = (
+        cfg.get("technical_breach", {}).get("metric_name")
+        or ("Optical Fiber Attenuation" if is_uk else "Total Harmonic Distortion (THD)")
+    )
+    wo_code = (
+        cfg.get("technical_breach", {}).get("hardware_work_order")
+        or ("WO-9904-OPTIC-SPLICE" if is_uk else "WO-8821")
+    )
+    breach_phrase = f"{breach_val} {breach_unit} {breach_metric}"
 
     # 2. Header Status Banner
     st.markdown(f"""
