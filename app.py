@@ -111,6 +111,117 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- SCHEMA-DRIVEN SCENARIO PACKS (AutonomousCapitalDefenseScenario) ---
+SCENARIO_PACKS = [
+    {
+        "scenario_id": "US_TX_ERCOT_BESS_01",
+        "metadata": {
+            "client_name": "Apex Clean Energy Partners",
+            "sector_name": "Grid Battery Storage (BESS)",
+            "asset_name": "Permian Basin BESS Cluster Phase II",
+            "country_code": "USA"
+        },
+        "jurisdiction": {
+            "court_name": "Delaware Court of Chancery",
+            "statute_board_reliance": "Delaware DGCL § 141(e)",
+            "statute_officer_indemnity": "Delaware DGCL § 145",
+            "evidence_auth_standard": "FRE 902(14) Self-Authentication",
+            "collateral_legal_framework": "ISP98 Standby Letter of Credit",
+            "default_notice_clause": "Turnkey EPC Agreement Clause 11.2"
+        },
+        "financials": {
+            "currency_symbol": "$",
+            "default_capex_usd": 300_000_000.0,
+            "daily_burn_base_usd": 295_810.17
+        },
+        "technical_breach": {
+            "standard_code": "IEEE 2800 / ERCOT § 4.2",
+            "metric_name": "Total Harmonic Distortion (THD)",
+            "breach_value": 4.1,
+            "threshold_limit": 1.5,
+            "unit_of_measure": "% THD",
+            "hardware_work_order": "WO-8821-HARMONIC"
+        },
+        "stakeholders": {
+            "chairman_name": "Executive Chairman",
+            "clo_name": "Katherine Ross, Esq.",
+            "technical_director_name": "Dr. Arthur Pendleton",
+            "ops_vp_name": "Sarah Jenkins",
+            "lead_pe_name": "Marcus Vance, PE (TX#114902)",
+            "regulatory_counsel_name": "Rachel Ramos, Esq.",
+            "forensic_expert_name": "Tariq Al-Mansoor"
+        }
+    },
+    {
+        "scenario_id": "UK_NORTHSEA_FIBER_02",
+        "metadata": {
+            "client_name": "Caledonia Interconnect Ltd",
+            "sector_name": "Subsea Telecommunications",
+            "asset_name": "North Sea Subsea Array 4",
+            "country_code": "GBR"
+        },
+        "jurisdiction": {
+            "court_name": "High Court of Justice (Commercial Court, London)",
+            "statute_board_reliance": "UK Companies Act 2006 s.172",
+            "statute_officer_indemnity": "UK Companies Act 2006 s.232",
+            "evidence_auth_standard": "Civil Evidence Act 1995 (Computer Records)",
+            "collateral_legal_framework": "URDG 758 On-Demand Guarantee",
+            "default_notice_clause": "FIDIC Yellow Book Sub-Clause 15.1"
+        },
+        "financials": {
+            "currency_symbol": "£",
+            "default_capex_usd": 180_000_000.0,
+            "daily_burn_base_usd": 142_000.00
+        },
+        "technical_breach": {
+            "standard_code": "ITU-T G.654.E",
+            "metric_name": "Optical Fiber Attenuation",
+            "breach_value": 0.28,
+            "threshold_limit": 0.16,
+            "unit_of_measure": "dB/km",
+            "hardware_work_order": "WO-9904-OPTIC-SPLICE"
+        },
+        "stakeholders": {
+            "chairman_name": "Sir Alistair Vance",
+            "clo_name": "Fiona MacLeod, KC",
+            "technical_director_name": "Dr. Ewan Campbell",
+            "ops_vp_name": "Callum Wright",
+            "lead_pe_name": "Nigel Stewart, CEng",
+            "regulatory_counsel_name": "Gillian Ross, Solicitor",
+            "forensic_expert_name": "Arun Patel"
+        }
+    }
+]
+
+_SCENARIO_COUNTRY_LABELS = {"USA": "USA", "GBR": "UK"}
+
+def _scenario_to_operating_book(scenario):
+    """Maps a schema-shaped scenario pack into the OPERATING_BOOKS entry shape."""
+    meta = scenario["metadata"]
+    juris = scenario["jurisdiction"]
+    fin = scenario["financials"]
+    breach = scenario["technical_breach"]
+    stake = scenario["stakeholders"]
+
+    country_label = _SCENARIO_COUNTRY_LABELS.get(meta["country_code"], meta["country_code"])
+    key = f"{meta['sector_name']} / {meta['asset_name']} ({country_label})"
+    jurisdiction_label = f"{juris['court_name']} ({juris['statute_board_reliance']})"
+
+    return key, {
+        "docket": f"{juris['court_name']} Docket #{scenario['scenario_id']}",
+        "jurisdiction": jurisdiction_label,
+        "jurisdiction_options": [jurisdiction_label],
+        "counterparty": meta["client_name"],
+        "contract": juris["default_notice_clause"],
+        "default_capex": float(fin["default_capex_usd"]),
+        "daily_burn_base": float(fin["daily_burn_base_usd"]),
+        "lead_pe": stake["lead_pe_name"],
+        "lead_director": stake["technical_director_name"],
+        "tech_standard": f"{breach['standard_code']} {breach['metric_name']} Breach "
+                         f"({breach['breach_value']}{breach['unit_of_measure']} vs "
+                         f"{breach['threshold_limit']}{breach['unit_of_measure']} limit)"
+    }
+
 # --- GLOBAL OPERATING BOOKS REGISTRY ---
 OPERATING_BOOKS = {
     "ERCOT BESS / Grid Storage (USA)": {
@@ -150,6 +261,10 @@ OPERATING_BOOKS = {
         "tech_standard": "NER S5.2.5.5 Voltage Support Non-Compliance"
     }
 }
+
+for _scenario in SCENARIO_PACKS:
+    _book_key, _book_entry = _scenario_to_operating_book(_scenario)
+    OPERATING_BOOKS[_book_key] = _book_entry
 
 # =========================================================
 # 1. INDUSTRIAL STYLING & PRINT STYLESHEET (@media print)
