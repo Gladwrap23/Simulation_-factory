@@ -991,6 +991,11 @@ if "selected_book_name" not in st.session_state:
 if st.session_state.selected_book_name not in OPERATING_BOOKS:
     st.session_state.selected_book_name = next(iter(OPERATING_BOOKS))
 
+# ==============================================================================
+# GLOBAL LOCKDOWN STATE EVALUATION (DUAL EXECUTIVE FINAL SIGN-OFF)
+# ==============================================================================
+is_master_sealed = st.session_state.get("chair_final_signed", False) and st.session_state.get("clo_final_signed", False)
+
 with st.sidebar:
     st.markdown("""
         <div class="sidebar-brand-card">
@@ -1110,8 +1115,44 @@ with st.sidebar:
         )
 
     st.sidebar.markdown("---")
+    st.sidebar.markdown("🖨️ **MASTER DOCKET LOCKDOWN EXPORT**")
+
+    if is_master_sealed:
+        active_capex_seal = st.session_state.get("capex_baseline", active_cfg["default_capex"])
+        docket_text = f"""
+======================================================================
+SOVEREIGN DISPUTE SYNTHESIS & MASTER DOCKET
+======================================================================
+STATUS: SEALED & FILED // READ-ONLY MODE
+JURISDICTION: {selected_jurisdiction}
+DOCKET: {active_cfg['docket']}
+CAPEX BASELINE: ${active_capex_seal:,.2f} USD
+======================================================================
+
+[X] EXECUTIVE CHAIRMAN FINAL SIGNATURE AFFIXED
+[X] CHIEF LEGAL OFFICER FINAL SIGNATURE AFFIXED
+
+======================================================================
+ALL MODIFICATIONS LOCKED. SPOLIATION RISK: ZERO.
+======================================================================
+"""
+        st.sidebar.download_button(
+            label="📄 DOWNLOAD MASTER DOCKET (TXT)",
+            data=docket_text,
+            file_name="Master_Docket_Sealed.txt",
+            mime="text/plain",
+            type="primary",
+            use_container_width=True
+        )
+        st.sidebar.success("🔒 Docket Sealed. App is in Read-Only Mode.")
+    else:
+        st.sidebar.button("📄 DOWNLOAD MASTER DOCKET (TXT)", disabled=True, help="Complete Dual Executive Sign-off on Tier 4 to unlock.", use_container_width=True)
+
+    st.sidebar.markdown("---")
     if st.sidebar.button("🔄 Reset Incident / Clean Run", use_container_width=True):
         reset_entire_incident()
+        st.session_state.chair_final_signed = False
+        st.session_state.clo_final_signed = False
         st.session_state.capex_baseline = float(active_cfg["default_capex"])
         st.session_state.slider_chair_capex = float(active_cfg["default_capex"])
         st.rerun()
@@ -1214,6 +1255,19 @@ if st.session_state.trigger_print:
     components.html("<script>window.parent.print();</script>", height=0, width=0)
 
 # ==============================================================================
+# MASTER RENDER LOOP: GLOBAL LOCKDOWN BANNER
+# ==============================================================================
+if is_master_sealed and st.session_state.active_desk not in [COMMERCIAL_DESKS[4], LEGAL_DESKS[3]]:
+    st.markdown("""
+        <div style="background: #1e1114; border: 2px solid #ef4444; border-left: 8px solid #ef4444; padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; text-align: center;">
+            <div style="font-size: 1.2rem; font-weight: 900; color: #f87171;">🔒 READ-ONLY MODE: DOCKET SEALED</div>
+            <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
+                The Executive Chairman and CLO have instigated collective action. All prior state inputs, sliders, and gates are permanently locked to preserve evidentiary integrity under FRE 902.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# ==============================================================================
 # TIER 1A: CHAIRMAN TACTICAL COMMAND POST (COMMERCIAL PREROGATIVE)
 # ==============================================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
@@ -1291,7 +1345,8 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         step=5_000_000.0,
         format="$%d",
         key="slider_chair_capex",
-        on_change=on_slider_move
+        on_change=on_slider_move,
+        disabled=is_master_sealed
     )
 
     # --- METRICS & STANDSTILL CONTROL (COMPACT UTILITY) ---
@@ -1321,10 +1376,10 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     with col_standstill:
         if not st.session_state.burn_halted:
             st.button("⏸️ Freeze Demurrage (Commercial Standstill)",
-                      key="btn_halt_burn", on_click=toggle_standstill_on)
+                      key="btn_halt_burn", on_click=toggle_standstill_on, disabled=is_master_sealed)
         else:
             st.button("▶️ Resume Demurrage Accrual",
-                      key="btn_run_burn", on_click=toggle_standstill_off, type="primary")
+                      key="btn_run_burn", on_click=toggle_standstill_off, type="primary", disabled=is_master_sealed)
 
     # --- KEY 1: COMMIT BALANCE SHEET AND ADVANCE DIRECTLY ---
     st.markdown("---")
