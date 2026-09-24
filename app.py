@@ -1411,7 +1411,7 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     with b_col3:
         st.button(f"{curr_sym}150M Utility-Scale", key="btn_preset_150", on_click=update_capex_target, args=(150000000.0,), use_container_width=True)
     with b_col4:
-        st.button(f"{curr_sym}300M Giga-Facility", key="btn_preset_300", on_click=update_capex_target, args=(300000000.0,), use_container_width=True)
+        st.button(f"{curr_sym}500M Mega-Cluster", key="btn_preset_500", on_click=update_capex_target, args=(500000000.0,), use_container_width=True)
 
     # Synchronized CapEx Slider
     active_capex = st.slider(
