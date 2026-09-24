@@ -1103,50 +1103,65 @@ def render_german_command_post(scenario_data, is_de=False):
     col_comm, col_legal = st.columns(2)
 
     with col_comm:
-        st.markdown(f"#### 💼 {t['chair_seat']}: **{roster['supervisory_chair']}**")
-        st.caption(f"{t['ops_lead']}: {roster['executive_ceo']}")
-        st.markdown(f'<div style="font-size:0.8rem; color:#ef4444; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">⚠️ {t["bottleneck_header"]}</div>', unsafe_allow_html=True)
-
-        st.error(f"**{t['drift_label']}:** {scenario_data['technical_drift_metric']}")
-
-        hourly_burn = daily_burn / 24.0
         st.markdown(f"""
-        <div style="background: rgba(220, 38, 38, 0.12); border: 2px solid #ef4444; border-radius: 8px; padding: 16px; margin: 12px 0;">
-            <div style="font-size: 0.75rem; color: #fca5a5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
-                🚨 UNMITIGATED INACTION HOLDING BURN
+        <div style="margin-bottom: 12px;">
+            <div style="font-size: 1.35rem; font-weight: 800; color: #ffffff;">
+                💼 {t['chair_seat']}: <span style="color: #60a5fa;">{roster['supervisory_chair']}</span>
             </div>
-            <div style="font-size: 2.2rem; font-weight: 900; color: #ffffff; margin: 4px 0; text-shadow: 0 0 12px rgba(239, 68, 68, 0.4);">
-                {curr}{daily_burn:,.0f} <span style="font-size: 1.1rem; color: #f87171; font-weight: 700;">/ DAY</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #fecaca; margin-top: 8px; border-top: 1px solid rgba(239,68,68,0.3); padding-top: 8px;">
-                <span>⏱️ <b>{curr}{hourly_burn:,.0f}</b> / hour</span>
-                <span>📅 30-Day Accumulation: <b>{curr}{thirty_day_bleed:,.0f}</b></span>
+            <div style="font-size: 1.1rem; color: #94a3b8; margin-top: 4px;">
+                {t['ops_lead']}: <span style="color: #e2e8f0; font-weight: 600;">{roster['executive_ceo']}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown(f"""
-        * **{t['lbl_base']}:** `{curr}{active_capex:,.2f}`
-        * **{t['lbl_ld_cap']}:** `{curr}{ld_cap:,.2f}`
-        * **{t['lbl_engineer']}:** `{roster['independent_engineer']}`
-        """)
+        <div style="font-size: 1.15rem; color: #f87171; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 14px 0 6px 0;">
+            ⚠️ {t['bottleneck_header']}
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.error(f"**{t['drift_label']}:** {scenario_data['technical_drift_metric']}")
+
+        hourly_burn = daily_burn / 24.0
+        st.markdown(f"""
+        <div style="background: rgba(220, 38, 38, 0.15); border: 2px solid #ef4444; border-radius: 10px; padding: 18px; margin: 14px 0;">
+            <div style="font-size: 0.95rem; color: #fca5a5; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;">
+                🚨 UNMITIGATED INACTION HOLDING BURN
+            </div>
+            <div style="font-size: 2.6rem; font-weight: 900; color: #ffffff; margin: 6px 0; text-shadow: 0 0 14px rgba(239, 68, 68, 0.5);">
+                {curr}{daily_burn:,.0f} <span style="font-size: 1.3rem; color: #fca5a5; font-weight: 800;">/ DAY</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: #ffffff; margin-top: 10px; border-top: 1px solid rgba(239,68,68,0.4); padding-top: 10px;">
+                <span>⏱️ Hourly: <b style="color: #fca5a5;">{curr}{hourly_burn:,.0f}</b> / hr</span>
+                <span>📅 30-Day Bleed: <b style="color: #fca5a5;">{curr}{thirty_day_bleed:,.0f}</b></span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown(f"""
-        <div style="background: rgba(16, 185, 129, 0.12); border: 2px solid #10b981; border-radius: 8px; padding: 16px; margin: 12px 0;">
-            <div style="font-size: 0.75rem; color: #6ee7b7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
-                📊 BRIDGING SCALE | BALANCE SHEET PRESERVATION
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px 18px; margin: 12px 0; font-size: 1.15rem; line-height: 1.8;">
+            <div>• <span style="color: #94a3b8;">{t['lbl_base']}:</span> <b style="color: #ffffff;">{curr}{active_capex:,.2f}</b></div>
+            <div>• <span style="color: #94a3b8;">{t['lbl_ld_cap']}:</span> <b style="color: #f87171;">{curr}{ld_cap:,.2f}</b></div>
+            <div>• <span style="color: #94a3b8;">{t['lbl_engineer']}:</span> <b style="color: #60a5fa;">{roster['independent_engineer']}</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; border-radius: 10px; padding: 18px; margin: 14px 0;">
+            <div style="font-size: 1.05rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;">
+                📊 {t['scale_header']}
             </div>
-            <div style="font-size: 0.85rem; color: #d1fae5; margin-top: 6px;">
-                Gross Exposure Blocked (30d Bleed + 10% LD Cap): <b>{curr}{(thirty_day_bleed + ld_cap):,.2f}</b>
+            <div style="font-size: 1.2rem; color: #ffffff; margin-top: 10px;">
+                {t['scale_gross']}: <b style="color: #a7f3d0;">{curr}{(thirty_day_bleed + ld_cap):,.2f}</b>
             </div>
-            <div style="font-size: 0.85rem; color: #fca5a5; margin-top: 2px;">
-                Less Statutory Forensic Retainer (2.5%): <b>-{curr}{forensic_fee:,.2f}</b>
+            <div style="font-size: 1.2rem; color: #fca5a5; margin-top: 6px;">
+                {t['scale_fee']}: <b style="color: #f87171;">-{curr}{forensic_fee:,.2f}</b>
             </div>
-            <div style="border-top: 1px solid rgba(16, 185, 129, 0.4); margin-top: 10px; padding-top: 8px;">
-                <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase; font-weight: 700;">
-                    NET CAPITAL PRESERVED TO BALANCE SHEET
+            <div style="border-top: 1px solid rgba(16, 185, 129, 0.5); margin-top: 12px; padding-top: 10px;">
+                <div style="font-size: 0.95rem; color: #a7f3d0; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">
+                    {t['scale_net']}
                 </div>
-                <div style="font-size: 1.8rem; font-weight: 900; color: #34d399; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">
+                <div style="font-size: 2.5rem; font-weight: 900; color: #34d399; text-shadow: 0 0 14px rgba(16, 185, 129, 0.4);">
                     {curr}{net_preserved:,.2f}
                 </div>
             </div>
@@ -1154,25 +1169,47 @@ def render_german_command_post(scenario_data, is_de=False):
         """, unsafe_allow_html=True)
 
     with col_legal:
-        st.markdown(f"#### ⚖️ {t['counsel_seat']}: **{roster['general_counsel']}**")
-        st.caption(t["counsel_role"])
-        st.markdown(f'<div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase;">{t["shield_header"]}</div>', unsafe_allow_html=True)
-        st.success(f"**{t['forum_label']}:** {scenario_data['court_forum']}")
         st.markdown(f"""
-        * **{t['safe_harbor_label']}:** {scenario_data['statutory_safe_harbor']}
-        * **{t['evidence_label']}:** {scenario_data['evidence_standard']}
-        * **{t['hold_status_label']}:** {t['hold_active'] if st.session_state.mandate_executed else t['hold_pending']}
-        * **{t['consortium_label']}:** {prov['co_investors']}
-        * **{t['counterparty_label']}:** `{scenario_data['counterparty_entity']}`
-        """)
+        <div style="margin-bottom: 12px;">
+            <div style="font-size: 1.35rem; font-weight: 800; color: #ffffff;">
+                ⚖️ {t['counsel_seat']}: <span style="color: #60a5fa;">{roster['general_counsel']}</span>
+            </div>
+            <div style="font-size: 1.1rem; color: #94a3b8; margin-top: 4px;">
+                {t['counsel_role']}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        with st.expander(t["provenance_title"]):
+        st.markdown(f"""
+        <div style="font-size: 1.15rem; color: #34d399; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 14px 0 6px 0;">
+            🛡️ {t['shield_header']}
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.success(f"**{t['forum_label']}:** {scenario_data['court_forum']}")
+
+        hold_badge_color = "#ef4444" if st.session_state.mandate_executed else "#94a3b8"
+        hold_text = t['hold_active'] if st.session_state.mandate_executed else t['hold_pending']
+
+        st.markdown(f"""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-size: 1.15rem; line-height: 1.9;">
+            <div>• <span style="color: #94a3b8;">{t['safe_harbor_label']}:</span> <b style="color: #34d399;">{scenario_data['statutory_safe_harbor']}</b></div>
+            <div>• <span style="color: #94a3b8;">{t['evidence_label']}:</span> <b style="color: #ffffff;">{scenario_data['evidence_standard']}</b></div>
+            <div>• <span style="color: #94a3b8;">{t['hold_status_label']}:</span> <b style="color: {hold_badge_color};">{hold_text}</b></div>
+            <div>• <span style="color: #94a3b8;">{t['consortium_label']}:</span> <b style="color: #e2e8f0;">{prov['co_investors']}</b></div>
+            <div>• <span style="color: #94a3b8;">{t['counterparty_label']}:</span> <b style="color: #f87171;">{scenario_data['counterparty_entity']}</b></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.expander(t['provenance_title'], expanded=True):
             st.markdown(f"""
-            * **{t['prov_source']}:** `{prov['ingestion_doc_id']}`
-            * **{t['prov_standard']}:** `{prov['derivation_standard']}`
-            * **{t['prov_hash']}:** `{prov['sha256_root']}`
-            * **{t['prov_legal']}**
-            """)
+            <div style="font-size: 1.1rem; line-height: 1.8; color: #e2e8f0;">
+                <div>• <span style="color: #94a3b8;">{t['prov_source']}:</span> <b style="color: #ffffff;">{prov['ingestion_doc_id']}</b></div>
+                <div>• <span style="color: #94a3b8;">{t['prov_standard']}:</span> <b style="color: #ffffff;">{prov['derivation_standard']}</b></div>
+                <div>• <span style="color: #94a3b8;">{t['prov_hash']}:</span> <code style="font-size: 0.95rem; color: #34d399;">{prov['sha256_root']}</code></div>
+                <div style="margin-top: 8px; color: #38bdf8; font-weight: 600;">• {t['prov_legal']}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     st.markdown("---")
     if not st.session_state.mandate_executed:
@@ -1184,9 +1221,19 @@ def render_german_command_post(scenario_data, is_de=False):
         st.success(t["airlock_success"])
         o1, o2 = st.columns(2)
         with o1:
-            st.button(f"{t['btn_ops']} ({roster['independent_engineer']})", key="btn_go_de_ops", use_container_width=True)
+            st.button(
+                f"{t['btn_ops']} ({roster['independent_engineer']})",
+                key="btn_go_de_ops",
+                on_click=trigger_goto_ops,
+                use_container_width=True
+            )
         with o2:
-            st.button(f"{t['btn_legal']} ({roster['general_counsel']})", key="btn_go_de_legal", use_container_width=True)
+            st.button(
+                f"{t['btn_legal']} ({roster['general_counsel']})",
+                key="btn_go_de_legal",
+                on_click=trigger_goto_legal,
+                use_container_width=True
+            )
 
 
 def build_operating_book(book_name):
@@ -1421,55 +1468,51 @@ with st.sidebar:
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
     # ==============================================================================
-    # SIDEBAR: SYNCHRONIZED DUAL-TRACK NAVIGATION (COLLISION-FREE)
+    # 1. SIDEBAR NAVIGATION CONTROLS (Ensure exact keys & string matches)
     # ==============================================================================
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🎛️ Command Desk")
 
-    COMMERCIAL_DESKS = [
-        "Tier 1A | Chairman Tactical Command Post",
-        "Tier 2A | Chairman Directorate Governance",
-        "Tier 3A | Engineering Operations Command",
-        "Tier 3B | Site Execution Desk",
-        "Tier 4 | Forensic Recovery Vault"
-    ]
+    TRACK_COMMERCIAL = "🗂️ Commercial & Operations Track"
+    TRACK_LEGAL = "⚖️ Legal & Statutory Track"
 
-    LEGAL_DESKS = [
-        "Tier 1B | General Counsel Legal Chambers",
-        "Tier 2B | Legal Counsel Governance Desk",
-        "Tier 3 | Regulatory & Interconnection Audit",
-        "Tier 4 | Legal Evidence & Collateral Vault"
-    ]
+    TIER_1A = "Tier 1A | Chairman Tactical Command Post"
+    TIER_2A = "Tier 2A | Chairman Directorate Governance"
+    TIER_3A = "Tier 3A | Engineering Operations Command"
+    TIER_3B = "Tier 3B | Site Execution Desk"
+    TIER_4 = "Tier 4 | Forensic Recovery Vault"
 
-    if "active_desk" not in st.session_state:
-        st.session_state.active_desk = COMMERCIAL_DESKS[0]
+    if "nav_track_selection" not in st.session_state:
+        st.session_state["nav_track_selection"] = TRACK_COMMERCIAL
+    if "nav_tier_commercial" not in st.session_state:
+        st.session_state["nav_tier_commercial"] = TIER_1A
 
-    current_track_idx = 1 if st.session_state.active_desk in LEGAL_DESKS else 0
     selected_track = st.sidebar.radio(
         "Select Operating Track:",
-        [TRACK_COMMERCIAL, TRACK_LEGAL],
-        index=current_track_idx,
-        key="nav_track_selector"
+        options=[TRACK_COMMERCIAL, TRACK_LEGAL],
+        key="nav_track_selection"
     )
 
     if selected_track == TRACK_COMMERCIAL:
-        if st.session_state.active_desk not in COMMERCIAL_DESKS:
-            st.session_state.active_desk = COMMERCIAL_DESKS[0]
-        current_comm_idx = COMMERCIAL_DESKS.index(st.session_state.active_desk)
-        st.session_state.active_desk = st.sidebar.radio(
+        selected_tier = st.sidebar.radio(
             "Commercial Hierarchy:",
-            COMMERCIAL_DESKS,
-            index=current_comm_idx
+            options=[TIER_1A, TIER_2A, TIER_3A, TIER_3B, TIER_4],
+            key="nav_tier_commercial"
         )
+        st.session_state.active_desk = selected_tier
     else:
-        if st.session_state.active_desk not in LEGAL_DESKS:
-            st.session_state.active_desk = LEGAL_DESKS[0]
-        current_leg_idx = LEGAL_DESKS.index(st.session_state.active_desk)
-        st.session_state.active_desk = st.sidebar.radio(
-            "Legal Hierarchy:",
-            LEGAL_DESKS,
-            index=current_leg_idx
-        )
+        st.session_state.active_desk = LEGAL_DESKS[0]
+
+    # ==============================================================================
+    # 2. NAVIGATION CALLBACKS (Fires on button click)
+    # ==============================================================================
+
+    def trigger_goto_ops():
+        st.session_state["nav_track_selection"] = TRACK_COMMERCIAL
+        st.session_state["nav_tier_commercial"] = TIER_3A
+
+    def trigger_goto_legal():
+        st.session_state["nav_track_selection"] = TRACK_LEGAL
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("🖨️ **MASTER DOCKET LOCKDOWN EXPORT**")
