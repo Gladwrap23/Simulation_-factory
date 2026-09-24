@@ -1260,6 +1260,33 @@ def render_german_command_post(scenario_data, is_de=False):
             )
 
 
+def render_tier_2a_governance(scenario_data, is_de=False):
+    roster = scenario_data["named_roster"]
+
+    st.markdown("## 🏛️ TIER 2A | CHAIRMAN DIRECTORATE GOVERNANCE")
+    st.info("Direct Board Oversight & Statutory Resolution Registry Active.")
+
+    st.markdown(f"""
+    * **Supervisory Chair:** `{roster['supervisory_chair']}`
+    * **Executive CEO:** `{roster['executive_ceo']}`
+    * **Safe Harbor:** {scenario_data['statutory_safe_harbor']}
+    * **Forum:** {scenario_data['court_forum']}
+    """)
+
+    def goto_tier_1a():
+        st.session_state["nav_tier_commercial"] = TIER_1A
+
+    def goto_tier_3a():
+        st.session_state["nav_tier_commercial"] = TIER_3A
+
+    st.markdown("---")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.button("⬅️ Return to Command Post (Tier 1A)", on_click=goto_tier_1a, use_container_width=True)
+    with c2:
+        st.button("➔ Advance to Engineering Operations (Tier 3A)", type="primary", on_click=goto_tier_3a, use_container_width=True)
+
+
 def render_tier_3a_engineering(scenario_data, is_de=False):
     roster = scenario_data["named_roster"]
     prov = scenario_data["provenance_data"]
@@ -1289,8 +1316,102 @@ def render_tier_3a_engineering(scenario_data, is_de=False):
         * **Status:** Site standstill active; demurrage freeze legally confirmed
         """)
 
+    def goto_tier_1a():
+        st.session_state["nav_tier_commercial"] = TIER_1A
+
+    def goto_tier_3b():
+        st.session_state["nav_tier_commercial"] = TIER_3B
+
     st.markdown("---")
-    if st.button("⬅️ Return to Chairman Command Post (Tier 1A)", use_container_width=True):
+    nav_c1, nav_c2 = st.columns(2)
+    with nav_c1:
+        st.button("⬅️ Return to Command Post (Tier 1A)", on_click=goto_tier_1a, use_container_width=True)
+    with nav_c2:
+        st.button("➔ Advance to Site Execution Desk (Tier 3B)", type="primary", on_click=goto_tier_3b, use_container_width=True)
+
+
+def render_tier_3b_site_execution(scenario_data, is_de=False):
+    roster = scenario_data["named_roster"]
+    prov = scenario_data["provenance_data"]
+
+    st.markdown("## ⚙️ TIER 3B | SITE EXECUTION DESK")
+    st.caption(f"Substation Field Telemetry & SCADA Intercept | Target: {scenario_data['counterparty_entity']}")
+
+    st.info("🔴 **ACTIVE INTERVENTION:** Substation harmonic damping filters isolated for dynamic firmware recalibration.")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("### 🎛️ Real-Time Bus Telemetry (66kV)")
+        st.markdown("""
+        * **Active Inverter Arrays:** 64 Turbines (Siemens Gamesa SG 14-236 DD)
+        * **Recorded Bus Voltage:** 66.12 kV RMS
+        * **Harmonic Resonance Slip:** `3.82% THD_I` (Statutory ceiling: 2.50%)
+        * **Calibration Rig:** Fluke 1777 Power Quality Analyzer (Cert #DE-2024-9912)
+        * **DIN Standard:** DIN EN 61000-4-30 Class A Compliance Active
+        """)
+
+    with c2:
+        st.markdown("### 📄 Certified Contractor Work Orders")
+        st.markdown(f"""
+        * **Notice of Mechanical Standstill:** Served to TenneT TSO GmbH
+        * **Demurrage Freezing Order:** Filed under LG Stuttgart Ref #24-OH-882
+        * **Field Engineer Sign-Off:** `{roster['independent_engineer']}`
+        * **SCADA Integrity Hash:** `{prov['sha256_root'][:32]}...`
+        """)
+
+    def goto_tier_3a():
+        st.session_state["nav_tier_commercial"] = TIER_3A
+
+    def goto_tier_4():
+        st.session_state["nav_tier_commercial"] = TIER_4
+
+    st.markdown("---")
+    b1, b2 = st.columns(2)
+    with b1:
+        st.button("⬅️ Back to Operations Command (Tier 3A)", on_click=goto_tier_3a, use_container_width=True)
+    with b2:
+        st.button("➔ Proceed to Forensic Vault (Tier 4)", type="primary", on_click=goto_tier_4, use_container_width=True)
+
+
+def render_tier_4_forensic_vault(scenario_data, is_de=False):
+    roster = scenario_data["named_roster"]
+    prov = scenario_data["provenance_data"]
+
+    st.markdown("## 🔐 TIER 4 | FORENSIC RECOVERY VAULT")
+    st.caption("Cryptographically Sealed Master Docket & Statutory Evidence Repository")
+
+    st.success("🏛️ **EVIDENCE RECORD READY FOR JUDICIAL SUBMISSION (ZPO § 371 / FRE 902)**")
+
+    v1, v2 = st.columns(2)
+    with v1:
+        st.markdown("### 🔏 Cryptographic Chain of Custody")
+        st.markdown(f"""
+        * **Master SHA-256 Root:** `{prov['sha256_root']}`
+        * **Statutory Reliance Standard:** {scenario_data['statutory_safe_harbor']}
+        * **Target Court Venue:** {scenario_data['court_forum']}
+        * **Admissibility Certification:** DIN EN ISO/IEC 17025 Accredited
+        * **Litigation Hold Custodian:** `{roster['general_counsel']}`
+        """)
+
+    with v2:
+        st.markdown("### 📦 Exportable Judicial Artifacts")
+        st.markdown(f"""
+        1. **Exhibit A:** Ingestion Data Root (`{prov['ingestion_doc_id']}`)
+        2. **Exhibit B:** 66kV Inter-Array Harmonic FFT Drift Plot
+        3. **Exhibit C:** Sworn Affidavit of `{roster['independent_engineer']}`
+        4. **Exhibit D:** AktG § 93 Fiduciary Defense Dossier for Supervisory Board
+        """)
+
+        st.download_button(
+            label="📥 DOWNLOAD SEALED JUDICIAL DOSSIER (.ZIP)",
+            data=f"MASTER FORENSIC DOSSIER\nAsset: {scenario_data['asset_name']}\nHash: {prov['sha256_root']}",
+            file_name=f"Forensic_Dossier_{scenario_data['scenario_id']}.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
+
+    st.markdown("---")
+    if st.button("⬅️ Return to Chairman Tactical Command Post (Tier 1A)", use_container_width=True):
         st.session_state["nav_tier_commercial"] = TIER_1A
         st.rerun()
 
@@ -1735,19 +1856,16 @@ if active_cfg.get("scenario_id") == "DE_OFFSHORE_WIND_001":
             render_german_command_post(scenario_data, is_de)
 
         elif selected_tier == TIER_2A:
-            st.markdown("## 🏛️ TIER 2A | CHAIRMAN DIRECTORATE GOVERNANCE")
-            st.info("Direct Board Oversight & Statutory Resolution Registry Active.")
+            render_tier_2a_governance(scenario_data, is_de)
 
         elif selected_tier == TIER_3A:
             render_tier_3a_engineering(scenario_data, is_de)
 
         elif selected_tier == TIER_3B:
-            st.markdown("## ⚙️ TIER 3B | SITE EXECUTION DESK")
-            st.info("Field SCADA Telemetry & Hardware Calibration Logs.")
+            render_tier_3b_site_execution(scenario_data, is_de)
 
         elif selected_tier == TIER_4:
-            st.markdown("## 🔐 TIER 4 | FORENSIC RECOVERY VAULT")
-            st.info("FRE 902 / ZPO § 371 Sealed Evidence Docket.")
+            render_tier_4_forensic_vault(scenario_data, is_de)
 
     elif selected_track == TRACK_LEGAL:
         render_legal_statutory_track(scenario_data, is_de)
