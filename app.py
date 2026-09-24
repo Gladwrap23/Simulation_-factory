@@ -7,7 +7,7 @@ from copy import deepcopy
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.9_german_command_post_sep24_2026"
+APP_BUILD_ID = "v6.10_german_language_toggle_sep24_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -942,23 +942,119 @@ for director in SECTORS["ERCOT BESS / Grid Storage (USA)"]["board_roster"]:
     director["remedy_description"] = remedy_description
 
 
-def render_german_command_post(scenario_data):
-    if "de_active_capex" not in st.session_state:
-        st.session_state.de_active_capex = float(scenario_data["capex_exposure"])
-    if "de_mandate_executed" not in st.session_state:
-        st.session_state.de_mandate_executed = False
-    if "slider_german_capex" not in st.session_state:
-        st.session_state.slider_german_capex = float(scenario_data["capex_exposure"])
+I18N.update({
+    "EN": {
+        "title": "TIER 1 | JUDICIAL EVIDENCE SEALING & EXECUTIVE COMMAND POST",
+        "caption": "Fiduciary Airlock & Sovereign Asset Defense | Forum: ",
+        "gateway_title": "Command Gateway: Exposure Target (Sensitivity Engine)",
+        "btn_base": "⭐ Audited Base",
+        "btn_base_src": "EnBW 2024 & BNetzA Filings",
+        "btn_500_cap": "Hypothetical Sub-Array",
+        "btn_1500_cap": "Hypothetical Grid Link",
+        "btn_3000_cap": "Full Offshore Expansion",
+        "slider_label": "Adjust Balance Sheet Exposure Floor:",
+        "chair_seat": "Supervisory Board & Executive",
+        "ops_lead": "Operational Leadership",
+        "bottleneck_header": "⚠️ Acute Grid Synchronization Bottleneck (Capital Burn)",
+        "drift_label": "Identified Drift",
+        "lbl_base": "Active CapEx Baseline",
+        "lbl_daily_burn": "Daily Holding Burn (8.5% p.a.)",
+        "per_day": "/ day",
+        "lbl_30d": "30-Day Standstill Accumulation",
+        "lbl_ld_cap": "Liquidated Damages Ceiling (10% LD Cap)",
+        "lbl_engineer": "Certifying Statutory Engineer",
+        "scale_header": "📊 Bridging Scale: Total Capital Preserved",
+        "scale_gross": "Gross Inaction Loss Prevented (30d + LD Cap)",
+        "scale_fee": "Less Forensic Retainer Mandate (2.5%)",
+        "scale_net": "NET CAPITAL PRESERVED TO BALANCE SHEET",
+        "counsel_seat": "General Counsel",
+        "counsel_role": "Chief Legal Officer / Corporate Legal Director",
+        "shield_header": "🛡️ Statutory Fiduciary & Safe-Harbor Ledger",
+        "forum_label": "Legal Forum",
+        "safe_harbor_label": "Statutory Shield",
+        "evidence_label": "Evidence Standard",
+        "hold_status_label": "Litigation Hold Status",
+        "hold_active": "🔴 ACTIVE & SEALED ON DOCKET",
+        "hold_pending": "⚪ PREPARED (PENDING RATIFICATION)",
+        "consortium_label": "Consortium Risk",
+        "counterparty_label": "Default Counterparty",
+        "provenance_title": "🔍 View Provenance Card & Statutory Anchor",
+        "prov_source": "Public Data Ingestion",
+        "prov_standard": "Methodological Standard",
+        "prov_hash": "Cryptographic Hash",
+        "prov_legal": "Statutory Reliance Instrument: Formally Certified under AktG § 93",
+        "airlock_warning": "🔒 SYSTEM AIRLOCK: To release court-admissible ZPO dossiers, DIN ISO 17025 telemetry logs, and operational VDI work orders, a formal board resolution pursuant to AktG § 93 is required.",
+        "airlock_btn": "🛡️ EXECUTE RESOLUTION: MANDATE STATUTORY EVIDENCE SEALING (2.5% RETAINER)",
+        "airlock_success": "✅ BOARD RESOLUTION RATIFIED: AktG § 93 SAFE HARBOR ENGAGED | EVIDENCE CHAIN CERTIFIED UNDER ZPO § 371",
+        "btn_ops": "➔ UNLOCK TECHNICAL OPERATIONS",
+        "btn_legal": "➔ ENTER COURT DOCKET & LITIGATION CHAMBERS",
+    },
+    "DE": {
+        "title": "TIER 1 | GERICHTLICHE BEWEISSICHERUNG & VORSTANDS-COMMAND POST",
+        "caption": "Fiduciary Airlock & Sovereign Asset Defense | Forum: ",
+        "gateway_title": "Command Gateway: Exposure Target (Sensitivity Engine)",
+        "btn_base": "⭐ Audited Base",
+        "btn_base_src": "EnBW 2024 & BNetzA Filings",
+        "btn_500_cap": "Hypothetisches Teilfeld",
+        "btn_1500_cap": "Hypothetische Netzanbindung",
+        "btn_3000_cap": "Vollständige Offshore-Erweiterung",
+        "slider_label": "Bilanzielle Bemessungsgrundlage anpassen:",
+        "chair_seat": "Aufsichtsrat & Vorstand",
+        "ops_lead": "Operative Leitung",
+        "bottleneck_header": "⚠️ Akute Netzsynchronisations-Blockade (Liquiditätsabfluss)",
+        "drift_label": "Identifizierte Abweichung",
+        "lbl_base": "Aktive Bemessungsgrundlage",
+        "lbl_daily_burn": "Täglicher Halteverlust (8.5% p.a.)",
+        "per_day": "/ Tag",
+        "lbl_30d": "30-Tage Stillstands-Akkumulation",
+        "lbl_ld_cap": "Pönalen-Deckel (10% LD Cap)",
+        "lbl_engineer": "Zertifizierender Gutachter",
+        "scale_header": "📊 Bridging Scale: Gesamterhaltener Kapitalwert",
+        "scale_gross": "Vermiedener Schadenseintritt (30d + Pönalen)",
+        "scale_fee": "Abzüglich Forensik-Mandat (2.5%)",
+        "scale_net": "NETTO-KAPITALERHALT AUF BILANZEBENE",
+        "counsel_seat": "General Counsel",
+        "counsel_role": "Syndikusrechtsanwalt / Leiter Konzernrechtsabteilung",
+        "shield_header": "🛡️ Gesetzlicher Fiduciary & Safe-Harbor Ledger",
+        "forum_label": "Rechtliches Forum",
+        "safe_harbor_label": "Haftungsprivileg",
+        "evidence_label": "Beweisstandard",
+        "hold_status_label": "Status Beweissicherung",
+        "hold_active": "🔴 RECHTSHÄNGIG EINGELEITET",
+        "hold_pending": "⚪ VORBEREITET (ZUR ZEICHNUNG)",
+        "consortium_label": "Konsortial-Risiko",
+        "counterparty_label": "Verzugsgegner",
+        "provenance_title": "🔍 Provenienz-Karte & Gesetzliche Verankerung einsehen",
+        "prov_source": "Öffentliche Datenquelle",
+        "prov_standard": "Methodischer Standard",
+        "prov_hash": "Kryptographischer Hash",
+        "prov_legal": "Freistellungs-Dokument: Freizeichnung gem. BGH II ZR 268/16",
+        "airlock_warning": "🔒 SYSTEM-SPERRE: Zur Freigabe gerichtsfester ZPO-Dossiers, Messprotokolle nach DIN EN ISO 17025 und operativer VDI-Mängellisten ist die formelle Beschlussfassung gem. AktG § 93 erforderlich.",
+        "airlock_btn": "🛡️ BESCHLUSS FASSEN: STATUTARISCHE BEWEISSICHERUNG MANDATIEREN (2.5% RETRO-RETAINER)",
+        "airlock_success": "✅ VORSTANDSBESCHLUSS RATIFIZIERT: AktG § 93 ENTWOHNUNG AKTIVIERT | BEWEISKETTE NACH ZPO § 371 BEGLAUBIGT",
+        "btn_ops": "➔ TECHNISCHE OPERATIVE FREISCHALTEN",
+        "btn_legal": "➔ GERICHTSKAMMER & KLAGESCHRIFT BETRETEN",
+    },
+})
+
+
+def render_german_command_post(scenario_data, is_de=False):
+    t = I18N["DE"] if is_de else I18N["EN"]
+
+    if "active_capex" not in st.session_state:
+        st.session_state.active_capex = float(scenario_data["capex_exposure"])
+    if "mandate_executed" not in st.session_state:
+        st.session_state.mandate_executed = False
 
     def update_capex(val):
-        st.session_state.de_active_capex = float(val)
+        st.session_state.active_capex = float(val)
         st.session_state.slider_german_capex = float(val)
 
     curr = scenario_data["currency_symbol"]
     roster = scenario_data["named_roster"]
     prov = scenario_data["provenance_data"]
 
-    active_capex = float(st.session_state.de_active_capex)
+    active_capex = float(st.session_state.active_capex)
     apr = scenario_data["cost_of_capital_apr"]
     daily_burn = (active_capex * apr) / 365.0
     thirty_day_bleed = daily_burn * 30.0
@@ -966,32 +1062,32 @@ def render_german_command_post(scenario_data):
     forensic_fee = active_capex * scenario_data["forensic_retainer_percent"]
     net_preserved = (thirty_day_bleed + ld_cap) - forensic_fee
 
-    st.markdown("## TIER 1 | GERICHTLICHE BEWEISSICHERUNG & VORSTANDS-COMMAND POST")
-    st.caption(f"Fiduciary Airlock & Sovereign Asset Defense | Forum: {scenario_data['court_forum']}")
+    st.markdown(f"## 🏛️ {t['title']}")
+    st.caption(f"{t['caption']}{scenario_data['court_forum']}")
 
-    st.markdown("### Command Gateway: Exposure Target (Sensitivity Engine)")
+    st.markdown(f"### 🎛️ {t['gateway_title']}")
     b1, b2, b3, b4 = st.columns(4)
     with b1:
         st.button(
-            f"Audited Base ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
-            key="btn_de_base",
+            f"{t['btn_base']} ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
+            key="btn_base",
             on_click=update_capex,
             args=(scenario_data["capex_exposure"],),
             use_container_width=True,
         )
-        st.caption(f"Source: {scenario_data['filing_source']}")
+        st.caption(t["btn_base_src"])
     with b2:
-        st.button(f"What-If: {curr}500M", key="btn_de_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
-        st.caption("Hypothetical Sub-Array")
+        st.button(f"What-If: {curr}500M", key="btn_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
+        st.caption(t["btn_500_cap"])
     with b3:
-        st.button(f"What-If: {curr}1.5B", key="btn_de_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
-        st.caption("Hypothetical Grid Link")
+        st.button(f"What-If: {curr}1.5B", key="btn_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
+        st.caption(t["btn_1500_cap"])
     with b4:
-        st.button(f"What-If: {curr}3.0B", key="btn_de_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
-        st.caption("Full Offshore Expansion")
+        st.button(f"What-If: {curr}3.0B", key="btn_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
+        st.caption(t["btn_3000_cap"])
 
     slider_val = st.slider(
-        "Adjust Balance Sheet Exposure Floor:",
+        t["slider_label"],
         min_value=100000000.0,
         max_value=3500000000.0,
         value=float(active_capex),
@@ -1000,66 +1096,66 @@ def render_german_command_post(scenario_data):
         key="slider_german_capex",
     )
     if slider_val != active_capex:
-        st.session_state.de_active_capex = float(slider_val)
+        st.session_state.active_capex = float(slider_val)
         st.rerun()
 
     st.markdown("---")
     col_comm, col_legal = st.columns(2)
 
     with col_comm:
-        st.markdown(f"#### Aufsichtsrat & Vorstand: **{roster['supervisory_chair']}**")
-        st.caption(f"Operative Leitung: {roster['executive_ceo']}")
-        st.markdown('<div style="font-size:0.75rem; color:#f59e0b; font-weight:700; text-transform:uppercase;">Akute Netzsynchronisations-Blockade (Liquiditaetsabfluss)</div>', unsafe_allow_html=True)
-        st.error(f"**Identifizierte Abweichung:** {scenario_data['technical_drift_metric']}")
+        st.markdown(f"#### 💼 {t['chair_seat']}: **{roster['supervisory_chair']}**")
+        st.caption(f"{t['ops_lead']}: {roster['executive_ceo']}")
+        st.markdown(f'<div style="font-size:0.75rem; color:#f59e0b; font-weight:700; text-transform:uppercase;">{t["bottleneck_header"]}</div>', unsafe_allow_html=True)
+        st.error(f"**{t['drift_label']}:** {scenario_data['technical_drift_metric']}")
         st.markdown(f"""
-        * **Aktive Bemessungsgrundlage:** `{curr}{active_capex:,.2f}`
-        * **Täglicher Halteverlust (8.5% p.a.):** `{curr}{daily_burn:,.2f} / Tag`
-        * **30-Tage Stillstands-Akkumulation:** `{curr}{thirty_day_bleed:,.2f}`
-        * **Pönalen-Deckel (10% LD Cap):** `{curr}{ld_cap:,.2f}`
-        * **Zertifizierender Gutachter:** `{roster['independent_engineer']}`
+        * **{t['lbl_base']}:** `{curr}{active_capex:,.2f}`
+        * **{t['lbl_daily_burn']}:** `{curr}{daily_burn:,.2f} {t['per_day']}`
+        * **{t['lbl_30d']}:** `{curr}{thirty_day_bleed:,.2f}`
+        * **{t['lbl_ld_cap']}:** `{curr}{ld_cap:,.2f}`
+        * **{t['lbl_engineer']}:** `{roster['independent_engineer']}`
         """)
 
-        st.markdown("##### Bridging Scale: Gesamterhaltener Kapitalwert")
+        st.markdown(f"##### {t['scale_header']}")
         st.info(f"""
-        * **Vermiedener Schadenseintritt (30d + Pönalen):** `{curr}{(thirty_day_bleed + ld_cap):,.2f}`
-        * **Abzüglich Forensik-Mandat (2.5%):** `-{curr}{forensic_fee:,.2f}`
-        * **NETTO-KAPITALERHALT AUF BILANZEBENE:** **`{curr}{net_preserved:,.2f}`**
+        * **{t['scale_gross']}:** `{curr}{(thirty_day_bleed + ld_cap):,.2f}`
+        * **{t['scale_fee']}:** `-{curr}{forensic_fee:,.2f}`
+        * **{t['scale_net']}:** **`{curr}{net_preserved:,.2f}`**
         """)
 
     with col_legal:
-        st.markdown(f"#### General Counsel: **{roster['general_counsel']}**")
-        st.caption("Syndikusrechtsanwalt / Leiter Konzernrechtsabteilung")
-        st.markdown('<div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase;">Gesetzlicher Fiduciary & Safe-Harbor Ledger</div>', unsafe_allow_html=True)
-        st.success(f"**Rechtliches Forum:** {scenario_data['court_forum']}")
+        st.markdown(f"#### ⚖️ {t['counsel_seat']}: **{roster['general_counsel']}**")
+        st.caption(t["counsel_role"])
+        st.markdown(f'<div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase;">{t["shield_header"]}</div>', unsafe_allow_html=True)
+        st.success(f"**{t['forum_label']}:** {scenario_data['court_forum']}")
         st.markdown(f"""
-        * **Haftungsprivileg:** {scenario_data['statutory_safe_harbor']}
-        * **Beweisstandard:** {scenario_data['evidence_standard']}
-        * **Status Beweissicherung:** {'RECHTSHÄNGIG EINGELEITET' if st.session_state.de_mandate_executed else 'VORBEREITET (ZUR ZEICHNUNG)'}
-        * **Konsortial-Risiko:** {prov['co_investors']}
-        * **Verzugsgegner:** `{scenario_data['counterparty_entity']}`
+        * **{t['safe_harbor_label']}:** {scenario_data['statutory_safe_harbor']}
+        * **{t['evidence_label']}:** {scenario_data['evidence_standard']}
+        * **{t['hold_status_label']}:** {t['hold_active'] if st.session_state.mandate_executed else t['hold_pending']}
+        * **{t['consortium_label']}:** {prov['co_investors']}
+        * **{t['counterparty_label']}:** `{scenario_data['counterparty_entity']}`
         """)
 
-        with st.expander("Provenienz-Karte & Gesetzliche Verankerung einsehen"):
+        with st.expander(t["provenance_title"]):
             st.markdown(f"""
-            * **Öffentliche Datenquelle:** `{prov['ingestion_doc_id']}`
-            * **Methodischer Standard:** `{prov['derivation_standard']}`
-            * **Kryptographischer Hash:** `{prov['sha256_root']}`
-            * **Freistellungs-Dokument:** Freizeichnung gem. BGH II ZR 268/16
+            * **{t['prov_source']}:** `{prov['ingestion_doc_id']}`
+            * **{t['prov_standard']}:** `{prov['derivation_standard']}`
+            * **{t['prov_hash']}:** `{prov['sha256_root']}`
+            * **{t['prov_legal']}**
             """)
 
     st.markdown("---")
-    if not st.session_state.de_mandate_executed:
-        st.warning("**SYSTEM-SPERRE:** Zur Freigabe gerichtsfester ZPO-Dossiers, Messprotokolle nach DIN EN ISO 17025 und operativer VDI-Mängellisten ist die formelle Beschlussfassung gem. AktG § 93 erforderlich.")
-        if st.button("BESCHLUSS FASSEN: STATUTARISCHE BEWEISSICHERUNG MANDATIEREN (2.5% RETRO-RETAINER)", type="primary", use_container_width=True):
-            st.session_state.de_mandate_executed = True
+    if not st.session_state.mandate_executed:
+        st.warning(t["airlock_warning"])
+        if st.button(t["airlock_btn"], type="primary", use_container_width=True):
+            st.session_state.mandate_executed = True
             st.rerun()
     else:
-        st.success("**VORSTANDSBESCHLUSS RATIFIZIERT:** AktG § 93 ENTHAFTUNG AKTIVIERT | BEWEISKETTE NACH ZPO § 371 BEGLAUBIGT")
+        st.success(t["airlock_success"])
         o1, o2 = st.columns(2)
         with o1:
-            st.button(f"TECHNISCHE OPERATIVE FREISCHALTEN ({roster['independent_engineer']})", key="btn_go_de_ops", use_container_width=True)
+            st.button(f"{t['btn_ops']} ({roster['independent_engineer']})", key="btn_go_de_ops", use_container_width=True)
         with o2:
-            st.button(f"GERICHTSKAMMER & KLAGESCHRIFT BETRETEN ({roster['general_counsel']})", key="btn_go_de_legal", use_container_width=True)
+            st.button(f"{t['btn_legal']} ({roster['general_counsel']})", key="btn_go_de_legal", use_container_width=True)
 
 
 def build_operating_book(book_name):
@@ -1230,6 +1326,7 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     active_cfg = OPERATING_BOOKS[selected_book]
+    scenario_data = SCENARIOS_MAP.get(selected_book, {})
 
     # --- SIDEBAR ASSET & CURRENCY BADGE ---
     cfg = active_cfg
@@ -1244,6 +1341,14 @@ with st.sidebar:
             <div style="font-size: 0.68rem; color: #64748b;">Baseline Exposure: {curr_sym}{base_capex_val:,.0f}</div>
         </div>
     """, unsafe_allow_html=True)
+
+    selected_lang = st.sidebar.selectbox(
+        "🌐 JURISDICTION LANGUAGE / SPRACHE",
+        options=["English (EN)", "Deutsch (DE)"],
+        index=1 if "DE" in scenario_data.get("jurisdiction_code", "") else 0,
+        key="app_language_toggle"
+    )
+    is_de = "Deutsch" in selected_lang
 
     if st.session_state.get("last_loaded_book") != selected_book:
         st.session_state.capex_baseline = active_cfg["default_capex"]
@@ -1467,7 +1572,7 @@ CERTIFIED UNDER STATUTORY CORPORATE COVENANT.
             request_navigation(DESK_OPTIONS[0])
 
 if active_cfg.get("scenario_id") == "DE_OFFSHORE_WIND_001":
-    render_german_command_post(SCENARIOS_MAP[selected_book])
+    render_german_command_post(SCENARIOS_MAP[selected_book], is_de=is_de)
     st.stop()
 
 if st.session_state.selected_incident_id not in sector["incidents"]:
