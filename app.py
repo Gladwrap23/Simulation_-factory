@@ -1105,22 +1105,53 @@ def render_german_command_post(scenario_data, is_de=False):
     with col_comm:
         st.markdown(f"#### 💼 {t['chair_seat']}: **{roster['supervisory_chair']}**")
         st.caption(f"{t['ops_lead']}: {roster['executive_ceo']}")
-        st.markdown(f'<div style="font-size:0.75rem; color:#f59e0b; font-weight:700; text-transform:uppercase;">{t["bottleneck_header"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:0.8rem; color:#ef4444; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">⚠️ {t["bottleneck_header"]}</div>', unsafe_allow_html=True)
+
         st.error(f"**{t['drift_label']}:** {scenario_data['technical_drift_metric']}")
+
+        hourly_burn = daily_burn / 24.0
+        st.markdown(f"""
+        <div style="background: rgba(220, 38, 38, 0.12); border: 2px solid #ef4444; border-radius: 8px; padding: 16px; margin: 12px 0;">
+            <div style="font-size: 0.75rem; color: #fca5a5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
+                🚨 UNMITIGATED INACTION HOLDING BURN
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 900; color: #ffffff; margin: 4px 0; text-shadow: 0 0 12px rgba(239, 68, 68, 0.4);">
+                {curr}{daily_burn:,.0f} <span style="font-size: 1.1rem; color: #f87171; font-weight: 700;">/ DAY</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #fecaca; margin-top: 8px; border-top: 1px solid rgba(239,68,68,0.3); padding-top: 8px;">
+                <span>⏱️ <b>{curr}{hourly_burn:,.0f}</b> / hour</span>
+                <span>📅 30-Day Accumulation: <b>{curr}{thirty_day_bleed:,.0f}</b></span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
         st.markdown(f"""
         * **{t['lbl_base']}:** `{curr}{active_capex:,.2f}`
-        * **{t['lbl_daily_burn']}:** `{curr}{daily_burn:,.2f} {t['per_day']}`
-        * **{t['lbl_30d']}:** `{curr}{thirty_day_bleed:,.2f}`
         * **{t['lbl_ld_cap']}:** `{curr}{ld_cap:,.2f}`
         * **{t['lbl_engineer']}:** `{roster['independent_engineer']}`
         """)
 
-        st.markdown(f"##### {t['scale_header']}")
-        st.info(f"""
-        * **{t['scale_gross']}:** `{curr}{(thirty_day_bleed + ld_cap):,.2f}`
-        * **{t['scale_fee']}:** `-{curr}{forensic_fee:,.2f}`
-        * **{t['scale_net']}:** **`{curr}{net_preserved:,.2f}`**
-        """)
+        st.markdown(f"""
+        <div style="background: rgba(16, 185, 129, 0.12); border: 2px solid #10b981; border-radius: 8px; padding: 16px; margin: 12px 0;">
+            <div style="font-size: 0.75rem; color: #6ee7b7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
+                📊 BRIDGING SCALE | BALANCE SHEET PRESERVATION
+            </div>
+            <div style="font-size: 0.85rem; color: #d1fae5; margin-top: 6px;">
+                Gross Exposure Blocked (30d Bleed + 10% LD Cap): <b>{curr}{(thirty_day_bleed + ld_cap):,.2f}</b>
+            </div>
+            <div style="font-size: 0.85rem; color: #fca5a5; margin-top: 2px;">
+                Less Statutory Forensic Retainer (2.5%): <b>-{curr}{forensic_fee:,.2f}</b>
+            </div>
+            <div style="border-top: 1px solid rgba(16, 185, 129, 0.4); margin-top: 10px; padding-top: 8px;">
+                <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase; font-weight: 700;">
+                    NET CAPITAL PRESERVED TO BALANCE SHEET
+                </div>
+                <div style="font-size: 1.8rem; font-weight: 900; color: #34d399; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">
+                    {curr}{net_preserved:,.2f}
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col_legal:
         st.markdown(f"#### ⚖️ {t['counsel_seat']}: **{roster['general_counsel']}**")
