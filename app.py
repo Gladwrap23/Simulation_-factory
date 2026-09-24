@@ -1796,95 +1796,134 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[2]:
                       disabled=True,
                       use_container_width=True)
 
-# =========================================================
-# 7. VIEW: TIER 3B — SITE EXECUTION & REMEDIATION DESK
-# =========================================================
-elif st.session_state.active_desk == DESK_OPTIONS[5]:
-    render_inception_guard()
-    render_breadcrumb(3)
-    render_top_action_bar()
-    st.markdown("""
-        <div style="background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%); border-left: 8px solid #00ff88; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
-            <div style="font-size: 2rem; font-weight: 900; color: #ffffff;">TIER 3B | SITE EXECUTION DESK</div>
-            <div style="font-size: 1.05rem; font-weight: 700; color: #00ff88; margin-top: 4px;">
-                SPECIALIZED PHYSICAL ENGINEERING & STATUTORY ATTESTATION | MARCUS VANCE, PE (TXLIC114902)
+# ==============================================================================
+# TIER 3B: SITE EXECUTION DESK (DYNAMIC JURISDICTION BINDING)
+# ==============================================================================
+elif st.session_state.active_desk == COMMERCIAL_DESKS[3]:
+    cfg = book_config
+    is_uk = "GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)
+
+    # 1. Dynamic Stakeholder & License Extraction
+    pe_name = (
+        cfg.get("stakeholders", {}).get("lead_pe_name") if isinstance(cfg.get("stakeholders"), dict) else None
+    ) or cfg.get("lead_pe") or ("Nigel Stewart, CEng" if is_uk else "Marcus Vance, PE")
+    
+    pe_reg = "ECUK Reg #884920" if is_uk else "TXLIC114902"
+    
+    # 2. Dynamic Breach & Work Order Metadata
+    breach_dict = cfg.get("technical_breach") if isinstance(cfg.get("technical_breach"), dict) else {}
+    wo_code = breach_dict.get("hardware_work_order", "WO-9904-OPTIC-SPLICE" if is_uk else "WO-8821-HARMONIC")
+    breach_val = breach_dict.get("breach_value", 0.28 if is_uk else 4.1)
+    breach_unit = breach_dict.get("unit_of_measure", "dB/km" if is_uk else "%")
+    breach_metric = breach_dict.get("metric_name", "Optical Fiber Attenuation" if is_uk else "THD Harmonics")
+    threshold_limit = breach_dict.get("threshold_limit", "< 0.16 dB/km (ITU-T G.654.E)" if is_uk else "< 3.0% (IEEE 2800)")
+
+    # 3. Dynamic Regulatory Body & Docket
+    target_gate = "Check #4 (Marine Landing COD)" if is_uk else "Check #6 (COD Attestation)"
+    reg_docket = cfg.get("docket_number", "#UK_NORTHSEA_FIBER_02" if is_uk else "ERCOT Docket #54219")
+    statute_board = "STATUTORY ECUK STATUS" if is_uk else "STATUTORY TBPE STATUS"
+    statute_shield = "UK Companies Act 2006 s.172/232 Active" if is_uk else "Delaware DGCL § 141 Shield Active"
+
+    # Header Banner
+    st.markdown(f"""
+        <div style="background: #0f172a; border-left: 6px solid #10b981; padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;">
+            <div style="font-size: 1.3rem; font-weight: 900; color: #ffffff;">TIER 3B | SITE EXECUTION DESK</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #34d399; letter-spacing: 0.5px; text-transform: uppercase;">
+                SPECIALIZED PHYSICAL ENGINEERING & STATUTORY ATTESTATION | {pe_name} ({pe_reg})
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    if not st.session_state.get("gate_3a_cleared", False):
-        st.error("⚠️ ACCESS RESTRICTED: Tier 3A Work Order WO-8821-HARMONIC has not been released by Sarah Jenkins.")
-        st.button("← Return to Tier 3A", on_click=go_to_desk, args=(DESK_OPTIONS[4],))
-        st.stop()
-
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.markdown("""
-            <div style="background: #111a2e; border-top: 3px solid #00d4ff; padding: 12px; border-radius: 6px;">
-                <div style="font-size: 0.75rem; color: #94a3b8;">ACTIVE WORK ORDER</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">WO-8821-HARMONIC</div>
-                <div style="font-size: 0.75rem; color: #ff4b4b; font-weight: 600;">● P1 - CRITICAL BYPASS</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with m2:
-        st.markdown("""
-            <div style="background: #111a2e; border-top: 3px solid #ffa500; padding: 12px; border-radius: 6px;">
-                <div style="font-size: 0.75rem; color: #94a3b8;">TARGET REGULATORY GATE</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff;">Check #6 (COD Attestation)</div>
-                <div style="font-size: 0.75rem; color: #a0aec0;">ERCOT Docket #54219</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with m3:
-        t3b_sealed = st.session_state.get("gate_3b_cleared", False)
+    # 3 KPI Metadata Cards
+    col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+    with col_kpi1:
         st.markdown(f"""
-            <div style="background: #111a2e; border-top: 3px solid {'#00ff88' if t3b_sealed else '#ff4b4b'}; padding: 12px; border-radius: 6px;">
-                <div style="font-size: 0.75rem; color: #94a3b8;">STATUTORY TBPE STATUS</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: {'#00ff88' if t3b_sealed else '#ff8080'};">
-                    {'100% SEALED' if t3b_sealed else 'PENDING ATTESTATION'}
-                </div>
-                <div style="font-size: 0.75rem; color: #94a3b8;">Delaware DGCL § 141 Shield Active</div>
+            <div style="background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Active Work Order</div>
+                <div style="font-size: 1.05rem; font-weight: 900; color: #ffffff; margin: 3px 0;">{wo_code}</div>
+                <div style="font-size: 0.72rem; color: #ef4444; font-weight: 700;">● P1 - CRITICAL BYPASS</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with col_kpi2:
+        st.markdown(f"""
+            <div style="background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Target Regulatory Gate</div>
+                <div style="font-size: 1.05rem; font-weight: 900; color: #ffffff; margin: 3px 0;">{target_gate}</div>
+                <div style="font-size: 0.72rem; color: #38bdf8; font-weight: 600;">{reg_docket}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with col_kpi3:
+        st.markdown(f"""
+            <div style="background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">{statute_board}</div>
+                <div style="font-size: 1.05rem; font-weight: 900; color: #f59e0b; margin: 3px 0;">PENDING ATTESTATION</div>
+                <div style="font-size: 0.72rem; color: #10b981; font-weight: 600;">{statute_shield}</div>
             </div>
         """, unsafe_allow_html=True)
 
     st.write("")
-    p_col1, p_col2 = st.columns([3, 2])
-    with p_col1:
-        st.markdown("#### Execution Punch List & Statutory Sign-Off")
-        s1 = st.checkbox("Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep", value=st.session_state.get("t3b_s1", False), key="cb_t3b_s1")
-        st.session_state.t3b_s1 = s1
-        s2 = st.checkbox("Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD 4.1%)", value=st.session_state.get("t3b_s2", False), disabled=not s1, key="cb_t3b_s2")
-        st.session_state.t3b_s2 = s2
-        s3 = st.checkbox("Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)", value=st.session_state.get("t3b_s3", False), disabled=not s2, key="cb_t3b_s3")
-        st.session_state.t3b_s3 = s3
-        s4 = st.checkbox("Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence", value=st.session_state.get("gate_3b_cleared", False), disabled=not s3, key="cb_t3b_s4")
-        st.session_state.gate_3b_cleared = s4
 
-    with p_col2:
-        st.markdown("#### Live Telemetry (Fluke 1775)")
-        st.markdown("""
-            <div style="background: #091322; border: 1px solid #1e293b; padding: 14px; border-radius: 6px; font-family: monospace;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: #94a3b8;">THD HARMONICS:</span><strong style="color: #ff4b4b; font-size: 1.1rem;">4.1%</strong></div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 12px;">Threshold: &lt; 3.0% (IEEE 2800 Breach)</div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span style="color: #94a3b8;">INRUSH DAMPING:</span><strong style="color: #00d4ff;">1.18 pu</strong></div>
-                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">RELAY COMTRADE:</span><strong style="color: #00ff88;">SYNCED (10 kHz)</strong></div>
-            </div>
-        """, unsafe_allow_html=True)
+    # Execution Punch List & Live Telemetry Columns
+    col_punch, col_telem = st.columns([1.1, 0.9])
 
+    with col_punch:
+        st.markdown("### Execution Punch List & Statutory Sign-Off")
+        if is_uk:
+            st.checkbox("Step 1: Subsea Repeater Station 3 OTDR Reflectometry Sweep", key="uk_step1")
+            st.checkbox(f"Step 2: Optical Core Splice Attenuation Profile ({breach_val} {breach_unit})", key="uk_step2")
+            st.checkbox("Step 3: Subsea PFE Power Feed Interlock Bypass (Covenant #COV-9904)", key="uk_step3")
+            st.checkbox("Step 4: Affix Statutory CEng Digital Seal & Formally Lock Evidence", key="uk_step4")
+        else:
+            st.checkbox("Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep", key="us_step1")
+            st.checkbox(f"Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD {breach_val}%)", key="us_step2")
+            st.checkbox("Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)", key="us_step3")
+            st.checkbox("Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence", key="us_step4")
+
+    with col_telem:
+        if is_uk:
+            st.markdown("### Live Telemetry (EXFO FTB-1 OTDR)")
+            st.markdown(f"""
+                <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 18px; font-family: monospace;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #94a3b8; font-weight: 700;">OPTICAL ATTENUATION:</span>
+                        <span style="color: #ef4444; font-weight: 900;">{breach_val} {breach_unit}</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px;">Threshold: {threshold_limit} Breach</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #94a3b8;">CHROMATIC DISPERSION:</span>
+                        <span style="color: #38bdf8; font-weight: 800;">20.4 ps/(nm·km)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #94a3b8;">OPTICAL RETURN LOSS:</span>
+                        <span style="color: #34d399; font-weight: 800;">SYNCED (> 45 dB)</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("### Live Telemetry (Fluke 1775)")
+            st.markdown(f"""
+                <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 18px; font-family: monospace;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #94a3b8; font-weight: 700;">THD HARMONICS:</span>
+                        <span style="color: #ef4444; font-weight: 900;">{breach_val}%</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px;">Threshold: {threshold_limit} Breach</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #94a3b8;">INRUSH DAMPING:</span>
+                        <span style="color: #38bdf8; font-weight: 800;">1.18 pu</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #94a3b8;">RELAY COMTRADE:</span>
+                        <span style="color: #34d399; font-weight: 800;">SYNCED (10 kHz)</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.write("")
     st.markdown("---")
-    if st.session_state.get("gate_3b_cleared", False):
-        st.markdown("""
-            <div style="background: #062b19; border: 2px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="font-size: 1.15rem; font-weight: 900; color: #00ff88;">🔒 FIELD EXECUTION COMPLETE — CHAIN OF CUSTODY SEALED</div>
-                <div style="font-size: 0.9rem; color: #f8fafc; margin-top: 4px;">Raw oscillography binaries and sworn PE affidavit (TXLIC114902) compiled into pre-litigation vault.</div>
-            </div>
-        """, unsafe_allow_html=True)
-        b_c1, b_c2 = st.columns([1, 2])
-        with b_c1:
-            st.button("⌂ Command Post (Tier 1)", key="t3b_back_t1", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
-        with b_c2:
-            st.button("➔ PROCEED TO TIER 4: FORENSIC RECOVERY VAULT", key="t3b_fwd_t4", on_click=go_to_desk, args=(DESK_OPTIONS[6],), use_container_width=True, type="primary")
-    else:
-        st.button("⌂ Return to Command Post (Tier 1)", key="t3b_back_t1_idle", on_click=go_to_desk, args=(DESK_OPTIONS[0],), use_container_width=True)
+    st.button("△ Return to Tactical Command Post (Tier 1A)", key="btn_t3b_back", on_click=go_to_desk, args=(COMMERCIAL_DESKS[0],), use_container_width=True)
 
 # ==============================================================================
 # LEGAL TIER 3: REGULATORY & INTERCONNECTION AUDIT (RACHEL RAMOS)
