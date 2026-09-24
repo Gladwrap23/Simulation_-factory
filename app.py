@@ -1871,15 +1871,15 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[3]:
     with col_punch:
         st.markdown("### Execution Punch List & Statutory Sign-Off")
         if is_uk:
-            st.checkbox("Step 1: Subsea Repeater Station 3 OTDR Reflectometry Sweep", key="uk_step1")
-            st.checkbox(f"Step 2: Optical Core Splice Attenuation Profile ({breach_val} {breach_unit})", key="uk_step2")
-            st.checkbox("Step 3: Subsea PFE Power Feed Interlock Bypass (Covenant #COV-9904)", key="uk_step3")
-            st.checkbox("Step 4: Affix Statutory CEng Digital Seal & Formally Lock Evidence", key="uk_step4")
+            s1 = st.checkbox("Step 1: Subsea Repeater Station 3 OTDR Reflectometry Sweep", key="uk_step1")
+            s2 = st.checkbox(f"Step 2: Optical Core Splice Attenuation Profile ({breach_val} {breach_unit})", key="uk_step2")
+            s3 = st.checkbox("Step 3: Subsea PFE Power Feed Interlock Bypass (Covenant #COV-9904)", key="uk_step3")
+            s4 = st.checkbox("Step 4: Affix Statutory CEng Digital Seal & Formally Lock Evidence", key="uk_step4")
         else:
-            st.checkbox("Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep", key="us_step1")
-            st.checkbox(f"Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD {breach_val}%)", key="us_step2")
-            st.checkbox("Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)", key="us_step3")
-            st.checkbox("Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence", key="us_step4")
+            s1 = st.checkbox("Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep", key="us_step1")
+            s2 = st.checkbox(f"Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD {breach_val}%)", key="us_step2")
+            s3 = st.checkbox("Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)", key="us_step3")
+            s4 = st.checkbox("Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence", key="us_step4")
 
     with col_telem:
         if is_uk:
@@ -1923,6 +1923,34 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[3]:
 
     st.write("")
     st.markdown("---")
+
+    # --- TIER 4 TRANSITION GATE ---
+    def proceed_to_tier4():
+        st.session_state.gate_3b_cleared = True
+        go_to_desk(COMMERCIAL_DESKS[4])  # Routes directly to Tier 4 | Forensic Recovery Vault
+        st.rerun()
+
+    all_signed = s1 and s2 and s3 and s4
+
+    if all_signed:
+        st.success(f"✓ All statutory protocols certified by {pe_name}. Evidence chain locked.")
+        st.button(
+            "🟢 SEAL STATUTORY EVIDENCE & PROCEED TO TIER 4 (FORENSIC VAULT) ➔",
+            key="btn_t3b_to_t4",
+            on_click=proceed_to_tier4,
+            type="primary",
+            use_container_width=True
+        )
+    else:
+        st.button(
+            "🔒 TIER 4 LOCKED (Complete all 4 sign-off steps above to proceed)",
+            key="btn_t3b_locked",
+            disabled=True,
+            use_container_width=True
+        )
+
+    # Secondary Navigation
+    st.write("")
     st.button("△ Return to Tactical Command Post (Tier 1A)", key="btn_t3b_back", on_click=go_to_desk, args=(COMMERCIAL_DESKS[0],), use_container_width=True)
 
 # ==============================================================================
