@@ -7,7 +7,7 @@ from copy import deepcopy
 import streamlit as st
 import streamlit.components.v1 as components
 
-APP_BUILD_ID = "v6.8_chairman_preemption_and_scroll_fix_sep17_2026"
+APP_BUILD_ID = "v6.9_german_command_post_sep24_2026"
 
 if st.session_state.get("build_id") != APP_BUILD_ID:
     st.session_state.clear()
@@ -124,9 +124,16 @@ except Exception:
 SCENARIO_PACKS = SCENARIOS_DATA
 
 # Map scenarios by name for the dropdown
+def _scenario_label(scenario):
+    if "metadata" in scenario:
+        meta = scenario["metadata"]
+        return f"{meta['sector_name']} ({meta['country_code']})"
+    return f"{scenario['asset_name']} ({scenario['jurisdiction_code']})"
+
+
 SCENARIOS_MAP = {
-    f"{s['metadata']['sector_name']} ({s['metadata']['country_code']})": s
-    for s in SCENARIOS_DATA
+    _scenario_label(scenario): scenario
+    for scenario in SCENARIOS_DATA
 }
 
 def _scenario_to_operating_book(scenario):
@@ -134,6 +141,28 @@ def _scenario_to_operating_book(scenario):
 
     Uses the same label key as SCENARIOS_MAP so the two stay interchangeable.
     """
+    if scenario.get("scenario_id") == "DE_OFFSHORE_WIND_001":
+        roster = scenario["named_roster"]
+        key = _scenario_label(scenario)
+        return key, {
+            "scenario_id": scenario["scenario_id"],
+            "docket": f"{scenario['court_forum']} Docket #{scenario['scenario_id']}",
+            "jurisdiction": scenario["statutory_safe_harbor"],
+            "jurisdiction_options": [scenario["court_forum"]],
+            "counterparty": scenario["counterparty_entity"],
+            "contract": scenario["evidence_standard"],
+            "capex_exposure": float(scenario["capex_exposure"]),
+            "filing_date": scenario.get("filing_date", "2024 Semi-Annual Report"),
+            "filing_source": scenario["filing_source"],
+            "default_capex": float(scenario["capex_exposure"]),
+            "daily_burn_base": float(scenario["daily_holding_burn"]),
+            "lead_pe": roster["independent_engineer"],
+            "lead_director": roster["supervisory_chair"],
+            "tech_standard": scenario["technical_drift_metric"],
+            "currency_symbol": scenario["currency_symbol"],
+            "currency_code": scenario["currency_code"],
+        }
+
     meta = scenario["metadata"]
     juris = scenario["jurisdiction"]
     fin = scenario["financials"]
@@ -913,6 +942,126 @@ for director in SECTORS["ERCOT BESS / Grid Storage (USA)"]["board_roster"]:
     director["remedy_description"] = remedy_description
 
 
+def render_german_command_post(scenario_data):
+    if "de_active_capex" not in st.session_state:
+        st.session_state.de_active_capex = float(scenario_data["capex_exposure"])
+    if "de_mandate_executed" not in st.session_state:
+        st.session_state.de_mandate_executed = False
+    if "slider_german_capex" not in st.session_state:
+        st.session_state.slider_german_capex = float(scenario_data["capex_exposure"])
+
+    def update_capex(val):
+        st.session_state.de_active_capex = float(val)
+        st.session_state.slider_german_capex = float(val)
+
+    curr = scenario_data["currency_symbol"]
+    roster = scenario_data["named_roster"]
+    prov = scenario_data["provenance_data"]
+
+    active_capex = float(st.session_state.de_active_capex)
+    apr = scenario_data["cost_of_capital_apr"]
+    daily_burn = (active_capex * apr) / 365.0
+    thirty_day_bleed = daily_burn * 30.0
+    ld_cap = active_capex * scenario_data["liquidated_damages_cap_percent"]
+    forensic_fee = active_capex * scenario_data["forensic_retainer_percent"]
+    net_preserved = (thirty_day_bleed + ld_cap) - forensic_fee
+
+    st.markdown("## TIER 1 | GERICHTLICHE BEWEISSICHERUNG & VORSTANDS-COMMAND POST")
+    st.caption(f"Fiduciary Airlock & Sovereign Asset Defense | Forum: {scenario_data['court_forum']}")
+
+    st.markdown("### Command Gateway: Exposure Target (Sensitivity Engine)")
+    b1, b2, b3, b4 = st.columns(4)
+    with b1:
+        st.button(
+            f"Audited Base ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
+            key="btn_de_base",
+            on_click=update_capex,
+            args=(scenario_data["capex_exposure"],),
+            use_container_width=True,
+        )
+        st.caption(f"Source: {scenario_data['filing_source']}")
+    with b2:
+        st.button(f"What-If: {curr}500M", key="btn_de_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
+        st.caption("Hypothetical Sub-Array")
+    with b3:
+        st.button(f"What-If: {curr}1.5B", key="btn_de_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
+        st.caption("Hypothetical Grid Link")
+    with b4:
+        st.button(f"What-If: {curr}3.0B", key="btn_de_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
+        st.caption("Full Offshore Expansion")
+
+    slider_val = st.slider(
+        "Adjust Balance Sheet Exposure Floor:",
+        min_value=100000000.0,
+        max_value=3500000000.0,
+        value=float(active_capex),
+        step=50000000.0,
+        format=f"{curr}%,d",
+        key="slider_german_capex",
+    )
+    if slider_val != active_capex:
+        st.session_state.de_active_capex = float(slider_val)
+        st.rerun()
+
+    st.markdown("---")
+    col_comm, col_legal = st.columns(2)
+
+    with col_comm:
+        st.markdown(f"#### Aufsichtsrat & Vorstand: **{roster['supervisory_chair']}**")
+        st.caption(f"Operative Leitung: {roster['executive_ceo']}")
+        st.markdown('<div style="font-size:0.75rem; color:#f59e0b; font-weight:700; text-transform:uppercase;">Akute Netzsynchronisations-Blockade (Liquiditaetsabfluss)</div>', unsafe_allow_html=True)
+        st.error(f"**Identifizierte Abweichung:** {scenario_data['technical_drift_metric']}")
+        st.markdown(f"""
+        * **Aktive Bemessungsgrundlage:** `{curr}{active_capex:,.2f}`
+        * **Täglicher Halteverlust (8.5% p.a.):** `{curr}{daily_burn:,.2f} / Tag`
+        * **30-Tage Stillstands-Akkumulation:** `{curr}{thirty_day_bleed:,.2f}`
+        * **Pönalen-Deckel (10% LD Cap):** `{curr}{ld_cap:,.2f}`
+        * **Zertifizierender Gutachter:** `{roster['independent_engineer']}`
+        """)
+
+        st.markdown("##### Bridging Scale: Gesamterhaltener Kapitalwert")
+        st.info(f"""
+        * **Vermiedener Schadenseintritt (30d + Pönalen):** `{curr}{(thirty_day_bleed + ld_cap):,.2f}`
+        * **Abzüglich Forensik-Mandat (2.5%):** `-{curr}{forensic_fee:,.2f}`
+        * **NETTO-KAPITALERHALT AUF BILANZEBENE:** **`{curr}{net_preserved:,.2f}`**
+        """)
+
+    with col_legal:
+        st.markdown(f"#### General Counsel: **{roster['general_counsel']}**")
+        st.caption("Syndikusrechtsanwalt / Leiter Konzernrechtsabteilung")
+        st.markdown('<div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase;">Gesetzlicher Fiduciary & Safe-Harbor Ledger</div>', unsafe_allow_html=True)
+        st.success(f"**Rechtliches Forum:** {scenario_data['court_forum']}")
+        st.markdown(f"""
+        * **Haftungsprivileg:** {scenario_data['statutory_safe_harbor']}
+        * **Beweisstandard:** {scenario_data['evidence_standard']}
+        * **Status Beweissicherung:** {'RECHTSHÄNGIG EINGELEITET' if st.session_state.de_mandate_executed else 'VORBEREITET (ZUR ZEICHNUNG)'}
+        * **Konsortial-Risiko:** {prov['co_investors']}
+        * **Verzugsgegner:** `{scenario_data['counterparty_entity']}`
+        """)
+
+        with st.expander("Provenienz-Karte & Gesetzliche Verankerung einsehen"):
+            st.markdown(f"""
+            * **Öffentliche Datenquelle:** `{prov['ingestion_doc_id']}`
+            * **Methodischer Standard:** `{prov['derivation_standard']}`
+            * **Kryptographischer Hash:** `{prov['sha256_root']}`
+            * **Freistellungs-Dokument:** Freizeichnung gem. BGH II ZR 268/16
+            """)
+
+    st.markdown("---")
+    if not st.session_state.de_mandate_executed:
+        st.warning("**SYSTEM-SPERRE:** Zur Freigabe gerichtsfester ZPO-Dossiers, Messprotokolle nach DIN EN ISO 17025 und operativer VDI-Mängellisten ist die formelle Beschlussfassung gem. AktG § 93 erforderlich.")
+        if st.button("BESCHLUSS FASSEN: STATUTARISCHE BEWEISSICHERUNG MANDATIEREN (2.5% RETRO-RETAINER)", type="primary", use_container_width=True):
+            st.session_state.de_mandate_executed = True
+            st.rerun()
+    else:
+        st.success("**VORSTANDSBESCHLUSS RATIFIZIERT:** AktG § 93 ENTHAFTUNG AKTIVIERT | BEWEISKETTE NACH ZPO § 371 BEGLAUBIGT")
+        o1, o2 = st.columns(2)
+        with o1:
+            st.button(f"TECHNISCHE OPERATIVE FREISCHALTEN ({roster['independent_engineer']})", key="btn_go_de_ops", use_container_width=True)
+        with o2:
+            st.button(f"GERICHTSKAMMER & KLAGESCHRIFT BETRETEN ({roster['general_counsel']})", key="btn_go_de_legal", use_container_width=True)
+
+
 def build_operating_book(book_name):
     """Overlay a selected global book onto the existing tiered workflow template."""
     config = OPERATING_BOOKS[book_name]
@@ -1084,8 +1233,8 @@ with st.sidebar:
 
     # --- SIDEBAR ASSET & CURRENCY BADGE ---
     cfg = active_cfg
-    curr_sym = "£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$"
-    curr_code = "GBP" if curr_sym == "£" else "USD"
+    curr_sym = cfg.get("currency_symbol") or ("£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$")
+    curr_code = cfg.get("currency_code") or ("GBP" if curr_sym == "£" else "USD")
     base_capex_val = cfg.get("capex_exposure", cfg.get("default_capex", 180000000 if curr_sym == "£" else 30000000))
 
     st.markdown(f"""
@@ -1122,7 +1271,7 @@ with st.sidebar:
     sector = build_operating_book(active_sector)
     sector["statute"] = selected_jurisdiction
     book_config = sector["operating_book"]
-    curr_sym = sector["currency"]
+    curr_sym = book_config.get("currency_symbol", sector["currency"])
     st.caption(f"Docket: {book_config['docket']}")
     st.caption(f"Law: {selected_jurisdiction}")
     st.caption(f"Counterparty: {book_config['counterparty']}")
@@ -1316,6 +1465,10 @@ CERTIFIED UNDER STATUTORY CORPORATE COVENANT.
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
             request_navigation(DESK_OPTIONS[0])
+
+if active_cfg.get("scenario_id") == "DE_OFFSHORE_WIND_001":
+    render_german_command_post(SCENARIOS_MAP[selected_book])
+    st.stop()
 
 if st.session_state.selected_incident_id not in sector["incidents"]:
     st.session_state.selected_incident_id = next(iter(sector["incidents"]))

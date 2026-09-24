@@ -82,5 +82,42 @@
       "regulatory_counsel_name": "Gillian Ross, Solicitor",
       "forensic_expert_name": "Arun Patel"
     }
+  },
+  {
+    "scenario_id": "DE_OFFSHORE_WIND_001",
+    "asset_name": "EnBW He Dreiht (960 MW Offshore Wind Farm)",
+    "corporate_entity": "Energie Baden-Württemberg AG (EnBW)",
+    "country": "Germany",
+    "jurisdiction_code": "DEU",
+    "court_forum": "Landgericht Stuttgart / OLG Frankfurt (ZPO Standards)",
+    "statutory_safe_harbor": "AktG § 93 (Business Judgment Rule) & AktG § 116",
+    "evidence_standard": "ZPO § 371 (Beweis durch Augenschein) & DIN EN ISO/IEC 17025",
+    "currency_symbol": "€",
+    "currency_code": "EUR",
+    "capex_exposure": 2400000000.0,
+    "cost_of_capital_apr": 0.085,
+    "daily_holding_burn": 558904.11,
+    "thirty_day_standstill_bleed": 16767123.29,
+    "liquidated_damages_cap_percent": 0.10,
+    "liquidated_damages_ceiling": 240000000.0,
+    "forensic_retainer_percent": 0.025,
+    "forensic_retainer_fee": 60000000.0,
+    "net_preserved_capital": 196767123.29,
+    "filing_source": "EnBW 2024 Semi-Annual Report & BNetzA Offshore Netzentwicklungsplan",
+    "technical_drift_metric": "Phase Angle Harmonic Slip (VDE-AR-N 4130 § 8.3 Deviation)",
+    "physical_threshold_limit": "THD_I < 2.50% at 66kV Inter-Array Bus (Current: 3.82%)",
+    "counterparty_entity": "TenneT TSO GmbH (BorWin epsilon Offshore Converter Platform)",
+    "named_roster": {
+      "supervisory_chair": "Lutz Feldmann (Aufsichtsratsvorsitzender)",
+      "executive_ceo": "Dr. Georg Stamatelopoulos (Vorstandsvorsitzender)",
+      "general_counsel": "Dr. Bernd-Michael Zinow (Syndikusrechtsanwalt)",
+      "independent_engineer": "Dr.-Ing. Klaus Behrens, VDI (Ö.b.u.v. Sachverständiger)"
+    },
+    "provenance_data": {
+      "ingestion_doc_id": "DE-BNetzA-2024-ND-84910",
+      "derivation_standard": "DIN EN 61000-4-30 Class A / IEC 61400-21-1 Harmonic Emission Benchmark",
+      "sha256_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "co_investors": "Allianz Capital Partners (28.4%), AIP Management (16.5%), Norges Bank IM (5.0%)"
+    }
   }
 ]
