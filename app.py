@@ -149,6 +149,9 @@ def _scenario_to_operating_book(scenario):
         "jurisdiction_options": [jurisdiction_label],
         "counterparty": meta["client_name"],
         "contract": juris["default_notice_clause"],
+        "capex_exposure": float(scenario.get("capex_exposure", fin["default_capex_usd"])),
+        "filing_date": scenario.get("filing_date"),
+        "filing_source": scenario.get("filing_source"),
         "default_capex": float(fin["default_capex_usd"]),
         "daily_burn_base": float(fin["daily_burn_base_usd"]),
         "lead_pe": stake["lead_pe_name"],
@@ -1384,12 +1387,11 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         """, unsafe_allow_html=True)
 
-    # ==============================================================================
-    # COMMAND GATEWAY: DYNAMIC CAPEX RECALIBRATION & METRICS
-    # ==============================================================================
+    # --- COMMAND GATEWAY: SENSITIVITY & AUDITED BASELINE ---
     curr_sym = "£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$"
     curr_code = "GBP" if curr_sym == "£" else "USD"
-    base_floor = float(cfg.get("capex_exposure", cfg.get("default_capex", 180000000 if curr_sym == "£" else 30000000)))
+    base_floor = float(cfg.get("capex_exposure", 180000000 if curr_sym == "£" else 300000000))
+    filing_date = cfg.get("filing_date", "Q3 2024 Filing" if curr_sym == "$" else "FY2023 Audited")
 
     # Initialize slider key if not present
     if "slider_capex" not in st.session_state:
@@ -1402,16 +1404,55 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
 
     st.markdown("### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
 
-    # Preset Button Grid
+    # Two-tier header separating evidentiary baseline from hypothetical sandbox
+    col_hdr_left, col_hdr_right = st.columns([1, 3])
+    with col_hdr_left:
+        st.markdown('<div style="font-size: 0.72rem; color: #10b981; font-weight: 800; text-transform: uppercase;">● Audited Contract Baseline</div>', unsafe_allow_html=True)
+    with col_hdr_right:
+        st.markdown('<div style="font-size: 0.72rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">● What-If Sensitivity Stress Tests</div>', unsafe_allow_html=True)
+
+    # 4 Preset Buttons with Contextual Metadata
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
+
     with b_col1:
-        st.button(f"⭐ Reset Base ({curr_sym}{base_floor/1e6:.0f}M)", key="btn_preset_base", on_click=update_capex_target, args=(base_floor,), use_container_width=True)
+        st.button(
+            f"⭐ Audited Base ({curr_sym}{base_floor/1e6:.0f}M)",
+            key="btn_preset_base",
+            on_click=update_capex_target,
+            args=(base_floor,),
+            use_container_width=True
+        )
+        st.caption(f"Evidence: {filing_date}")
+
     with b_col2:
-        st.button(f"{curr_sym}50M Mini-Build", key="btn_preset_50", on_click=update_capex_target, args=(50000000.0,), use_container_width=True)
+        st.button(
+            f"What-If: {curr_sym}50M",
+            key="btn_preset_50",
+            on_click=update_capex_target,
+            args=(50000000.0,),
+            use_container_width=True
+        )
+        st.caption("Hypothetical Mini-Build")
+
     with b_col3:
-        st.button(f"{curr_sym}150M Utility-Scale", key="btn_preset_150", on_click=update_capex_target, args=(150000000.0,), use_container_width=True)
+        st.button(
+            f"What-If: {curr_sym}150M",
+            key="btn_preset_150",
+            on_click=update_capex_target,
+            args=(150000000.0,),
+            use_container_width=True
+        )
+        st.caption("Hypothetical Utility-Scale")
+
     with b_col4:
-        st.button(f"{curr_sym}500M Mega-Cluster", key="btn_preset_500", on_click=update_capex_target, args=(500000000.0,), use_container_width=True)
+        st.button(
+            f"What-If: {curr_sym}500M",
+            key="btn_preset_500",
+            on_click=update_capex_target,
+            args=(500000000.0,),
+            use_container_width=True
+        )
+        st.caption("Hypothetical Mega-Cluster")
 
     # Synchronized CapEx Slider
     active_capex = st.slider(

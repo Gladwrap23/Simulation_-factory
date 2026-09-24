@@ -1,6 +1,9 @@
 [
   {
     "scenario_id": "US_TX_ERCOT_BESS_01",
+    "capex_exposure": 300000000.0,
+    "filing_date": "Q3 2024 SEC Form 10-Q",
+    "filing_source": "Audited Asset Valuation",
     "metadata": {
       "client_name": "Apex Clean Energy Partners",
       "sector_name": "Grid Battery Storage (BESS)",
@@ -40,6 +43,9 @@
   },
   {
     "scenario_id": "UK_NORTHSEA_FIBER_02",
+    "capex_exposure": 180000000.0,
+    "filing_date": "FY2023 Companies House",
+    "filing_source": "Audited Balance Sheet",
     "metadata": {
       "client_name": "Caledonia Interconnect Ltd",
       "sector_name": "Subsea Telecommunications",
