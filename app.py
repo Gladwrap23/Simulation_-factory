@@ -1107,29 +1107,31 @@ def render_german_command_post(scenario_data, is_de=False):
     st.markdown(f"## 🏛️ {t['title']}")
     st.caption(f"{t['caption']}{scenario_data['court_forum']}")
 
-    st.markdown(f"### 🎛️ {t['gateway_title']}")
+    st.markdown("### 🎛️ Fiduciary Sensitivity Matrix | IDW PS 340 Exposure Calibration")
+    st.caption("Deterministic balance-sheet stress-testing across audited capital allocations:")
+
     b1, b2, b3, b4 = st.columns(4)
     with b1:
         st.button(
-            f"{t['btn_base']} ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
+            f"⭐ Audited Baseline ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
             key="btn_base",
             on_click=update_capex,
             args=(scenario_data["capex_exposure"],),
             use_container_width=True,
         )
-        st.caption(t["btn_base_src"])
+        st.caption("EnBW & BNetzA Regulatory Filings")
     with b2:
-        st.button(f"What-If: {curr}500M", key="btn_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
-        st.caption(t["btn_500_cap"])
+        st.button(f"Stress Case: {curr}500M", key="btn_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
+        st.caption("Isolated Converter Station Risk")
     with b3:
-        st.button(f"What-If: {curr}1.5B", key="btn_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
-        st.caption(t["btn_1500_cap"])
+        st.button(f"Stress Case: {curr}1.5B", key="btn_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
+        st.caption("HVDC Grid Interconnect Risk")
     with b4:
-        st.button(f"What-If: {curr}3.0B", key="btn_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
-        st.caption(t["btn_3000_cap"])
+        st.button(f"Full Scope: {curr}3.0B", key="btn_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
+        st.caption("Total Offshore Array Expansion")
 
     slider_val = st.slider(
-        t["slider_label"],
+        "Calibrate Capital Exposure Baseline (for AktG § 93 Fiduciary Determination):",
         min_value=100000000.0,
         max_value=3500000000.0,
         value=float(active_capex),
