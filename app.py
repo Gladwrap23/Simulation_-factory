@@ -568,6 +568,7 @@ def reset_entire_incident():
     default_capex = float(OPERATING_BOOKS[selected_book]["default_capex"])
     st.session_state.capex_baseline = default_capex
     st.session_state.slider_chair_capex = default_capex
+    st.session_state.slider_capex = default_capex
     go_to_desk(COMMERCIAL_DESKS[0])
 
 
@@ -1078,8 +1079,23 @@ with st.sidebar:
     )
     active_cfg = OPERATING_BOOKS[selected_book]
 
+    # --- SIDEBAR ASSET & CURRENCY BADGE ---
+    cfg = active_cfg
+    curr_sym = "£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$"
+    curr_code = "GBP" if curr_sym == "£" else "USD"
+    base_capex_val = cfg.get("capex_exposure", cfg.get("default_capex", 180000000 if curr_sym == "£" else 30000000))
+
+    st.markdown(f"""
+        <div style="background: #0f172a; border: 1px solid #1e293b; border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 4px; margin-top: -8px; margin-bottom: 14px;">
+            <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Operating Currency:</span>
+            <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 800; margin-left: 4px;">{curr_code} ({curr_sym})</span>
+            <div style="font-size: 0.68rem; color: #64748b;">Baseline Exposure: {curr_sym}{base_capex_val:,.0f}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
     if st.session_state.get("last_loaded_book") != selected_book:
         st.session_state.capex_baseline = active_cfg["default_capex"]
+        st.session_state.slider_capex = float(active_cfg["default_capex"])
         st.session_state.active_docket = active_cfg["docket"]
         st.session_state.active_counterparty = active_cfg["counterparty"]
         st.session_state.selected_incident_id = "INC-001"
@@ -1208,6 +1224,7 @@ ALL MODIFICATIONS LOCKED. SPOLIATION RISK: ZERO.
         st.session_state.clo_final_signed = False
         st.session_state.capex_baseline = float(active_cfg["default_capex"])
         st.session_state.slider_chair_capex = float(active_cfg["default_capex"])
+        st.session_state.slider_capex = float(active_cfg["default_capex"])
         st.rerun()
 
     st.session_state["nav_desk_selection"] = st.session_state.active_desk
@@ -1325,22 +1342,12 @@ if is_master_sealed and st.session_state.active_desk not in [COMMERCIAL_DESKS[4]
 # ==============================================================================
 if st.session_state.active_desk == DESK_OPTIONS[0]:
     cfg = book_config
-    # 1. State Synchronization Callbacks
     if "capex_baseline" not in st.session_state:
         st.session_state.capex_baseline = float(cfg["default_capex"])
-    if "slider_chair_capex" not in st.session_state:
-        st.session_state.slider_chair_capex = float(st.session_state.capex_baseline)
+    if "slider_capex" in st.session_state:
+        st.session_state.capex_baseline = float(st.session_state.slider_capex)
     if "burn_halted" not in st.session_state:
         st.session_state.burn_halted = False
-
-    def set_capex_preset(target_amount):
-        """Forces both the baseline state and slider state to update simultaneously."""
-        st.session_state.capex_baseline = float(target_amount)
-        st.session_state.slider_chair_capex = float(target_amount)
-
-    def on_slider_move():
-        """Updates baseline whenever the slider is manually dragged."""
-        st.session_state.capex_baseline = float(st.session_state.slider_chair_capex)
 
     is_sealed = st.session_state.get("docket_inception_sealed", False)
     k1 = st.session_state.get("key_chairman_armed", False)
@@ -1377,62 +1384,89 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
             </div>
         """, unsafe_allow_html=True)
 
-    # 3. CAPEX PRESETS WITH DIRECT ON_CLICK CALLBACKS
-    st.markdown("#### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        base_val = float(cfg["default_capex"])
-        st.button(f"⭐ Reset Base (${base_val/1e6:,.1f}M)", key="btn_px_base", on_click=set_capex_preset, args=(base_val,), use_container_width=True)
-    with c2:
-        st.button("$50M Mini-Build", key="btn_px_50m", on_click=set_capex_preset, args=(50_000_000.0,), use_container_width=True)
-    with c3:
-        st.button("$150M Utility-Scale", key="btn_px_150m", on_click=set_capex_preset, args=(150_000_000.0,), use_container_width=True)
-    with c4:
-        st.button("$300M Giga-Facility", key="btn_px_300m", on_click=set_capex_preset, args=(300_000_000.0,), use_container_width=True, type="primary" if current_capex == 300_000_000.0 else "secondary")
+    # ==============================================================================
+    # COMMAND GATEWAY: DYNAMIC CAPEX RECALIBRATION & METRICS
+    # ==============================================================================
+    curr_sym = "£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$"
+    curr_code = "GBP" if curr_sym == "£" else "USD"
+    base_floor = float(cfg.get("capex_exposure", cfg.get("default_capex", 180000000 if curr_sym == "£" else 30000000)))
 
-    # 4. SLIDER BOUND DIRECTLY TO ON_CHANGE
-    st.slider(
-        "Fine CapEx Recalibration ($ USD):",
-        min_value=25_000_000.0,
-        max_value=500_000_000.0,
-        step=5_000_000.0,
-        format="$%d",
-        key="slider_chair_capex",
-        on_change=on_slider_move,
-        disabled=is_master_sealed
+    # Initialize slider key if not present
+    if "slider_capex" not in st.session_state:
+        st.session_state.slider_capex = base_floor
+
+    # Callback helper to ensure buttons override the slider instantly
+    def update_capex_target(target_amount):
+        st.session_state.slider_capex = float(target_amount)
+        st.session_state.capex_baseline = float(target_amount)
+
+    st.markdown("### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
+
+    # Preset Button Grid
+    b_col1, b_col2, b_col3, b_col4 = st.columns(4)
+    with b_col1:
+        st.button(f"⭐ Reset Base ({curr_sym}{base_floor/1e6:.0f}M)", key="btn_preset_base", on_click=update_capex_target, args=(base_floor,), use_container_width=True)
+    with b_col2:
+        st.button(f"{curr_sym}50M Mini-Build", key="btn_preset_50", on_click=update_capex_target, args=(50000000.0,), use_container_width=True)
+    with b_col3:
+        st.button(f"{curr_sym}150M Utility-Scale", key="btn_preset_150", on_click=update_capex_target, args=(150000000.0,), use_container_width=True)
+    with b_col4:
+        st.button(f"{curr_sym}300M Giga-Facility", key="btn_preset_300", on_click=update_capex_target, args=(300000000.0,), use_container_width=True)
+
+    # Synchronized CapEx Slider
+    active_capex = st.slider(
+        f"Fine CapEx Recalibration ({curr_sym} {curr_code}):",
+        min_value=min(50000000.0, float(base_floor * 0.5)),
+        max_value=500000000.0,
+        step=1000000.0,
+        key="slider_capex"
     )
+    st.session_state.capex_baseline = float(active_capex)
+    current_capex = float(active_capex)
 
-    # --- METRICS & STANDSTILL CONTROL (COMPACT UTILITY) ---
-    scale_factor = current_capex / float(cfg["default_capex"])
-    daily_burn = float(cfg["daily_burn_base"]) * scale_factor
-    accrued_7day = daily_burn * 7.0
+    # Financial Calculations
+    daily_holding_burn = (active_capex * 0.12) / 365.0
+    accrued_demurrage = daily_holding_burn * 7.0
+    fee_percentage = 0.025  # 2.5% Sovereign Recovery Success Fee
+    platform_recovery_fee = active_capex * fee_percentage
+
+    # 4-Column KPI Grid with Restored Recovery Fee
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+
+    with m_col1:
+        st.markdown(f"""
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Balance Sheet CapEx</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: #ffffff; margin-top: 4px;">{curr_sym}{active_capex:,.0f}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m_col2:
+        st.markdown(f"""
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Daily Holding Burn</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: #ffffff; margin-top: 4px;">{curr_sym}{daily_holding_burn:,.2f} / day</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m_col3:
+        st.markdown(f"""
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Accrued Demurrage (7-Day)</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: #ffffff; margin-top: 4px;">{curr_sym}{accrued_demurrage:,.2f}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m_col4:
+        st.markdown(f"""
+            <div style="background: #141c2e; border: 1px solid #3b82f6; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 0.7rem; color: #60a5fa; font-weight: 700; text-transform: uppercase;">Forensic Fee (2.5% Retainer)</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: #38bdf8; margin-top: 4px;">{curr_sym}{platform_recovery_fee:,.0f}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
     st.write("")
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Balance Sheet CapEx", f"${current_capex:,.0f}")
-
-    if st.session_state.burn_halted:
-        m2.metric("Daily Holding Burn", "$0.00 / day", delta="STANDSTILL ACTIVE", delta_color="inverse")
-        m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}", delta="FROZEN", delta_color="off")
-    else:
-        m2.metric("Daily Holding Burn", f"${daily_burn:,.2f} / day")
-        m3.metric("Accrued Demurrage (7-Day)", f"${accrued_7day:,.2f}")
-
-    # Compact Standstill Toggle (Tucked neatly under metrics)
-    def toggle_standstill_on():
-        st.session_state.burn_halted = True
-
-    def toggle_standstill_off():
-        st.session_state.burn_halted = False
-
-    col_standstill, _ = st.columns([2, 1])
-    with col_standstill:
-        if not st.session_state.burn_halted:
-            st.button("⏸️ Freeze Demurrage (Commercial Standstill)",
-                      key="btn_halt_burn", on_click=toggle_standstill_on, disabled=is_master_sealed)
-        else:
-            st.button("▶️ Resume Demurrage Accrual",
-                      key="btn_run_burn", on_click=toggle_standstill_off, type="primary", disabled=is_master_sealed)
+    st.button("⏸ Freeze Demurrage (Commercial Standstill)", key="btn_freeze_demurrage")
 
     # --- KEY 1: COMMIT BALANCE SHEET AND ADVANCE DIRECTLY ---
     st.markdown("---")
