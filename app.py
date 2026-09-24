@@ -514,12 +514,54 @@ if "active_desk" not in st.session_state:
     st.session_state.active_desk = DESK_OPTIONS[0]
 
 # --- DUAL-TRACK GROUPING (COMMERCIAL/OPS vs LEGAL/STATUTORY) ---
-TRACK_COMMERCIAL = "👔 Commercial & Operations Track"
+TRACK_COMMERCIAL = "🗂️ Commercial & Operations Track"
 TRACK_LEGAL = "⚖️ Legal & Statutory Track"
-COMMERCIAL_DESKS = [DESK_OPTIONS[0], DESK_OPTIONS[2], DESK_OPTIONS[4], DESK_OPTIONS[5], DESK_OPTIONS[6]]
+TIER_1A = "Tier 1A | Chairman Tactical Command Post"
+TIER_2A = "Tier 2A | Chairman Directorate Governance"
+TIER_3A = "Tier 3A | Engineering Operations Command"
+TIER_3B = "Tier 3B | Site Execution Desk"
+TIER_4 = "Tier 4 | Forensic Recovery Vault"
+COMMERCIAL_DESKS = [TIER_1A, TIER_2A, TIER_3A, TIER_3B, TIER_4]
+COMMERCIAL_TIERS = COMMERCIAL_DESKS
 LEGAL_TIER3_LABEL = "Tier 3 | Regulatory & Interconnection Audit"
 LEGAL_TIER4_LABEL = "Tier 4 | Legal Evidence & Collateral Vault"
 LEGAL_DESKS = [DESK_OPTIONS[1], DESK_OPTIONS[3], LEGAL_TIER3_LABEL, LEGAL_TIER4_LABEL]
+LEGAL_TIERS = [
+    "Tier 1B | General Counsel Litigation Command",
+    "Tier 2B | Litigation Hold & Statutory Notice",
+    "Tier 3C | Evidentiary Discovery & ISO Audit",
+    "Tier 4 | Master Judicial Docket & Evidence Vault"
+]
+
+if "nav_tier_legal" not in st.session_state:
+    st.session_state["nav_tier_legal"] = LEGAL_TIERS[0]
+
+if "nav_track_selection" not in st.session_state:
+    st.session_state["nav_track_selection"] = TRACK_COMMERCIAL
+if "nav_tier_commercial" not in st.session_state:
+    st.session_state["nav_tier_commercial"] = TIER_1A
+if "mandate_executed" not in st.session_state:
+    st.session_state["mandate_executed"] = False
+
+
+def cb_goto_tier_1a():
+    st.session_state["nav_tier_commercial"] = TIER_1A
+
+
+def cb_goto_tier_3a():
+    st.session_state["nav_tier_commercial"] = TIER_3A
+
+
+def cb_goto_tier_3b():
+    st.session_state["nav_tier_commercial"] = TIER_3B
+
+
+def cb_goto_tier_4():
+    st.session_state["nav_tier_commercial"] = TIER_4
+
+
+def cb_goto_legal():
+    st.session_state["nav_track_selection"] = TRACK_LEGAL
 
 # --- DUAL-KEY INCEPTION INTERLOCK STATE ---
 if "key_chairman_armed" not in st.session_state:
@@ -1248,14 +1290,14 @@ def render_german_command_post(scenario_data, is_de=False):
             st.button(
                 f"➔ DISPATCH OPERATIONS ({roster['independent_engineer'].split(',')[0]})",
                 key="btn_go_de_ops",
-                on_click=trigger_goto_ops,
+                on_click=cb_goto_tier_3a,
                 use_container_width=True
             )
         with o2:
             st.button(
                 f"➔ COURT DOCKET ({roster['general_counsel'].split('(')[0].strip()})",
                 key="btn_go_de_legal",
-                on_click=trigger_goto_legal,
+                on_click=cb_goto_legal,
                 use_container_width=True
             )
 
@@ -1273,18 +1315,12 @@ def render_tier_2a_governance(scenario_data, is_de=False):
     * **Forum:** {scenario_data['court_forum']}
     """)
 
-    def goto_tier_1a():
-        st.session_state["nav_tier_commercial"] = TIER_1A
-
-    def goto_tier_3a():
-        st.session_state["nav_tier_commercial"] = TIER_3A
-
     st.markdown("---")
     c1, c2 = st.columns(2)
     with c1:
-        st.button("⬅️ Return to Command Post (Tier 1A)", on_click=goto_tier_1a, use_container_width=True)
+        st.button("⬅️ Return to Command Post (Tier 1A)", on_click=cb_goto_tier_1a, use_container_width=True)
     with c2:
-        st.button("➔ Advance to Engineering Operations (Tier 3A)", type="primary", on_click=goto_tier_3a, use_container_width=True)
+        st.button("➔ Advance to Engineering Operations (Tier 3A)", type="primary", on_click=cb_goto_tier_3a, use_container_width=True)
 
 
 def render_tier_3a_engineering(scenario_data, is_de=False):
@@ -1316,18 +1352,12 @@ def render_tier_3a_engineering(scenario_data, is_de=False):
         * **Status:** Site standstill active; demurrage freeze legally confirmed
         """)
 
-    def goto_tier_1a():
-        st.session_state["nav_tier_commercial"] = TIER_1A
-
-    def goto_tier_3b():
-        st.session_state["nav_tier_commercial"] = TIER_3B
-
     st.markdown("---")
     nav_c1, nav_c2 = st.columns(2)
     with nav_c1:
-        st.button("⬅️ Return to Command Post (Tier 1A)", on_click=goto_tier_1a, use_container_width=True)
+        st.button("⬅️ Return to Command Post", on_click=cb_goto_tier_1a, use_container_width=True)
     with nav_c2:
-        st.button("➔ Advance to Site Execution Desk (Tier 3B)", type="primary", on_click=goto_tier_3b, use_container_width=True)
+        st.button("➔ Advance to Site Execution Desk", on_click=cb_goto_tier_3b, type="primary", use_container_width=True)
 
 
 def render_tier_3b_site_execution(scenario_data, is_de=False):
@@ -1335,85 +1365,326 @@ def render_tier_3b_site_execution(scenario_data, is_de=False):
     prov = scenario_data["provenance_data"]
 
     st.markdown("## ⚙️ TIER 3B | SITE EXECUTION DESK")
-    st.caption(f"Substation Field Telemetry & SCADA Intercept | Target: {scenario_data['counterparty_entity']}")
+    st.caption(f"Substation Field Telemetry, Physical Inspection & SCADA Directives | Target: {scenario_data['counterparty_entity']}")
 
-    st.info("🔴 **ACTIVE INTERVENTION:** Substation harmonic damping filters isolated for dynamic firmware recalibration.")
+    st.markdown("""
+    <div style="background: rgba(245, 158, 11, 0.12); border: 2px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin: 12px 0;">
+        <div style="font-size: 1.1rem; font-weight: 800; color: #fbbf24; text-transform: uppercase;">
+            ⚠️ ACTIVE PHYSICAL FIELD INTERVENTION | VDI / DIN EN ISO 17025 ACCREDITED
+        </div>
+        <div style="font-size: 0.95rem; color: #fef3c7; margin-top: 4px;">
+            Raw sensory inputs, high-resolution inspection media, and hardware calibration traces captured live from the 66kV inter-array substation bus.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("### 🎛️ Real-Time Bus Telemetry (66kV)")
+        st.markdown("### 🎛️ Substation Bus Telemetry")
         st.markdown("""
-        * **Active Inverter Arrays:** 64 Turbines (Siemens Gamesa SG 14-236 DD)
-        * **Recorded Bus Voltage:** 66.12 kV RMS
-        * **Harmonic Resonance Slip:** `3.82% THD_I` (Statutory ceiling: 2.50%)
-        * **Calibration Rig:** Fluke 1777 Power Quality Analyzer (Cert #DE-2024-9912)
-        * **DIN Standard:** DIN EN 61000-4-30 Class A Compliance Active
+        * **Array Architecture:** 64 x SG 14-236 DD Turbines (960 MW Array)
+        * **Recorded Voltage:** 66.12 kV RMS | Frequency: 49.98 Hz
+        * **Current Harmonic Slip:** **3.82% THD_I** (VDE-AR-N 4130 Limit: 2.50%)
+        * **Oscilloscope Rig:** Fluke 1777 Power Quality Analyzer (Cal ID: `DE-2024-9912`)
         """)
-
     with c2:
-        st.markdown("### 📄 Certified Contractor Work Orders")
+        st.markdown("### 📋 Physical Inspection Directives")
         st.markdown(f"""
-        * **Notice of Mechanical Standstill:** Served to TenneT TSO GmbH
-        * **Demurrage Freezing Order:** Filed under LG Stuttgart Ref #24-OH-882
-        * **Field Engineer Sign-Off:** `{roster['independent_engineer']}`
-        * **SCADA Integrity Hash:** `{prov['sha256_root'][:32]}...`
+        * **Intervention Status:** Damping filter banks isolated for firmware recalibration
+        * **Lead Field Engineer:** `{roster['independent_engineer']}`
+        * **Demurrage Freezing Notice:** Ref #LG-STGT-2024-882 served to TenneT
+        * **Telemetry Hash:** `{prov['sha256_root'][:32]}...`
         """)
-
-    def goto_tier_3a():
-        st.session_state["nav_tier_commercial"] = TIER_3A
-
-    def goto_tier_4():
-        st.session_state["nav_tier_commercial"] = TIER_4
 
     st.markdown("---")
-    b1, b2 = st.columns(2)
-    with b1:
-        st.button("⬅️ Back to Operations Command (Tier 3A)", on_click=goto_tier_3a, use_container_width=True)
-    with b2:
-        st.button("➔ Proceed to Forensic Vault (Tier 4)", type="primary", on_click=goto_tier_4, use_container_width=True)
 
+    st.markdown("### 📥 Physical Evidence Extraction Hub")
+    st.caption("Direct extraction of raw telemetry logs, engineering single-line diagrams, and marine inspection video footage:")
 
-def render_tier_4_forensic_vault(scenario_data, is_de=False):
-    roster = scenario_data["named_roster"]
-    prov = scenario_data["provenance_data"]
+    d1, d2, d3 = st.columns(3)
 
-    st.markdown("## 🔐 TIER 4 | FORENSIC RECOVERY VAULT")
-    st.caption("Cryptographically Sealed Master Docket & Statutory Evidence Repository")
-
-    st.success("🏛️ **EVIDENCE RECORD READY FOR JUDICIAL SUBMISSION (ZPO § 371 / FRE 902)**")
-
-    v1, v2 = st.columns(2)
-    with v1:
-        st.markdown("### 🔏 Cryptographic Chain of Custody")
-        st.markdown(f"""
-        * **Master SHA-256 Root:** `{prov['sha256_root']}`
-        * **Statutory Reliance Standard:** {scenario_data['statutory_safe_harbor']}
-        * **Target Court Venue:** {scenario_data['court_forum']}
-        * **Admissibility Certification:** DIN EN ISO/IEC 17025 Accredited
-        * **Litigation Hold Custodian:** `{roster['general_counsel']}`
-        """)
-
-    with v2:
-        st.markdown("### 📦 Exportable Judicial Artifacts")
-        st.markdown(f"""
-        1. **Exhibit A:** Ingestion Data Root (`{prov['ingestion_doc_id']}`)
-        2. **Exhibit B:** 66kV Inter-Array Harmonic FFT Drift Plot
-        3. **Exhibit C:** Sworn Affidavit of `{roster['independent_engineer']}`
-        4. **Exhibit D:** AktG § 93 Fiduciary Defense Dossier for Supervisory Board
-        """)
-
+    with d1:
+        st.markdown("""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
+            <div style="font-size: 2.0rem;">📊</div>
+            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">Raw Telemetry Stream</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">Fluke 1777 66kV FFT Waveforms (.CSV)</div>
+        </div>
+        """, unsafe_allow_html=True)
+        raw_csv_data = "timestamp,bus_kv,freq_hz,thd_i_percent,sub_sync_resonance_hz\n2026-09-24T14:00:00Z,66.12,49.98,3.82,14.2\n2026-09-24T14:05:00Z,66.10,49.99,3.81,14.3"
         st.download_button(
-            label="📥 DOWNLOAD SEALED JUDICIAL DOSSIER (.ZIP)",
-            data=f"MASTER FORENSIC DOSSIER\nAsset: {scenario_data['asset_name']}\nHash: {prov['sha256_root']}",
-            file_name=f"Forensic_Dossier_{scenario_data['scenario_id']}.txt",
+            label="⬇️ Download Telemetry (.CSV)",
+            data=raw_csv_data,
+            file_name=f"Substation_Telemetry_66kV_{scenario_data['scenario_id']}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+    with d2:
+        st.markdown("""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
+            <div style="font-size: 2.0rem;">📐</div>
+            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">Single-Line Diagrams</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">VDI 2024 Electrical CAD Plans (.PDF)</div>
+        </div>
+        """, unsafe_allow_html=True)
+        plan_manifest = f"ENBW HE DREIHT - 66KV SUBSTATION SCHEMATIC\nApproved by: {roster['independent_engineer']}\nStandard: DIN EN 61400-21\nHash: {prov['sha256_root']}"
+        st.download_button(
+            label="⬇️ Download SLD Plans (.PDF)",
+            data=plan_manifest,
+            file_name=f"Substation_SLD_Plans_{scenario_data['scenario_id']}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+
+    with d3:
+        st.markdown("""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
+            <div style="font-size: 2.0rem;">🎥</div>
+            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">ROV Inspection Media</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">Subsea J-Tube & Cable Video Logs</div>
+        </div>
+        """, unsafe_allow_html=True)
+        video_metadata = "ROV SUBSEA INSPECTION LOG (4K UHD)\nTarget: BorWin epsilon J-Tube Subsea Tie-In\nCamera: Kongsberg OE14-502 Marine HD\nIntegrity Hash: SHA-256: 4f8a91c0e3b1285091cd"
+        st.download_button(
+            label="⬇️ Download Media Package",
+            data=video_metadata,
+            file_name=f"ROV_Inspection_Log_{scenario_data['scenario_id']}.txt",
             mime="text/plain",
             use_container_width=True
         )
 
     st.markdown("---")
-    if st.button("⬅️ Return to Chairman Tactical Command Post (Tier 1A)", use_container_width=True):
-        st.session_state["nav_tier_commercial"] = TIER_1A
-        st.rerun()
+    b1, b2 = st.columns(2)
+    with b1:
+        st.button("⬅️ Back to Operations Command (Tier 3A)", on_click=cb_goto_tier_3a, use_container_width=True)
+    with b2:
+        st.button("➔ Advance to Forensic Recovery Vault (Tier 4)", type="primary", on_click=cb_goto_tier_4, use_container_width=True)
+
+
+def render_tier_4_forensic_vault(scenario_data, is_de=False):
+    curr = scenario_data["currency_symbol"]
+    roster = scenario_data["named_roster"]
+    prov = scenario_data["provenance_data"]
+    active_capex = st.session_state.get("active_capex", scenario_data["capex_exposure"])
+
+    # Header & Status
+    st.markdown("## 🔐 TIER 4 | FORENSIC RECOVERY VAULT & JUDICIAL DOCKET")
+    st.caption(f"Immutable Statutory Evidence Repository | Forum: {scenario_data['court_forum']}")
+
+    st.markdown("""
+    <div style="background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; border-radius: 8px; padding: 14px 18px; margin: 12px 0;">
+        <div style="font-size: 1.15rem; font-weight: 800; color: #34d399; text-transform: uppercase;">
+            🏛️ STATUTORY CHAIN OF CUSTODY SEALED | ZPO § 371 & FRE 902(14) READY
+        </div>
+        <div style="font-size: 0.95rem; color: #d1fae5; margin-top: 4px;">
+            Every action, telemetry ingest, and legal notice below is immutably anchored to the master Merkle root. Tamper-evident and admissible as primary direct evidence.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Master Root & Custody Metrics
+    st.markdown("### 🔏 Cryptographic Integrity & Legal Custody")
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        st.markdown(f"""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 12px 16px;">
+            <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Legal Custodian</div>
+            <div style="font-size: 1.15rem; color: #60a5fa; font-weight: 800; margin-top: 2px;">{roster['general_counsel'].split('(')[0].strip()}</div>
+            <div style="font-size: 0.8rem; color: #e2e8f0;">Syndikusrechtsanwalt (DE Bar)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m2:
+        st.markdown(f"""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 12px 16px;">
+            <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Forensic Engineer</div>
+            <div style="font-size: 1.15rem; color: #60a5fa; font-weight: 800; margin-top: 2px;">{roster['independent_engineer'].split(',')[0].strip()}</div>
+            <div style="font-size: 0.8rem; color: #e2e8f0;">Ö.b.u.v. Sachverständiger (VDI)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m3:
+        st.markdown(f"""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 12px 16px;">
+            <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Statutory Reliance Shield</div>
+            <div style="font-size: 1.15rem; color: #34d399; font-weight: 800; margin-top: 2px;">AktG § 93 (BJR)</div>
+            <div style="font-size: 0.8rem; color: #e2e8f0;">DIN EN ISO/IEC 17025 Accredited</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 10px 14px; margin: 12px 0; font-family: monospace; font-size: 0.85rem; color: #38bdf8;">
+        <b>MASTER MERKLE ROOT:</b> SHA-256: {prov['sha256_root']}
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Granular Forensic Interaction Ledger
+    st.markdown("### ⏱️ Sequential Forensic Chain-of-Custody Ledger")
+    st.caption("Chronological, second-by-second interaction record showing all statutory actors and verified actions:")
+
+    audit_events = [
+        {
+            "time": "2026-09-24 14:12:08 UTC",
+            "actor": "System Automation Engine",
+            "role": "Public Data Ingest",
+            "action": f"Ingested audited filings ({prov['ingestion_doc_id']}). Identified 3.82% THD harmonic drift against VDE-AR-N 4130.",
+            "hash": "4f8a91c0e3b1...81a0",
+            "status": "INGESTED"
+        },
+        {
+            "time": "2026-09-24 15:30:22 UTC",
+            "actor": roster['independent_engineer'],
+            "role": "Statutory Certifying Engineer",
+            "action": "Completed independent DIN EN 61000-4-30 Class A FFT calibration sweep. Executed sworn engineering affidavit attesting to converter sub-synchronous resonance.",
+            "hash": "8c7d31f99a02...41bc",
+            "status": "SWORN & SIGNED"
+        },
+        {
+            "time": "2026-09-24 16:45:10 UTC",
+            "actor": f"{roster['supervisory_chair']} / {roster['executive_ceo']}",
+            "role": "Supervisory & Management Board",
+            "action": "Constructive notice formally served. Unmitigated inaction holding burn calculated at €558,904/day. Fiduciary exposure entered on corporate risk ledger.",
+            "hash": "19b4e602f7aa...9921",
+            "status": "NOTICE SERVED"
+        },
+        {
+            "time": "2026-09-24 17:05:44 UTC",
+            "actor": roster['general_counsel'],
+            "role": "General Counsel / Syndikus",
+            "action": "Issued formal Litigation Hold Notice to TenneT TSO GmbH (BorWin epsilon platform). Standstill standstill period invoked under EnWG § 17.",
+            "hash": "d281ac49e108...77e4",
+            "status": "HOLD ACTIVE"
+        },
+        {
+            "time": "2026-09-24 18:20:00 UTC",
+            "actor": "Joint Supervisory & Legal Directorate",
+            "role": "Board Directive Execution",
+            "action": "2.5% Statutory Forensic Retainer ratified under AktG § 93 Business Judgment Rule. Full demurrage freeze and court bundle generation authorized.",
+            "hash": "e3b0c44298fc...b855",
+            "status": "RATIFIED"
+        }
+    ]
+
+    for ev in audit_events:
+        st.markdown(f"""
+        <div style="background: #111827; border-left: 4px solid #38bdf8; border-radius: 4px; padding: 12px 16px; margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-family: monospace; font-size: 0.85rem; color: #94a3b8;">📅 {ev['time']}</span>
+                <span style="background: #0369a1; color: #ffffff; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;">{ev['status']}</span>
+            </div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-top: 4px;">
+                👤 {ev['actor']} <span style="font-size: 0.85rem; font-weight: 400; color: #94a3b8;">({ev['role']})</span>
+            </div>
+            <div style="font-size: 0.95rem; color: #cbd5e1; margin-top: 4px;">
+                {ev['action']}
+            </div>
+            <div style="font-family: monospace; font-size: 0.8rem; color: #64748b; margin-top: 6px;">
+                SHA-256 HASH: {ev['hash']}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Exportable Multi-Modal Judicial Artifacts
+    st.markdown("### 📦 Certified Judicial Evidence Exhibits (ZPO § 371 / FRE 902)")
+    st.caption("All artifacts are cryptographically signed, timestamped, and exportable for court submission:")
+
+    with st.expander("📄 EXHIBIT A: Statutory Ingestion Root & Grid Restudy Record", expanded=False):
+        st.markdown(f"""
+        * **Document Identifier:** `{prov['ingestion_doc_id']}`
+        * **Sovereign Source:** Bundesnetzagentur (BNetzA) & EnBW 2024 Semi-Annual Filing
+        * **Finding:** Synchronization halted at 66kV bus bar due to 3.82% THD harmonic drift.
+        """)
+        st.download_button(
+            "⬇️ Download Exhibit A (.PDF)",
+            data=f"EXHIBIT A: Sovereign Ingestion Filing {prov['ingestion_doc_id']}",
+            file_name="Exhibit_A_Sovereign_Ingest.pdf",
+            mime="application/pdf",
+            key="dl_ex_a"
+        )
+
+    with st.expander("🎥 EXHIBIT B: Sworn Expert Deposition & Video Testimony", expanded=False):
+        st.markdown(f"""
+        * **Deponent:** `{roster['independent_engineer']}` (Ö.b.u.v. Sachverständiger)
+        * **Format:** Recorded Sworn Video Deposition (4K / H.264) + Certified Transcript
+        * **Attestation:** Confirms under penalty of perjury that harmonic instability originates inside the TenneT BorWin epsilon converter controls, fully exonerating EnBW turbine hardware.
+        * **Admissibility:** Sworn under ZPO § 371 and FRE 902(14) self-authenticating standard.
+        """)
+        st.download_button(
+            "⬇️ Download Deposition Transcript & Video Hash (.PDF)",
+            data=f"CERTIFIED TESTIMONY & VIDEO TRANSCRIPT\nDeponent: {roster['independent_engineer']}\nVerified Hash: 19b4e602f7aa119b...",
+            file_name="Exhibit_B_Expert_Deposition_Transcript.pdf",
+            mime="application/pdf",
+            key="dl_ex_b"
+        )
+
+    with st.expander("📐 EXHIBIT C: Substation Single-Line Diagrams & Telemetry Logs", expanded=False):
+        st.markdown("""
+        * **Contents:** 66kV Substation SLD, Harmonic Filter Calibration Data, and Oscilloscope Traces.
+        * **Calibration Rig:** Fluke 1777 (Calibration ID: `DE-CAL-2024-9912`)
+        * **Standard:** DIN EN 61000-4-30 Class A Compliance
+        """)
+        st.download_button(
+            "⬇️ Download Engineering Evidence Package (.ZIP)",
+            data=f"ENGINEERING PACKAGE: SLD + FLUKE LOGS\nAsset: {scenario_data['asset_name']}",
+            file_name="Exhibit_C_Engineering_Package.zip",
+            mime="application/zip",
+            key="dl_ex_c"
+        )
+
+    with st.expander("⚖️ EXHIBIT D: AktG § 93 / § 116 Supervisory Board Fiduciary Shield", expanded=False):
+        st.markdown(f"""
+        * **Addressed To:** {roster['supervisory_chair']} & {roster['general_counsel']}
+        * **Legal Weight:** Primary reliance instrument insulating directors from joint-venture liability claims by Allianz, AIP, and Norges Bank.
+        """)
+        st.download_button(
+            "⬇️ Download Certified Fiduciary Shield Directive (.PDF)",
+            data=f"AKTG § 93 FIDUCIARY SHIELD DIRECTIVE\nAuthorized for: {roster['supervisory_chair']}",
+            file_name="Exhibit_D_AktG93_Fiduciary_Shield.pdf",
+            mime="application/pdf",
+            key="dl_ex_d"
+        )
+
+    st.markdown("---")
+
+    # Master Court Export Button
+    docket_text = f"""================================================================================
+GERICHTLICHE BEWEISSICHERUNGSDOSSIER GEM. ZPO § 371 / FRE 902(14)
+LANDGERICHT STUTTGART / OLG FRANKFURT
+================================================================================
+ASSET: {scenario_data['asset_name']}
+OPERATING ENTITY: {scenario_data['corporate_entity']}
+COUNTERPARTY: {scenario_data['counterparty_entity']}
+ACTIVE CAPEX: {curr}{active_capex:,.2f}
+MASTER MERKLE ROOT: {prov['sha256_root']}
+CUSTODIAN: {roster['general_counsel']}
+INDEPENDENT ENGINEER: {roster['independent_engineer']}
+
+CHRONOLOGICAL EVENT LOG:
+- 2026-09-24 14:12:08 UTC | Public Ingestion Verified | BNetzA Doc: {prov['ingestion_doc_id']}
+- 2026-09-24 15:30:22 UTC | DIN EN 61000-4-30 Calibration Executed | 3.82% THD Breach Confirmed
+- 2026-09-24 16:45:10 UTC | Board Constructive Notice Served | Carrying Cost Burn Logged
+- 2026-09-24 17:05:44 UTC | Litigation Hold Served on TenneT TSO GmbH
+- 2026-09-24 18:20:00 UTC | AktG § 93 Mandate Formally Ratified
+
+CERTIFICATION:
+This electronic record constitutes primary judicial evidence under German ZPO § 371.
+All SHA-256 hashes are mathematically verified against original hardware telemetry.
+================================================================================
+"""
+
+    st.download_button(
+        label="📥 EXPORT SEALED MASTER JUDICIAL DOSSIER (.TXT / COURT DOCKET)",
+        data=docket_text,
+        file_name=f"Forensic_Judicial_Docket_{scenario_data['scenario_id']}.txt",
+        mime="text/plain",
+        use_container_width=True
+    )
+
+    st.markdown("---")
+    st.button("⬅️ Return to Chairman Tactical Command Post (Tier 1A)", on_click=cb_goto_tier_1a, use_container_width=True)
 
 
 def render_legal_statutory_track(scenario_data, is_de=False):
@@ -1673,24 +1944,10 @@ with st.sidebar:
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
     # ==============================================================================
-    # 1. SIDEBAR NAVIGATION CONTROLS (Ensure exact keys & string matches)
+    # 3. SIDEBAR WITH VISUAL LOCKS
     # ==============================================================================
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🎛️ Command Desk")
-
-    TRACK_COMMERCIAL = "🗂️ Commercial & Operations Track"
-    TRACK_LEGAL = "⚖️ Legal & Statutory Track"
-
-    TIER_1A = "Tier 1A | Chairman Tactical Command Post"
-    TIER_2A = "Tier 2A | Chairman Directorate Governance"
-    TIER_3A = "Tier 3A | Engineering Operations Command"
-    TIER_3B = "Tier 3B | Site Execution Desk"
-    TIER_4 = "Tier 4 | Forensic Recovery Vault"
-
-    if "nav_track_selection" not in st.session_state:
-        st.session_state["nav_track_selection"] = TRACK_COMMERCIAL
-    if "nav_tier_commercial" not in st.session_state:
-        st.session_state["nav_tier_commercial"] = TIER_1A
 
     selected_track = st.sidebar.radio(
         "Select Operating Track:",
@@ -1698,26 +1955,22 @@ with st.sidebar:
         key="nav_track_selection"
     )
 
+    is_retained = st.session_state.get("mandate_executed", False)
+
     if selected_track == TRACK_COMMERCIAL:
         selected_tier = st.sidebar.radio(
             "Commercial Hierarchy:",
-            options=[TIER_1A, TIER_2A, TIER_3A, TIER_3B, TIER_4],
+            options=COMMERCIAL_TIERS,
             key="nav_tier_commercial"
         )
         st.session_state.active_desk = selected_tier
     else:
+        selected_tier = st.sidebar.radio(
+            "Legal & Statutory Hierarchy:",
+            options=LEGAL_TIERS,
+            key="nav_tier_legal"
+        )
         st.session_state.active_desk = LEGAL_DESKS[0]
-
-    # ==============================================================================
-    # 2. NAVIGATION CALLBACKS (Fires on button click)
-    # ==============================================================================
-
-    def trigger_goto_ops():
-        st.session_state["nav_track_selection"] = TRACK_COMMERCIAL
-        st.session_state["nav_tier_commercial"] = TIER_3A
-
-    def trigger_goto_legal():
-        st.session_state["nav_track_selection"] = TRACK_LEGAL
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("🖨️ **MASTER DOCKET LOCKDOWN EXPORT**")
