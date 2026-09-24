@@ -1926,63 +1926,85 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[3]:
     st.button("△ Return to Tactical Command Post (Tier 1A)", key="btn_t3b_back", on_click=go_to_desk, args=(COMMERCIAL_DESKS[0],), use_container_width=True)
 
 # ==============================================================================
-# LEGAL TIER 3: REGULATORY & INTERCONNECTION AUDIT (RACHEL RAMOS)
+# LEGAL TIER 3: REGULATORY & INTERCONNECTION AUDIT (DYNAMIC BINDING)
 # ==============================================================================
 elif st.session_state.active_desk == LEGAL_DESKS[2]:
-    st.markdown("""
-        <div style="background: linear-gradient(90deg, #130f26 0%, #1e1b4b 100%); border-left: 8px solid #a855f7; padding: 18px 24px; border-radius: 8px; margin-bottom: 20px;">
-            <div style="font-size: 1.4rem; font-weight: 900; color: #ffffff;">LEGAL TIER 3 | REGULATORY & INTERCONNECTION AUDIT</div>
-            <div style="font-size: 0.85rem; font-weight: 700; color: #c084fc; margin-top: 2px;">
-                PUCT PROTOCOL AUDIT & CONTRACTUAL DEFAULT NOTICE // RACHEL RAMOS, ESQ.
+    cfg = book_config
+    is_uk = "GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)
+
+    # 1. Dynamic Legal & Regulatory Persona
+    counsel_name = "Alistair Vance, Solicitor" if is_uk else "Rachel Ramos, Esq."
+    counsel_role = "Subsea Telecom & Maritime Regulatory Counsel" if is_uk else "Regulatory & Interconnection Counsel"
+    statute_cite = (
+        "Ofcom General Conditions of Entitlement // UK Communications Act 2003"
+        if is_uk else
+        "PUCT Substantive Rules § 25.101 // ERCOT Protocol § 4.2 Lead"
+    )
+    reg_title = "OFCOM PROTOCOL AUDIT & STATUTORY DEFAULT NOTICE" if is_uk else "PUCT PROTOCOL AUDIT & CONTRACTUAL DEFAULT NOTICE"
+
+    # 2. Dynamic Conditions Precedent
+    if is_uk:
+        cond_1 = "Subsea Turnkey EPC Clause 18.4 default notice served via London Maritime EDI."
+        cond_2 = "48-hour subsea core remediation window elapsed without Consortium cure."
+        cond_3 = "Cable landing bypass logged as emergency maritime asset preservation under Ofcom § 12."
+    else:
+        cond_1 = "Turnkey EPC Clause 11.2 default notice served via certified EDI/SMTP."
+        cond_2 = "90-minute cure clock logged without OEM cure response."
+        cond_3 = "Substation bypass logged as emergency grid reliability event under ERCOT § 4.2."
+
+    # Header Banner
+    st.markdown(f"""
+        <div style="background: #1e112a; border-left: 6px solid #a855f7; padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;">
+            <div style="font-size: 1.3rem; font-weight: 900; color: #ffffff;">LEGAL TIER 3 | REGULATORY & INTERCONNECTION AUDIT</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #c084fc; letter-spacing: 0.5px; text-transform: uppercase;">
+                {reg_title} // {counsel_name.upper()}
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-        <div style="background: #141c2e; border: 2px solid #a855f7; border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;">
+    # Dynamic Legal Counsel Card
+    st.markdown(f"""
+        <div style="background: #141324; border: 2px solid #7c3aed; border-radius: 8px; padding: 16px 18px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff;">Rachel Ramos, Esq.</div>
-                    <div style="color: #c084fc; font-size: 0.82rem; font-weight: 700;">Regulatory & Interconnection Counsel</div>
-                    <div style="color: #94a3b8; font-size: 0.75rem;">PUCT Substantive Rules § 25.101 // ERCOT Protocol § 4.2 Lead</div>
+                    <div style="font-size: 1.2rem; font-weight: 900; color: #ffffff;">{counsel_name}</div>
+                    <div style="color: #a78bfa; font-size: 0.82rem; font-weight: 700;">{counsel_role}</div>
+                    <div style="color: #94a3b8; font-size: 0.75rem;">{statute_cite}</div>
                 </div>
-                <span style="background: #a855f7; color: #ffffff; font-size: 0.72rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
+                <span style="background: #7c3aed; color: #ffffff; font-size: 0.72rem; font-weight: 900; padding: 3px 8px; border-radius: 4px;">
                     STATUTORY AUDIT
                 </span>
             </div>
-            <div style="margin-top: 12px; background: #0b1120; border-left: 3px solid #3b82f6; padding: 10px 14px; border-radius: 4px;">
-                <strong style="color: #93c5fd; font-size: 0.8rem;">CONDITIONS PRECEDENT VERIFIED:</strong>
-                <div style="color: #cbd5e0; font-size: 0.8rem; margin-top: 4px; line-height: 1.6;">
-                    • Turnkey EPC Clause 11.2 default notice served via certified EDI/SMTP.<br>
-                    • 90-minute cure clock logged without OEM cure response.<br>
-                    • Substation bypass logged as emergency grid reliability event under ERCOT § 4.2.
+            <div style="margin-top: 14px; background: #0c0a1a; border-left: 3px solid #38bdf8; padding: 12px 14px; border-radius: 4px;">
+                <div style="color: #38bdf8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">
+                    Conditions Precedent Verified:
+                </div>
+                <div style="color: #cbd5e0; font-size: 0.8rem; line-height: 1.5;">
+                    • {cond_1}<br>
+                    • {cond_2}<br>
+                    • {cond_3}
                 </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    def certify_default_and_advance():
-        st.session_state.gate_leg3_cleared = True
+    # Gateway Execution Button
+    def certify_legal_default():
+        st.session_state.gate_legal_3_cleared = True
         go_to_desk(LEGAL_DESKS[3])
         st.rerun()
 
     st.button(
-        "⚖️ CERTIFY CONTRACTUAL DEFAULT & PROCEED TO LEGAL TIER 4 (VAULT) ➔",
-        key="btn_cert_and_advance_leg3",
-        on_click=certify_default_and_advance,
+        "📄 CERTIFY CONTRACTUAL DEFAULT & PROCEED TO LEGAL TIER 4 (VAULT) ➔",
+        key="btn_certify_default_dyn",
+        on_click=certify_legal_default,
         type="primary",
         use_container_width=True
     )
 
     st.write("")
     st.markdown("---")
-    st.button(
-        "△ Return to Governance Desk (Tier 2B)",
-        key="btn_leg3_back_clean",
-        on_click=go_to_desk,
-        args=(LEGAL_DESKS[1],),
-        use_container_width=True
-    )
+    st.button("△ Return to Governance Desk (Tier 2B)", key="btn_l3_back", on_click=go_to_desk, args=(LEGAL_DESKS[1],), use_container_width=True)
 
 # ==============================================================================
 # LEGAL TIER 4: LEGAL EVIDENCE & COLLATERAL VAULT (TARIQ AL-MANSOOR)
