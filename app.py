@@ -1219,21 +1219,105 @@ def render_german_command_post(scenario_data, is_de=False):
             st.rerun()
     else:
         st.success(t["airlock_success"])
+        st.markdown("""
+        <style>
+        div.stButton > button[key="btn_go_de_ops"] {
+            background-color: #f59e0b !important;
+            color: #000000 !important;
+            font-weight: 900 !important;
+            font-size: 1.05rem !important;
+            border: 2px solid #d97706 !important;
+            border-radius: 8px !important;
+            padding: 12px 16px !important;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4) !important;
+        }
+        div.stButton > button[key="btn_go_de_legal"] {
+            background-color: #38bdf8 !important;
+            color: #000000 !important;
+            font-weight: 900 !important;
+            font-size: 1.05rem !important;
+            border: 2px solid #0284c7 !important;
+            border-radius: 8px !important;
+            padding: 12px 16px !important;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
         o1, o2 = st.columns(2)
         with o1:
             st.button(
-                f"{t['btn_ops']} ({roster['independent_engineer']})",
+                f"➔ DISPATCH OPERATIONS ({roster['independent_engineer'].split(',')[0]})",
                 key="btn_go_de_ops",
                 on_click=trigger_goto_ops,
                 use_container_width=True
             )
         with o2:
             st.button(
-                f"{t['btn_legal']} ({roster['general_counsel']})",
+                f"➔ COURT DOCKET ({roster['general_counsel'].split('(')[0].strip()})",
                 key="btn_go_de_legal",
                 on_click=trigger_goto_legal,
                 use_container_width=True
             )
+
+
+def render_tier_3a_engineering(scenario_data, is_de=False):
+    roster = scenario_data["named_roster"]
+    prov = scenario_data["provenance_data"]
+
+    st.markdown("## ⚡ TIER 3A | ENGINEERING OPERATIONS COMMAND")
+    st.caption(f"Lead Certifying Engineer: **{roster['independent_engineer']}** | Standards: DIN EN ISO/IEC 17025")
+
+    st.success("🔓 **STATUTORY ACCESS GRANTED:** Full telemetry bus logs, calibration certificates, and contractor default notices unsealed.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 🔌 Inter-Array 66kV Phase Distortion Log")
+        st.error(f"**Critical Breach:** {scenario_data['technical_drift_metric']}")
+        st.markdown(f"""
+        * **Governing Grid Code:** VDE-AR-N 4130 § 8.3 / TenneT BorWin epsilon
+        * **Recorded Current Harmonic Distortion:** `3.82% THD_I` (Statutory Cap: `2.50%`)
+        * **Root Mechanism:** Sub-synchronous resonance on converter filter banks
+        * **VDI Work Order:** `WO-2024-DE-0941` issued for physical dampening recalibration
+        """)
+
+    with col2:
+        st.markdown("### 📋 Statutory Field Directives")
+        st.markdown(f"""
+        * **Field Notice Target:** `{scenario_data['counterparty_entity']}`
+        * **Engineering Sign-off Authority:** `{roster['independent_engineer']}`
+        * **Cryptographic Telemetry Seal:** `{prov['sha256_root'][:32]}...`
+        * **Status:** Site standstill active; demurrage freeze legally confirmed
+        """)
+
+    st.markdown("---")
+    if st.button("⬅️ Return to Chairman Command Post (Tier 1A)", use_container_width=True):
+        st.session_state["nav_tier_commercial"] = TIER_1A
+        st.rerun()
+
+
+def render_legal_statutory_track(scenario_data, is_de=False):
+    roster = scenario_data["named_roster"]
+    prov = scenario_data["provenance_data"]
+
+    st.markdown("## ⚖️ LEGAL & STATUTORY TRACK")
+    st.caption(f"General Counsel: **{roster['general_counsel']}** | Forum: {scenario_data['court_forum']}")
+    st.success("Legal statutory track active. Litigation hold and ZPO evidence custody are available for review.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### Statutory Ledger")
+        st.markdown(f"""
+        * **Safe Harbor:** {scenario_data['statutory_safe_harbor']}
+        * **Evidence Standard:** {scenario_data['evidence_standard']}
+        * **Counterparty:** `{scenario_data['counterparty_entity']}`
+        """)
+    with col2:
+        st.markdown("### Evidence Provenance")
+        st.markdown(f"""
+        * **Ingestion:** `{prov['ingestion_doc_id']}`
+        * **Standard:** `{prov['derivation_standard']}`
+        * **Hash:** `{prov['sha256_root']}`
+        """)
 
 
 def build_operating_book(book_name):
@@ -1646,7 +1730,27 @@ CERTIFIED UNDER STATUTORY CORPORATE COVENANT.
             request_navigation(DESK_OPTIONS[0])
 
 if active_cfg.get("scenario_id") == "DE_OFFSHORE_WIND_001":
-    render_german_command_post(SCENARIOS_MAP[selected_book], is_de=is_de)
+    if selected_track == TRACK_COMMERCIAL:
+        if selected_tier == TIER_1A:
+            render_german_command_post(scenario_data, is_de)
+
+        elif selected_tier == TIER_2A:
+            st.markdown("## 🏛️ TIER 2A | CHAIRMAN DIRECTORATE GOVERNANCE")
+            st.info("Direct Board Oversight & Statutory Resolution Registry Active.")
+
+        elif selected_tier == TIER_3A:
+            render_tier_3a_engineering(scenario_data, is_de)
+
+        elif selected_tier == TIER_3B:
+            st.markdown("## ⚙️ TIER 3B | SITE EXECUTION DESK")
+            st.info("Field SCADA Telemetry & Hardware Calibration Logs.")
+
+        elif selected_tier == TIER_4:
+            st.markdown("## 🔐 TIER 4 | FORENSIC RECOVERY VAULT")
+            st.info("FRE 902 / ZPO § 371 Sealed Evidence Docket.")
+
+    elif selected_track == TRACK_LEGAL:
+        render_legal_statutory_track(scenario_data, is_de)
     st.stop()
 
 if st.session_state.selected_incident_id not in sector["incidents"]:
