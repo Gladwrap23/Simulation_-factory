@@ -2046,27 +2046,47 @@ with st.sidebar:
         st.session_state.selected_director = active_cfg["lead_director"]
         st.session_state.last_loaded_book = selected_book
 
-    st.markdown(f"""
-        <div style="font-size: 0.85rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-top: 14px; margin-bottom: 6px; letter-spacing: 0.5px;">
-            ⚖️ {sb['jurisdiction']}
-        </div>
-    """, unsafe_allow_html=True)
-    selected_jurisdiction = st.selectbox(
-        sb["law"],
-        options=active_cfg["jurisdiction_options"],
-        key=f"jurisdiction_{selected_book}",
-        label_visibility="collapsed"
+    st.sidebar.markdown(f"**{sb['jurisdiction']}**")
+    country_label = "🇩🇪 Deutschland (Bundesrepublik Deutschland)" if is_de else "🇩🇪 Germany (Federal Republic)"
+    st.sidebar.selectbox(
+        "",
+        options=[country_label],
+        key="sb_sovereign_country",
+        label_visibility="collapsed",
+    )
+
+    selected_jurisdiction = scenario_data.get(
+        "court_forum",
+        active_cfg["jurisdiction_options"][0],
     )
     st.session_state.active_jurisdiction = selected_jurisdiction
+
+    counterparty = scenario_data.get("counterparty_entity", active_cfg["counterparty"])
+    docket_reference = scenario_data.get("scenario_id", "DE_001")
+    if is_de:
+        st.sidebar.markdown(f"""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; font-size: 0.85rem; line-height: 1.6; margin-top: -6px;">
+            <div>🏛️ <b>Gerichtskammer:</b> Landgericht Stuttgart / OLG Frankfurt</div>
+            <div>📜 <b>Rechtsrahmen:</b> Deutsches ZPO, AktG & EnWG</div>
+            <div>📂 <b>Aktenzeichen:</b> <code>#{docket_reference}</code></div>
+            <div>⚔️ <b>Verzugsgegner:</b> {counterparty}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.sidebar.markdown(f"""
+        <div style="background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; font-size: 0.85rem; line-height: 1.6; margin-top: -6px;">
+            <div>🏛️ <b>Judicial Forum:</b> Landgericht Stuttgart / OLG Frankfurt</div>
+            <div>📜 <b>Governing Law:</b> German Law (ZPO, AktG & EnWG)</div>
+            <div>📂 <b>Docket Ref:</b> <code>#{docket_reference}</code></div>
+            <div>⚔️ <b>Counterparty:</b> {counterparty}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     active_sector = selected_book
     sector = build_operating_book(active_sector)
     sector["statute"] = selected_jurisdiction
     book_config = sector["operating_book"]
     curr_sym = book_config.get("currency_symbol", sector["currency"])
-    st.caption(f"{sb['docket']}: {book_config['docket']}")
-    st.caption(f"{sb['law']}: {selected_jurisdiction}")
-    st.caption(f"{sb['counterparty']}: {book_config['counterparty']}")
     
     calib_key = f"capex_override_{active_sector}"
     if calib_key not in st.session_state:
