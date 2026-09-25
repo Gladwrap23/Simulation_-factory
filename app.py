@@ -1107,35 +1107,49 @@ def render_german_command_post(scenario_data, is_de=False):
     st.markdown(f"## 🏛️ {t['title']}")
     st.caption(f"{t['caption']}{scenario_data['court_forum']}")
 
-    st.markdown("### 🎛️ Fiduciary Sensitivity Matrix | IDW PS 340 Exposure Calibration")
-    st.caption("Deterministic balance-sheet stress-testing across audited capital allocations:")
+    matrix_cfg = scenario_data.get("sensitivity_matrix", {
+        "framework_title": "Fiduciary Sensitivity Matrix | Capital Exposure Calibration",
+        "framework_subtitle": "Deterministic balance-sheet stress-testing across audited capital allocations:",
+        "slider_caption": "Calibrate Balance Sheet Exposure Baseline:",
+        "base_btn_caption": "Audited Sovereign Filings",
+        "presets": [
+            {"label": "Stress Case 1", "val": scenario_data["capex_exposure"] * 0.25, "desc": "Sub-Component Risk"},
+            {"label": "Stress Case 2", "val": scenario_data["capex_exposure"] * 0.60, "desc": "Transmission / Tie-In Risk"},
+            {"label": "Full Scope", "val": scenario_data["capex_exposure"] * 1.25, "desc": "Full Program Exposure"},
+        ],
+    })
+
+    st.markdown(f"### 🎛️ {matrix_cfg['framework_title']}")
+    st.caption(matrix_cfg["framework_subtitle"])
 
     b1, b2, b3, b4 = st.columns(4)
     with b1:
         st.button(
-            f"⭐ Audited Baseline ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
+            f"⭐ Base ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
             key="btn_base",
             on_click=update_capex,
             args=(scenario_data["capex_exposure"],),
             use_container_width=True,
         )
-        st.caption("EnBW & BNetzA Regulatory Filings")
-    with b2:
-        st.button(f"Stress Case: {curr}500M", key="btn_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
-        st.caption("Isolated Converter Station Risk")
-    with b3:
-        st.button(f"Stress Case: {curr}1.5B", key="btn_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
-        st.caption("HVDC Grid Interconnect Risk")
-    with b4:
-        st.button(f"Full Scope: {curr}3.0B", key="btn_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
-        st.caption("Total Offshore Array Expansion")
+        st.caption(matrix_cfg["base_btn_caption"])
+
+    for index, preset in enumerate(matrix_cfg["presets"]):
+        with (b2, b3, b4)[index]:
+            st.button(
+                preset["label"],
+                key=f"btn_preset_{index}",
+                on_click=update_capex,
+                args=(preset["val"],),
+                use_container_width=True,
+            )
+            st.caption(preset["desc"])
 
     slider_val = st.slider(
-        "Calibrate Capital Exposure Baseline (for AktG § 93 Fiduciary Determination):",
-        min_value=100000000.0,
-        max_value=3500000000.0,
+        matrix_cfg["slider_caption"],
+        min_value=float(scenario_data["capex_exposure"] * 0.1),
+        max_value=float(scenario_data["capex_exposure"] * 1.5),
         value=float(active_capex),
-        step=50000000.0,
+        step=float(scenario_data["capex_exposure"] * 0.02),
         format=f"{curr}%,d",
         key="slider_german_capex",
     )
@@ -2197,10 +2211,26 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         """, unsafe_allow_html=True)
 
     # --- COMMAND GATEWAY: SENSITIVITY & AUDITED BASELINE ---
-    curr_sym = "£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$"
+    curr_sym = scenario_data.get(
+        "currency_symbol",
+        scenario_data.get("financials", {}).get(
+            "currency_symbol",
+            "£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$",
+        ),
+    )
     curr_code = "GBP" if curr_sym == "£" else "USD"
     base_floor = float(cfg.get("capex_exposure", 180000000 if curr_sym == "£" else 300000000))
-    filing_date = cfg.get("filing_date", "Q3 2024 Filing" if curr_sym == "$" else "FY2023 Audited")
+    matrix_cfg = scenario_data.get("sensitivity_matrix", {
+        "framework_title": "Fiduciary Sensitivity Matrix | Capital Exposure Calibration",
+        "framework_subtitle": "Deterministic balance-sheet stress-testing across audited capital allocations:",
+        "slider_caption": "Calibrate Balance Sheet Exposure Baseline:",
+        "base_btn_caption": "Audited Sovereign Filings",
+        "presets": [
+            {"label": "Stress Case 1", "val": base_floor * 0.25, "desc": "Sub-Component Risk"},
+            {"label": "Stress Case 2", "val": base_floor * 0.60, "desc": "Transmission / Tie-In Risk"},
+            {"label": "Full Scope", "val": base_floor * 1.25, "desc": "Full Program Exposure"},
+        ],
+    })
 
     # Initialize slider key if not present
     if "slider_capex" not in st.session_state:
@@ -2211,64 +2241,39 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
         st.session_state.slider_capex = float(target_amount)
         st.session_state.capex_baseline = float(target_amount)
 
-    st.markdown("### 🎛️ Command Gateway: Project CapEx at Risk (Recalibrate)")
-
-    # Two-tier header separating evidentiary baseline from hypothetical sandbox
-    col_hdr_left, col_hdr_right = st.columns([1, 3])
-    with col_hdr_left:
-        st.markdown('<div style="font-size: 0.72rem; color: #10b981; font-weight: 800; text-transform: uppercase;">● Audited Contract Baseline</div>', unsafe_allow_html=True)
-    with col_hdr_right:
-        st.markdown('<div style="font-size: 0.72rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">● What-If Sensitivity Stress Tests</div>', unsafe_allow_html=True)
+    st.markdown(f"### 🎛️ {matrix_cfg['framework_title']}")
+    st.caption(matrix_cfg["framework_subtitle"])
 
     # 4 Preset Buttons with Contextual Metadata
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
 
     with b_col1:
         st.button(
-            f"⭐ Audited Base ({curr_sym}{base_floor/1e6:.0f}M)",
+            f"⭐ Base ({curr_sym}{base_floor/1e9:.1f}B)",
             key="btn_preset_base",
             on_click=update_capex_target,
             args=(base_floor,),
             use_container_width=True
         )
-        st.caption(f"Evidence: {filing_date}")
+        st.caption(matrix_cfg["base_btn_caption"])
 
-    with b_col2:
-        st.button(
-            f"What-If: {curr_sym}50M",
-            key="btn_preset_50",
-            on_click=update_capex_target,
-            args=(50000000.0,),
-            use_container_width=True
-        )
-        st.caption("Hypothetical Mini-Build")
-
-    with b_col3:
-        st.button(
-            f"What-If: {curr_sym}150M",
-            key="btn_preset_150",
-            on_click=update_capex_target,
-            args=(150000000.0,),
-            use_container_width=True
-        )
-        st.caption("Hypothetical Utility-Scale")
-
-    with b_col4:
-        st.button(
-            f"What-If: {curr_sym}500M",
-            key="btn_preset_500",
-            on_click=update_capex_target,
-            args=(500000000.0,),
-            use_container_width=True
-        )
-        st.caption("Hypothetical Mega-Cluster")
+    for index, preset in enumerate(matrix_cfg["presets"]):
+        with (b_col2, b_col3, b_col4)[index]:
+            st.button(
+                preset["label"],
+                key=f"btn_preset_{index}",
+                on_click=update_capex_target,
+                args=(preset["val"],),
+                use_container_width=True,
+            )
+            st.caption(preset["desc"])
 
     # Synchronized CapEx Slider
     active_capex = st.slider(
-        f"Fine CapEx Recalibration ({curr_sym} {curr_code}):",
-        min_value=min(50000000.0, float(base_floor * 0.5)),
-        max_value=500000000.0,
-        step=1000000.0,
+        matrix_cfg["slider_caption"],
+        min_value=float(base_floor * 0.1),
+        max_value=float(base_floor * 1.5),
+        step=float(base_floor * 0.02),
         key="slider_capex"
     )
     st.session_state.capex_baseline = float(active_capex)

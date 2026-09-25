@@ -2,6 +2,17 @@
   {
     "scenario_id": "US_TX_ERCOT_BESS_01",
     "capex_exposure": 300000000.0,
+    "sensitivity_matrix": {
+      "framework_title": "Fiduciary Sensitivity Matrix | DGCL § 141(e) Exposure Calibration",
+      "framework_subtitle": "Deterministic balance-sheet stress-testing across audited capital allocations:",
+      "slider_caption": "Calibrate Capital Exposure Baseline (for DGCL § 141(e) Reliance Determination):",
+      "base_btn_caption": "SEC Form 10-Q Audited Asset Valuation",
+      "presets": [
+        {"label": "Stress Case: $75M", "val": 75000000.0, "desc": "Inverter Skid Risk"},
+        {"label": "Stress Case: $180M", "val": 180000000.0, "desc": "Utility-Scale Cluster Risk"},
+        {"label": "Full Scope: $375M", "val": 375000000.0, "desc": "Total BESS Portfolio Exposure"}
+      ]
+    },
     "filing_date": "Q3 2024 SEC Form 10-Q",
     "filing_source": "Audited Asset Valuation",
     "metadata": {
@@ -44,6 +55,17 @@
   {
     "scenario_id": "UK_NORTHSEA_FIBER_02",
     "capex_exposure": 180000000.0,
+    "sensitivity_matrix": {
+      "framework_title": "Fiduciary Sensitivity Matrix | Companies Act 2006 s.172 Exposure Calibration",
+      "framework_subtitle": "Deterministic balance-sheet stress-testing across audited capital allocations:",
+      "slider_caption": "Calibrate Capital Exposure Baseline (for Companies Act 2006 s.172 Determination):",
+      "base_btn_caption": "Companies House Audited Balance Sheet",
+      "presets": [
+        {"label": "Stress Case: £45M", "val": 45000000.0, "desc": "Subsea Repeater Risk"},
+        {"label": "Stress Case: £110M", "val": 110000000.0, "desc": "Landing Station Risk"},
+        {"label": "Full Scope: £225M", "val": 225000000.0, "desc": "Total Subsea Array Exposure"}
+      ]
+    },
     "filing_date": "FY2023 Companies House",
     "filing_source": "Audited Balance Sheet",
     "metadata": {
@@ -84,6 +106,59 @@
     }
   },
   {
+    "scenario_id": "AU_TRANSMISSION_001",
+    "capex_exposure": 3200000000.0,
+    "sensitivity_matrix": {
+      "framework_title": "Fiduciary Sensitivity Matrix | ASA 315 / AER Capital Prudence",
+      "framework_subtitle": "Deterministic capital velocity stress-testing across regulated asset base (RAB):",
+      "slider_caption": "Calibrate Regulated Asset Exposure (for Corporations Act s.189 Reliance):",
+      "base_btn_caption": "AER Approved Revenue Determination",
+      "presets": [
+        {"label": "Stress Case: AU$450M", "val": 450000000.0, "desc": "Synchronous Condenser Package"},
+        {"label": "Stress Case: AU$1.2B", "val": 1200000000.0, "desc": "Buronga to Wagga Eastern Link"},
+        {"label": "Full Scope: AU$3.6B", "val": 3600000000.0, "desc": "Total Interconnect Capital Cap"}
+      ]
+    },
+    "filing_date": "FY2024 AER Revenue Determination",
+    "filing_source": "AER Approved Revenue Determination",
+    "metadata": {
+      "client_name": "Transgrid / NSW Electricity Networks Operations Pty Ltd",
+      "sector_name": "High-Voltage Transmission",
+      "asset_name": "Transgrid Project EnergyConnect (900 km Interconnect)",
+      "country_code": "AUS"
+    },
+    "jurisdiction": {
+      "court_name": "Supreme Court of New South Wales",
+      "statute_board_reliance": "Corporations Act 2001 s.189",
+      "statute_officer_indemnity": "Corporations Act 2001 s.199A",
+      "evidence_auth_standard": "Evidence Act 1995 (NSW) s.146",
+      "collateral_legal_framework": "AER National Electricity Rules Revenue Determination",
+      "default_notice_clause": "Project EnergyConnect Delivery Agreement Clause 14.2"
+    },
+    "financials": {
+      "currency_symbol": "AU$",
+      "default_capex_usd": 3200000000.0,
+      "daily_burn_base_usd": 745205.48
+    },
+    "technical_breach": {
+      "standard_code": "NER S5.1.8",
+      "metric_name": "Network Voltage Control Compliance",
+      "breach_value": 1.8,
+      "threshold_limit": 1.0,
+      "unit_of_measure": "% voltage deviation",
+      "hardware_work_order": "WO-7412-SYNCON"
+    },
+    "stakeholders": {
+      "chairman_name": "Executive Chairman",
+      "clo_name": "General Counsel",
+      "technical_director_name": "Transmission Technical Director",
+      "ops_vp_name": "Network Operations Vice President",
+      "lead_pe_name": "Lead Transmission Engineer, RPEQ",
+      "regulatory_counsel_name": "AER Regulatory Counsel",
+      "forensic_expert_name": "Grid Forensics Expert"
+    }
+  },
+  {
     "scenario_id": "DE_OFFSHORE_WIND_001",
     "asset_name": "EnBW He Dreiht (960 MW Offshore Wind Farm)",
     "corporate_entity": "Energie Baden-Württemberg AG (EnBW)",
@@ -95,6 +170,17 @@
     "currency_symbol": "€",
     "currency_code": "EUR",
     "capex_exposure": 2400000000.0,
+    "sensitivity_matrix": {
+      "framework_title": "Fiduciary Sensitivity Matrix | IDW PS 340 Exposure Calibration",
+      "framework_subtitle": "Deterministic balance-sheet stress-testing across audited capital allocations:",
+      "slider_caption": "Calibrate Capital Exposure Baseline (for AktG § 93 Fiduciary Determination):",
+      "base_btn_caption": "EnBW & BNetzA Regulatory Filings",
+      "presets": [
+        {"label": "Stress Case: €500M", "val": 500000000.0, "desc": "Isolated Converter Station Risk"},
+        {"label": "Stress Case: €1.5B", "val": 1500000000.0, "desc": "HVDC Grid Interconnect Risk"},
+        {"label": "Full Scope: €3.0B", "val": 3000000000.0, "desc": "Total Offshore Array Expansion"}
+      ]
+    },
     "cost_of_capital_apr": 0.085,
     "daily_holding_burn": 558904.11,
     "thirty_day_standstill_bleed": 16767123.29,
