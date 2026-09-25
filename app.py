@@ -1079,9 +1079,64 @@ I18N.update({
     },
 })
 
+T1_I18N = {
+    "EN": {
+        **I18N["EN"],
+        "top_title": "TIER 1 | JUDICIAL EVIDENCE SEALING & EXECUTIVE COMMAND POST",
+        "top_caption": "Fiduciary Airlock & Sovereign Asset Defense | Forum: ",
+        "matrix_title": "Fiduciary Sensitivity Matrix | IDW PS 340 Exposure Calibration",
+        "matrix_sub": "Deterministic balance-sheet stress-testing across audited capital allocations:",
+        "btn_base": "⭐ Base",
+        "btn_base_sub": "EnBW 2024 & BNetzA Filings",
+        "btn_500": "Stress Case: €500M",
+        "btn_500_sub": "Isolated Converter Station Risk",
+        "btn_1500": "Stress Case: €1.5B",
+        "btn_1500_sub": "HVDC Grid Interconnect Risk",
+        "btn_3000": "Full Scope: €3.0B",
+        "btn_3000_sub": "Total Offshore Array Expansion",
+        "slider_label": "Calibrate Balance Sheet Exposure (for AktG § 93 Fiduciary Determination):",
+        "burn_banner": "🚨 UNMITIGATED INACTION HOLDING BURN",
+        "hourly_label": "Hourly Bleed:",
+        "bleed_30d_label": "30-Day Accumulation:",
+        "daily_suffix": "/ day",
+        "hourly_suffix": "/ hr",
+        "btn_ops": "➔ DISPATCH OPERATIONS",
+        "btn_legal": "➔ COURT DOCKET",
+    },
+    "DE": {
+        **I18N["DE"],
+        "top_title": "TIER 1 | GERICHTLICHE BEWEISSICHERUNG & VORSTANDS-COMMAND POST",
+        "top_caption": "Treuhänderischer Fiduciary-Airlock & Schutzschirm | Gerichtsstand: ",
+        "matrix_title": "Fiduciary-Sensitivitätsmatrix | IDW PS 340 Risikofrüherkennung",
+        "matrix_sub": "Deterministische Bilanz-Stresstests auf Basis testierter Kapitalallokationen:",
+        "btn_base": "⭐ Basis",
+        "btn_base_sub": "EnBW 2024 & BNetzA Regulierungs-Filing",
+        "btn_500": "Stresstest: €500 Mio.",
+        "btn_500_sub": "Isoliertes Konverterstations-Risiko",
+        "btn_1500": "Stresstest: €1,5 Mrd.",
+        "btn_1500_sub": "HVDC-Netzanbindungs-Risiko",
+        "btn_3000": "Vollumfang: €3,0 Mrd.",
+        "btn_3000_sub": "Gesamtexpansion Offshore-Park",
+        "slider_label": "Bilanzielle Bemessungsgrundlage kalibrieren (für AktG § 93 Ermessensentscheidung):",
+        "burn_banner": "🚨 UNMITIGIERTER STILLSTANDS-HALTEVERLUST",
+        "hourly_label": "Stündlicher Verlust:",
+        "bleed_30d_label": "30-Tage Stillstands-Akkumulation:",
+        "daily_suffix": "/ Tag",
+        "hourly_suffix": "/ Std",
+        "btn_ops": "➔ TECHNISCHE OPERATIVE FREISCHALTEN",
+        "btn_legal": "➔ GERICHTSKAMMER & KLAGESCHRIFT BETRETEN",
+        "scale_header": "📊 BRIDGING SCALE | BILANZIELLER KAPITALERHALT",
+        "scale_gross": "Vermiedener Schadenseintritt (30d Verlust + 10% Pönale)",
+        "scale_fee": "Abzüglich Statutarischer Forensik-Retainer (2,5%)",
+        "counsel_seat": "General Counsel / Chefjurist",
+        "hold_active": "🔴 RECHTSHÄNGIG EINGELEITET (ZPO § 371)",
+        "prov_legal": "Freistellungs-Dokument: Freizeichnung gem. AktG § 93 / BGH II ZR 268/16",
+    },
+}
+
 
 def render_german_command_post(scenario_data, is_de=False):
-    t = I18N["DE"] if is_de else I18N["EN"]
+    t = T1_I18N["DE"] if is_de else T1_I18N["EN"]
 
     if "active_capex" not in st.session_state:
         st.session_state.active_capex = float(scenario_data["capex_exposure"])
@@ -1104,58 +1159,37 @@ def render_german_command_post(scenario_data, is_de=False):
     forensic_fee = active_capex * scenario_data["forensic_retainer_percent"]
     net_preserved = (thirty_day_bleed + ld_cap) - forensic_fee
 
-    st.markdown("## 🏛️ TIER 1 | JUDICIAL EVIDENCE SEALING & EXECUTIVE COMMAND POST")
-    st.caption(f"Fiduciary Airlock & Sovereign Asset Defense | Forum: {scenario_data['court_forum']}")
-
-    matrix_cfg = scenario_data.get("sensitivity_matrix", {
-        "framework_title": "Fiduciary Sensitivity Matrix | Capital Exposure Calibration",
-        "framework_subtitle": "Deterministic balance-sheet stress-testing across audited capital allocations:",
-        "slider_caption": "Calibrate Balance Sheet Exposure Baseline:",
-        "base_btn_caption": "Audited Sovereign Filings",
-        "presets": [
-            {"label": "Stress Case 1", "val": scenario_data["capex_exposure"] * 0.25, "desc": "Sub-Component Risk"},
-            {"label": "Stress Case 2", "val": scenario_data["capex_exposure"] * 0.60, "desc": "Transmission / Tie-In Risk"},
-            {"label": "Full Scope", "val": scenario_data["capex_exposure"] * 1.25, "desc": "Full Program Exposure"},
-        ],
-    })
-
-    st.markdown(f"### 🎛️ {matrix_cfg['framework_title']}")
-    st.caption(matrix_cfg["framework_subtitle"])
-
-    base_label = (
-        f"{curr}{scenario_data['capex_exposure'] / 1e9:.1f}B"
-        if scenario_data["capex_exposure"] >= 1e9
-        else f"{curr}{scenario_data['capex_exposure'] / 1e6:.0f}M"
-    )
+    st.markdown(f"## 🏛️ {t['top_title']}")
+    st.caption(f"{t['top_caption']}{scenario_data['court_forum']}")
+    st.markdown(f"### 🎛️ {t['matrix_title']}")
+    st.caption(t["matrix_sub"])
 
     b1, b2, b3, b4 = st.columns(4)
     with b1:
         st.button(
-            f"⭐ Base ({base_label})",
+            f"{t['btn_base']} ({curr}{scenario_data['capex_exposure'] / 1e9:.1f}B)",
             key="btn_base",
             on_click=update_capex,
             args=(scenario_data["capex_exposure"],),
             use_container_width=True,
         )
-        st.caption(matrix_cfg["base_btn_caption"])
-
-    for index, preset in enumerate(matrix_cfg["presets"]):
-        with (b2, b3, b4)[index]:
-            st.button(
-                preset["label"],
-                key=f"btn_preset_{index}",
-                on_click=update_capex,
-                args=(preset["val"],),
-                use_container_width=True,
-            )
-            st.caption(preset["desc"])
+        st.caption(t["btn_base_sub"])
+    with b2:
+        st.button(t["btn_500"], key="btn_500", on_click=update_capex, args=(500000000.0,), use_container_width=True)
+        st.caption(t["btn_500_sub"])
+    with b3:
+        st.button(t["btn_1500"], key="btn_1500", on_click=update_capex, args=(1500000000.0,), use_container_width=True)
+        st.caption(t["btn_1500_sub"])
+    with b4:
+        st.button(t["btn_3000"], key="btn_3000", on_click=update_capex, args=(3000000000.0,), use_container_width=True)
+        st.caption(t["btn_3000_sub"])
 
     slider_val = st.slider(
-        matrix_cfg["slider_caption"],
-        min_value=float(scenario_data["capex_exposure"] * 0.1),
-        max_value=float(scenario_data["capex_exposure"] * 1.5),
+        t["slider_label"],
+        min_value=100000000.0,
+        max_value=3500000000.0,
         value=float(active_capex),
-        step=float(scenario_data["capex_exposure"] * 0.02),
+        step=50000000.0,
         format=f"{curr}%,d",
         key="slider_german_capex",
     )
@@ -1180,7 +1214,7 @@ def render_german_command_post(scenario_data, is_de=False):
 
         st.markdown(f"""
         <div style="font-size: 1.15rem; color: #f87171; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; margin: 14px 0 6px 0;">
-            ⚠️ {t['bottleneck_header']}
+            {t['bottleneck_header']}
         </div>
         """, unsafe_allow_html=True)
 
@@ -1190,14 +1224,14 @@ def render_german_command_post(scenario_data, is_de=False):
         st.markdown(f"""
         <div style="background: rgba(220, 38, 38, 0.15); border: 2px solid #ef4444; border-radius: 10px; padding: 18px; margin: 14px 0;">
             <div style="font-size: 0.95rem; color: #fca5a5; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;">
-                🚨 UNMITIGATED INACTION HOLDING BURN
+                {t['burn_banner']}
             </div>
             <div style="font-size: 2.6rem; font-weight: 900; color: #ffffff; margin: 6px 0; text-shadow: 0 0 14px rgba(239, 68, 68, 0.5);">
-                {curr}{daily_burn:,.0f} <span style="font-size: 1.3rem; color: #fca5a5; font-weight: 800;">/ DAY</span>
+                {curr}{daily_burn:,.0f} <span style="font-size: 1.3rem; color: #fca5a5; font-weight: 800;">{t['daily_suffix']}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 1.15rem; color: #ffffff; margin-top: 10px; border-top: 1px solid rgba(239,68,68,0.4); padding-top: 10px;">
-                <span>⏱️ Hourly: <b style="color: #fca5a5;">{curr}{hourly_burn:,.0f}</b> / hr</span>
-                <span>📅 30-Day Bleed: <b style="color: #fca5a5;">{curr}{thirty_day_bleed:,.0f}</b></span>
+                <span>⏱️ {t['hourly_label']} <b style="color: #fca5a5;">{curr}{hourly_burn:,.0f}</b> {t['hourly_suffix']}</span>
+                <span>📅 {t['bleed_30d_label']} <b style="color: #fca5a5;">{curr}{thirty_day_bleed:,.0f}</b></span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1213,7 +1247,7 @@ def render_german_command_post(scenario_data, is_de=False):
         st.markdown(f"""
         <div style="background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; border-radius: 10px; padding: 18px; margin: 14px 0;">
             <div style="font-size: 1.05rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;">
-                📊 {t['scale_header']}
+                {t['scale_header']}
             </div>
             <div style="font-size: 1.2rem; color: #ffffff; margin-top: 10px;">
                 {t['scale_gross']}: <b style="color: #a7f3d0;">{curr}{(thirty_day_bleed + ld_cap):,.2f}</b>
@@ -1310,14 +1344,14 @@ def render_german_command_post(scenario_data, is_de=False):
         o1, o2 = st.columns(2)
         with o1:
             st.button(
-                f"➔ DISPATCH OPERATIONS ({roster['independent_engineer'].split(',')[0]})",
+                f"{t['btn_ops']} ({roster['independent_engineer'].split(',')[0]})",
                 key="btn_go_de_ops",
                 on_click=cb_goto_tier_3a,
                 use_container_width=True
             )
         with o2:
             st.button(
-                f"➔ COURT DOCKET ({roster['general_counsel'].split('(')[0].strip()})",
+                f"{t['btn_legal']} ({roster['general_counsel'].split('(')[0].strip()})",
                 key="btn_go_de_legal",
                 on_click=cb_goto_legal,
                 use_container_width=True
@@ -1913,6 +1947,41 @@ if st.session_state.selected_book_name not in OPERATING_BOOKS:
 # ==============================================================================
 is_master_sealed = st.session_state.get("chair_final_signed", False) and st.session_state.get("clo_final_signed", False)
 
+SIDEBAR_I18N = {
+    "EN": {
+        "book": "OPERATING BOOK (GLOBAL DISPUTED ASSETS)",
+        "currency": "OPERATING CURRENCY",
+        "baseline": "Baseline Exposure",
+        "lang_label": "🌐 JURISDICTION LANGUAGE / SPRACHE",
+        "jurisdiction": "SOVEREIGN LEGAL JURISDICTION",
+        "docket": "Docket",
+        "law": "Governing Law",
+        "counterparty": "Counterparty",
+        "desk": "Command Desk",
+        "track_label": "Select Operating Track:",
+        "track_comm": "🗂️ Commercial & Operations Track",
+        "track_legal": "⚖️ Legal & Statutory Track",
+        "comm_hierarchy": "Commercial Hierarchy:",
+        "legal_hierarchy": "Legal & Statutory Hierarchy:",
+    },
+    "DE": {
+        "book": "PORTFOLIO (GLOBAL STRITTIGE ANLAGEN)",
+        "currency": "BETRIEBSWÄHRUNG",
+        "baseline": "Ausgangs-Bemessungsgrundlage",
+        "lang_label": "🌐 SPRACHE / JURISDICTION LANGUAGE",
+        "jurisdiction": "HOHEITLICHER GERICHTSSTAND",
+        "docket": "Aktenzeichen",
+        "law": "Anwendbares Recht",
+        "counterparty": "Verzugsgegner",
+        "desk": "Leitstand",
+        "track_label": "Betriebspfad wählen:",
+        "track_comm": "🗂️ Operativer & Kaufmännischer Pfad",
+        "track_legal": "⚖️ Rechtlicher & Statutarischer Pfad",
+        "comm_hierarchy": "Operative Hierarchie:",
+        "legal_hierarchy": "Rechtliche Hierarchie:",
+    },
+}
+
 with st.sidebar:
     st.markdown("""
         <div style="padding: 6px 0 16px 0;">
@@ -1925,14 +1994,28 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
+    selected_book_default = st.session_state.selected_book_name
+    selected_scenario_default = SCENARIOS_MAP.get(selected_book_default, {})
+    language_default = "Deutsch (DE)" if "DE" in selected_scenario_default.get("jurisdiction_code", "") else "English (EN)"
+    selected_language_state = st.session_state.get("app_language_toggle", language_default)
+    language_strings = SIDEBAR_I18N["DE"] if "Deutsch" in selected_language_state else SIDEBAR_I18N["EN"]
+    selected_lang = st.selectbox(
+        language_strings["lang_label"],
+        options=["English (EN)", "Deutsch (DE)"],
+        index=1 if language_default == "Deutsch (DE)" else 0,
+        key="app_language_toggle",
+    )
+    is_de = "Deutsch" in selected_lang
+    sb = SIDEBAR_I18N["DE"] if is_de else SIDEBAR_I18N["EN"]
+
+    st.markdown(f"""
         <div style="font-size: 0.85rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
-            📁 OPERATING BOOK (GLOBAL DISPUTED ASSETS)
+            📁 {sb['book']}
         </div>
     """, unsafe_allow_html=True)
     
     selected_book = st.selectbox(
-        "Operating Book:",
+        sb["book"],
         options=list(SCENARIOS_MAP.keys()) if SCENARIOS_MAP else list(OPERATING_BOOKS.keys()),
         key="selected_book_name",
         label_visibility="collapsed"
@@ -1942,25 +2025,17 @@ with st.sidebar:
 
     # --- SIDEBAR ASSET & CURRENCY BADGE ---
     cfg = active_cfg
-    curr_sym = cfg.get("currency_symbol") or ("£" if ("GBR" in str(cfg) or "Subsea" in str(cfg) or "Caledonia" in str(cfg)) else "$")
-    curr_code = cfg.get("currency_code") or ("GBP" if curr_sym == "£" else "USD")
+    curr_sym = scenario_data.get("currency_symbol", scenario_data.get("financials", {}).get("currency_symbol", cfg.get("currency_symbol", "$")))
+    curr_code = scenario_data.get("currency_code", cfg.get("currency_code", "GBP" if curr_sym == "£" else "USD"))
     base_capex_val = cfg.get("capex_exposure", cfg.get("default_capex", 180000000 if curr_sym == "£" else 30000000))
 
     st.markdown(f"""
         <div style="background: #0f172a; border: 1px solid #1e293b; border-left: 3px solid #38bdf8; padding: 6px 10px; border-radius: 4px; margin-top: -8px; margin-bottom: 14px;">
-            <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Operating Currency:</span>
+            <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">{sb['currency']}:</span>
             <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 800; margin-left: 4px;">{curr_code} ({curr_sym})</span>
-            <div style="font-size: 0.68rem; color: #64748b;">Baseline Exposure: {curr_sym}{base_capex_val:,.0f}</div>
+            <div style="font-size: 0.68rem; color: #64748b;">{sb['baseline']}: {curr_sym}{base_capex_val:,.0f}</div>
         </div>
     """, unsafe_allow_html=True)
-
-    selected_lang = st.sidebar.selectbox(
-        "🌐 JURISDICTION LANGUAGE / SPRACHE",
-        options=["English (EN)", "Deutsch (DE)"],
-        index=1 if "DE" in scenario_data.get("jurisdiction_code", "") else 0,
-        key="app_language_toggle"
-    )
-    is_de = "Deutsch" in selected_lang
 
     if st.session_state.get("last_loaded_book") != selected_book:
         st.session_state.capex_baseline = active_cfg["default_capex"]
@@ -1971,13 +2046,13 @@ with st.sidebar:
         st.session_state.selected_director = active_cfg["lead_director"]
         st.session_state.last_loaded_book = selected_book
 
-    st.markdown("""
+    st.markdown(f"""
         <div style="font-size: 0.85rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-top: 14px; margin-bottom: 6px; letter-spacing: 0.5px;">
-            ⚖️ SOVEREIGN LEGAL JURISDICTION
+            ⚖️ {sb['jurisdiction']}
         </div>
     """, unsafe_allow_html=True)
     selected_jurisdiction = st.selectbox(
-        "Governing Jurisdiction:",
+        sb["law"],
         options=active_cfg["jurisdiction_options"],
         key=f"jurisdiction_{selected_book}",
         label_visibility="collapsed"
@@ -1989,9 +2064,9 @@ with st.sidebar:
     sector["statute"] = selected_jurisdiction
     book_config = sector["operating_book"]
     curr_sym = book_config.get("currency_symbol", sector["currency"])
-    st.caption(f"Docket: {book_config['docket']}")
-    st.caption(f"Law: {selected_jurisdiction}")
-    st.caption(f"Counterparty: {book_config['counterparty']}")
+    st.caption(f"{sb['docket']}: {book_config['docket']}")
+    st.caption(f"{sb['law']}: {selected_jurisdiction}")
+    st.caption(f"{sb['counterparty']}: {book_config['counterparty']}")
     
     calib_key = f"capex_override_{active_sector}"
     if calib_key not in st.session_state:
@@ -2005,26 +2080,28 @@ with st.sidebar:
     # 3. SIDEBAR WITH VISUAL LOCKS
     # ==============================================================================
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🎛️ Command Desk")
+    st.sidebar.markdown(f"### 🎛️ {sb['desk']}")
 
-    selected_track = st.sidebar.radio(
-        "Select Operating Track:",
-        options=[TRACK_COMMERCIAL, TRACK_LEGAL],
+    track_labels = {sb["track_comm"]: TRACK_COMMERCIAL, sb["track_legal"]: TRACK_LEGAL}
+    selected_track_label = st.sidebar.radio(
+        sb["track_label"],
+        options=list(track_labels),
         key="nav_track_selection"
     )
+    selected_track = track_labels[selected_track_label]
 
     is_retained = st.session_state.get("mandate_executed", False)
 
     if selected_track == TRACK_COMMERCIAL:
         selected_tier = st.sidebar.radio(
-            "Commercial Hierarchy:",
+            sb["comm_hierarchy"],
             options=COMMERCIAL_TIERS,
             key="nav_tier_commercial"
         )
         st.session_state.active_desk = selected_tier
     else:
         selected_tier = st.sidebar.radio(
-            "Legal & Statutory Hierarchy:",
+            sb["legal_hierarchy"],
             options=LEGAL_TIERS,
             key="nav_tier_legal"
         )
