@@ -1382,106 +1382,145 @@ def render_tier_3a_engineering(scenario_data, is_de=False):
         st.button("➔ Advance to Site Execution Desk", on_click=cb_goto_tier_3b, type="primary", use_container_width=True)
 
 
+T3B_I18N = {
+    "EN": {
+        "title": "TIER 3B | SITE EXECUTION DESK",
+        "caption": "Substation Field Telemetry, Physical Inspection & SCADA Directives | Target: ",
+        "alert_title": "⚠️ ACTIVE PHYSICAL FIELD INTERVENTION | VDI / DIN EN ISO 17025 ACCREDITED",
+        "alert_desc": "Raw sensory inputs, high-resolution inspection media, and hardware calibration traces captured live from the 66kV inter-array substation bus.",
+        "telemetry_header": "🎛️ Substation Bus Telemetry",
+        "array_arch": "Array Architecture: 64 x SG 14-236 DD Turbines (960 MW Array)",
+        "rec_volt": "Recorded Voltage: 66.12 kV RMS | Frequency: 49.98 Hz",
+        "harmonic_slip": "Current Harmonic Slip: 3.82% THD_I (VDE-AR-N 4130 Limit: 2.50%)",
+        "osc_rig": "Oscilloscope Rig: Fluke 1777 Power Quality Analyzer (Cal ID: DE-2024-9912)",
+        "directives_header": "📋 Physical Inspection Directives",
+        "intervention_stat": "Intervention Status: Damping filter banks isolated for firmware recalibration",
+        "lead_eng": "Lead Field Engineer: ",
+        "demurrage_notice": "Demurrage Freezing Notice: Ref #LG-STGT-2024-882 served to TenneT",
+        "telemetry_hash": "Telemetry Hash: ",
+        "hub_header": "📥 Physical Evidence Extraction Hub",
+        "hub_desc": "Direct extraction of raw telemetry logs, engineering single-line diagrams, and marine inspection video footage:",
+        "card1_title": "Raw Telemetry Stream",
+        "card1_sub": "Fluke 1777 66kV FFT Waveforms (.CSV)",
+        "card1_btn": "⬇️ Download Telemetry (.CSV)",
+        "card2_title": "Single-Line Diagrams",
+        "card2_sub": "VDI 2024 Electrical CAD Plans (.PDF)",
+        "card2_btn": "⬇️ Download SLD Plans (.PDF)",
+        "card3_title": "ROV Inspection Media",
+        "card3_sub": "Subsea J-Tube & Cable Video Logs",
+        "card3_btn": "⬇️ Download Media Package",
+        "btn_back": "⬅️ Back to Operations Command (Tier 3A)",
+        "btn_next": "➔ Advance to Forensic Recovery Vault (Tier 4)",
+    },
+    "DE": {
+        "title": "TIER 3B | OPERATIVER STANDORT-LEITSTAND",
+        "caption": "Umspannwerk-Feldtelemetrie, physische Inspektion & SCADA-Direktiven | Ziel: ",
+        "alert_title": "⚠️ AKTIVE PHYSISCHE INTERVENTION | VDI / DIN EN ISO 17025 AKKREDITIERT",
+        "alert_desc": "Echtzeit-Sensordaten, hochauflösende Inspektionsmedien und Hardware-Kalibrierungsspuren direkt von der 66-kV-Park-Sammelschiene erfasst.",
+        "telemetry_header": "🎛️ Sammelschienen-Telemetrie (66 kV)",
+        "array_arch": "Park-Konfiguration: 64 x SG 14-236 DD Turbinen (960-MW-Gesamtfeld)",
+        "rec_volt": "Gemessene Betriebsspannung: 66,12 kV RMS | Netzfrequenz: 49,98 Hz",
+        "harmonic_slip": "Oberschwingungsdrift: 3,82% THD_I (VDE-AR-N 4130 Grenzwert: 2,50%)",
+        "osc_rig": "Mess-Oszilloskop: Fluke 1777 Netzanalysator (Kalibrier-ID: DE-2024-9912)",
+        "directives_header": "📋 Physische Inspektions-Direktiven",
+        "intervention_stat": "Interventions-Status: Dämpfungsfilterkreise zur Firmware-Rekalibrierung isoliert",
+        "lead_eng": "Leitender Sachverständiger: ",
+        "demurrage_notice": "Stillstandsmeldung & Pönalenstopp: Az. LG Stuttgart 24-OH-882 an TenneT zugestellt",
+        "telemetry_hash": "Kryptographischer Telemetrie-Hash: ",
+        "hub_header": "📥 Beweismittel-Extraktionszentrum",
+        "hub_desc": "Direkter Abruf gerichtsfester Roh-Telemetriedaten, elektrotechnischer Übersichts-Schaltpläne und ROV-Unterwasser-Videobeweise:",
+        "card1_title": "Roh-Telemetriedatenstrom",
+        "card1_sub": "Fluke 1777 66-kV FFT-Wellenformen (.CSV)",
+        "card1_btn": "⬇️ Telemetriedaten herunterladen (.CSV)",
+        "card2_title": "Übersichts-Schaltpläne",
+        "card2_sub": "VDI 2024 CAD-Elektro-Bestandspläne (.PDF)",
+        "card2_btn": "⬇️ Schaltpläne herunterladen (.PDF)",
+        "card3_title": "ROV-Inspektionsmedien",
+        "card3_sub": "Unterwasser-J-Tube- und Seekabel-Videoprotokolle",
+        "card3_btn": "⬇️ Medienpaket herunterladen",
+        "btn_back": "⬅️ Zurück zu Operations Command (Tier 3A)",
+        "btn_next": "➔ Weiter zum Beweismittel-Tresor (Tier 4)",
+    },
+}
+
+
 def render_tier_3b_site_execution(scenario_data, is_de=False):
+    t = T3B_I18N["DE"] if is_de else T3B_I18N["EN"]
     roster = scenario_data["named_roster"]
     prov = scenario_data["provenance_data"]
 
-    st.markdown("## ⚙️ TIER 3B | SITE EXECUTION DESK")
-    st.caption(f"Substation Field Telemetry, Physical Inspection & SCADA Directives | Target: {scenario_data['counterparty_entity']}")
+    st.markdown(f"## ⚙️ {t['title']}")
+    st.caption(f"{t['caption']}{scenario_data['counterparty_entity']}")
 
-    st.markdown("""
+    st.markdown(f"""
     <div style="background: rgba(245, 158, 11, 0.12); border: 2px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin: 12px 0;">
-        <div style="font-size: 1.1rem; font-weight: 800; color: #fbbf24; text-transform: uppercase;">
-            ⚠️ ACTIVE PHYSICAL FIELD INTERVENTION | VDI / DIN EN ISO 17025 ACCREDITED
-        </div>
-        <div style="font-size: 0.95rem; color: #fef3c7; margin-top: 4px;">
-            Raw sensory inputs, high-resolution inspection media, and hardware calibration traces captured live from the 66kV inter-array substation bus.
-        </div>
+        <div style="font-size: 1.1rem; font-weight: 800; color: #fbbf24; text-transform: uppercase;">{t['alert_title']}</div>
+        <div style="font-size: 0.95rem; color: #fef3c7; margin-top: 4px;">{t['alert_desc']}</div>
     </div>
     """, unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("### 🎛️ Substation Bus Telemetry")
-        st.markdown("""
-        * **Array Architecture:** 64 x SG 14-236 DD Turbines (960 MW Array)
-        * **Recorded Voltage:** 66.12 kV RMS | Frequency: 49.98 Hz
-        * **Current Harmonic Slip:** **3.82% THD_I** (VDE-AR-N 4130 Limit: 2.50%)
-        * **Oscilloscope Rig:** Fluke 1777 Power Quality Analyzer (Cal ID: `DE-2024-9912`)
+        st.markdown(f"### {t['telemetry_header']}")
+        st.markdown(f"""
+        * **{t['array_arch']}**
+        * **{t['rec_volt']}**
+        * **{t['harmonic_slip']}**
+        * **{t['osc_rig']}**
         """)
     with c2:
-        st.markdown("### 📋 Physical Inspection Directives")
+        st.markdown(f"### {t['directives_header']}")
         st.markdown(f"""
-        * **Intervention Status:** Damping filter banks isolated for firmware recalibration
-        * **Lead Field Engineer:** `{roster['independent_engineer']}`
-        * **Demurrage Freezing Notice:** Ref #LG-STGT-2024-882 served to TenneT
-        * **Telemetry Hash:** `{prov['sha256_root'][:32]}...`
+        * **{t['intervention_stat']}**
+        * **{t['lead_eng']}** `{roster['independent_engineer']}`
+        * **{t['demurrage_notice']}**
+        * **{t['telemetry_hash']}** `{prov['sha256_root'][:32]}...`
         """)
 
     st.markdown("---")
-
-    st.markdown("### 📥 Physical Evidence Extraction Hub")
-    st.caption("Direct extraction of raw telemetry logs, engineering single-line diagrams, and marine inspection video footage:")
+    st.markdown(f"### {t['hub_header']}")
+    st.caption(t["hub_desc"])
 
     d1, d2, d3 = st.columns(3)
-
     with d1:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
             <div style="font-size: 2.0rem;">📊</div>
-            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">Raw Telemetry Stream</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">Fluke 1777 66kV FFT Waveforms (.CSV)</div>
+            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">{t['card1_title']}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">{t['card1_sub']}</div>
         </div>
         """, unsafe_allow_html=True)
-        raw_csv_data = "timestamp,bus_kv,freq_hz,thd_i_percent,sub_sync_resonance_hz\n2026-09-24T14:00:00Z,66.12,49.98,3.82,14.2\n2026-09-24T14:05:00Z,66.10,49.99,3.81,14.3"
-        st.download_button(
-            label="⬇️ Download Telemetry (.CSV)",
-            data=raw_csv_data,
-            file_name=f"Substation_Telemetry_66kV_{scenario_data['scenario_id']}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+        raw_csv = "zeitstempel,spannung_kv,frequenz_hz,thd_i_prozent,subsynchrone_resonanz_hz\n2026-09-24T14:00:00Z,66.12,49.98,3.82,14.2\n2026-09-24T14:05:00Z,66.10,49.99,3.81,14.3"
+        st.download_button(label=t["card1_btn"], data=raw_csv, file_name=f"Telemetrie_66kV_{scenario_data['scenario_id']}.csv", mime="text/csv", key="btn_dl_telemetry_t3b", use_container_width=True)
 
     with d2:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
             <div style="font-size: 2.0rem;">📐</div>
-            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">Single-Line Diagrams</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">VDI 2024 Electrical CAD Plans (.PDF)</div>
+            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">{t['card2_title']}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">{t['card2_sub']}</div>
         </div>
         """, unsafe_allow_html=True)
-        plan_manifest = f"ENBW HE DREIHT - 66KV SUBSTATION SCHEMATIC\nApproved by: {roster['independent_engineer']}\nStandard: DIN EN 61400-21\nHash: {prov['sha256_root']}"
-        st.download_button(
-            label="⬇️ Download SLD Plans (.PDF)",
-            data=plan_manifest,
-            file_name=f"Substation_SLD_Plans_{scenario_data['scenario_id']}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+        plan_manifest = f"ENBW HE DREIHT - 66KV SCHALTPLAN\nSachverstaendiger: {roster['independent_engineer']}\nNorm: DIN EN 61400-21 / VDE-AR-N 4130\nPruefsumme SHA-256: {prov['sha256_root']}"
+        st.download_button(label=t["card2_btn"], data=plan_manifest, file_name=f"Schaltplan_66kV_{scenario_data['scenario_id']}.pdf", mime="application/pdf", key="btn_dl_cad_t3b", use_container_width=True)
 
     with d3:
-        st.markdown("""
+        st.markdown(f"""
         <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
             <div style="font-size: 2.0rem;">🎥</div>
-            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">ROV Inspection Media</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">Subsea J-Tube & Cable Video Logs</div>
+            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">{t['card3_title']}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">{t['card3_sub']}</div>
         </div>
         """, unsafe_allow_html=True)
-        video_metadata = "ROV SUBSEA INSPECTION LOG (4K UHD)\nTarget: BorWin epsilon J-Tube Subsea Tie-In\nCamera: Kongsberg OE14-502 Marine HD\nIntegrity Hash: SHA-256: 4f8a91c0e3b1285091cd"
-        st.download_button(
-            label="⬇️ Download Media Package",
-            data=video_metadata,
-            file_name=f"ROV_Inspection_Log_{scenario_data['scenario_id']}.txt",
-            mime="text/plain",
-            use_container_width=True
-        )
+        video_metadata = "ROV UNTERWASSER-INSPEKTIONS-PROTOKOLL (4K UHD)\nObjekt: BorWin epsilon J-Tube Kabeleinfuehrung\nKamera: Kongsberg OE14-502 Marine HD\nBeglaubigter Hash: SHA-256: 4f8a91c0e3b1285091cd"
+        st.download_button(label=t["card3_btn"], data=video_metadata, file_name=f"ROV_Inspektionsprotokoll_{scenario_data['scenario_id']}.txt", mime="text/plain", key="btn_dl_media_t3b", use_container_width=True)
 
     st.markdown("---")
     b1, b2 = st.columns(2)
     with b1:
-        st.button("⬅️ Back to Operations Command (Tier 3A)", on_click=cb_goto_tier_3a, use_container_width=True)
+        st.button(t["btn_back"], on_click=cb_goto_tier_3a, use_container_width=True)
     with b2:
-        st.button("➔ Advance to Forensic Recovery Vault (Tier 4)", type="primary", on_click=cb_goto_tier_4, use_container_width=True)
+        st.button(t["btn_next"], type="primary", on_click=cb_goto_tier_4, use_container_width=True)
 
 
 def render_tier_4_forensic_vault(scenario_data, is_de=False):
