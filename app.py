@@ -1104,8 +1104,8 @@ def render_german_command_post(scenario_data, is_de=False):
     forensic_fee = active_capex * scenario_data["forensic_retainer_percent"]
     net_preserved = (thirty_day_bleed + ld_cap) - forensic_fee
 
-    st.markdown(f"## 🏛️ {t['title']}")
-    st.caption(f"{t['caption']}{scenario_data['court_forum']}")
+    st.markdown("## 🏛️ TIER 1 | JUDICIAL EVIDENCE SEALING & EXECUTIVE COMMAND POST")
+    st.caption(f"Fiduciary Airlock & Sovereign Asset Defense | Forum: {scenario_data['court_forum']}")
 
     matrix_cfg = scenario_data.get("sensitivity_matrix", {
         "framework_title": "Fiduciary Sensitivity Matrix | Capital Exposure Calibration",
@@ -1122,10 +1122,16 @@ def render_german_command_post(scenario_data, is_de=False):
     st.markdown(f"### 🎛️ {matrix_cfg['framework_title']}")
     st.caption(matrix_cfg["framework_subtitle"])
 
+    base_label = (
+        f"{curr}{scenario_data['capex_exposure'] / 1e9:.1f}B"
+        if scenario_data["capex_exposure"] >= 1e9
+        else f"{curr}{scenario_data['capex_exposure'] / 1e6:.0f}M"
+    )
+
     b1, b2, b3, b4 = st.columns(4)
     with b1:
         st.button(
-            f"⭐ Base ({curr}{scenario_data['capex_exposure']/1e9:.1f}B)",
+            f"⭐ Base ({base_label})",
             key="btn_base",
             on_click=update_capex,
             args=(scenario_data["capex_exposure"],),
@@ -1870,15 +1876,12 @@ is_master_sealed = st.session_state.get("chair_final_signed", False) and st.sess
 
 with st.sidebar:
     st.markdown("""
-        <div class="sidebar-brand-card">
-            <div style="font-size: 1.15rem; font-weight: 900; color: #58a6ff; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.25;">
-                ⚡ Autonomous Capital Defense
+        <div style="padding: 6px 0 16px 0;">
+            <div style="font-size: 1.1rem; font-weight: 900; color: #ffffff; letter-spacing: 0.05em;">
+                ⚡ AUTONOMOUS CAPITAL DEFENSE
             </div>
-            <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff; margin-top: 4px;">
-                Forensic Claims Engine
-            </div>
-            <div style="font-size: 0.8rem; color: #8b949e; margin-top: 6px; font-family: monospace;">
-                Pactum Sovereign OS · Build v6.8
+            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">
+                Forensic Claims Engine • Build v6.8
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -2180,35 +2183,12 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     k2 = st.session_state.get("key_counsel_armed", False)
     current_capex = float(st.session_state.capex_baseline)
 
-    # 2. STATUS BANNER
-    if is_sealed:
-        st.markdown(f"""
-            <div style="background: #062b19; border: 2px solid #00ff88; border-left: 8px solid #00ff88; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; font-weight: 900; color: #00ff88;">🔒 DOCKET INCEPTION CHARTER SEALED // COMMERCIALLY BOUND</span>
-                    <span style="background: #00ff88; color: #04101e; font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">ARMED & BOUND</span>
-                </div>
-                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
-                    Dual-Key satisfied. Balance sheet committed at <strong>${current_capex:,.0f} USD</strong>.
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-            <div style="background: #1c1408; border: 2px solid #ffa500; border-left: 8px solid #ffa500; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; font-weight: 900; color: #ffa500;">⚠️ STRATEGIC SANDBOX MODE // NON-BINDING SCENARIO MODELING</span>
-                    <span style="background: #ffa500; color: #000; font-size: 0.75rem; font-weight: 900; padding: 2px 8px; border-radius: 4px;">SANDBOX</span>
-                </div>
-                <div style="color: #cbd5e0; font-size: 0.85rem; margin-top: 4px;">
-                    Recalibrate capital exposure below. Turning Key 1 binds this balance-sheet floor to the court docket.
-                </div>
-                <div style="display: flex; gap: 20px; margin-top: 8px; font-size: 0.82rem; font-weight: 800;">
-                    <span style="color: {'#00ff88' if k1 else '#ff4b4b'};">{'✓' if k1 else '○'} KEY 1 (CHAIRMAN): {'ARMED & COMMITTED' if k1 else 'PENDING AUTHORIZATION'}</span>
-                    <span style="color: {'#00ff88' if k2 else '#ffa500'};">{'✓' if k2 else '○'} KEY 2 (GENERAL COUNSEL): {'ARMED' if k2 else 'PENDING LEGAL CHAMBERS'}</span>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    forum = scenario_data.get(
+        "court_forum",
+        scenario_data.get("jurisdiction", {}).get("court_name", selected_jurisdiction),
+    )
+    st.markdown("## 🏛️ TIER 1 | JUDICIAL EVIDENCE SEALING & EXECUTIVE COMMAND POST")
+    st.caption(f"Fiduciary Airlock & Sovereign Asset Defense | Forum: {forum}")
 
     # --- COMMAND GATEWAY: SENSITIVITY & AUDITED BASELINE ---
     curr_sym = scenario_data.get(
@@ -2244,12 +2224,18 @@ if st.session_state.active_desk == DESK_OPTIONS[0]:
     st.markdown(f"### 🎛️ {matrix_cfg['framework_title']}")
     st.caption(matrix_cfg["framework_subtitle"])
 
+    base_label = (
+        f"{curr_sym}{base_floor / 1e9:.1f}B"
+        if base_floor >= 1e9
+        else f"{curr_sym}{base_floor / 1e6:.0f}M"
+    )
+
     # 4 Preset Buttons with Contextual Metadata
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
 
     with b_col1:
         st.button(
-            f"⭐ Base ({curr_sym}{base_floor/1e9:.1f}B)",
+            f"⭐ Base ({base_label})",
             key="btn_preset_base",
             on_click=update_capex_target,
             args=(base_floor,),
