@@ -561,6 +561,15 @@ def cb_goto_tier_4():
     st.session_state["nav_tier_commercial"] = TIER_4
 
 
+def proceed_to_tier4():
+    st.session_state["tier_4_unlocked"] = True
+    st.session_state["pe_seal_locked"] = True
+    st.session_state["gate_3b_cleared"] = True
+    st.session_state["nav_tier_commercial"] = TIER_4
+    st.session_state["active_desk"] = TIER_4
+    st.rerun()
+
+
 def cb_goto_legal():
     st.session_state["nav_track_selection"] = TRACK_LEGAL
 
@@ -1479,6 +1488,26 @@ T3B_I18N = {
 }
 
 
+def render_tier_3b_execution_punch_list(step_labels, is_de=False):
+    st.markdown("### Execution Punch List" if not is_de else "### Betriebliche Prüfliste")
+    pe_seal_locked = st.session_state.get("pe_seal_locked", False)
+    completed_steps = []
+    for index, label in enumerate(step_labels, start=1):
+        step_complete = st.checkbox(
+            label,
+            value=st.session_state.get("pe_seal_locked", False),
+            key=f"chk_step_{index}",
+            disabled=pe_seal_locked or (index == 4 and not all(completed_steps)),
+        )
+        completed_steps.append(step_complete)
+
+    if len(completed_steps) == 4 and completed_steps[3]:
+        st.session_state["tier_4_unlocked"] = True
+        st.session_state["pe_seal_locked"] = True
+        st.session_state["gate_3b_cleared"] = True
+    return len(completed_steps) == 4 and all(completed_steps)
+
+
 def render_tier_3b_site_execution(scenario_data, is_de=False):
     t = T3B_I18N["DE"] if is_de else T3B_I18N["EN"]
     scenario_id = scenario_data.get("scenario_id", "UNKNOWN")
@@ -1541,7 +1570,7 @@ def render_tier_3b_site_execution(scenario_data, is_de=False):
     voltage_label, frequency_label, harmonic_label = metric_labels
     metric_columns = st.columns(3)
     with metric_columns[0]:
-        st.metric(voltage_label, "66.12 kV", "Nominal: 66.00 kV")
+        st.metric(voltage_label, "66.12 kV", "Nominal: 6.00 kV")
     with metric_columns[1]:
         frequency_note = "Target" if not is_de else "Sollwert"
         st.metric(frequency_label, "49.98 Hz", f"{frequency_note}: {target_frequency}")
@@ -1556,6 +1585,39 @@ def render_tier_3b_site_execution(scenario_data, is_de=False):
     * **{standard_label}:** DIN EN ISO/IEC 17025 Certified
     * **{certificate_label}:** `CAL-DE-2024-9912`
     """)
+
+    step_labels = (
+        (
+            "Step 1: Isolate and inspect the busbar measurement circuit",
+            "Step 2: Verify voltage and frequency calibration",
+            "Step 3: Run the harmonic distortion waveform sweep",
+            "Step 4: Affix the PE digital seal and lock the evidence",
+        )
+        if not is_de
+        else (
+            "Schritt 1: Sammelschienen-Messkreis isolieren und prüfen",
+            "Schritt 2: Spannungs- und Frequenzkalibrierung verifizieren",
+            "Schritt 3: Oberschwingungs-Wellenformmessung durchführen",
+            "Schritt 4: PE-Digitalsiegel anbringen und Beweise sperren",
+        )
+    )
+    all_signed = render_tier_3b_execution_punch_list(step_labels, is_de)
+    if all_signed:
+        st.success("All four execution steps are sealed." if not is_de else "Alle vier Ausführungsschritte sind versiegelt.")
+        st.button(
+            "🟢 SEAL STATUTORY EVIDENCE & PROCEED TO TIER 4",
+            key="btn_t3b_to_t4",
+            on_click=proceed_to_tier4,
+            type="primary",
+            use_container_width=True,
+        )
+    else:
+        st.button(
+            "🔒 TIER 4 LOCKED (Complete all 4 execution steps)" if not is_de else "🔒 TIER 4 GESPERRT (Alle 4 Ausführungsschritte abschließen)",
+            key="btn_t3b_locked",
+            disabled=True,
+            use_container_width=True,
+        )
 
     telemetry_csv = "\n".join((
         f"# Corporate Header: {corporate_name}",
@@ -1586,11 +1648,7 @@ def render_tier_3b_site_execution(scenario_data, is_de=False):
     )
 
     st.markdown("---")
-    b1, b2 = st.columns(2)
-    with b1:
-        st.button(t["btn_back"], on_click=cb_goto_tier_3a, use_container_width=True)
-    with b2:
-        st.button(t["btn_next"], type="primary", on_click=cb_goto_tier_4, use_container_width=True)
+    st.button(t["btn_back"], on_click=cb_goto_tier_3a, use_container_width=True)
 
 
 def render_tier_4_forensic_vault(scenario_data, is_de=False):
@@ -2391,6 +2449,11 @@ with st.sidebar:
     is_retained = st.session_state.get("mandate_executed", False)
 
     if selected_track == TRACK_COMMERCIAL:
+        if (
+            st.session_state.get("tier_4_unlocked", False)
+            and st.session_state.get("active_desk") == TIER_4
+        ):
+            st.session_state["nav_tier_commercial"] = TIER_4
         selected_tier = st.sidebar.radio(
             sb["comm_hierarchy"],
             options=COMMERCIAL_TIERS,
@@ -3160,17 +3223,21 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[3]:
     col_punch, col_telem = st.columns([1.1, 0.9])
 
     with col_punch:
-        st.markdown("### Execution Punch List & Statutory Sign-Off")
         if is_uk:
-            s1 = st.checkbox("Step 1: Subsea Repeater Station 3 OTDR Reflectometry Sweep", key="uk_step1")
-            s2 = st.checkbox(f"Step 2: Optical Core Splice Attenuation Profile ({breach_val} {breach_unit})", key="uk_step2")
-            s3 = st.checkbox("Step 3: Subsea PFE Power Feed Interlock Bypass (Covenant #COV-9904)", key="uk_step3")
-            s4 = st.checkbox("Step 4: Affix Statutory CEng Digital Seal & Formally Lock Evidence", key="uk_step4")
+            step_labels = (
+                "Step 1: Subsea Repeater Station 3 OTDR Reflectometry Sweep",
+                f"Step 2: Optical Core Splice Attenuation Profile ({breach_val} {breach_unit})",
+                "Step 3: Subsea PFE Power Feed Interlock Bypass (Covenant #COV-9904)",
+                "Step 4: Affix Statutory CEng Digital Seal & Formally Lock Evidence",
+            )
         else:
-            s1 = st.checkbox("Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep", key="us_step1")
-            s2 = st.checkbox(f"Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD {breach_val}%)", key="us_step2")
-            s3 = st.checkbox("Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)", key="us_step3")
-            s4 = st.checkbox("Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence", key="us_step4")
+            step_labels = (
+                "Step 1: Rack 4 PE Calibration & Neutral Grounding Sweep",
+                f"Step 2: Inverter Bank 1–4 Sub-Cycle Injection Sweep (THD {breach_val}%)",
+                "Step 3: Hardware PE Key Interlock Bypass (Covenant #COV-8821)",
+                "Step 4: Affix Statutory PE Digital Seal & Formally Lock Evidence",
+            )
+        all_signed = render_tier_3b_execution_punch_list(step_labels)
 
     with col_telem:
         if is_uk:
@@ -3216,13 +3283,6 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[3]:
     st.markdown("---")
 
     # --- TIER 4 TRANSITION GATE ---
-    def proceed_to_tier4():
-        st.session_state.gate_3b_cleared = True
-        go_to_desk(COMMERCIAL_DESKS[4])  # Routes directly to Tier 4 | Forensic Recovery Vault
-        st.rerun()
-
-    all_signed = s1 and s2 and s3 and s4
-
     if all_signed:
         st.success(f"✓ All statutory protocols certified by {pe_name}. Evidence chain locked.")
         st.button(
