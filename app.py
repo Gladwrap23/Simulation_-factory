@@ -6,7 +6,7 @@ import re
 from copy import deepcopy
 import streamlit as st
 import streamlit.components.v1 as components
-from watermark import render_unified_watermark_system
+from watermark import render_unified_watermark_system, stamp_egress_artifact
 
 APP_BUILD_ID = "v6.10_german_language_toggle_sep24_2026"
 
@@ -1783,29 +1783,244 @@ All SHA-256 hashes are mathematically verified against original hardware telemet
     st.button("⬅️ Return to Chairman Tactical Command Post (Tier 1A)", on_click=cb_goto_tier_1a, use_container_width=True)
 
 
-def render_legal_statutory_track(scenario_data, is_de=False):
-    roster = scenario_data["named_roster"]
-    prov = scenario_data["provenance_data"]
+LEGAL_I18N = {
+    "EN": {
+        "track_header": "⚖️ LEGAL & STATUTORY TRACK",
+        "counsel_role": "General Counsel",
+        "forum": "Forum",
+        "track_desc": "Legal statutory track active. Litigation hold and ZPO evidence custody are available for review.",
+        "ledger_header": "Statutory Ledger",
+        "lbl_safe_harbor": "Safe Harbor",
+        "lbl_evidence": "Evidence Standard",
+        "lbl_counterparty": "Counterparty",
+        "prov_header": "Evidence Provenance",
+        "lbl_ingest": "Public Ingestion",
+        "lbl_standard": "Engineering Standard",
+        "lbl_hash": "System Root Hash",
+        "tier2b_title": "TIER 2B | FORMAL LITIGATION HOLD & EVIDENTIARY EXHIBITS",
+        "tier2b_caption": "Statutory notice under ZPO § 371 and BGB § 286 default notice",
+        "docket_box_title": "🏛️ LANDGERICHT STUTTGART — MASTER LITIGATION DOCKET",
+        "docket_box_sub": "Electronic dossier prepared for review before the Commercial Chamber:",
+        "exhibit_a_title": "Exhibit A: Statutory Default Notice (BGB § 286)",
+        "exhibit_b_title": "Exhibit B: Technical Non-Compliance Report (DIN EN 61000-4-30)",
+        "exhibit_c_title": "Exhibit C: Liquidated Damages & Holding-Cost Schedule",
+        "preview_a": "Exhibit A Preview",
+        "preview_b": "Exhibit B Preview",
+        "preview_c": "Exhibit C Preview",
+        "btn_dl_exhibit": "⬇️ Download Stamped Court Exhibit",
+        "btn_dl_docket": "📥 Export Master Judicial Evidence Docket (.TXT)",
+        "stamp_a": "Exhibit A - Default Notice",
+        "stamp_b": "Exhibit B - Technical Report",
+        "stamp_c": "Exhibit C - Damages Schedule",
+        "stamp_docket": "Master Judicial Docket",
+        "notice_body": """FORMAL DEFAULT AND NON-COMPLIANCE NOTICE
+To: {counterparty}
+Forum: {forum}
+Docket: #{docket}
 
-    st.markdown("## ⚖️ LEGAL & STATUTORY TRACK")
-    st.caption(f"General Counsel: **{roster['general_counsel']}** | Forum: {scenario_data['court_forum']}")
-    st.success("Legal statutory track active. Litigation hold and ZPO evidence custody are available for review.")
+This notice records that the contractually required BorWin epsilon grid connection was not provided in conformity with the applicable requirements. Measured current harmonic distortion (THD_I) is 3.82%, above the stated 2.50% threshold.
+
+Default under BGB § 286 and all claims for damages and contractual penalties are reserved. This document is a generated case record and is not a filed court document.""",
+        "affidavit_body": """TECHNICAL NON-COMPLIANCE REPORT
+Examiner: {engineer}
+Measurement standard: DIN EN 61000-4-30 Class A / IEC 61400-21-1
+Measurement instrument: Fluke 1777 power quality analyzer
+
+FINDING:
+Measured current harmonic distortion is 3.82% THD_I, exceeding the stated 2.50% limit. A sub-synchronous resonance at 14.2 Hz is identified as a risk requiring independent technical review.""",
+        "damages_body": """LIQUIDATED DAMAGES AND HOLDING-COST SCHEDULE
+Counterparty: {counterparty}
+Capital exposure: {capex}
+Liquidated-damages ceiling: {damages}
+Daily holding cost: {daily_burn}
+
+Amounts are scenario inputs for review and are not a legal determination or a demand for payment.""",
+        "docket_body": """MASTER JUDICIAL EVIDENCE DOCKET
+Forum: {forum}
+Docket: #{docket}
+Capital exposure: {capex}
+
+1. Exhibit A: Default and non-compliance notice
+2. Exhibit B: Technical non-compliance report
+3. Exhibit C: Liquidated damages and holding-cost schedule
+Source system root hash: {root_hash}
+
+Prepared for review; this export is not a court filing or a certification of evidence.""",
+        "docket_header": "Docket",
+        "capex_label": "Capital exposure",
+        "damages_label": "Liquidated-damages ceiling",
+        "daily_burn_label": "Daily holding cost",
+        "root_hash_label": "System Root Hash",
+        "stamp_track": "Legal & Statutory Track",
+        "stamp_artifact": "Artifact",
+        "stamp_scenario": "Scenario",
+        "stamp_sha256": "Content SHA-256",
+    },
+    "DE": {
+        "track_header": "⚖️ GERICHTSKAMMER & STATUTARISCHER PFAD",
+        "counsel_role": "Konzern-Chefsyndikus",
+        "forum": "Gerichtsstand",
+        "track_desc": "Statutarischer Gerichtspfad aktiv. Beweissicherungsbeschlüsse und ZPO-Aktenführung einsehbar.",
+        "ledger_header": "Statutarischer Nachweis",
+        "lbl_safe_harbor": "Haftungsprivileg",
+        "lbl_evidence": "Beweisstandard",
+        "lbl_counterparty": "Verzugsgegner",
+        "prov_header": "Beweismittel-Provenienz",
+        "lbl_ingest": "Öffentliche Primärquelle",
+        "lbl_standard": "Technischer Prüfstandard",
+        "lbl_hash": "Kryptographischer Root-Hash",
+        "tier2b_title": "TIER 2B | FORMELLE BEWEISSICHERUNG & GERICHTSANLAGEN",
+        "tier2b_caption": "Statutarische Anzeige nach § 371 ZPO und Verzugsanzeige nach § 286 BGB",
+        "docket_box_title": "🏛️ LANDGERICHT STUTTGART — GERICHTLICHE STAMMAKTE",
+        "docket_box_sub": "Elektronisches Dossier zur Prüfung durch die Kammer für Handelssachen:",
+        "exhibit_a_title": "Anlage A: Formelle Verzugs- und Mängelanzeige (§ 286 BGB)",
+        "exhibit_b_title": "Anlage B: Bericht zur technischen Nichteinhaltung (DIN EN 61000-4-30)",
+        "exhibit_c_title": "Anlage C: Aufstellung möglicher Vertragsstrafen und Vorhaltekosten",
+        "preview_a": "Vorschau Anlage A",
+        "preview_b": "Vorschau Anlage B",
+        "preview_c": "Vorschau Anlage C",
+        "btn_dl_exhibit": "⬇️ Gestempelte Gerichtsanlage herunterladen",
+        "btn_dl_docket": "📥 Vollständige Gerichtsakte exportieren (.TXT)",
+        "stamp_a": "Anlage A - Verzugsanzeige",
+        "stamp_b": "Anlage B - Technischer Bericht",
+        "stamp_c": "Anlage C - Schadensaufstellung",
+        "stamp_docket": "Gerichtliche Stammakte",
+        "notice_body": """FORMELLE VERZUGS- UND MÄNGELANZEIGE
+An: {counterparty}
+Gerichtsstand: {forum}
+Aktenzeichen: #{docket}
+
+Dieses Schreiben hält fest, dass die vertraglich geschuldete Netzkopplung BorWin epsilon nicht vertragsgemäß bereitgestellt wurde. Die gemessene Stromoberschwingungsverzerrung (THD_I) beträgt 3,82 % und liegt damit über dem angegebenen Grenzwert von 2,50 %.
+
+Rechte wegen Verzugs nach § 286 BGB sowie Schadensersatz- und Vertragsstrafenansprüche bleiben vorbehalten. Dieses Dokument ist eine generierte Fallakte und kein bei Gericht eingereichter Schriftsatz.""",
+        "affidavit_body": """BERICHT ZUR TECHNISCHEN NICHTEINHALTUNG
+Prüfer: {engineer}
+Messstandard: DIN EN 61000-4-30 Klasse A / IEC 61400-21-1
+Messgerät: Fluke 1777 Netzqualitätsanalysator
+
+FESTSTELLUNG:
+Die gemessene Stromoberschwingungsverzerrung beträgt 3,82 % THD_I und überschreitet den angegebenen Grenzwert von 2,50 %. Eine subsynchrone Resonanz bei 14,2 Hz wird als Risiko ausgewiesen und bedarf einer unabhängigen technischen Prüfung.""",
+        "damages_body": """AUFSTELLUNG MÖGLICHER VERTRAGSSTRAFEN UND VORHALTEKOSTEN
+Vertragspartner: {counterparty}
+Kapitalexposition: {capex}
+Obergrenze möglicher Vertragsstrafen: {damages}
+Tägliche Vorhaltekosten: {daily_burn}
+
+Die Beträge sind Szenariowerte zur Prüfung und stellen weder eine rechtliche Feststellung noch eine Zahlungsaufforderung dar.""",
+        "docket_body": """GERICHTLICHE STAMMAKTE // MASTER-EVIDENZAKTE
+Gerichtsstand: {forum}
+Aktenzeichen: #{docket}
+Kapitalexposition: {capex}
+
+1. Anlage A: Verzugs- und Mängelanzeige
+2. Anlage B: Bericht zur technischen Nichteinhaltung
+3. Anlage C: Aufstellung möglicher Vertragsstrafen und Vorhaltekosten
+System-Root-Hash: {root_hash}
+
+Zur Prüfung erstellt; dieser Export ist weder ein Gerichtsschriftsatz noch eine Beglaubigung von Beweismitteln.""",
+        "docket_header": "Aktenzeichen",
+        "capex_label": "Kapitalexposition",
+        "damages_label": "Obergrenze möglicher Vertragsstrafen",
+        "daily_burn_label": "Tägliche Vorhaltekosten",
+        "root_hash_label": "Kryptographischer Root-Hash",
+        "stamp_track": "Gerichtskammer & Statutarischer Pfad",
+        "stamp_artifact": "Dokument",
+        "stamp_scenario": "Szenario",
+        "stamp_sha256": "Inhalts-Hash (SHA-256)",
+    },
+}
+
+
+def render_legal_statutory_track(scenario_data, is_de=False):
+    t = LEGAL_I18N["DE"] if is_de else LEGAL_I18N["EN"]
+    roster = scenario_data.get("named_roster", {})
+    prov = scenario_data.get("provenance_data", {})
+    docket_num = scenario_data.get("scenario_id", "DE_OFFSHORE_WIND_001")
+    forum = scenario_data.get("court_forum", "Landgericht Stuttgart / OLG Frankfurt")
+    counterparty = scenario_data.get("counterparty_entity", "")
+    root_hash = prov.get("sha256_root", "")
+
+    def format_amount(value):
+        amount = f"€{float(value or 0):,.2f}"
+        if is_de:
+            amount = amount.replace(",", "_").replace(".", ",").replace("_", ".")
+        return amount
+
+    template_values = {
+        "counterparty": counterparty,
+        "forum": forum,
+        "docket": docket_num,
+        "engineer": roster.get("independent_engineer", ""),
+        "capex": format_amount(scenario_data.get("capex_exposure")),
+        "damages": format_amount(scenario_data.get("liquidated_damages_ceiling")),
+        "daily_burn": format_amount(scenario_data.get("daily_holding_burn")),
+        "root_hash": root_hash,
+    }
+
+    def stamp(payload, artifact_name):
+        return stamp_egress_artifact(
+            payload,
+            artifact_name,
+            t["stamp_track"],
+            scenario_data,
+            is_de=is_de,
+        )
+
+    st.markdown(f"## {t['track_header']}")
+    st.caption(f"{t['counsel_role']}: **{roster.get('general_counsel', '')}** | {t['forum']}: {forum}")
+    st.info(t["track_desc"])
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("### Statutory Ledger")
+        st.markdown(f"### {t['ledger_header']}")
         st.markdown(f"""
-        * **Safe Harbor:** {scenario_data['statutory_safe_harbor']}
-        * **Evidence Standard:** {scenario_data['evidence_standard']}
-        * **Counterparty:** `{scenario_data['counterparty_entity']}`
+        * **{t['lbl_safe_harbor']}:** `{scenario_data.get('statutory_safe_harbor', '')}`
+        * **{t['lbl_evidence']}:** `{scenario_data.get('evidence_standard', '')}`
+        * **{t['lbl_counterparty']}:** `{counterparty}`
         """)
     with col2:
-        st.markdown("### Evidence Provenance")
+        st.markdown(f"### {t['prov_header']}")
         st.markdown(f"""
-        * **Ingestion:** `{prov['ingestion_doc_id']}`
-        * **Standard:** `{prov['derivation_standard']}`
-        * **Hash:** `{prov['sha256_root']}`
+        * **{t['lbl_ingest']}:** `{prov.get('ingestion_doc_id', '')}`
+        * **{t['lbl_standard']}:** `{prov.get('derivation_standard', '')}`
+        * **{t['lbl_hash']}:** `{root_hash}`
         """)
+
+    st.markdown("---")
+    st.markdown(f"### {t['tier2b_title']}")
+    st.caption(t["tier2b_caption"])
+    st.markdown(f"#### {t['docket_box_title']}")
+    st.caption(t["docket_box_sub"])
+
+    exhibits = (
+        ("a", "notice_body", "stamp_a", "preview_a", "exhibit_a_title", "Anlage_A_Mahnung", True),
+        ("b", "affidavit_body", "stamp_b", "preview_b", "exhibit_b_title", "Anlage_B_Gutachten", False),
+        ("c", "damages_body", "stamp_c", "preview_c", "exhibit_c_title", "Anlage_C_Schadensaufstellung", False),
+    )
+    for key, body_key, stamp_key, preview_key, title_key, filename, expanded in exhibits:
+        with st.expander(t[title_key], expanded=expanded):
+            payload = stamp(t[body_key].format(**template_values), t[stamp_key])
+            st.text_area(t[preview_key], value=payload, height=180, key=f"txt_exhibit_{key}", disabled=True)
+            st.download_button(
+                label=f"{t['btn_dl_exhibit']} ({'Anlage' if is_de else 'Exhibit'} {key.upper()})",
+                data=payload,
+                file_name=f"{filename}_{docket_num}.txt",
+                mime="text/plain",
+                key=f"btn_dl_ex_{key}",
+                use_container_width=True,
+            )
+
+    st.markdown("---")
+    master_docket = stamp(t["docket_body"].format(**template_values), t["stamp_docket"])
+    st.download_button(
+        label=t["btn_dl_docket"],
+        data=master_docket,
+        file_name=f"Master_Gerichtsakte_{docket_num}.txt",
+        mime="text/plain",
+        key="btn_dl_master_docket",
+        type="primary",
+        use_container_width=True,
+    )
 
 
 def build_operating_book(book_name):
@@ -2047,38 +2262,66 @@ with st.sidebar:
         st.session_state.selected_director = active_cfg["lead_director"]
         st.session_state.last_loaded_book = selected_book
 
+    metadata = scenario_data.get("metadata", {})
+    jurisdiction = scenario_data.get("jurisdiction", {})
+    country_code = scenario_data.get("jurisdiction_code") or metadata.get("country_code", "")
+    country_names = {
+        "USA": ("United States", "Vereinigte Staaten"),
+        "GBR": ("United Kingdom", "Vereinigtes Königreich"),
+        "AUS": ("Australia", "Australien"),
+        "DEU": ("Germany", "Deutschland"),
+    }
+    country_flags = {"USA": "🇺🇸", "GBR": "🇬🇧", "AUS": "🇦🇺", "DEU": "🇩🇪"}
+    country_name = scenario_data.get("country_name") or country_names.get(
+        country_code,
+        (scenario_data.get("country", country_code or "Unknown"),) * 2,
+    )[1 if is_de else 0]
+    country_flag = scenario_data.get("country_flag") or country_flags.get(country_code, "🌐")
+    country_label = f"{country_flag} {country_name}"
+    court_forum = scenario_data.get("court_forum") or jurisdiction.get(
+        "court_name", active_cfg["jurisdiction_options"][0]
+    )
+    governing_law = scenario_data.get("governing_law") or scenario_data.get(
+        "statutory_safe_harbor", jurisdiction.get("statute_board_reliance", "")
+    )
+    scenario_id = scenario_data.get("scenario_id", active_cfg.get("scenario_id", ""))
+    counterparty_entity = scenario_data.get("counterparty_entity") or metadata.get(
+        "client_name", active_cfg["counterparty"]
+    )
+
     st.sidebar.markdown(f"**{sb['jurisdiction']}**")
-    country_label = "🇩🇪 Deutschland (Bundesrepublik Deutschland)" if is_de else "🇩🇪 Germany (Federal Republic)"
     st.sidebar.selectbox(
         "",
-        options=[country_label],        key="sb_sovereign_country",
+        options=[country_label],
+        key=f"sb_country_{selected_book}",
         label_visibility="collapsed",
     )
 
-    selected_jurisdiction = scenario_data.get(
-        "court_forum",
-        active_cfg["jurisdiction_options"][0],
-    )
+    selected_jurisdiction = court_forum
     st.session_state.active_jurisdiction = selected_jurisdiction
 
-    counterparty = scenario_data.get("counterparty_entity", active_cfg["counterparty"])
-    docket_reference = scenario_data.get("scenario_id", "DE_001")
+    jurisdiction_labels = (
+        ("Gerichtskammer", "Rechtsrahmen", "Aktenzeichen", "Verzugsgegner")
+        if is_de
+        else ("Judicial Forum", "Governing Law", "Docket Ref", "Counterparty")
+    )
+    forum_label, law_label, docket_label, counterparty_label = jurisdiction_labels
     if is_de:
         st.sidebar.markdown(f"""
         <div style="background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; font-size: 0.85rem; line-height: 1.6; margin-top: -6px;">
-            <div>🏛️ <b>Gerichtskammer:</b> Landgericht Stuttgart / OLG Frankfurt</div>
-            <div>📜 <b>Rechtsrahmen:</b> Deutsches ZPO, AktG & EnWG</div>
-            <div>📂 <b>Aktenzeichen:</b> <code>#{docket_reference}</code></div>
-            <div>⚔️ <b>Verzugsgegner:</b> {counterparty}</div>
+            <div>🏛️ <b>{forum_label}:</b> {court_forum}</div>
+            <div>📜 <b>{law_label}:</b> {governing_law}</div>
+            <div>📂 <b>{docket_label}:</b> <code>#{scenario_id}</code></div>
+            <div>⚔️ <b>{counterparty_label}:</b> {counterparty_entity}</div>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.sidebar.markdown(f"""
         <div style="background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; font-size: 0.85rem; line-height: 1.6; margin-top: -6px;">
-            <div>🏛️ <b>Judicial Forum:</b> Landgericht Stuttgart / OLG Frankfurt</div>
-            <div>📜 <b>Governing Law:</b> German Law (ZPO, AktG & EnWG)</div>
-            <div>📂 <b>Docket Ref:</b> <code>#{docket_reference}</code></div>
-            <div>⚔️ <b>Counterparty:</b> {counterparty}</div>
+            <div>🏛️ <b>{forum_label}:</b> {court_forum}</div>
+            <div>📜 <b>{law_label}:</b> {governing_law}</div>
+            <div>📂 <b>{docket_label}:</b> <code>#{scenario_id}</code></div>
+            <div>⚔️ <b>{counterparty_label}:</b> {counterparty_entity}</div>
         </div>
         """, unsafe_allow_html=True)
 

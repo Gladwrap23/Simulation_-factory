@@ -1,4 +1,25 @@
+import hashlib
+
 import streamlit as st
+
+
+def stamp_egress_artifact(artifact, artifact_name, track, scenario_data, is_de=False):
+    content_hash = hashlib.sha256(artifact.encode("utf-8")).hexdigest()
+    separator = " | "
+    labels = (
+        ("AUSGANGSSTEMPEL", "Dokument", "Pfad", "Szenario", "Inhalts-Hash (SHA-256)")
+        if is_de
+        else ("EGRESS STAMP", "Artifact", "Track", "Scenario", "Content SHA-256")
+    )
+    title, artifact_label, track_label, scenario_label, hash_label = labels
+    stamp = (
+        f"--- {title} ---\n"
+        f"{artifact_label}: {artifact_name}\n"
+        f"{track_label}: {track}\n"
+        f"{scenario_label}: {scenario_data.get('scenario_id', 'unknown')}\n"
+        f"{hash_label}: {content_hash}"
+    )
+    return f"{artifact.rstrip()}\n\n{stamp}\n"
 
 
 def render_unified_watermark_system(scenario_data, selected_track, is_de=False):
