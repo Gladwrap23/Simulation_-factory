@@ -539,33 +539,36 @@ if "nav_tier_legal" not in st.session_state:
 
 if "nav_track_selection" not in st.session_state:
     st.session_state["nav_track_selection"] = TRACK_COMMERCIAL
-if "nav_tier_commercial" not in st.session_state:
-    st.session_state["nav_tier_commercial"] = TIER_1A
+if "sb_commercial_hierarchy" not in st.session_state:
+    st.session_state["sb_commercial_hierarchy"] = st.session_state.get(
+        "nav_tier_commercial", TIER_1A
+    )
 if "mandate_executed" not in st.session_state:
     st.session_state["mandate_executed"] = False
 
 
 def cb_goto_tier_1a():
-    st.session_state["nav_tier_commercial"] = TIER_1A
+    st.session_state["sb_commercial_hierarchy"] = TIER_1A
 
 
 def cb_goto_tier_3a():
-    st.session_state["nav_tier_commercial"] = TIER_3A
+    st.session_state["sb_commercial_hierarchy"] = TIER_3A
 
 
 def cb_goto_tier_3b():
-    st.session_state["nav_tier_commercial"] = TIER_3B
+    st.session_state["sb_commercial_hierarchy"] = TIER_3B
 
 
 def cb_goto_tier_4():
-    st.session_state["nav_tier_commercial"] = TIER_4
+    st.session_state["sb_commercial_hierarchy"] = TIER_4
 
 
 def proceed_to_tier4():
+    st.session_state["tier_3b_attested"] = True
     st.session_state["tier_4_unlocked"] = True
     st.session_state["pe_seal_locked"] = True
     st.session_state["gate_3b_cleared"] = True
-    st.session_state["nav_tier_commercial"] = TIER_4
+    st.session_state["sb_commercial_hierarchy"] = TIER_4
     st.session_state["active_desk"] = TIER_4
     st.rerun()
 
@@ -1502,6 +1505,7 @@ def render_tier_3b_execution_punch_list(step_labels, is_de=False):
         completed_steps.append(step_complete)
 
     if len(completed_steps) == 4 and completed_steps[3]:
+        st.session_state["tier_3b_attested"] = True
         st.session_state["tier_4_unlocked"] = True
         st.session_state["pe_seal_locked"] = True
         st.session_state["gate_3b_cleared"] = True
@@ -1647,8 +1651,82 @@ def render_tier_3b_site_execution(scenario_data, is_de=False):
         use_container_width=True,
     )
 
+    witness_name = "Marcus Vance, PE #114902"
+    work_order = "WO-8821"
+    exhibit_b_title = "Exhibit B: Technical Affidavit" if not is_de else "Anlage B: Technisches Gutachten"
+    exhibit_b = f"""EXHIBIT B | TECHNICAL FIELD AFFIDAVIT
+Corporate entity: {corporate_name}
+Scenario: {scenario_id}
+Field witness: {witness_name}
+Work order: {work_order}
+Instrument: Fluke 1777 Power Quality Analyzer
+Calibration: DIN EN ISO/IEC 17025 Certified | CAL-DE-2024-9912
+
+FIELD MEASUREMENTS
+Busbar voltage: 66.12 kV (nominal 66.00 kV)
+Grid frequency: 49.98 Hz (target {target_frequency})
+Harmonic distortion: 3.82% THD_I
+Limit: 2.50% (VDE-AR-N 4130 / IEEE 519)
+
+Witness metadata is provided for operational traceability."""
+    exhibit_c_title = "Exhibit C: Fluke 1777 Telemetry Log" if not is_de else "Anlage C: Fluke 1777 Telemetrieprotokoll"
+    exhibit_c = f"""# EXHIBIT C | FLUKE 1777 TELEMETRY LOG
+# Corporate entity: {corporate_name}
+# Scenario: {scenario_id}
+# Field witness: {witness_name}
+# Work order: {work_order}
+# Instrument: Fluke 1777 Power Quality Analyzer
+timestamp_utc,busbar_voltage_kv,grid_frequency_hz,thd_i_percent
+2026-09-24T14:00:00Z,66.12,49.98,3.82
+2026-09-24T14:05:00Z,66.10,49.99,3.81"""
+    exhibits = (
+        ("b", exhibit_b_title, exhibit_b, f"Exhibit_B_Technical_Affidavit_{scenario_id}.txt", "text/plain"),
+        ("c", exhibit_c_title, exhibit_c, f"Exhibit_C_Fluke_1777_Telemetry_{scenario_id}.csv", "text/csv"),
+    )
+    for exhibit_id, title, content, filename, mime_type in exhibits:
+        stamped_exhibit = stamp_egress_artifact(
+            content,
+            title,
+            TIER_3B,
+            scenario_data,
+            is_de=is_de,
+        )
+        with st.expander(title, expanded=False):
+            st.text_area(
+                f"{title} Preview",
+                value=stamped_exhibit,
+                height=220,
+                key=f"txt_exhibit_{exhibit_id}_t3b",
+                disabled=True,
+            )
+            st.download_button(
+                label=f"Download {title}" if not is_de else f"{title} herunterladen",
+                data=stamped_exhibit,
+                file_name=filename,
+                mime=mime_type,
+                key=f"btn_dl_exhibit_{exhibit_id}_t3b",
+                use_container_width=True,
+            )
+
     st.markdown("---")
     st.button(t["btn_back"], on_click=cb_goto_tier_3a, use_container_width=True)
+
+
+def render_tier_4_witness_chain_banner(is_de=False):
+    attested = st.session_state.get("tier_3b_attested", False)
+    status = "VERIFIED" if attested else "PENDING TIER 3B ATTESTATION"
+    title = "Verified Field Witness Chain of Custody" if attested else "Field Witness Chain of Custody"
+    if is_de:
+        status = "VERIFIZIERT" if attested else "TIER-3B-ATTESTIERUNG AUSSTEHEND"
+        title = "Verifizierte Feldzeugen- und Beweismittelkette" if attested else "Feldzeugen- und Beweismittelkette"
+    background = "rgba(16, 185, 129, 0.15)" if attested else "rgba(245, 158, 11, 0.12)"
+    border = "#10b981" if attested else "#f59e0b"
+    st.markdown(f"""
+    <div style="background: {background}; border: 2px solid {border}; border-radius: 8px; padding: 12px 16px; margin: 10px 0 16px;">
+        <div style="font-weight: 800; color: #d1fae5;">🔐 {title} | {status}</div>
+        <div style="margin-top: 4px; color: #e2e8f0;">Field witness: Marcus Vance, PE #114902 | Work Order: WO-8821</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def render_tier_4_forensic_vault(scenario_data, is_de=False):
@@ -1660,6 +1738,7 @@ def render_tier_4_forensic_vault(scenario_data, is_de=False):
     # Header & Status
     st.markdown("## 🔐 TIER 4 | FORENSIC RECOVERY VAULT & JUDICIAL DOCKET")
     st.caption(f"Immutable Statutory Evidence Repository | Forum: {scenario_data['court_forum']}")
+    render_tier_4_witness_chain_banner(is_de)
 
     st.markdown("""
     <div style="background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; border-radius: 8px; padding: 14px 18px; margin: 12px 0;">
@@ -2453,11 +2532,11 @@ with st.sidebar:
             st.session_state.get("tier_4_unlocked", False)
             and st.session_state.get("active_desk") == TIER_4
         ):
-            st.session_state["nav_tier_commercial"] = TIER_4
+            st.session_state["sb_commercial_hierarchy"] = TIER_4
         selected_tier = st.sidebar.radio(
             sb["comm_hierarchy"],
             options=COMMERCIAL_TIERS,
-            key="nav_tier_commercial"
+            key="sb_commercial_hierarchy"
         )
         st.session_state.active_desk = selected_tier
     else:
@@ -3421,6 +3500,8 @@ elif st.session_state.active_desk == LEGAL_TIER3_LABEL:
         st.button("PROCEED TO TIER 4: LEGAL EVIDENCE VAULT", key="t3leg_to_t4", on_click=go_to_desk, args=(LEGAL_TIER4_LABEL,), use_container_width=True, type="primary")
 
 elif st.session_state.active_desk in [COMMERCIAL_DESKS[4], LEGAL_DESKS[3]]:
+    render_tier_4_witness_chain_banner(is_de)
+
     # 1. State Initializations
     if "chair_final_signed" not in st.session_state:
         st.session_state.chair_final_signed = False
