@@ -641,6 +641,18 @@ def go_to_desk(target_desk):
         st.session_state.radio_leg_desks = target_desk
 
 
+def proceed_to_tier_3b():
+    tier_3b_option = next(
+        (option for option in COMMERCIAL_TIERS if "Tier 3B" in option),
+        TIER_3B,
+    )
+    st.session_state["sb_commercial_hierarchy"] = tier_3b_option
+    st.session_state["tier_3a_cleared"] = True
+    st.session_state["gate_3a_cleared"] = True
+    st.session_state["active_desk"] = tier_3b_option
+    st.rerun()
+
+
 def reset_entire_incident():
     """Wipe gate progression back to an uncommitted, pristine state."""
     keys_to_clear = [
@@ -3186,21 +3198,24 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[2]:
         if step3:
             st.session_state.gate_3a_cleared = True
 
+    lead_status_stamp = "" if not st.session_state.gate_3a_cleared else """
+        <div style="background: #062b19; border: 1px solid #00ff88; color: #00ff88; font-size: 0.75rem; font-weight: 800; padding: 4px 8px; border-radius: 4px; margin-top: 8px; display: inline-block;">
+            ● 3A Gate Cleared: Dispatched to Field Lead
+        </div>
+    """
+
     # Inside Sarah Jenkins' Lead Status Column:
     with c2:
-        st.markdown(f"""
+        lead_status_html = f"""
             <div style="background: #0d1526; border: 1px solid #1e293b; padding: 14px; border-radius: 6px;">
                 <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Command Lead Status</div>
                 <div style="color: #ffffff; font-weight: 900; font-size: 1rem; margin-top: 2px;">Officer: Sarah Jenkins</div>
                 <div style="color: #60a5fa; font-size: 0.8rem; margin-top: 2px;">Role: VP, Engineering Operations</div>
                 <div style="color: #94a3b8; font-size: 0.8rem;">Contractor: Permian HV Field Services</div>
-                {"" if not st.session_state.gate_3a_cleared else '''
-                <div style="background: #062b19; border: 1px solid #00ff88; color: #00ff88; font-size: 0.75rem; font-weight: 800; padding: 4px 8px; border-radius: 4px; margin-top: 8px; display: inline-block;">
-                    ● 3A Gate Cleared: Dispatched to Field Lead
-                </div>
-                '''}
+                {lead_status_stamp}
             </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(lead_status_html, unsafe_allow_html=True)
         if not st.session_state.gate_3a_cleared:
             st.warning("○ Awaiting Corporate Handoff Completion")
 
@@ -3216,18 +3231,11 @@ elif st.session_state.active_desk == COMMERCIAL_DESKS[2]:
                   args=(COMMERCIAL_DESKS[1],),
                   use_container_width=True)
     with col_fwd:
-        if st.session_state.gate_3a_cleared:
-            st.button("🟢 PROCEED TO TIER 3B: SITE EXECUTION ➔",
-                      key="btn_t3a_to_t3b",
-                      on_click=go_to_desk,
-                      args=(COMMERCIAL_DESKS[3],),
-                      type="primary",
-                      use_container_width=True)
-        else:
-            st.button("🔴 TIER 3B LOCKED (Complete Steps 1-3 Above to Proceed)",
-                      key="btn_t3a_locked",
-                      disabled=True,
-                      use_container_width=True)
+        st.button("🟢 PROCEED TO TIER 3B: SITE EXECUTION ➔",
+                  key="btn_t3a_to_t3b",
+                  on_click=proceed_to_tier_3b,
+                  type="primary",
+                  use_container_width=True)
 
 # ==============================================================================
 # TIER 3B: SITE EXECUTION DESK (DYNAMIC JURISDICTION BINDING)
