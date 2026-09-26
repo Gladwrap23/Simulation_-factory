@@ -1481,74 +1481,109 @@ T3B_I18N = {
 
 def render_tier_3b_site_execution(scenario_data, is_de=False):
     t = T3B_I18N["DE"] if is_de else T3B_I18N["EN"]
-    roster = scenario_data["named_roster"]
-    prov = scenario_data["provenance_data"]
+    scenario_id = scenario_data.get("scenario_id", "UNKNOWN")
+    metadata = scenario_data.get("metadata", {})
+    country_code = str(
+        scenario_data.get("jurisdiction_code") or metadata.get("country_code") or ""
+    ).upper()
+    is_us = country_code in {"US", "USA"} or "US" in str(scenario_id).upper()
+    target_frequency = "60.00 Hz" if is_us else "50.00 Hz"
+    corporate_name = next(
+        (
+            str(name).strip()
+            for name in (
+                scenario_data.get("corporate_entity"),
+                scenario_data.get("entity"),
+                scenario_data.get("company_name"),
+                scenario_data.get("client_name"),
+                scenario_data.get("book_name"),
+                metadata.get("client_name"),
+            )
+            if name
+        ),
+        "AUTHORIZED ENTERPRISE",
+    )
 
-    st.markdown(f"## ⚙️ {t['title']}")
-    st.caption(f"{t['caption']}{scenario_data['counterparty_entity']}")
+    mandate = (
+        f"🔧 TIER 3B | SITE EXECUTION & CALIBRATION DESK — OPERATIONAL MANDATE REF: #{scenario_id}"
+        if not is_de
+        else f"🔧 TIER 3B | STANDORTAUSFÜHRUNG & KALIBRIERUNG — BETRIEBSMANDAT NR.: #{scenario_id}"
+    )
+    quarantine_caption = (
+        "Quarantined Operational View | Zero Fiduciary Exposure Visible"
+        if not is_de
+        else "Quarantänisierte Betriebsansicht | Keine treuhänderischen Risiken sichtbar"
+    )
+    violation_badge = (
+        "VIOLATION: Limit 2.50% (VDE-AR-N 4130 / IEEE 519)"
+        if not is_de
+        else "GRENZWERTVERLETZUNG: Limit 2,50 % (VDE-AR-N 4130 / IEEE 519)"
+    )
+    metric_labels = (
+        ("Busbar Voltage", "Grid Frequency", "Harmonic Distortion (THD_I)")
+        if not is_de
+        else ("Sammelschienenspannung", "Netzfrequenz", "Oberschwingungsverzerrung (THD_I)")
+    )
+    calibration_labels = (
+        ("Physical Calibration", "Equipment", "Calibration Standard", "Certificate Ref")
+        if not is_de
+        else ("Physische Kalibrierung", "Gerät", "Kalibrierstandard", "Zertifikatsreferenz")
+    )
 
+    st.markdown(f"## {t['title']}")
     st.markdown(f"""
-    <div style="background: rgba(245, 158, 11, 0.12); border: 2px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin: 12px 0;">
-        <div style="font-size: 1.1rem; font-weight: 800; color: #fbbf24; text-transform: uppercase;">{t['alert_title']}</div>
-        <div style="font-size: 0.95rem; color: #fef3c7; margin-top: 4px;">{t['alert_desc']}</div>
+    <div style="background: rgba(14, 165, 233, 0.12); border: 2px solid #0ea5e9; border-radius: 8px; padding: 14px 18px; margin: 12px 0;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: #7dd3fc;">{mandate}</div>
+        <div style="font-size: 0.9rem; color: #e0f2fe; margin-top: 4px;">{quarantine_caption}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown(f"### {t['telemetry_header']}")
-        st.markdown(f"""
-        * **{t['array_arch']}**
-        * **{t['rec_volt']}**
-        * **{t['harmonic_slip']}**
-        * **{t['osc_rig']}**
-        """)
-    with c2:
-        st.markdown(f"### {t['directives_header']}")
-        st.markdown(f"""
-        * **{t['intervention_stat']}**
-        * **{t['lead_eng']}** `{roster['independent_engineer']}`
-        * **{t['demurrage_notice']}**
-        * **{t['telemetry_hash']}** `{prov['sha256_root'][:32]}...`
-        """)
+    voltage_label, frequency_label, harmonic_label = metric_labels
+    metric_columns = st.columns(3)
+    with metric_columns[0]:
+        st.metric(voltage_label, "66.12 kV", "Nominal: 66.00 kV")
+    with metric_columns[1]:
+        frequency_note = "Target" if not is_de else "Sollwert"
+        st.metric(frequency_label, "49.98 Hz", f"{frequency_note}: {target_frequency}")
+    with metric_columns[2]:
+        st.metric(harmonic_label, "3.82%")
+        st.error(violation_badge)
 
-    st.markdown("---")
-    st.markdown(f"### {t['hub_header']}")
-    st.caption(t["hub_desc"])
+    calibration_title, equipment_label, standard_label, certificate_label = calibration_labels
+    st.markdown(f"### 🧰 {calibration_title}")
+    st.markdown(f"""
+    * **{equipment_label}:** Fluke 1777 Power Quality Analyzer
+    * **{standard_label}:** DIN EN ISO/IEC 17025 Certified
+    * **{certificate_label}:** `CAL-DE-2024-9912`
+    """)
 
-    d1, d2, d3 = st.columns(3)
-    with d1:
-        st.markdown(f"""
-        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
-            <div style="font-size: 2.0rem;">📊</div>
-            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">{t['card1_title']}</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">{t['card1_sub']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        raw_csv = "zeitstempel,spannung_kv,frequenz_hz,thd_i_prozent,subsynchrone_resonanz_hz\n2026-09-24T14:00:00Z,66.12,49.98,3.82,14.2\n2026-09-24T14:05:00Z,66.10,49.99,3.81,14.3"
-        st.download_button(label=t["card1_btn"], data=raw_csv, file_name=f"Telemetrie_66kV_{scenario_data['scenario_id']}.csv", mime="text/csv", key="btn_dl_telemetry_t3b", use_container_width=True)
-
-    with d2:
-        st.markdown(f"""
-        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
-            <div style="font-size: 2.0rem;">📐</div>
-            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">{t['card2_title']}</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">{t['card2_sub']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        plan_manifest = f"ENBW HE DREIHT - 66KV SCHALTPLAN\nSachverstaendiger: {roster['independent_engineer']}\nNorm: DIN EN 61400-21 / VDE-AR-N 4130\nPruefsumme SHA-256: {prov['sha256_root']}"
-        st.download_button(label=t["card2_btn"], data=plan_manifest, file_name=f"Schaltplan_66kV_{scenario_data['scenario_id']}.pdf", mime="application/pdf", key="btn_dl_cad_t3b", use_container_width=True)
-
-    with d3:
-        st.markdown(f"""
-        <div style="background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 14px; text-align: center;">
-            <div style="font-size: 2.0rem;">🎥</div>
-            <div style="font-weight: 800; color: #ffffff; margin-top: 6px;">{t['card3_title']}</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 12px 0;">{t['card3_sub']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        video_metadata = "ROV UNTERWASSER-INSPEKTIONS-PROTOKOLL (4K UHD)\nObjekt: BorWin epsilon J-Tube Kabeleinfuehrung\nKamera: Kongsberg OE14-502 Marine HD\nBeglaubigter Hash: SHA-256: 4f8a91c0e3b1285091cd"
-        st.download_button(label=t["card3_btn"], data=video_metadata, file_name=f"ROV_Inspektionsprotokoll_{scenario_data['scenario_id']}.txt", mime="text/plain", key="btn_dl_media_t3b", use_container_width=True)
+    telemetry_csv = "\n".join((
+        f"# Corporate Header: {corporate_name}",
+        f"# Session Token: {scenario_id}",
+        "timestamp_utc,busbar_voltage_kv,grid_frequency_hz,thd_i_percent",
+        f"2026-09-24T14:00:00Z,66.12,49.98,3.82",
+        f"2026-09-24T14:05:00Z,66.10,49.99,3.81",
+    ))
+    stamped_telemetry = stamp_egress_artifact(
+        telemetry_csv,
+        "Site Telemetry & Waveform Data (.CSV)",
+        TIER_3B,
+        scenario_data,
+        is_de=is_de,
+    )
+    download_label = (
+        "Site Telemetry & Waveform Data (.CSV)"
+        if not is_de
+        else "Standorttelemetrie & Wellenformdaten (.CSV)"
+    )
+    st.download_button(
+        label=download_label,
+        data=stamped_telemetry,
+        file_name=f"Site_Telemetry_Waveform_{scenario_id}.csv",
+        mime="text/csv",
+        key="btn_dl_site_telemetry_t3b",
+        use_container_width=True,
+    )
 
     st.markdown("---")
     b1, b2 = st.columns(2)
