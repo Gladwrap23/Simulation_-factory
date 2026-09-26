@@ -23,17 +23,50 @@ def stamp_egress_artifact(artifact, artifact_name, track, scenario_data, is_de=F
 
 
 def render_unified_watermark_system(scenario_data, selected_track, is_de=False):
-    corp_name = scenario_data.get("corporate_entity", "ENERGIE BADEN-WÜRTTEMBERG AG").upper()
-    chair_name = scenario_data.get("named_roster", {}).get("supervisory_chair", "LUTZ FELDMANN").upper()
-    counsel_name = scenario_data.get("named_roster", {}).get("general_counsel", "DR. BERND-MICHAEL ZINOW").split("(")[0].strip().upper()
+    metadata = scenario_data.get("metadata", {})
+    named_roster = scenario_data.get("named_roster", {})
+    stakeholders = scenario_data.get("stakeholders", {})
+    corp_candidates = (
+        scenario_data.get("corporate_entity"),
+        scenario_data.get("entity"),
+        scenario_data.get("company_name"),
+        scenario_data.get("client_name"),
+        scenario_data.get("book_name"),
+        metadata.get("client_name"),
+    )
+    corp_name = next((str(name).strip() for name in corp_candidates if name), "AUTHORIZED ENTERPRISE").upper()
+    chair_candidates = (
+        named_roster.get("supervisory_chair"),
+        named_roster.get("board_chair"),
+        named_roster.get("lead_director"),
+        scenario_data.get("lead_director"),
+        stakeholders.get("chairman_name"),
+        stakeholders.get("technical_director_name"),
+    )
+    chair_name = next((str(name).strip() for name in chair_candidates if name), "BOARD CHAIR").upper()
+    counsel_value = named_roster.get("general_counsel") or stakeholders.get("clo_name") or "DR. BERND-MICHAEL ZINOW"
+    counsel_name = counsel_value.split("(")[0].strip().upper()
     session_token = scenario_data.get("scenario_id", "DE_OFFSHORE_WIND_001")
-    forum = scenario_data.get("court_forum", "Landgericht Stuttgart / OLG Frankfurt")
+    jurisdiction = scenario_data.get("jurisdiction", {})
+    forum = scenario_data.get("court_forum") or jurisdiction.get("court_name") or "Landgericht Stuttgart / OLG Frankfurt"
+    country_code = str(scenario_data.get("jurisdiction_code") or metadata.get("country_code") or "").upper()
+    country_name = str(scenario_data.get("country") or scenario_data.get("country_name") or "").casefold()
+    is_germany = country_code in {"DE", "DEU", "GER"} or country_name in {"germany", "deutschland"}
+    token_upper = str(session_token).upper()
+    if "US" in token_upper:
+        provenance_source = "(SEC, FERC & ERCOT Filings)"
+    elif "DE" in token_upper:
+        provenance_source = "(BNetzA & EnBW 2024 Halbjahresbericht)"
+    else:
+        filing_source = scenario_data.get("filing_source") or "public regulatory filings"
+        provenance_source = f"({filing_source})"
     is_legal = ("Legal" in str(selected_track) or "Recht" in str(selected_track))
 
     border_color = "#ef4444" if is_legal else "#38bdf8"
     text_color = "#f87171" if is_legal else "#38bdf8"
     badge = ("⚖️ GERICHTSKAMMER // STRENG VERTRAULICH" if is_de else "⚖️ LEGAL CHAMBER // RESTRICTED") if is_legal else (f"💼 VORSTANDS-LEITSTAND // TOKEN #{session_token}" if is_de else f"💼 COMMERCIAL GOVERNANCE // TOKEN #{session_token}")
-    custody = f"LEGAL CUSTODIAN: {counsel_name} | FORUM: {forum}" if is_legal else f"SUPERVISORY CUSTODY: {chair_name} | MANDATE REF: #{session_token}"
+    custody_label = "SUPERVISORY CUSTODY" if is_germany else "BOARD / EXECUTIVE CUSTODY"
+    custody = f"LEGAL CUSTODIAN: {counsel_name} | FORUM: {forum}" if is_legal else f"{custody_label}: {chair_name} | MANDATE REF: #{session_token}"
 
     st.markdown(f"""
     <div style="background: linear-gradient(90deg, #0b1329 0%, #1e293b 100%); border-left: 5px solid {border_color}; border-right: 1px solid #334155; border-top: 1px solid #334155; border-bottom: 1px solid #334155; border-radius: 6px; padding: 10px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -51,7 +84,7 @@ def render_unified_watermark_system(scenario_data, selected_track, is_de=False):
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.82rem; line-height: 1.5;">
             <div><b style="color: #f1f5f9;">🔒 {'Zero-Inbound-Architektur' if is_de else 'Zero-Inbound Architecture'}:</b> <div style="color: #94a3b8;">{'Keine Schnittstellen zu internen IT-, SAP- oder SCADA-Systemen.' if is_de else 'No connections to internal corporate IT, ERP (SAP), or substation SCADA networks.'}</div></div>
-            <div><b style="color: #f1f5f9;">📋 {'Öffentliche Primärprovenienz' if is_de else 'Public Statutory Provenance'}:</b> <div style="color: #94a3b8;">{'Ausgangswerte stammen zu 100% aus testierten Pflichtveröffentlichungen (BNetzA, EnBW 2024).' if is_de else 'Baseline derived 100% from public regulatory filings (BNetzA, SEC, EnBW 2024).'}</div></div>
+            <div><b style="color: #f1f5f9;">📋 {'Öffentliche Primärprovenienz' if is_de else 'Public Statutory Provenance'}:</b> <div style="color: #94a3b8;">{'Ausgangswerte stammen zu 100% aus testierten Pflichtveröffentlichungen ' + provenance_source + '.' if is_de else 'Baseline derived 100% from public regulatory filings ' + provenance_source + '.'}</div></div>
             <div><b style="color: #f1f5f9;">🚫 {'Keine KI-Modell-Verarbeitung' if is_de else 'Zero Model Training'}:</b> <div style="color: #94a3b8;">{'Keine Speicherung oder Verwendung von Messdaten für externe KI-Modelle.' if is_de else 'No client data or legal work-product are processed for external AI models.'}</div></div>
             <div><b style="color: #f1f5f9;">👤 {'Exklusives Vorstands-Token' if is_de else 'Exclusive Chairman Token'}:</b> <div style="color: #94a3b8;">{'Sitzungsinitialisierung strikt an individuelles Mandats-Token gebunden.' if is_de else 'Access strictly authenticated under sovereign executive token.'}</div></div>
         </div>
