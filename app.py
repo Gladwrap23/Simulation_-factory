@@ -6,6 +6,7 @@ import re
 from copy import deepcopy
 import streamlit as st
 import streamlit.components.v1 as components
+from watermark import render_unified_watermark_system
 
 APP_BUILD_ID = "v6.10_german_language_toggle_sep24_2026"
 
@@ -2050,8 +2051,7 @@ with st.sidebar:
     country_label = "🇩🇪 Deutschland (Bundesrepublik Deutschland)" if is_de else "🇩🇪 Germany (Federal Republic)"
     st.sidebar.selectbox(
         "",
-        options=[country_label],
-        key="sb_sovereign_country",
+        options=[country_label],        key="sb_sovereign_country",
         label_visibility="collapsed",
     )
 
@@ -2257,6 +2257,8 @@ CERTIFIED UNDER STATUTORY CORPORATE COVENANT.
             st.session_state.selected_incident_id = inc_key
             st.session_state.conference_focus = "DEFAULT"
             request_navigation(DESK_OPTIONS[0])
+
+render_unified_watermark_system(scenario_data, selected_track, is_de)
 
 if active_cfg.get("scenario_id") == "DE_OFFSHORE_WIND_001":
     if selected_track == TRACK_COMMERCIAL:
