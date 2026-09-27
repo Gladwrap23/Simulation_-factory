@@ -122,16 +122,22 @@ st.sidebar.markdown(f"**Statutory Evidence:** `{jurisdiction['statute_evidence']
 st.sidebar.markdown(f"**Banking Cutoff:** :red[{jurisdiction['banking_cutoff']}]")
 st.sidebar.markdown(f"**Daily Burn Rate:** :red[${profile['burn_rate_daily']:,.2f} / day]")
 
+navigation_options = [
+    "Tier 1: Sovereign Executive Overview",
+    "Tier 3A: Operations Dispatch Command",
+    "Tier 3B: Work-Face Attestation Desk",
+    "Tier 3A: Operations Verification Desk",
+    "Legal Chambers: Evidentiary Audit",
+    "Tier 4: Executive Vault & Filing (Always Active)",
+]
+nav_override = st.session_state.pop("nav_override", None)
+if nav_override in navigation_options:
+    st.session_state.nav_selection = nav_override
+
 nav_selection = st.sidebar.radio(
     "Workstation Navigation",
-    [
-        "Tier 1: Sovereign Executive Overview",
-        "Tier 3A: Operations Dispatch Command",
-        "Tier 3B: Work-Face Attestation Desk",
-        "Tier 3A: Operations Verification Desk",
-        "Legal Chambers: Evidentiary Audit",
-        "Tier 4: Executive Vault & Filing (Always Active)",
-    ],
+    navigation_options,
+    key="nav_selection",
 )
 
 if nav_selection == "Tier 1: Sovereign Executive Overview":
@@ -152,22 +158,34 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
         f"Stage 2 (Field Attestation) must anchor telemetry to {jurisdiction['metrology']} calibration."
     )
 
-    st.subheader("Evidentiary Pipeline Progress")
-    stages = [
-        "1. Ops Dispatch (Tier 3A)",
-        "2. PE Field Attestation (Tier 3B)",
-        "3. Methodological Countersign (Tier 3A)",
-        "4. Chambers Admissibility Clearance",
-        "5. Dual-Key Execution (Tier 4)",
-    ]
-    cols = st.columns(5)
-    for idx, stage_name in enumerate(stages):
-        if st.session_state.dossier_stage > idx + 1:
-            cols[idx].success(f"✓ {stage_name}")
-        elif st.session_state.dossier_stage == idx + 1:
-            cols[idx].warning(f"▶ {stage_name}")
-        else:
-            cols[idx].info(f"⏳ {stage_name}")
+    st.subheader("Evidentiary Pipeline Command (Tap to Navigate)")
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+
+    with c1:
+        if st.button("1. Ops Dispatch\n(Tier 3A)", use_container_width=True):
+            st.session_state.nav_override = "Tier 3A: Operations Dispatch Command"
+            st.rerun()
+
+    with c2:
+        if st.button("2. Field Attestation\n(Tier 3B)", use_container_width=True):
+            st.session_state.nav_override = "Tier 3B: Work-Face Attestation Desk"
+            st.rerun()
+
+    with c3:
+        if st.button("3. Ops Verification\n(Tier 3A)", use_container_width=True):
+            st.session_state.nav_override = "Tier 3A: Operations Verification Desk"
+            st.rerun()
+
+    with c4:
+        if st.button("4. Chambers Audit\n(Legal)", use_container_width=True):
+            st.session_state.nav_override = "Legal Chambers: Evidentiary Audit"
+            st.rerun()
+
+    with c5:
+        if st.button("5. Executive Vault\n(Tier 4)", use_container_width=True):
+            st.session_state.nav_override = "Tier 4: Executive Vault & Filing (Always Active)"
+            st.rerun()
 
 elif nav_selection == "Tier 3A: Operations Dispatch Command":
     st.title("Tier 3A: Engineering Operations Dispatch")
