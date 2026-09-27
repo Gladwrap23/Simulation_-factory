@@ -230,6 +230,120 @@ EXHIBIT_LOCALIZATIONS = {
         },
     },
 }
+
+UI_STRINGS = {
+    "DEFAULT": {
+        "vault_title": "Tier 4: Executive Vault & Subpoena-Proof Filing",
+        "vault_caption": "Dual-Key Fiduciary Ratification & Global Banking Drawstop",
+        "status_title": "Live Evidentiary Dossier Status",
+        "ex_a": "Exhibit A",
+        "ex_a_sub": "Incident Brief",
+        "ex_b": "Exhibit B",
+        "ex_b_sub": "Telemetry Affidavit",
+        "ex_c": "Exhibit C",
+        "ex_c_sub": "Admissibility Certificate",
+        "ex_d": "Exhibit D",
+        "ex_d_sub": "Fiduciary Memo",
+        "badge_ready": "READY",
+        "badge_sealed": "SEALED",
+        "badge_cert": "CERTIFIED",
+        "badge_comp": "COMPILED",
+        "badge_awaiting": "AWAITING",
+        "badge_draft": "DRAFTING",
+        "witness_prefix": "Witness",
+        "pending_witness": "Pending field witness",
+        "dual_key_title": "Dual-Key Release Authorization",
+        "dual_key_bank": "Target Issuing Bank / Clearing Agency",
+        "key_1_label": "Key 1: Executive Chairman Ratification",
+        "key_2_label": "Key 2: Chief Legal Officer Filing Clearance",
+        "keys_locked_msg": "Dual-key execution is locked until stages 1 through 4 are certified.",
+        "keys_verified_msg": "DUAL KEYS VERIFIED: Filing authorization unlocked.",
+        "exec_btn": "EXECUTE EMERGENCY FILING & WIRE FREEZE NOTICE",
+        "filed_banner": "DOCKET FILED",
+        "claim_served": "Notice of claim served on",
+        "lc_drawstop": "Letter of credit drawstop transmitted before the banking cutoff.",
+        "export_title": "Dossier Export Packages",
+        "export_caption": "Both packages reference the same sealed telemetry SHA-256 value.",
+        "court_btn": "Download Official Court Pleading (EN)",
+        "court_btn_sub": "Court-language exhibit bundle for the selected jurisdiction.",
+        "master_btn": "Download Executive Master Dossier (EN)",
+        "master_btn_sub": "English master bundle for board and executive review.",
+    },
+    "DE_BW": {
+        "vault_title": "Stufe 4: Geschäftsführungs-Tresor und Einreichung",
+        "vault_caption": "Treuhänderische Freigabe durch zwei Schlüssel und Zahlungsstopp",
+        "status_title": "Aktueller Beweisaktenstatus",
+        "ex_a": "Beweisstück A",
+        "ex_a_sub": "Vorfallsbericht",
+        "ex_b": "Beweisstück B",
+        "ex_b_sub": "Telemetrie-Eidesstattliche Versicherung",
+        "ex_c": "Beweisstück C",
+        "ex_c_sub": "Zulassungszertifikat",
+        "ex_d": "Beweisstück D",
+        "ex_d_sub": "Organhaftungs-Memorandum",
+        "badge_ready": "BEREIT",
+        "badge_sealed": "VERSIEGELT",
+        "badge_cert": "ZERTIFIZIERT",
+        "badge_comp": "ZUSAMMENGESTELLT",
+        "badge_awaiting": "AUSSTEHEND",
+        "badge_draft": "IN BEARBEITUNG",
+        "witness_prefix": "Zeuge/in",
+        "pending_witness": "Feldzeuge ausstehend",
+        "dual_key_title": "Freigabe durch zwei Schlüssel",
+        "dual_key_bank": "Zielbank / Clearingstelle",
+        "key_1_label": "Schlüssel 1: Genehmigung durch den Vorstandsvorsitz",
+        "key_2_label": "Schlüssel 2: Freigabe durch die Rechtsabteilung",
+        "keys_locked_msg": "Zwei-Schlüssel-Freigabe erst nach Zertifizierung der Stufen 1 bis 4 möglich.",
+        "keys_verified_msg": "BEIDE SCHLÜSSEL BESTÄTIGT: Einreichung freigegeben.",
+        "exec_btn": "NOTFALLEINREICHUNG UND ZAHLUNGSSTOPP AUSFÜHREN",
+        "filed_banner": "AKTE EINGEREICHT",
+        "claim_served": "Anspruch zugestellt an",
+        "lc_drawstop": "Zahlungsstopp vor dem Bankschluss übermittelt.",
+        "export_title": "Dossier-Exportpakete",
+        "export_caption": "Beide Pakete enthalten denselben versiegelten SHA-256-Telemetriehash.",
+        "court_btn": "Amtlichen Schriftsatz herunterladen (DE)",
+        "court_btn_sub": "Gerichtssprachliches Beweispaket für die gewählte Gerichtsbarkeit.",
+        "master_btn": "Englisches Executive-Dossier herunterladen",
+        "master_btn_sub": "Englische Masterfassung für Vorstand und Geschäftsleitung.",
+    },
+    "JP_TYO": {
+        "vault_title": "第4段階：役員保管庫および提出",
+        "vault_caption": "二重承認による受託者承認と送金停止",
+        "status_title": "証拠記録の現在の状況",
+        "ex_a": "証拠A",
+        "ex_a_sub": "インシデント概要",
+        "ex_b": "証拠B",
+        "ex_b_sub": "テレメトリ宣誓書",
+        "ex_c": "証拠C",
+        "ex_c_sub": "証拠能力認証書",
+        "ex_d": "証拠D",
+        "ex_d_sub": "取締役責任メモ",
+        "badge_ready": "準備完了",
+        "badge_sealed": "封印済み",
+        "badge_cert": "認証済み",
+        "badge_comp": "作成済み",
+        "badge_awaiting": "未完了",
+        "badge_draft": "作成中",
+        "witness_prefix": "証人",
+        "pending_witness": "現場証人未登録",
+        "dual_key_title": "二重承認による開示許可",
+        "dual_key_bank": "送金先銀行 / 決済機関",
+        "key_1_label": "鍵1：取締役会議長の承認",
+        "key_2_label": "鍵2：最高法務責任者の提出承認",
+        "keys_locked_msg": "第1段階から第4段階の認証完了まで、二重承認はロックされています。",
+        "keys_verified_msg": "二つの鍵を確認しました：提出が承認されました。",
+        "exec_btn": "緊急申立ておよび送金停止通知を実行",
+        "filed_banner": "申立てを提出しました",
+        "claim_served": "請求通知の送付先：",
+        "lc_drawstop": "銀行締切前に信用状の支払停止を通知しました。",
+        "export_title": "証拠記録のエクスポート",
+        "export_caption": "両方のパッケージに同一の封印済みテレメトリSHA-256値が含まれます。",
+        "court_btn": "裁判所提出書類をダウンロード（日本語）",
+        "court_btn_sub": "選択された管轄の裁判所提出用証拠パッケージ。",
+        "master_btn": "英語版エグゼクティブ記録をダウンロード",
+        "master_btn_sub": "取締役会および経営陣向けの英語版マスター記録。",
+    },
+}
 CURRENCY_SYMBOLS = {
     "USD": "$",
     "EUR": "€",
@@ -665,48 +779,53 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
 elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
-    st.title("Tier 4: Executive Vault & Subpoena-Proof Filing")
-    st.caption("Dual-Key Fiduciary Ratification & Global Banking Drawstop")
+    ui = (
+        UI_STRINGS.get(profile["jurisdiction"], UI_STRINGS["DEFAULT"])
+        if is_court_native
+        else UI_STRINGS["DEFAULT"]
+    )
+    st.title(ui["vault_title"])
+    st.caption(ui["vault_caption"])
 
-    st.subheader("Live Evidentiary Dossier Status")
+    st.subheader(ui["status_title"])
     e1, e2, e3, e4 = st.columns(4)
-    e1.markdown("**Exhibit A**\n\n*Incident Brief*")
-    e1.success("READY")
+    e1.markdown(f"**{ui['ex_a']}**\n\n*{ui['ex_a_sub']}*")
+    e1.success(ui["badge_ready"])
 
-    e2.markdown("**Exhibit B**\n\n*Telemetry Affidavit*")
-    if active_docket["pe_signed_by"]:
-        e2.success("SEALED")
-        e2.caption(f"**Witness:** {active_docket['pe_signed_by']}")
+    certifier_witness = active_docket.get("pe_signed_by") or profile["certifier_title"]
+    e2.markdown(f"**{ui['ex_b']}**\n\n*{ui['ex_b_sub']}*")
+    if active_docket.get("pe_signed_by"):
+        e2.success(ui["badge_sealed"])
     else:
-        e2.warning("Awaiting Tier 3B")
-        e2.caption("Pending Field PE/Chief")
+        e2.warning(ui["badge_awaiting"])
+    e2.caption(f"{ui['witness_prefix']}: {certifier_witness}")
 
-    e3.markdown("**Exhibit C**\n\n*FRE/ZPO Certificate*")
-    if active_docket["legal_cleared_by"]:
-        e3.success("CERTIFIED")
+    e3.markdown(f"**{ui['ex_c']}**\n\n*{ui['ex_c_sub']}*")
+    if active_docket.get("legal_cleared_by"):
+        e3.success(ui["badge_cert"])
     else:
-        e3.warning("Awaiting Chambers")
+        e3.warning(ui["badge_awaiting"])
 
-    e4.markdown("**Exhibit D**\n\n*Fiduciary Memo*")
+    e4.markdown(f"**{ui['ex_d']}**\n\n*{ui['ex_d_sub']}*")
     if dossier_stage == 5:
-        e4.success("COMPILED")
+        e4.success(ui["badge_comp"])
     else:
-        e4.info("Drafting...")
+        e4.info(ui["badge_draft"])
 
     st.markdown("---")
-    st.subheader("Dual-Key Release Authorization")
-    st.markdown(f"**Target Issuing Bank / Clearing Agency:** `{jurisdiction['banking_cutoff']}`")
+    st.subheader(ui["dual_key_title"])
+    st.markdown(f"**{ui['dual_key_bank']}:** :red[{jurisdiction['banking_cutoff']}]")
 
-    c1, c2 = st.columns(2)
-    key_chairman = c1.checkbox(
-        "Key 1: Executive Chairman Ratification (DGCL § 141(e) Reliance)",
-        value=active_docket["dual_key_chairman"],
+    col_k1, col_k2 = st.columns(2)
+    key_chairman = col_k1.checkbox(
+        ui["key_1_label"],
+        value=active_docket.get("dual_key_chairman", False),
         disabled=(dossier_stage < 5),
         key=f"{active_docket_id}_dual_key_chairman",
     )
-    key_clo = c2.checkbox(
-        "Key 2: Chief Legal Officer Filing Clearance",
-        value=active_docket["dual_key_clo"],
+    key_clo = col_k2.checkbox(
+        ui["key_2_label"],
+        value=active_docket.get("dual_key_clo", False),
         disabled=(dossier_stage < 5),
         key=f"{active_docket_id}_dual_key_clo",
     )
@@ -715,24 +834,32 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     active_docket["dual_key_clo"] = key_clo
 
     if dossier_stage < 5:
-        st.warning("Dual-key execution is locked until Stages 1 through 4 are certified.")
+        st.info(ui["keys_locked_msg"])
     else:
         if key_chairman and key_clo:
-            st.success("DUAL KEYS VERIFIED: Sovereign Filing Authority Unlocked.")
-            if st.button("EXECUTE EMERGENCY FILING & WIRE FREEZE NOTICE", type="primary"):
+            st.success(ui["keys_verified_msg"])
+            if st.button(ui["exec_btn"], type="primary", use_container_width=True):
+                active_docket["executed"] = True
                 st.balloons()
-                st.success(
-                    f"DOCKET FILED BEFORE LUNCHTIME.\n\n"
-                    f"Notice of Claim served on {profile['target_entity']}.\n\n"
-                    f"Letter of Credit drawstop transmitted to escrow bank prior to {jurisdiction['banking_cutoff']} cutoff."
-                )
         else:
-            st.info("Both Executive Chairman and Chief Legal Officer must turn their keys to execute filing.")
+            st.info(ui["keys_locked_msg"])
+
+    if active_docket.get("executed", False):
+        st.markdown(
+            f"""
+            <div style="background-color: #1e3a24; border: 1px solid #2e7d32; padding: 14px; border-radius: 6px; margin-top: 15px;">
+                <h4 style="color: #4caf50; margin: 0 0 8px 0;">{ui['filed_banner']}</h4>
+                <p style="margin: 0; color: #c8e6c9;">{ui['claim_served']} <b>{profile['target_entity']}</b></p>
+                <p style="margin: 4px 0 0 0; color: #a5d6a7;">{ui['lc_drawstop']}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     active_jurisdiction = profile["jurisdiction"]
     st.markdown("---")
-    st.subheader("Dossier Export Packages")
-    st.caption("Both packages reference the same sealed telemetry SHA-256 value.")
+    st.subheader(ui["export_title"])
+    st.caption(ui["export_caption"])
     file_col1, file_col2 = st.columns(2)
 
     court_native_payload = {
@@ -747,16 +874,13 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
 
     with file_col1:
         st.download_button(
-            label=(
-                "📥 Download Official Court Pleading "
-                f"({loc_data['court_lang_name'].split()[0] if loc_data else 'EN'})"
-            ),
+            label=ui["court_btn"],
             data=json.dumps(court_native_payload, indent=2, ensure_ascii=False),
             file_name=f"{profile['docket_id']}_COURT_OFFICIAL.json",
             mime="application/json",
             use_container_width=True,
         )
-        st.caption("Court-language exhibit bundle for the selected jurisdiction.")
+        st.caption(ui["court_btn_sub"])
 
     exec_master_payload = {
         "docket_id": profile["docket_id"],
@@ -770,10 +894,10 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
 
     with file_col2:
         st.download_button(
-            label="📥 Download Executive Master Dossier (EN)",
+            label=ui["master_btn"],
             data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
             file_name=f"{profile['docket_id']}_EXECUTIVE_MASTER_EN.json",
             mime="application/json",
             use_container_width=True,
         )
-        st.caption("English master bundle for board and executive review.")
+        st.caption(ui["master_btn_sub"])
