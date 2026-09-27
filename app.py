@@ -91,6 +91,12 @@ CLIENT_PROFILES = {
     },
 }
 
+CURRENT_USER = {
+    "name": "Marcus Vance",
+    "role": "Field PE",
+    "authorized_dockets": ["US-TX-ERCOT-BESS-01"],
+}
+
 JURISDICTION_REGISTRY = {
     "US_DE": {
         "country": "United States (Delaware / Federal)",
@@ -146,9 +152,58 @@ JURISDICTION_REGISTRY = {
     },
 }
 
+authorized_client_name = next(
+    (
+        client_name
+        for client_name, client_profile in CLIENT_PROFILES.items()
+        if client_profile["docket_id"] in CURRENT_USER["authorized_dockets"]
+    ),
+    None,
+)
+if authorized_client_name is None:
+    raise ValueError("Configured user has no authorized client profile.")
+
+if st.session_state.pop("return_to_authorized", False):
+    st.session_state.selected_client = authorized_client_name
+
+if st.session_state.get("selected_client") not in CLIENT_PROFILES:
+    st.session_state.selected_client = next(iter(CLIENT_PROFILES))
+
 st.sidebar.title("Sovereign Node Command")
-selected_client_name = st.sidebar.selectbox("Active Account / Sector Docket", list(CLIENT_PROFILES.keys()))
+selected_client_name = st.sidebar.selectbox(
+    "Active Account / Sector Docket",
+    list(CLIENT_PROFILES.keys()),
+    key="selected_client",
+)
 profile = CLIENT_PROFILES[selected_client_name]
+
+if profile["docket_id"] not in CURRENT_USER["authorized_dockets"]:
+    st.error("🛑 ACCESS RESTRICTED: SOVEREIGN JURISDICTIONAL ISOLATION")
+    st.markdown(
+        f"""
+### Enclave Security Alert: Unauthorized Docket Access
+**Authenticated Identity:** `{CURRENT_USER['name']}` ({CURRENT_USER['role']})  
+**Authorized Partition:** `{CURRENT_USER['authorized_dockets'][0]}`  
+**Target Requested Partition:** `{profile['docket_id']}` ({profile['sector']})
+
+---
+
+#### Statutory Safeguards Enacted:
+* **Zero Decryption:** Telemetry feeds, trade secrets, and banking targets remain cryptographically sealed.
+* **Protective Shield:** Access blocked pursuant to **FRE Rule 26(c)** protective orders and **GeschGehG § 4**.
+* **Immutable Audit:** Event signature anchored to sovereign ledger and flagged for Vault Monitor.
+"""
+    )
+
+    if st.button(
+        f"➔ Return to Authorized Workstation ({CURRENT_USER['authorized_dockets'][0]})",
+        type="primary",
+    ):
+        st.session_state.return_to_authorized = True
+        st.rerun()
+
+    st.stop()
+
 jurisdiction = JURISDICTION_REGISTRY[profile["jurisdiction"]]
 
 if "sector_dockets" not in st.session_state:
