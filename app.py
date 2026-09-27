@@ -131,25 +131,27 @@ PAGES = [
     "Tier 4: Executive Vault & Filing (Always Active)",
 ]
 
-if st.session_state.get("current_page") not in PAGES:
-    st.session_state.current_page = PAGES[0]
+target_page = st.session_state.get("target_page")
+if target_page in PAGES:
+    st.session_state.nav_radio = target_page
+    st.session_state.target_page = None
+elif "target_page" in st.session_state:
+    st.session_state.target_page = None
 
-if (
-    "nav_radio" in st.session_state
-    and st.session_state.nav_radio != st.session_state.current_page
-):
-    del st.session_state.nav_radio
+if st.session_state.get("nav_radio") not in PAGES:
+    st.session_state.nav_radio = PAGES[0]
 
 
-def set_page(page_name: str) -> None:
-    st.session_state.current_page = page_name
+def navigate_to(page_name: str) -> None:
+    if page_name not in PAGES:
+        raise ValueError(f"Unknown workstation page: {page_name}")
+    st.session_state.target_page = page_name
+    st.rerun()
 
 nav_selection = st.sidebar.radio(
     "Workstation Navigation",
     PAGES,
-    index=PAGES.index(st.session_state.current_page),
     key="nav_radio",
-    on_change=lambda: set_page(st.session_state.nav_radio),
 )
 
 if nav_selection == "Tier 1: Sovereign Executive Overview":
@@ -176,28 +178,23 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
 
     with c1:
         if st.button("1. Ops Dispatch\n(Tier 3A)", use_container_width=True):
-            st.session_state.current_page = "Tier 3A: Operations Dispatch Command"
-            st.rerun()
+            navigate_to("Tier 3A: Operations Dispatch Command")
 
     with c2:
         if st.button("2. Field Attestation\n(Tier 3B)", use_container_width=True):
-            st.session_state.current_page = "Tier 3B: Work-Face Attestation Desk"
-            st.rerun()
+            navigate_to("Tier 3B: Work-Face Attestation Desk")
 
     with c3:
         if st.button("3. Ops Verification\n(Tier 3A)", use_container_width=True):
-            st.session_state.current_page = "Tier 3A: Operations Verification Desk"
-            st.rerun()
+            navigate_to("Tier 3A: Operations Verification Desk")
 
     with c4:
         if st.button("4. Chambers Audit\n(Legal)", use_container_width=True):
-            st.session_state.current_page = "Legal Chambers: Evidentiary Audit"
-            st.rerun()
+            navigate_to("Legal Chambers: Evidentiary Audit")
 
     with c5:
         if st.button("5. Executive Vault\n(Tier 4)", use_container_width=True):
-            st.session_state.current_page = "Tier 4: Executive Vault & Filing (Always Active)"
-            st.rerun()
+            navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
 elif nav_selection == "Tier 3A: Operations Dispatch Command":
     st.title("Tier 3A: Engineering Operations Dispatch")
@@ -221,8 +218,7 @@ elif nav_selection == "Tier 3A: Operations Dispatch Command":
         ):
             st.session_state.dossier_data["wo_scope"] = wo_text
             advance_stage(2)
-            st.session_state.current_page = "Tier 3B: Work-Face Attestation Desk"
-            st.rerun()
+            navigate_to("Tier 3B: Work-Face Attestation Desk")
     else:
         st.success(f"Work Order dispatched. Current lifecycle is at Stage {st.session_state.dossier_stage}.")
         if st.button(
@@ -230,8 +226,7 @@ elif nav_selection == "Tier 3A: Operations Dispatch Command":
             type="primary",
             use_container_width=True,
         ):
-            st.session_state.current_page = "Tier 3B: Work-Face Attestation Desk"
-            st.rerun()
+            navigate_to("Tier 3B: Work-Face Attestation Desk")
 
 elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
     st.title("Tier 3B: Work-Face Attestation Desk")
@@ -271,7 +266,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             use_container_width=True,
         ):
             advance_stage(2)
-            st.rerun()
+            navigate_to("Tier 3B: Work-Face Attestation Desk")
     elif st.session_state.dossier_stage == 2:
         if st.button(
             f"Affix Statutory Seal ({profile['certifier_title']})",
@@ -282,8 +277,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             st.session_state.dossier_data["field_telemetry_hash"] = raw_hash
             st.session_state.dossier_data["pe_signed_by"] = profile["certifier_title"]
             advance_stage(3)
-            st.session_state.current_page = "Tier 3A: Operations Verification Desk"
-            st.rerun()
+            navigate_to("Tier 3A: Operations Verification Desk")
     else:
         st.success(f"Attestation completed by {st.session_state.dossier_data['pe_signed_by']}.")
         st.code(f"Hash: {st.session_state.dossier_data['field_telemetry_hash']}")
@@ -292,8 +286,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             type="primary",
             use_container_width=True,
         ):
-            st.session_state.current_page = "Tier 3A: Operations Verification Desk"
-            st.rerun()
+            navigate_to("Tier 3A: Operations Verification Desk")
 
 elif nav_selection == "Tier 3A: Operations Verification Desk":
     st.title("Tier 3A: Operations Verification & Audit")
@@ -317,8 +310,7 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
             ):
                 st.session_state.dossier_data["ops_countersigned_by"] = "VP Operations / Sarah Jenkins"
                 advance_stage(4)
-                st.session_state.current_page = "Legal Chambers: Evidentiary Audit"
-                st.rerun()
+                navigate_to("Legal Chambers: Evidentiary Audit")
         else:
             st.success(f"Countersigned by {st.session_state.dossier_data['ops_countersigned_by']}.")
             if st.button(
@@ -326,8 +318,7 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
                 type="primary",
                 use_container_width=True,
             ):
-                st.session_state.current_page = "Legal Chambers: Evidentiary Audit"
-                st.rerun()
+                navigate_to("Legal Chambers: Evidentiary Audit")
 
 elif nav_selection == "Legal Chambers: Evidentiary Audit":
     st.title("Legal Chambers: Trial Admissibility Clearance")
@@ -354,8 +345,7 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
             ):
                 st.session_state.dossier_data["legal_cleared_by"] = "Katherine Ross, Lead Trial Counsel"
                 advance_stage(5)
-                st.session_state.current_page = "Tier 4: Executive Vault & Filing (Always Active)"
-                st.rerun()
+                navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
         else:
             st.success(f"Cleared for trial filing by {st.session_state.dossier_data['legal_cleared_by']}.")
             if st.button(
@@ -363,8 +353,7 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
                 type="primary",
                 use_container_width=True,
             ):
-                st.session_state.current_page = "Tier 4: Executive Vault & Filing (Always Active)"
-                st.rerun()
+                navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
 elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.title("Tier 4: Executive Vault & Subpoena-Proof Filing")
