@@ -11,6 +11,28 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.markdown(
+    """
+    <style>
+    /* Force iPad Safari momentum scrolling across sidebar and dropdowns */
+    section[data-testid="stSidebar"] {
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-height: 100vh !important;
+    }
+    div[data-baseweb="select"] {
+        max-height: 400px !important;
+    }
+    div[role="listbox"] {
+        max-height: 320px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 CLIENT_PROFILES = {
     "BESS / Grid Storage (Apex Clean Energy | ERCOT § 4.2)": {
         "sector": "BESS / Power Quality",
