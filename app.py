@@ -223,7 +223,10 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
     st.warning(f"**Statutory Oath:** {jurisdiction['oath_text']}")
 
     if st.session_state.dossier_stage < 2:
-        st.error("Cannot sign: Work order has not been dispatched by Tier 3A.")
+        st.error("Work Order pending dispatch from Tier 3A.")
+        if st.button("⚡ Fast-Track Dispatch & Unlock Signing Desk", type="primary"):
+            advance_stage(2)
+            st.rerun()
     elif st.session_state.dossier_stage == 2:
         if st.button(f"Affix Statutory Seal ({profile['certifier_title']})", type="primary"):
             raw_hash = hashlib.sha256(json.dumps(sample_payload).encode()).hexdigest()
