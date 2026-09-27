@@ -201,8 +201,12 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
 
     st.markdown("#### Step 1: Physical Zero-Drift & Sensor Calibration")
     c1, c2 = st.columns(2)
-    c1.text_input("Calibration Hash / Metrology Token", value="NIST-CAL-99120-PASS", disabled=True)
-    c2.text_input("Zero-Drift Variance Observed", value="0.0002% (Tolerance < 0.01%)", disabled=True)
+    with c1:
+        st.markdown("**Metrology Calibration Token (NIST Traceable)**")
+        st.code("NIST-CAL-99120-PASS", language="text")
+    with c2:
+        st.markdown("**Zero-Drift Variance (Pre-Test Audit)**")
+        st.success("0.0002% — WITHIN STATUTORY TOLERANCE (< 0.01%)")
 
     st.markdown("#### Step 2: Telemetry Capture & Oscillography Stream")
     sample_payload = {
