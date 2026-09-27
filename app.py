@@ -52,60 +52,45 @@ st.markdown(
 )
 
 CLIENT_PROFILES = {
-    "BESS / Grid Storage (Apex Clean Energy | ERCOT § 4.2)": {
-        "sector": "BESS / Power Quality",
-        "docket_id": "US-TX-ERCOT-BESS-01",
-        "jurisdiction": "US_DE",
-        "burn_rate_daily": 2_070_671.19,
-        "standard": "IEEE 2800-2022 / ERCOT § 4.2",
-        "instrument": "Fluke 1777 Power Quality Analyzer (Cal: NIST-FLK-8812)",
-        "work_order": "WO-8821-HARMONIC",
-        "certifier_title": "Marcus Vance, PE (TX #114902)",
-        "target_entity": "ERCOT / Interconnection Utility & Standby LC Desk",
-    },
-    "Offshore Wind (EnBW / TenneT | VDE-AR-N 4130)": {
-        "sector": "Offshore Wind Transmission",
-        "docket_id": "DE-HB-TENNET-OW-04",
-        "jurisdiction": "DE_BW",
-        "burn_rate_daily": 454_000.00,
-        "standard": "VDE-AR-N 4130 / BNetzA EnWG",
-        "instrument": "Omicron CMC 356 + PTB Zero-Drift Calibration Check",
-        "work_order": "WO-4409-SUBSTATION",
-        "certifier_title": "Dr.-Ing. K. Meissner (Ingenieurkammer #88412)",
-        "target_entity": "TenneT TSO B.V. & Deutsche Bundesbank TARGET2",
-    },
-    "Autonomous Fleet Logistics (Amazon Freight | I-45 Corridor)": {
-        "sector": "Autonomous Heavy Transport",
-        "docket_id": "US-FED-FMCSA-AMZN-09",
+    "🇺🇸 USA | Amazon Freight (I-45 Corridor)": {
+        "sector": "Autonomous Class 8 Haulage",
+        "docket_id": "US-FMCSA-AMZN-I45",
         "jurisdiction": "US_DE",
         "burn_rate_daily": 450_000.00,
-        "standard": "FMCSA Part 396 / SAE J3016 Level 4 / ISO 21448",
-        "instrument": "Edge DSSAD Tap + NIST Dual-IMU Gyroscope Vector Log",
-        "work_order": "WO-9912-AV-COLLISION",
-        "certifier_title": "Senior Systems Safety Engineer, PE",
-        "target_entity": "NHTSA SGO Desk / OEM Product Liability Syndicate",
+        "currency": "USD",
+        "target_entity": "NHTSA SGO / Commercial Van Carrier",
     },
-    "Wildfire & Municipal Safety (Consortium Black Box)": {
-        "sector": "Emergency Municipal Telemetry",
-        "docket_id": "US-CA-CALFIRE-BB-11",
-        "jurisdiction": "US_CA",
-        "burn_rate_daily": 1_500_000.00,
-        "standard": "NFPA 1221 / CPUC Fire Safety Tariff Rule 20",
-        "instrument": "Starlink LEO Enclave + Hardened RAWS Station Telemetry",
-        "work_order": "WO-7731-FIRE-PSPS",
-        "certifier_title": "Battalion Chief / Forensic Fire Investigator",
-        "target_entity": "Investor-Owned Utility (IOU) / Reinsurance Treaty",
+    "🇩🇪 GER | TenneT / EnBW (North Sea Offshore)": {
+        "sector": "Offshore HVDC Grid Transmission",
+        "docket_id": "DE-BNetzA-TENNET-OW",
+        "jurisdiction": "DE_BW",
+        "burn_rate_daily": 454_000.00,
+        "currency": "EUR",
+        "target_entity": "TenneT TSO B.V. & Offshore Wind Syndicate",
     },
-    "Autonomous Drone Postal (Wing / Zipline BVLOS Fleet)": {
-        "sector": "Autonomous Air Delivery",
-        "docket_id": "US-FAA-BVLOS-DRONE-07",
-        "jurisdiction": "US_DE",
-        "burn_rate_daily": 385_000.00,
-        "standard": "FAA 14 CFR Part 108 / ASTM F38 / ISO 21384",
-        "instrument": "High-Frequency ESC Current Logger + RTK-GNSS Spoof Enclave",
-        "work_order": "WO-5510-DRONE-DESYNC",
-        "certifier_title": "Director of Flight Operations (Part 108 § 108.35)",
-        "target_entity": "FAA FSDO / OEM Autopilot Avionics Insurer",
+    "🇬🇧 GBR | Zenobē / National Grid (Scotland BESS)": {
+        "sector": "Grid-Scale Transmission BESS",
+        "docket_id": "UK-TCC-ZENOBE-BESS",
+        "jurisdiction": "UK_ENG",
+        "burn_rate_daily": 320_000.00,
+        "currency": "GBP",
+        "target_entity": "National Grid Electricity System Operator (ESO)",
+    },
+    "🇯🇵 JPN | Toyota / Japan Post (Tokyo Drone Hub)": {
+        "sector": "Autonomous Postal Drone / Last-Mile",
+        "docket_id": "JP-MLIT-TOYOTA-BVLOS",
+        "jurisdiction": "JP_TYO",
+        "burn_rate_daily": 58_000_000.00,
+        "currency": "JPY",
+        "target_entity": "MLIT Civil Aviation Bureau & East Japan Railway",
+    },
+    "🇨🇱 CHL | Enel Chile / SQM (Atacama BESS)": {
+        "sector": "High-Altitude Lithium BESS Microgrid",
+        "docket_id": "CL-SEC-ENEL-ATACAMA",
+        "jurisdiction": "CL_STGO",
+        "burn_rate_daily": 620_000.00,
+        "currency": "USD",
+        "target_entity": "Coordinador Eléctrico Nacional (CEN) & Interconnector",
     },
 }
 
@@ -168,6 +153,40 @@ JURISDICTION_REGISTRY = {
         "banking_cutoff": "16:00 GMT (CHAPS / Bank of England)",
         "oath_text": "I believe that the facts stated in this witness statement are true. I understand that proceedings for contempt of court may be brought against anyone who makes a false statement.",
     },
+    "JP_TYO": {
+        "country": "Japan (Tokyo / National)",
+        "court": "Tokyo District Court",
+        "currency_code": "JPY",
+        "currency_symbol": "¥",
+        "language_name": "Japanese (ja-JP)",
+        "statutory_schema": "Code of Civil Procedure of Japan",
+        "metrology": "National Metrology Institute of Japan (NMIJ)",
+        "statute_evidence": "Code of Civil Procedure (documentary and expert evidence)",
+        "fiduciary_shield": "Companies Act of Japan (directors' duties)",
+        "banking_cutoff": "15:00 JST (BOJ-NET / Zengin)",
+        "oath_text": "I certify that this record accurately reflects the technical observations captured.",
+    },
+    "CL_STGO": {
+        "country": "Chile (Santiago / National)",
+        "court": "Santiago Civil Courts",
+        "currency_code": "CLP",
+        "currency_symbol": "CLP $",
+        "language_name": "Spanish (es-CL)",
+        "statutory_schema": "Código de Procedimiento Civil de Chile",
+        "metrology": "Instituto Nacional de Normalización (INN)",
+        "statute_evidence": "Código de Procedimiento Civil (documentary and expert evidence)",
+        "fiduciary_shield": "Ley de Sociedades Anónimas (directors' duties)",
+        "banking_cutoff": "14:00 CLT (Sistema LBTR / Banco Central de Chile)",
+        "oath_text": "Certifico que este registro refleja fielmente las observaciones técnicas capturadas.",
+    },
+}
+
+CURRENCY_SYMBOLS = {
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "JPY": "¥",
+    "CLP": "CLP $",
 }
 
 authorized_client_name = next(
@@ -209,7 +228,7 @@ selected_client_name = st.sidebar.selectbox(
     list(CLIENT_PROFILES.keys()),
     key="selected_client",
 )
-profile = CLIENT_PROFILES[selected_client_name]
+profile = dict(CLIENT_PROFILES[selected_client_name])
 
 if (
     "ALL" not in CURRENT_USER["authorized_dockets"]
@@ -242,6 +261,12 @@ if (
     st.stop()
 
 jurisdiction = JURISDICTION_REGISTRY[profile["jurisdiction"]]
+profile.setdefault("standard", profile["sector"])
+profile.setdefault("instrument", "Configured sector telemetry instrumentation")
+profile.setdefault("work_order", f"WO-{profile['docket_id']}")
+profile.setdefault("certifier_title", f"{CURRENT_USER['name']} ({CURRENT_USER['role']})")
+currency_code = profile["currency"]
+currency_symbol = CURRENCY_SYMBOLS[currency_code]
 
 if "sector_dockets" not in st.session_state:
     st.session_state.sector_dockets = {}
@@ -272,7 +297,7 @@ st.sidebar.markdown(f"**Docket ID:** `{profile['docket_id']}`")
 st.sidebar.markdown(f"**Jurisdiction:** {jurisdiction['country']}")
 col_meta1, col_meta2 = st.sidebar.columns(2)
 col_meta1.markdown(
-    f"**Currency:**\n\n`{jurisdiction['currency_code']} ({jurisdiction['currency_symbol']})`"
+    f"**Currency:**\n\n`{currency_code} ({currency_symbol})`"
 )
 col_meta2.markdown(f"**Court Language:**\n\n`{jurisdiction['language_name']}`")
 st.sidebar.markdown(f"**Target Court:** {jurisdiction['court']}")
@@ -280,7 +305,7 @@ st.sidebar.markdown(f"**Metrology Body:** {jurisdiction['metrology']}")
 st.sidebar.markdown(f"**Statutory Evidence:** `{jurisdiction['statute_evidence']}`")
 st.sidebar.markdown(f"**Banking Cutoff:** :red[{jurisdiction['banking_cutoff']}]")
 st.sidebar.markdown(
-    f"**Daily Burn Rate:** :red[{jurisdiction['currency_symbol']}{profile['burn_rate_daily']:,.2f} / day]"
+    f"**Daily Burn Rate:** :red[{currency_symbol}{profile['burn_rate_daily']:,.2f} / day]"
 )
 
 PAGES = [
@@ -320,8 +345,6 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
 
     c1, c2, c3 = st.columns(3)
-    currency_symbol = jurisdiction["currency_symbol"]
-    currency_code = jurisdiction["currency_code"]
     c1.metric(
         f"Accrued Holding Burn ({currency_code})",
         f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.2f}",
