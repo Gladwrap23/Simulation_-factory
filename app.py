@@ -28,6 +28,24 @@ st.markdown(
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
     }
+
+    /* Expand the popover menu height so all clients are visible */
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
+    ul[role="listbox"] {
+        max-height: 650px !important;
+        height: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Make each client row taller and easier to tap with a finger */
+    li[role="option"] {
+        padding-top: 14px !important;
+        padding-bottom: 14px !important;
+        font-size: 15px !important;
+        line-height: 1.4 !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -94,7 +112,7 @@ CLIENT_PROFILES = {
 CURRENT_USER = {
     "name": "Marcus Vance",
     "role": "Field PE",
-    "authorized_dockets": ["US-TX-ERCOT-BESS-01"],
+    "authorized_dockets": ["ALL"],
 }
 
 JURISDICTION_REGISTRY = {
@@ -153,6 +171,8 @@ JURISDICTION_REGISTRY = {
 }
 
 authorized_client_name = next(
+    iter(CLIENT_PROFILES)
+) if "ALL" in CURRENT_USER["authorized_dockets"] else next(
     (
         client_name
         for client_name, client_profile in CLIENT_PROFILES.items()
@@ -162,6 +182,20 @@ authorized_client_name = next(
 )
 if authorized_client_name is None:
     raise ValueError("Configured user has no authorized client profile.")
+
+requested_docket = st.query_params.get("docket")
+if requested_docket and requested_docket != st.session_state.get("last_magic_link_docket"):
+    matching_client = next(
+        (
+            client_name
+            for client_name, client_profile in CLIENT_PROFILES.items()
+            if client_profile["docket_id"] == requested_docket
+        ),
+        None,
+    )
+    if matching_client is not None:
+        st.session_state.selected_client = matching_client
+        st.session_state.last_magic_link_docket = requested_docket
 
 if st.session_state.pop("return_to_authorized", False):
     st.session_state.selected_client = authorized_client_name
@@ -177,7 +211,10 @@ selected_client_name = st.sidebar.selectbox(
 )
 profile = CLIENT_PROFILES[selected_client_name]
 
-if profile["docket_id"] not in CURRENT_USER["authorized_dockets"]:
+if (
+    "ALL" not in CURRENT_USER["authorized_dockets"]
+    and profile["docket_id"] not in CURRENT_USER["authorized_dockets"]
+):
     st.error("🛑 ACCESS RESTRICTED: SOVEREIGN JURISDICTIONAL ISOLATION")
     st.markdown(
         f"""
@@ -196,10 +233,10 @@ if profile["docket_id"] not in CURRENT_USER["authorized_dockets"]:
     )
 
     if st.button(
-        f"➔ Return to Authorized Workstation ({CURRENT_USER['authorized_dockets'][0]})",
+        f"➔ Return to Authorized Workstation ({CLIENT_PROFILES[authorized_client_name]['docket_id']})",
         type="primary",
     ):
-        st.session_state.return_to_authorized = True
+        st.session_state.selected_client = authorized_client_name
         st.rerun()
 
     st.stop()
