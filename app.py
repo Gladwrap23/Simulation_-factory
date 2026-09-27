@@ -310,6 +310,7 @@ if (
     st.stop()
 
 jurisdiction = JURISDICTION_REGISTRY[profile["jurisdiction"]]
+loc_data = EXHIBIT_LOCALIZATIONS.get(profile["jurisdiction"])
 profile.setdefault("standard", profile["sector"])
 profile.setdefault("instrument", "Configured sector telemetry instrumentation")
 profile.setdefault("work_order", f"WO-{profile['docket_id']}")
@@ -341,14 +342,41 @@ def advance_active_stage(target_stage: int) -> None:
     if target_stage > active_docket["stage"]:
         active_docket["stage"] = target_stage
 
-st.sidebar.markdown("---")
-st.sidebar.markdown(f"**Docket ID:** `{profile['docket_id']}`")
+st.sidebar.markdown(f"## Docket: `{profile['docket_id']}`")
+if loc_data:
+    court_native_name = loc_data["court_lang_name"].split()[0]
+    language_options = [
+        f"Official Court ({court_native_name})",
+        "Executive English Master",
+    ]
+    language_widget_key = "global_language_toggle"
+    if st.session_state.get(language_widget_key) not in language_options:
+        st.session_state[language_widget_key] = language_options[0]
+
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🌐 Evidentiary Language Mode")
+    lang_mode = st.sidebar.radio(
+        "Select Operating Stream:",
+        options=language_options,
+        index=language_options.index(st.session_state[language_widget_key]),
+        key=language_widget_key,
+        label_visibility="collapsed",
+    )
+    is_court_native = "Official Court" in lang_mode
+    st.sidebar.caption(
+        "Active Filing Stream: **"
+        f"{loc_data['court_lang_name'] if is_court_native else 'Standardized English (en-US)'}**"
+    )
+    st.sidebar.markdown("---")
+else:
+    is_court_native = False
+
 st.sidebar.markdown(f"**Jurisdiction:** {jurisdiction['country']}")
 col_meta1, col_meta2 = st.sidebar.columns(2)
-col_meta1.markdown(
-    f"**Currency:**\n\n`{currency_code} ({currency_symbol})`"
-)
-col_meta2.markdown(f"**Court Language:**\n\n`{jurisdiction['language_name']}`")
+with col_meta1:
+    st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
+with col_meta2:
+    st.markdown(f"**Court Lang:**\n\n`{jurisdiction['language_name']}`")
 st.sidebar.markdown(f"**Target Court:** {jurisdiction['court']}")
 st.sidebar.markdown(f"**Metrology Body:** {jurisdiction['metrology']}")
 st.sidebar.markdown(f"**Statutory Evidence:** `{jurisdiction['statute_evidence']}`")
@@ -388,6 +416,44 @@ nav_selection = st.sidebar.radio(
     PAGES,
     key="nav_radio",
 )
+
+st.markdown(f"### Active Dossier: `{profile['docket_id']}`")
+st.caption(
+    f"🏛️ **Filing Venue:** {jurisdiction['court']} | "
+    f"**Procedural Authority:** {jurisdiction['statutory_schema']}"
+)
+
+if loc_data and is_court_native:
+    doc_content = loc_data["court"]
+    active_stream_label = f"Official Court Language [{loc_data['court_lang_name']}]"
+else:
+    doc_content = loc_data["english"] if loc_data else {
+        "exhibit_a_title": "EXHIBIT A: INCIDENT BRIEF",
+        "exhibit_a_body": "Operational anomaly detected within certified boundaries.",
+        "exhibit_b_title": "EXHIBIT B: TELEMETRY AFFIDAVIT",
+        "exhibit_b_body": (
+            "Witnessed and verified under oath by "
+            f"{active_docket['pe_signed_by'] or 'the assigned field witness'}."
+        ),
+        "exhibit_c_title": "EXHIBIT C: ADMISSIBILITY CERTIFICATE",
+        "exhibit_c_body": f"Certified under {jurisdiction['statute_evidence']}.",
+        "exhibit_d_title": "EXHIBIT D: FIDUCIARY MEMORANDUM",
+        "exhibit_d_body": f"Reliance memo filed prior to {jurisdiction['banking_cutoff']}.",
+    }
+    active_stream_label = "International English Master [en-US]"
+
+with st.expander(f"📄 View Active Documents [{active_stream_label}]", expanded=True):
+    st.markdown(f"#### {doc_content['exhibit_a_title']}")
+    st.write(doc_content["exhibit_a_body"])
+    st.markdown("---")
+    st.markdown(f"#### {doc_content['exhibit_b_title']}")
+    st.write(doc_content["exhibit_b_body"])
+    st.markdown("---")
+    st.markdown(f"#### {doc_content['exhibit_c_title']}")
+    st.write(doc_content["exhibit_c_body"])
+    st.markdown("---")
+    st.markdown(f"#### {doc_content['exhibit_d_title']}")
+    st.write(doc_content["exhibit_d_body"])
 
 if nav_selection == "Tier 1: Sovereign Executive Overview":
     st.title("Tier 1: Sovereign Executive Command")
@@ -664,112 +730,50 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
             st.info("Both Executive Chairman and Chief Legal Officer must turn their keys to execute filing.")
 
     active_jurisdiction = profile["jurisdiction"]
-    loc_data = EXHIBIT_LOCALIZATIONS.get(active_jurisdiction)
+    st.markdown("---")
+    st.subheader("Dossier Export Packages")
+    st.caption("Both packages reference the same sealed telemetry SHA-256 value.")
+    file_col1, file_col2 = st.columns(2)
 
-    if loc_data:
-        st.markdown("---")
-        lang_col1, lang_col2 = st.columns([3, 2])
+    court_native_payload = {
+        "docket_id": profile["docket_id"],
+        "document_type": "OFFICIAL_COURT_PLEADING",
+        "jurisdiction": active_jurisdiction,
+        "court_venue": jurisdiction["court"],
+        "language": loc_data["court_lang_name"] if loc_data else jurisdiction["language_name"],
+        "exhibits": loc_data["court"] if loc_data else doc_content,
+        "telemetry_sha256": active_docket["field_telemetry_hash"],
+    }
 
-        with lang_col1:
-            st.markdown(f"**Operating Docket:** `{profile['docket_id']}`")
-            st.caption(f"Target Venue: {jurisdiction['court']}")
-
-        with lang_col2:
-            lang_choice = st.radio(
-                "Document Language Mode:",
-                options=[
-                    f"Official Court Language ({loc_data['court_lang_name'].split()[0]})",
-                    "Executive English Master",
-                ],
-                horizontal=True,
-                key=f"{active_docket_id}_language_mode",
-            )
-            is_court_native = "Official Court" in lang_choice
-    else:
-        is_court_native = False
-
-    if loc_data and is_court_native:
-        doc_content = loc_data["court"]
-        current_lang_label = loc_data["court_lang_name"]
-    else:
-        doc_content = loc_data["english"] if loc_data else {
-            "exhibit_a_title": "EXHIBIT A: INCIDENT BRIEF",
-            "exhibit_a_body": "Operational anomaly detected within certified boundaries.",
-            "exhibit_b_title": "EXHIBIT B: TELEMETRY AFFIDAVIT",
-            "exhibit_b_body": (
-                "Witnessed and verified under oath by "
-                f"{active_docket['pe_signed_by'] or 'the assigned field witness'}."
+    with file_col1:
+        st.download_button(
+            label=(
+                "📥 Download Official Court Pleading "
+                f"({loc_data['court_lang_name'].split()[0] if loc_data else 'EN'})"
             ),
-            "exhibit_c_title": "EXHIBIT C: ADMISSIBILITY CERTIFICATE",
-            "exhibit_c_body": f"Certified under {jurisdiction['statute_evidence']}.",
-            "exhibit_d_title": "EXHIBIT D: FIDUCIARY MEMORANDUM",
-            "exhibit_d_body": (
-                f"Governance reliance memorandum prepared for "
-                f"{jurisdiction['banking_cutoff']}."
-            ),
-        }
-        current_lang_label = (
-            "International English (en-US Master)"
-            if not loc_data
-            else "Executive English Master"
+            data=json.dumps(court_native_payload, indent=2, ensure_ascii=False),
+            file_name=f"{profile['docket_id']}_COURT_OFFICIAL.json",
+            mime="application/json",
+            use_container_width=True,
         )
+        st.caption("Court-language exhibit bundle for the selected jurisdiction.")
 
-    with st.expander(f"📄 View Active Documents [{current_lang_label}]", expanded=True):
-        st.markdown(f"#### {doc_content['exhibit_a_title']}")
-        st.write(doc_content["exhibit_a_body"])
-        st.markdown("---")
-        st.markdown(f"#### {doc_content['exhibit_b_title']}")
-        st.write(doc_content["exhibit_b_body"])
-        st.markdown("---")
-        st.markdown(f"#### {doc_content['exhibit_c_title']}")
-        st.write(doc_content["exhibit_c_body"])
-        st.markdown("---")
-        st.markdown(f"#### {doc_content['exhibit_d_title']}")
-        st.write(doc_content["exhibit_d_body"])
+    exec_master_payload = {
+        "docket_id": profile["docket_id"],
+        "document_type": "EXECUTIVE_MASTER_DOSSIER",
+        "jurisdiction": active_jurisdiction,
+        "governing_standard": profile["standard"],
+        "language": "en-US (International Master)",
+        "exhibits": loc_data["english"] if loc_data else doc_content,
+        "telemetry_sha256": active_docket["field_telemetry_hash"],
+    }
 
-        st.markdown("### Dossier Export Packages")
-        st.caption("Both packages reference the same sealed telemetry SHA-256 value.")
-        file_col1, file_col2 = st.columns(2)
-
-        court_native_payload = {
-            "docket_id": profile["docket_id"],
-            "document_type": "OFFICIAL_COURT_PLEADING",
-            "jurisdiction": active_jurisdiction,
-            "court_venue": jurisdiction["court"],
-            "language": loc_data["court_lang_name"] if loc_data else jurisdiction["language_name"],
-            "exhibits": loc_data["court"] if loc_data else doc_content,
-            "telemetry_sha256": active_docket["field_telemetry_hash"],
-        }
-
-        with file_col1:
-            st.download_button(
-                label=(
-                    "📥 Download Official Court Pleading "
-                    f"({loc_data['court_lang_name'].split()[0] if loc_data else 'EN'})"
-                ),
-                data=json.dumps(court_native_payload, indent=2, ensure_ascii=False),
-                file_name=f"{profile['docket_id']}_COURT_OFFICIAL.json",
-                mime="application/json",
-                use_container_width=True,
-            )
-            st.caption("Court-language exhibit bundle for the selected jurisdiction.")
-
-        exec_master_payload = {
-            "docket_id": profile["docket_id"],
-            "document_type": "EXECUTIVE_MASTER_DOSSIER",
-            "jurisdiction": active_jurisdiction,
-            "governing_standard": profile["standard"],
-            "language": "en-US (International Master)",
-            "exhibits": loc_data["english"] if loc_data else doc_content,
-            "telemetry_sha256": active_docket["field_telemetry_hash"],
-        }
-
-        with file_col2:
-            st.download_button(
-                label="📥 Download Executive Master Dossier (EN)",
-                data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
-                file_name=f"{profile['docket_id']}_EXECUTIVE_MASTER_EN.json",
-                mime="application/json",
-                use_container_width=True,
-            )
-            st.caption("English master bundle for board and executive review.")
+    with file_col2:
+        st.download_button(
+            label="📥 Download Executive Master Dossier (EN)",
+            data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
+            file_name=f"{profile['docket_id']}_EXECUTIVE_MASTER_EN.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+        st.caption("English master bundle for board and executive review.")
