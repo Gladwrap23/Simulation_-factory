@@ -181,6 +181,55 @@ JURISDICTION_REGISTRY = {
     },
 }
 
+
+EXHIBIT_LOCALIZATIONS = {
+    "DE_BW": {
+        "court_lang_name": "German (Deutsch - de-DE)",
+        "court": {
+            "exhibit_a_title": "BEWEISSTÜCK A: STATUTARISCHER VORFALLBERICHT",
+            "exhibit_a_body": "Am 28. September 2026 um 07:14:22 Uhr registrierte das Enklaven-Messsystem eine unzulässige Netzfrequenzabweichung außerhalb der VDE-AR-N 4130 Toleranzbandbreite.",
+            "exhibit_b_title": "BEWEISSTÜCK B: EIDESSTATTLICHE VERSICHERUNG DER TELEMETRIEDATEN",
+            "exhibit_b_body": "Unter Bezugnahme auf StGB § 156 versichere ich an Eides statt, dass die vorstehenden Messdaten des Prüfgeräts Omicron CMC 356 unverändert und PTB-rückführbar erfasst wurden.",
+            "exhibit_c_title": "BEWEISSTÜCK C: ZPO-GERICHTSZERTIFIKAT",
+            "exhibit_c_body": "Gerichtliches Zertifikat zur Wahrung des elektronischen Beweisverfahrens gemäß ZPO §§ 371, 416a zur Vorlage beim Landgericht Stuttgart.",
+            "exhibit_d_title": "BEWEISSTÜCK D: COMPLIANCE- UND HAFTUNGSMEMORANDUM",
+            "exhibit_d_body": "Feststellung der Einhaltung der organschaftlichen Sorgfaltspflichten gemäß AktG § 93 zur sofortigen Vorlage bei der Bundesbank (TARGET2).",
+        },
+        "english": {
+            "exhibit_a_title": "EXHIBIT A: STATUTORY INCIDENT BRIEF",
+            "exhibit_a_body": "On 28 September 2026 at 07:14:22 UTC, the enclave telemetry system registered a severe grid frequency excursion exceeding VDE-AR-N 4130 operating tolerances.",
+            "exhibit_b_title": "EXHIBIT B: SWORN TELEMETRY AFFIDAVIT",
+            "exhibit_b_body": "Under statutory witness oath, I declare that the foregoing Omicron CMC 356 telemetry logs were ingested without alteration and remain traceable to national PTB standards.",
+            "exhibit_c_title": "EXHIBIT C: ADMISSIBILITY CLEARANCE CERTIFICATE",
+            "exhibit_c_body": "Electronic evidence admissibility certification issued pursuant to ZPO §§ 371, 416a for commercial court proceedings before Landgericht Stuttgart.",
+            "exhibit_d_title": "EXHIBIT D: EXECUTIVE FIDUCIARY MEMORANDUM",
+            "exhibit_d_body": "Corporate governance safe harbor memorandum under AktG § 93 Business Judgment Rule for immediate TARGET2 wire freeze execution.",
+        },
+    },
+    "JP_TYO": {
+        "court_lang_name": "Japanese (日本語 - ja-JP)",
+        "court": {
+            "exhibit_a_title": "証拠説明書 甲第1号証：インシデント概要報告書",
+            "exhibit_a_body": "2026年9月28日07時14分、自律型配送ドローンにおいてASTM F38基準を超えるアクチュエータ同期異常およびフェイルセーフ作動を検知しました。",
+            "exhibit_b_title": "証拠説明書 甲第2号証：テレメトリ電磁的記録宣誓書",
+            "exhibit_b_body": "良心に従って真実を述べ、何事も隠さず、偽りのないことを誓います。産業技術総合研究所（NMIJ）計量標準に準拠した記録であることを証明します。",
+            "exhibit_c_title": "証拠説明書 甲第3号証：民事訴訟法第228条認証書",
+            "exhibit_c_body": "民事訴訟法第74条及び第228条に基づく真正に成立した電磁的記録としての証拠保全完了認証書（東京地方裁判所民事部提出用）。",
+            "exhibit_d_title": "証拠説明書 甲第4号証：取締役善管注意義務遵守メモ",
+            "exhibit_d_body": "会社法第355条に基づく善管注意義務履行証明書およびBOJ-NET即時資金保全執行指令。",
+        },
+        "english": {
+            "exhibit_a_title": "EXHIBIT A: STATUTORY INCIDENT BRIEF",
+            "exhibit_a_body": "On 28 September 2026 at 07:14 UTC, the autonomous delivery drone experienced an actuator desynchronization event exceeding ASTM F38 thresholds.",
+            "exhibit_b_title": "EXHIBIT B: SWORN TELEMETRY AFFIDAVIT",
+            "exhibit_b_body": "I declare under statutory oath that the flight telemetry records were captured without modification and are traceable to NMIJ/AIST metrology standards.",
+            "exhibit_c_title": "EXHIBIT C: ADMISSIBILITY CLEARANCE CERTIFICATE",
+            "exhibit_c_body": "Admissibility certification issued pursuant to Code of Civil Procedure Arts. 74 & 228 for immediate filing before the Tokyo District Court.",
+            "exhibit_d_title": "EXHIBIT D: EXECUTIVE FIDUCIARY MEMORANDUM",
+            "exhibit_d_body": "Corporate fiduciary protection memo under Companies Act Art. 355 for emergency BOJ-NET wire freeze transmission.",
+        },
+    },
+}
 CURRENCY_SYMBOLS = {
     "USD": "$",
     "EUR": "€",
@@ -613,3 +662,114 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
                 )
         else:
             st.info("Both Executive Chairman and Chief Legal Officer must turn their keys to execute filing.")
+
+    active_jurisdiction = profile["jurisdiction"]
+    loc_data = EXHIBIT_LOCALIZATIONS.get(active_jurisdiction)
+
+    if loc_data:
+        st.markdown("---")
+        lang_col1, lang_col2 = st.columns([3, 2])
+
+        with lang_col1:
+            st.markdown(f"**Operating Docket:** `{profile['docket_id']}`")
+            st.caption(f"Target Venue: {jurisdiction['court']}")
+
+        with lang_col2:
+            lang_choice = st.radio(
+                "Document Language Mode:",
+                options=[
+                    f"Official Court Language ({loc_data['court_lang_name'].split()[0]})",
+                    "Executive English Master",
+                ],
+                horizontal=True,
+                key=f"{active_docket_id}_language_mode",
+            )
+            is_court_native = "Official Court" in lang_choice
+    else:
+        is_court_native = False
+
+    if loc_data and is_court_native:
+        doc_content = loc_data["court"]
+        current_lang_label = loc_data["court_lang_name"]
+    else:
+        doc_content = loc_data["english"] if loc_data else {
+            "exhibit_a_title": "EXHIBIT A: INCIDENT BRIEF",
+            "exhibit_a_body": "Operational anomaly detected within certified boundaries.",
+            "exhibit_b_title": "EXHIBIT B: TELEMETRY AFFIDAVIT",
+            "exhibit_b_body": (
+                "Witnessed and verified under oath by "
+                f"{active_docket['pe_signed_by'] or 'the assigned field witness'}."
+            ),
+            "exhibit_c_title": "EXHIBIT C: ADMISSIBILITY CERTIFICATE",
+            "exhibit_c_body": f"Certified under {jurisdiction['statute_evidence']}.",
+            "exhibit_d_title": "EXHIBIT D: FIDUCIARY MEMORANDUM",
+            "exhibit_d_body": (
+                f"Governance reliance memorandum prepared for "
+                f"{jurisdiction['banking_cutoff']}."
+            ),
+        }
+        current_lang_label = (
+            "International English (en-US Master)"
+            if not loc_data
+            else "Executive English Master"
+        )
+
+    with st.expander(f"📄 View Active Documents [{current_lang_label}]", expanded=True):
+        st.markdown(f"#### {doc_content['exhibit_a_title']}")
+        st.write(doc_content["exhibit_a_body"])
+        st.markdown("---")
+        st.markdown(f"#### {doc_content['exhibit_b_title']}")
+        st.write(doc_content["exhibit_b_body"])
+        st.markdown("---")
+        st.markdown(f"#### {doc_content['exhibit_c_title']}")
+        st.write(doc_content["exhibit_c_body"])
+        st.markdown("---")
+        st.markdown(f"#### {doc_content['exhibit_d_title']}")
+        st.write(doc_content["exhibit_d_body"])
+
+        st.markdown("### Dossier Export Packages")
+        st.caption("Both packages reference the same sealed telemetry SHA-256 value.")
+        file_col1, file_col2 = st.columns(2)
+
+        court_native_payload = {
+            "docket_id": profile["docket_id"],
+            "document_type": "OFFICIAL_COURT_PLEADING",
+            "jurisdiction": active_jurisdiction,
+            "court_venue": jurisdiction["court"],
+            "language": loc_data["court_lang_name"] if loc_data else jurisdiction["language_name"],
+            "exhibits": loc_data["court"] if loc_data else doc_content,
+            "telemetry_sha256": active_docket["field_telemetry_hash"],
+        }
+
+        with file_col1:
+            st.download_button(
+                label=(
+                    "📥 Download Official Court Pleading "
+                    f"({loc_data['court_lang_name'].split()[0] if loc_data else 'EN'})"
+                ),
+                data=json.dumps(court_native_payload, indent=2, ensure_ascii=False),
+                file_name=f"{profile['docket_id']}_COURT_OFFICIAL.json",
+                mime="application/json",
+                use_container_width=True,
+            )
+            st.caption("Court-language exhibit bundle for the selected jurisdiction.")
+
+        exec_master_payload = {
+            "docket_id": profile["docket_id"],
+            "document_type": "EXECUTIVE_MASTER_DOSSIER",
+            "jurisdiction": active_jurisdiction,
+            "governing_standard": profile["standard"],
+            "language": "en-US (International Master)",
+            "exhibits": loc_data["english"] if loc_data else doc_content,
+            "telemetry_sha256": active_docket["field_telemetry_hash"],
+        }
+
+        with file_col2:
+            st.download_button(
+                label="📥 Download Executive Master Dossier (EN)",
+                data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
+                file_name=f"{profile['docket_id']}_EXECUTIVE_MASTER_EN.json",
+                mime="application/json",
+                use_container_width=True,
+            )
+            st.caption("English master bundle for board and executive review.")
