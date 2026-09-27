@@ -48,7 +48,7 @@ CLIENT_PROFILES = {
     "Wildfire & Municipal Safety (Consortium Black Box)": {
         "sector": "Emergency Municipal Telemetry",
         "docket_id": "US-CA-CALFIRE-BB-11",
-        "jurisdiction": "US_DE",
+        "jurisdiction": "US_CA",
         "burn_rate_daily": 1_500_000.00,
         "standard": "NFPA 1221 / CPUC Fire Safety Tariff Rule 20",
         "instrument": "Starlink LEO Enclave + Hardened RAWS Station Telemetry",
@@ -71,20 +71,56 @@ CLIENT_PROFILES = {
 
 JURISDICTION_REGISTRY = {
     "US_DE": {
+        "country": "United States (Delaware / Federal)",
         "court": "Delaware Court of Chancery / Federal District Court",
+        "currency_code": "USD",
+        "currency_symbol": "$",
+        "language_name": "English (en-US)",
+        "statutory_schema": "Delaware Uniform Rules of Evidence / FRE 902(14)",
         "metrology": "NIST (National Institute of Standards and Technology)",
         "statute_evidence": "FRE 902(14) / FRCP Rule 37(e) Litigation Hold",
         "fiduciary_shield": "DGCL § 141(e) Reliance Protection",
         "banking_cutoff": "14:00 EST (Fedwire / CHIPS)",
         "oath_text": "I declare under penalty of perjury under the laws of the United States of America that the foregoing is true and correct.",
     },
+    "US_CA": {
+        "country": "United States (California / 9th Cir.)",
+        "court": "California Superior Court / N.D. Cal",
+        "currency_code": "USD",
+        "currency_symbol": "$",
+        "language_name": "English (en-US)",
+        "statutory_schema": "California Evidence Code §§ 1552, 1553",
+        "metrology": "NIST Traceable / CAL FIRE Calibration Enclave",
+        "statute_evidence": "CEC § 1552 / CPUC Fire Safety Order Rule 20",
+        "fiduciary_shield": "Cal. Corp. Code § 309 Good Faith Reliance",
+        "banking_cutoff": "14:00 PST (Fedwire Escrow Desk)",
+        "oath_text": "I certify under penalty of perjury under the laws of the State of California that the foregoing is true and correct.",
+    },
     "DE_BW": {
+        "country": "Germany (Baden-Württemberg / Federal)",
         "court": "Landgericht Stuttgart (Commercial Chamber)",
+        "currency_code": "EUR",
+        "currency_symbol": "€",
+        "language_name": "German (de-DE / Amtssprache)",
+        "statutory_schema": "ZPO § 184 (Gerichtssprache Deutsch) / ZPO § 371",
         "metrology": "PTB (Physikalisch-Technische Bundesanstalt)",
         "statute_evidence": "ZPO §§ 371, 416a / ZPO § 485 Beweisverfahren",
         "fiduciary_shield": "AktG § 93 Business Judgment Rule",
         "banking_cutoff": "14:00 CET (TARGET2 / Bundesbank)",
         "oath_text": "Ich versichere an Eides statt unter Bezugnahme auf StGB § 156, dass die vorstehenden Messungen unverändert sind.",
+    },
+    "UK_ENG": {
+        "country": "United Kingdom (England & Wales)",
+        "court": "High Court of Justice (Technology & Construction Court)",
+        "currency_code": "GBP",
+        "currency_symbol": "£",
+        "language_name": "English (en-GB)",
+        "statutory_schema": "Civil Procedure Rules (CPR Part 22 & Part 35)",
+        "metrology": "NPL (National Physical Laboratory)",
+        "statute_evidence": "Civil Evidence Act 1995 (s. 8/9) / CPR Part 31",
+        "fiduciary_shield": "Companies Act 2006 s. 172 Director Safe Harbor",
+        "banking_cutoff": "16:00 GMT (CHAPS / Bank of England)",
+        "oath_text": "I believe that the facts stated in this witness statement are true. I understand that proceedings for contempt of court may be brought against anyone who makes a false statement.",
     },
 }
 
@@ -119,11 +155,19 @@ def advance_active_stage(target_stage: int) -> None:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"**Docket ID:** `{profile['docket_id']}`")
+st.sidebar.markdown(f"**Jurisdiction:** {jurisdiction['country']}")
+col_meta1, col_meta2 = st.sidebar.columns(2)
+col_meta1.markdown(
+    f"**Currency:**\n\n`{jurisdiction['currency_code']} ({jurisdiction['currency_symbol']})`"
+)
+col_meta2.markdown(f"**Court Language:**\n\n`{jurisdiction['language_name']}`")
 st.sidebar.markdown(f"**Target Court:** {jurisdiction['court']}")
 st.sidebar.markdown(f"**Metrology Body:** {jurisdiction['metrology']}")
 st.sidebar.markdown(f"**Statutory Evidence:** `{jurisdiction['statute_evidence']}`")
 st.sidebar.markdown(f"**Banking Cutoff:** :red[{jurisdiction['banking_cutoff']}]")
-st.sidebar.markdown(f"**Daily Burn Rate:** :red[${profile['burn_rate_daily']:,.2f} / day]")
+st.sidebar.markdown(
+    f"**Daily Burn Rate:** :red[{jurisdiction['currency_symbol']}{profile['burn_rate_daily']:,.2f} / day]"
+)
 
 PAGES = [
     "Tier 1: Sovereign Executive Overview",
@@ -162,8 +206,18 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("Accrued Holding Burn (Today)", f"${(profile['burn_rate_daily'] / 24 * 4.2):,.2f}", "+$48.20/sec")
-    c2.metric("Letter of Credit At Risk", "$15,000,000.00", "Freeze Deadline: 11:45 AM")
+    currency_symbol = jurisdiction["currency_symbol"]
+    currency_code = jurisdiction["currency_code"]
+    c1.metric(
+        f"Accrued Holding Burn ({currency_code})",
+        f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.2f}",
+        f"+{currency_symbol}48.20/sec",
+    )
+    c2.metric(
+        f"Letter of Credit At Risk ({currency_code})",
+        f"{currency_symbol}15,000,000.00",
+        f"Freeze Deadline: {jurisdiction['banking_cutoff'].split()[0]}",
+    )
     c3.metric("Dossier Lifecycle Status", f"Stage {dossier_stage} of 5")
 
     st.markdown("---")
