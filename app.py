@@ -88,31 +88,34 @@ JURISDICTION_REGISTRY = {
     },
 }
 
-if "dossier_stage" not in st.session_state:
-    st.session_state.dossier_stage = 1
+st.sidebar.title("Sovereign Node Command")
+selected_client_name = st.sidebar.selectbox("Active Account / Sector Docket", list(CLIENT_PROFILES.keys()))
+profile = CLIENT_PROFILES[selected_client_name]
+jurisdiction = JURISDICTION_REGISTRY[profile["jurisdiction"]]
 
-if "dossier_data" not in st.session_state:
-    st.session_state.dossier_data = {
-        "wo_scope": "Statutory instrument sweep, zero-drift verification, and harmonic oscillation capture.",
+if "sector_dockets" not in st.session_state:
+    st.session_state.sector_dockets = {}
+
+active_docket_id = profile["docket_id"]
+if active_docket_id not in st.session_state.sector_dockets:
+    st.session_state.sector_dockets[active_docket_id] = {
+        "stage": 1,
+        "wo_scope": f"Statutory inspection and calibration for {profile['standard']}.",
         "field_telemetry_hash": None,
         "pe_signed_by": None,
         "ops_countersigned_by": None,
         "legal_cleared_by": None,
         "dual_key_chairman": False,
         "dual_key_clo": False,
-        "timestamp_initialized": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
-
-def advance_stage(target_stage: int) -> None:
-    if target_stage > st.session_state.dossier_stage:
-        st.session_state.dossier_stage = target_stage
+active_docket = st.session_state.sector_dockets[active_docket_id]
+dossier_stage = active_docket["stage"]
 
 
-st.sidebar.title("Sovereign Node Command")
-selected_client_name = st.sidebar.selectbox("Active Account / Sector Docket", list(CLIENT_PROFILES.keys()))
-profile = CLIENT_PROFILES[selected_client_name]
-jurisdiction = JURISDICTION_REGISTRY[profile["jurisdiction"]]
+def advance_active_stage(target_stage: int) -> None:
+    if target_stage > active_docket["stage"]:
+        active_docket["stage"] = target_stage
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"**Docket ID:** `{profile['docket_id']}`")
@@ -161,7 +164,7 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     c1, c2, c3 = st.columns(3)
     c1.metric("Accrued Holding Burn (Today)", f"${(profile['burn_rate_daily'] / 24 * 4.2):,.2f}", "+$48.20/sec")
     c2.metric("Letter of Credit At Risk", "$15,000,000.00", "Freeze Deadline: 11:45 AM")
-    c3.metric("Dossier Lifecycle Status", f"Stage {st.session_state.dossier_stage} of 5")
+    c3.metric("Dossier Lifecycle Status", f"Stage {dossier_stage} of 5")
 
     st.markdown("---")
     st.subheader("Adversarial Red Team Pre-Emption Briefing")
@@ -206,21 +209,21 @@ elif nav_selection == "Tier 3A: Operations Dispatch Command":
 
     wo_text = st.text_area(
         "Technical Scope & Statutory Directives",
-        value=st.session_state.dossier_data["wo_scope"],
+        value=active_docket["wo_scope"],
         height=150,
     )
 
-    if st.session_state.dossier_stage == 1:
+    if dossier_stage == 1:
         if st.button(
             "Transmit Work Order to Site Desk (Tier 3B)",
             type="primary",
             use_container_width=True,
         ):
-            st.session_state.dossier_data["wo_scope"] = wo_text
-            advance_stage(2)
+            active_docket["wo_scope"] = wo_text
+            advance_active_stage(2)
             navigate_to("Tier 3B: Work-Face Attestation Desk")
     else:
-        st.success(f"Work Order dispatched. Current lifecycle is at Stage {st.session_state.dossier_stage}.")
+        st.success(f"Work Order dispatched. Current lifecycle is at Stage {dossier_stage}.")
         if st.button(
             "➔ Proceed to Tier 3B: Work-Face Attestation Desk",
             type="primary",
@@ -258,29 +261,29 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
     st.markdown("#### Step 3: Statutory Witness Oath")
     st.warning(f"**Statutory Oath:** {jurisdiction['oath_text']}")
 
-    if st.session_state.dossier_stage < 2:
+    if dossier_stage < 2:
         st.error("Work Order pending dispatch from Tier 3A.")
         if st.button(
             "⚡ Fast-Track Dispatch & Unlock Signing Desk",
             type="primary",
             use_container_width=True,
         ):
-            advance_stage(2)
+            advance_active_stage(2)
             navigate_to("Tier 3B: Work-Face Attestation Desk")
-    elif st.session_state.dossier_stage == 2:
+    elif dossier_stage == 2:
         if st.button(
             f"Affix Statutory Seal ({profile['certifier_title']})",
             type="primary",
             use_container_width=True,
         ):
             raw_hash = hashlib.sha256(json.dumps(sample_payload).encode()).hexdigest()
-            st.session_state.dossier_data["field_telemetry_hash"] = raw_hash
-            st.session_state.dossier_data["pe_signed_by"] = profile["certifier_title"]
-            advance_stage(3)
+            active_docket["field_telemetry_hash"] = raw_hash
+            active_docket["pe_signed_by"] = profile["certifier_title"]
+            advance_active_stage(3)
             navigate_to("Tier 3A: Operations Verification Desk")
     else:
-        st.success(f"Attestation completed by {st.session_state.dossier_data['pe_signed_by']}.")
-        st.code(f"Hash: {st.session_state.dossier_data['field_telemetry_hash']}")
+        st.success(f"Attestation completed by {active_docket['pe_signed_by']}.")
+        st.code(f"Hash: {active_docket['field_telemetry_hash']}")
         if st.button(
             "➔ Proceed to Tier 3A: Operations Verification",
             type="primary",
@@ -292,27 +295,27 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
     st.title("Tier 3A: Operations Verification & Audit")
     st.caption("Verification of Methodological Integrity Prior to Legal Review")
 
-    if st.session_state.dossier_stage < 3:
+    if dossier_stage < 3:
         st.info("Awaiting completion of Tier 3B physical field attestation.")
     else:
-        st.markdown(f"**Verified Telemetry Hash:** `{st.session_state.dossier_data['field_telemetry_hash']}`")
-        st.markdown(f"**Field Witness:** `{st.session_state.dossier_data['pe_signed_by']}`")
+        st.markdown(f"**Verified Telemetry Hash:** `{active_docket['field_telemetry_hash']}`")
+        st.markdown(f"**Field Witness:** `{active_docket['pe_signed_by']}`")
 
         c1, c2 = st.columns(2)
         c1.checkbox("Confirm 48-Hour Prior Notice of Test was Served", value=True, disabled=True)
         c2.checkbox("Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], value=True, disabled=True)
 
-        if st.session_state.dossier_stage == 3:
+        if dossier_stage == 3:
             if st.button(
                 "Countersign Manifest & Transmit to Legal Chambers",
                 type="primary",
                 use_container_width=True,
             ):
-                st.session_state.dossier_data["ops_countersigned_by"] = "VP Operations / Sarah Jenkins"
-                advance_stage(4)
+                active_docket["ops_countersigned_by"] = "VP Operations / Sarah Jenkins"
+                advance_active_stage(4)
                 navigate_to("Legal Chambers: Evidentiary Audit")
         else:
-            st.success(f"Countersigned by {st.session_state.dossier_data['ops_countersigned_by']}.")
+            st.success(f"Countersigned by {active_docket['ops_countersigned_by']}.")
             if st.button(
                 "➔ Proceed to Legal Chambers Audit",
                 type="primary",
@@ -324,7 +327,7 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
     st.title("Legal Chambers: Trial Admissibility Clearance")
     st.caption("FRE / ZPO Gap Analysis, Anti-Spoliation Directive & Red-Team Audit")
 
-    if st.session_state.dossier_stage < 4:
+    if dossier_stage < 4:
         st.info("Awaiting Operations verification before initiating legal chambers review.")
     else:
         st.subheader("Admissibility Gap Analysis")
@@ -337,17 +340,17 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
             "✓ Anti-spoliation litigation hold ready for simultaneous service."
         )
 
-        if st.session_state.dossier_stage == 4:
+        if dossier_stage == 4:
             if st.button(
                 "Clear Dossier & Issue Litigation Hold to Tier 4 Vault",
                 type="primary",
                 use_container_width=True,
             ):
-                st.session_state.dossier_data["legal_cleared_by"] = "Katherine Ross, Lead Trial Counsel"
-                advance_stage(5)
+                active_docket["legal_cleared_by"] = "Katherine Ross, Lead Trial Counsel"
+                advance_active_stage(5)
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
         else:
-            st.success(f"Cleared for trial filing by {st.session_state.dossier_data['legal_cleared_by']}.")
+            st.success(f"Cleared for trial filing by {active_docket['legal_cleared_by']}.")
             if st.button(
                 "➔ Open Tier 4 Executive Vault",
                 type="primary",
@@ -365,19 +368,21 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     e1.success("READY")
 
     e2.markdown("**Exhibit B**\n\n*Telemetry Affidavit*")
-    if st.session_state.dossier_data["pe_signed_by"]:
-        e2.success(f"SEALED\n\n`{st.session_state.dossier_data['pe_signed_by'][:15]}...`")
+    if active_docket["pe_signed_by"]:
+        e2.success("SEALED")
+        e2.caption(f"**Witness:** {active_docket['pe_signed_by']}")
     else:
         e2.warning("Awaiting Tier 3B")
+        e2.caption("Pending Field PE/Chief")
 
     e3.markdown("**Exhibit C**\n\n*FRE/ZPO Certificate*")
-    if st.session_state.dossier_data["legal_cleared_by"]:
+    if active_docket["legal_cleared_by"]:
         e3.success("CERTIFIED")
     else:
         e3.warning("Awaiting Chambers")
 
     e4.markdown("**Exhibit D**\n\n*Fiduciary Memo*")
-    if st.session_state.dossier_stage == 5:
+    if dossier_stage == 5:
         e4.success("COMPILED")
     else:
         e4.info("Drafting...")
@@ -389,19 +394,21 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     c1, c2 = st.columns(2)
     key_chairman = c1.checkbox(
         "Key 1: Executive Chairman Ratification (DGCL § 141(e) Reliance)",
-        value=st.session_state.dossier_data["dual_key_chairman"],
-        disabled=(st.session_state.dossier_stage < 5),
+        value=active_docket["dual_key_chairman"],
+        disabled=(dossier_stage < 5),
+        key=f"{active_docket_id}_dual_key_chairman",
     )
     key_clo = c2.checkbox(
         "Key 2: Chief Legal Officer Filing Clearance",
-        value=st.session_state.dossier_data["dual_key_clo"],
-        disabled=(st.session_state.dossier_stage < 5),
+        value=active_docket["dual_key_clo"],
+        disabled=(dossier_stage < 5),
+        key=f"{active_docket_id}_dual_key_clo",
     )
 
-    st.session_state.dossier_data["dual_key_chairman"] = key_chairman
-    st.session_state.dossier_data["dual_key_clo"] = key_clo
+    active_docket["dual_key_chairman"] = key_chairman
+    active_docket["dual_key_clo"] = key_clo
 
-    if st.session_state.dossier_stage < 5:
+    if dossier_stage < 5:
         st.warning("Dual-key execution is locked until Stages 1 through 4 are certified.")
     else:
         if key_chairman and key_clo:
