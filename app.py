@@ -481,16 +481,27 @@ if loc_data:
         "Active Filing Stream: **"
         f"{loc_data['court_lang_name'] if is_court_native else 'Standardized English (en-US)'}**"
     )
+    c_meta1, c_meta2 = st.sidebar.columns(2)
+    active_lang_display = (
+        loc_data["court_lang_name"]
+        if is_court_native
+        else "English (en-US Master)"
+    )
+    with c_meta1:
+        st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
+    with c_meta2:
+        st.markdown(f"**Active Mode:**\n\n`{active_lang_display.split()[0]}`")
     st.sidebar.markdown("---")
 else:
     is_court_native = False
 
 st.sidebar.markdown(f"**Jurisdiction:** {jurisdiction['country']}")
-col_meta1, col_meta2 = st.sidebar.columns(2)
-with col_meta1:
-    st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
-with col_meta2:
-    st.markdown(f"**Court Lang:**\n\n`{jurisdiction['language_name']}`")
+if not loc_data:
+    col_meta1, col_meta2 = st.sidebar.columns(2)
+    with col_meta1:
+        st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
+    with col_meta2:
+        st.markdown(f"**Court Lang:**\n\n`{jurisdiction['language_name']}`")
 st.sidebar.markdown(f"**Target Court:** {jurisdiction['court']}")
 st.sidebar.markdown(f"**Metrology Body:** {jurisdiction['metrology']}")
 st.sidebar.markdown(f"**Statutory Evidence:** `{jurisdiction['statute_evidence']}`")
@@ -570,54 +581,99 @@ with st.expander(f"📄 View Active Documents [{active_stream_label}]", expanded
     st.write(doc_content["exhibit_d_body"])
 
 if nav_selection == "Tier 1: Sovereign Executive Overview":
-    st.title("Tier 1: Sovereign Executive Command")
-    st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
+    if is_court_native and profile["jurisdiction"] == "DE_BW":
+        curr_sym = jurisdiction["currency_symbol"]
+        burn_today = profile["burn_rate_daily"] / 24 * 4.2
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric(
-        f"Accrued Holding Burn ({currency_code})",
-        f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.2f}",
-        f"+{currency_symbol}48.20/sec",
-    )
-    c2.metric(
-        f"Letter of Credit At Risk ({currency_code})",
-        f"{currency_symbol}15,000,000.00",
-        f"Freeze Deadline: {jurisdiction['banking_cutoff'].split()[0]}",
-    )
-    c3.metric("Dossier Lifecycle Status", f"Stage {dossier_stage} of 5")
+        st.title("Tier 1: Hoheitliche Exekutivbefehlsstelle")
+        st.caption("Echtzeit-Liquiditätsrisiko, Schadensminderung & Prozessvorbereitung")
 
-    st.markdown("---")
-    st.subheader("Adversarial Red Team Pre-Emption Briefing")
-    st.info(
-        f"**Target Counterparty:** {profile['target_entity']}\n\n"
-        f"**Forum Precedent Risk:** Delaware Chancery & Landgericht commercial divisions dismiss monetary-only claims "
-        f"unless irreparable system damage and continuous metric logging are demonstrated on Day 1. "
-        f"Stage 2 (Field Attestation) must anchor telemetry to {jurisdiction['metrology']} calibration."
-    )
+        col1, col2, col3 = st.columns(3)
+        col1.metric(
+            "Auflaufender Verzugsschaden (Heute)",
+            f"{curr_sym}{burn_today:,.2f}",
+            f"+{curr_sym}48,20/Sek.",
+        )
+        col2.metric(
+            "Gefährdetes Akkreditiv (Standby LC)",
+            f"{curr_sym}15.000.000,00",
+            f"Fristablauf: {jurisdiction['banking_cutoff']}",
+        )
+        col3.metric("Dossier-Lebenszyklusstatus", f"Stufe {active_docket['stage']} von 5")
 
-    st.subheader("Evidentiary Pipeline Command (Tap to Navigate)")
+        st.markdown("---")
+        st.subheader("Adversäres Red-Team-Präemptions-Briefing")
+        st.info(
+            f"**Ziel-Gegenpartei:** {profile['target_entity']}\n\n"
+            "**Gerichtliches Präzedenzrisiko:** Die Handelskammern des Landgerichts Stuttgart weisen reine "
+            "Schadensersatzklagen zurück, sofern nicht die Unverzüglichkeit und die lückenlose Messintegrität am ersten Tag "
+            "im selbständigen Beweisverfahren (§ 485 ZPO) nachgewiesen werden. "
+            "Stufe 2 (Beweisaufnahme vor Ort) muss die Telemetriedaten zwingend an Kalibrierzertifikate der "
+            f"**{jurisdiction['metrology']}** rückbinden."
+        )
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+        st.subheader("Beweismittel-Prozesssteuerung (Zum Navigieren antippen)")
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            if st.button("1. Einsatzdisposition\n(Tier 3A)", use_container_width=True):
+                navigate_to("Tier 3A: Operations Dispatch Command")
+        with c2:
+            if st.button("2. Technische Beglaubigung\n(Tier 3B)", use_container_width=True):
+                navigate_to("Tier 3B: Work-Face Attestation Desk")
+        with c3:
+            if st.button("3. Betriebsverifikation\n(Tier 3A)", use_container_width=True):
+                navigate_to("Tier 3A: Operations Verification Desk")
+        with c4:
+            if st.button("4. Justiziarprüfung\n(Chambers)", use_container_width=True):
+                navigate_to("Legal Chambers: Evidentiary Audit")
+        with c5:
+            if st.button("5. Exekutiv-Tresor\n(Tier 4)", use_container_width=True):
+                navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
-    with c1:
-        if st.button("1. Ops Dispatch\n(Tier 3A)", use_container_width=True):
-            navigate_to("Tier 3A: Operations Dispatch Command")
+    else:
+        st.title("Tier 1: Sovereign Executive Command")
+        st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
 
-    with c2:
-        if st.button("2. Field Attestation\n(Tier 3B)", use_container_width=True):
-            navigate_to("Tier 3B: Work-Face Attestation Desk")
+        c1, c2, c3 = st.columns(3)
+        c1.metric(
+            f"Accrued Holding Burn ({currency_code})",
+            f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.2f}",
+            f"+{currency_symbol}48.20/sec",
+        )
+        c2.metric(
+            f"Letter of Credit At Risk ({currency_code})",
+            f"{currency_symbol}15,000,000.00",
+            f"Freeze Deadline: {jurisdiction['banking_cutoff'].split()[0]}",
+        )
+        c3.metric("Dossier Lifecycle Status", f"Stage {dossier_stage} of 5")
 
-    with c3:
-        if st.button("3. Ops Verification\n(Tier 3A)", use_container_width=True):
-            navigate_to("Tier 3A: Operations Verification Desk")
+        st.markdown("---")
+        st.subheader("Adversarial Red Team Pre-Emption Briefing")
+        st.info(
+            f"**Target Counterparty:** {profile['target_entity']}\n\n"
+            "**Forum Precedent Risk:** Commercial divisions dismiss monetary-only claims unless irreparable system "
+            "damage and continuous metric logging are demonstrated on Day 1. "
+            "Stage 2 (Field Attestation) must anchor telemetry to "
+            f"{jurisdiction['metrology']} calibration."
+        )
 
-    with c4:
-        if st.button("4. Chambers Audit\n(Legal)", use_container_width=True):
-            navigate_to("Legal Chambers: Evidentiary Audit")
-
-    with c5:
-        if st.button("5. Executive Vault\n(Tier 4)", use_container_width=True):
-            navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
+        st.subheader("Evidentiary Pipeline Command (Tap to Navigate)")
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            if st.button("1. Ops Dispatch\n(Tier 3A)", use_container_width=True):
+                navigate_to("Tier 3A: Operations Dispatch Command")
+        with c2:
+            if st.button("2. Field Attestation\n(Tier 3B)", use_container_width=True):
+                navigate_to("Tier 3B: Work-Face Attestation Desk")
+        with c3:
+            if st.button("3. Ops Verification\n(Tier 3A)", use_container_width=True):
+                navigate_to("Tier 3A: Operations Verification Desk")
+        with c4:
+            if st.button("4. Chambers Audit\n(Legal)", use_container_width=True):
+                navigate_to("Legal Chambers: Evidentiary Audit")
+        with c5:
+            if st.button("5. Executive Vault\n(Tier 4)", use_container_width=True):
+                navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
 elif nav_selection == "Tier 3A: Operations Dispatch Command":
     st.title("Tier 3A: Engineering Operations Dispatch")
