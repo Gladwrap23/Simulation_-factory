@@ -392,11 +392,20 @@ if st.session_state.pop("return_to_authorized", False):
 if st.session_state.get("selected_client") not in CLIENT_PROFILES:
     st.session_state.selected_client = next(iter(CLIENT_PROFILES))
 
+
+def on_docket_change() -> None:
+    st.session_state["nav_radio"] = "Tier 1: Sovereign Executive Overview"
+    st.session_state.pop("target_page", None)
+    for exhibit_name in ("a", "b", "c", "d"):
+        st.session_state.pop(f"exhibit_{exhibit_name}_status", None)
+
+
 st.sidebar.title("Sovereign Node Command")
 selected_client_name = st.sidebar.selectbox(
     "Active Account / Sector Docket",
     list(CLIENT_PROFILES.keys()),
     key="selected_client",
+    on_change=on_docket_change,
 )
 profile = dict(CLIENT_PROFILES[selected_client_name])
 
