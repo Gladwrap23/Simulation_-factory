@@ -484,7 +484,7 @@ def advance_active_stage(target_stage: int) -> None:
 
 st.sidebar.markdown(f"## Docket: `{profile['docket_id']}`")
 language_options = jurisdiction["available_languages"]
-language_widget_key = "global_language_toggle"
+language_widget_key = "evidentiary_language"
 if st.session_state.get(language_widget_key) not in language_options:
     st.session_state[language_widget_key] = language_options[0]
 
@@ -498,6 +498,18 @@ lang_mode = st.sidebar.radio(
     label_visibility="collapsed",
 )
 is_court_native = "Official Court" in lang_mode
+is_japanese = is_court_native and profile["jurisdiction"] == "JP_TYO"
+is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
+
+
+def localized_text(english: str, german: str, japanese: str) -> str:
+    if is_german_court:
+        return german
+    if is_japanese:
+        return japanese
+    return english
+
+
 active_lang_display = (
     loc_data["court_lang_name"]
     if is_court_native and loc_data
@@ -719,23 +731,22 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
 elif nav_selection == "Tier 3A: Operations Dispatch Command":
-    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
-    st.title("Tier 3A: Technische Einsatzdisposition" if is_german_court else "Tier 3A: Engineering Operations Dispatch")
-    st.caption("Prüfauftragserstellung & forensische Metrologie-Rückbindung" if is_german_court else "Formal Issuance of Statutory Work Orders")
+    st.title(localized_text("Tier 3A: Engineering Operations Dispatch", "Tier 3A: Technische Einsatzdisposition", "第3A段階：技術運用指令"))
+    st.caption(localized_text("Formal Issuance of Statutory Work Orders", "Prüfauftragserstellung & forensische Metrologie-Rückbindung", "法定作業指示書の発行および法科学的計量トレーサビリティ"))
 
-    st.markdown(f"**{'Prüfauftrag' if is_german_court else 'Work Order ID'}:** `{profile['work_order']}`")
-    st.markdown(f"**{'Prüfstandard' if is_german_court else 'Governing Metric'}:** `{profile['standard']}`")
-    st.markdown(f"**{'Zugewiesenes Messgerät' if is_german_court else 'Assigned Instrument'}:** `{profile['instrument']}`")
+    st.markdown(f"**{localized_text('Work Order ID', 'Prüfauftrag', '作業指示書ID')}：** `{profile['work_order']}`")
+    st.markdown(f"**{localized_text('Governing Metric', 'Prüfstandard', '適用基準')}：** `{profile['standard']}`")
+    st.markdown(f"**{localized_text('Assigned Instrument', 'Zugewiesenes Messgerät', '指定計測機器')}：** `{profile['instrument']}`")
 
     wo_text = st.text_area(
-        "Gegenstand des Prüfauftrags:" if is_german_court else "Technical Scope & Statutory Directives",
+        localized_text("Technical Scope & Statutory Directives", "Gegenstand des Prüfauftrags:", "技術範囲および法定指示"),
         value=active_docket["wo_scope"],
         height=150,
     )
 
     if dossier_stage == 1:
         if st.button(
-            "Einsatzauftrag an Prüfingenieur übermitteln" if is_german_court else "Transmit Work Order to Site Desk (Tier 3B)",
+            localized_text("Transmit Work Order to Site Desk (Tier 3B)", "Einsatzauftrag an Prüfingenieur übermitteln", "作業指示書を現場認証デスクへ送信"),
             type="primary",
             use_container_width=True,
         ):
@@ -744,33 +755,32 @@ elif nav_selection == "Tier 3A: Operations Dispatch Command":
             advance_active_stage(2)
             navigate_to("Tier 3B: Work-Face Attestation Desk")
     else:
-        st.success(f"Work Order dispatched. Current lifecycle is at Stage {dossier_stage}.")
+        st.success(localized_text(f"Work Order dispatched. Current lifecycle is at Stage {dossier_stage}.", f"Prüfauftrag übermittelt. Aktueller Lebenszyklus: Stufe {dossier_stage}.", f"作業指示書を送信しました。現在は第{dossier_stage}段階です。"))
         if st.button(
-            "➔ Proceed to Tier 3B: Work-Face Attestation Desk",
+            localized_text("➔ Proceed to Tier 3B: Work-Face Attestation Desk", "➔ Weiter zu Tier 3B: Beglaubigungsarbeitsplatz", "➔ 第3B段階：現場認証デスクへ進む"),
             type="primary",
             use_container_width=True,
         ):
             navigate_to("Tier 3B: Work-Face Attestation Desk")
 
 elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
-    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
-    st.title("Tier 3B: Beglaubigungsarbeitsplatz vor Ort" if is_german_court else "Tier 3B: Work-Face Attestation Desk")
-    st.caption("Eidesstattliche Erklärung & Versiegelung der Telemetriedaten" if is_german_court else "Physical Calibration, Telemetry Ingestion & PE Statutory Seal")
+    st.title(localized_text("Tier 3B: Work-Face Attestation Desk", "Tier 3B: Beglaubigungsarbeitsplatz vor Ort", "第3B段階：現場証拠認証デスク"))
+    st.caption(localized_text("Physical Calibration, Telemetry Ingestion & PE Statutory Seal", "Eidesstattliche Erklärung & Versiegelung der Telemetriedaten", "物理校正、テレメトリ取得および法定技術者封印"))
 
-    st.markdown(f"**{'Aktiver Prüfauftrag' if is_german_court else 'Active Work Order'}:** `{profile['work_order']}`")
-    st.markdown(f"**{'Zertifizierter Prüfingenieur' if is_german_court else 'Assigned Certifying Witness'}:** `{certifier_witness}`")
-    st.markdown(f"**{'Rückführbare Kalibrierstelle' if is_german_court else 'Metrology Traceability'}:** `{jurisdiction['metrology']}`")
+    st.markdown(f"**{localized_text('Active Work Order', 'Aktiver Prüfauftrag', '有効な作業指示書')}：** `{profile['work_order']}`")
+    st.markdown(f"**{localized_text('Assigned Certifying Witness', 'Zertifizierter Prüfingenieur', '指定認証証人')}：** `{certifier_witness}`")
+    st.markdown(f"**{localized_text('Metrology Traceability', 'Rückführbare Kalibrierstelle', '計量トレーサビリティ')}：** `{jurisdiction['metrology']}`")
 
-    st.markdown("#### Step 1: Physical Zero-Drift & Sensor Calibration")
+    st.markdown(localized_text("#### Step 1: Physical Zero-Drift & Sensor Calibration", "#### Schritt 1: Nullpunktdrift- und Sensorkalibrierung", "#### 手順1：ゼロドリフトおよびセンサー校正"))
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"**Metrology Calibration Token ({jurisdiction['metrology']} Traceable)**")
+        st.markdown(f"**{localized_text('Metrology Calibration Token', 'Metrologischer Kalibriernachweis', '計量校正トークン')} ({jurisdiction['metrology']})**")
         st.code("NIST-CAL-99120-PASS", language="text")
     with c2:
-        st.markdown("**Zero-Drift Variance (Pre-Test Audit)**")
-        st.success("0.0002% — WITHIN STATUTORY TOLERANCE (< 0.01%)")
+        st.markdown(f"**{localized_text('Zero-Drift Variance (Pre-Test Audit)', 'Nullpunktdrift (Vorprüfung)', 'ゼロドリフト偏差（試験前監査）')}**")
+        st.success(localized_text("0.0002% — WITHIN STATUTORY TOLERANCE (< 0.01%)", "0,0002 % — INNERHALB DER GESETZLICHEN TOLERANZ (< 0,01 %)", "0.0002% — 法定許容範囲内（< 0.01%）"))
 
-    st.markdown("#### Step 2: Telemetry Capture & Oscillography Stream")
+    st.markdown(localized_text("#### Step 2: Telemetry Capture & Oscillography Stream", "#### Schritt 2: Telemetrie- und Oszillografiedatenerfassung", "#### 手順2：テレメトリ取得および波形記録"))
     sample_payload = {
         "docket": profile["docket_id"],
         "standard": profile["standard"],
@@ -781,13 +791,13 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
     }
     st.json(sample_payload)
 
-    st.markdown("#### Step 3: Statutory Witness Oath")
-    st.warning(f"**{'Eidesstattliche Versicherung' if is_german_court else 'Statutory Oath'}:** {jurisdiction['oath_text']}")
+    st.markdown(localized_text("#### Step 3: Statutory Witness Oath", "#### Schritt 3: Eidesstattliche Versicherung", "#### 手順3：法定証人宣誓"))
+    st.warning(f"**{localized_text('Statutory Oath', 'Eidesstattliche Versicherung', '法定宣誓')}：** {jurisdiction['oath_text']}")
 
     if dossier_stage < 2:
-        st.error("Work Order pending dispatch from Tier 3A.")
+        st.error(localized_text("Work Order pending dispatch from Tier 3A.", "Prüfauftrag aus Tier 3A steht noch aus.", "第3A段階からの作業指示書送信を待機しています。"))
         if st.button(
-            "⚡ Fast-Track Dispatch & Unlock Signing Desk",
+            localized_text("Fast-Track Dispatch & Unlock Signing Desk", "Eilübermittlung & Signaturplatz freigeben", "緊急送信して認証デスクを解除"),
             type="primary",
             use_container_width=True,
         ):
@@ -796,7 +806,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             navigate_to("Tier 3B: Work-Face Attestation Desk")
     elif dossier_stage == 2:
         if st.button(
-            "Telemetrie versiegeln und eidesstattlich bestätigen" if is_german_court else f"Affix Statutory Seal ({certifier_witness})",
+            localized_text(f"Affix Statutory Seal ({certifier_witness})", "Telemetrie versiegeln und eidesstattlich bestätigen", "証拠認証を実行"),
             type="primary",
             use_container_width=True,
         ):
@@ -807,33 +817,32 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             advance_active_stage(3)
             navigate_to("Tier 3A: Operations Verification Desk")
     else:
-        st.success(f"Attestation completed by {active_docket['pe_signed_by']}.")
+        st.success(localized_text(f"Attestation completed by {active_docket['pe_signed_by']}.", f"Beglaubigung abgeschlossen durch {active_docket['pe_signed_by']}.", f"{active_docket['pe_signed_by']} による証拠認証が完了しました。"))
         st.code(f"Hash: {active_docket['field_telemetry_hash']}")
         if st.button(
-            "➔ Proceed to Tier 3A: Operations Verification",
+            localized_text("➔ Proceed to Tier 3A: Operations Verification", "➔ Weiter zu Tier 3A: Betriebsverifikation", "➔ 第3A段階：運用検証へ進む"),
             type="primary",
             use_container_width=True,
         ):
             navigate_to("Tier 3A: Operations Verification Desk")
 
 elif nav_selection == "Tier 3A: Operations Verification Desk":
-    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
-    st.title("Tier 3A: Betriebs- und Revisionsverifikation" if is_german_court else "Tier 3A: Operations Verification & Audit")
-    st.caption("Prüfung der methodischen Integrität vor Vorlage bei der Rechtsabteilung" if is_german_court else "Verification of Methodological Integrity Prior to Legal Review")
+    st.title(localized_text("Tier 3A: Operations Verification & Audit", "Tier 3A: Betriebs- und Revisionsverifikation", "第3A段階：運用検証および監査"))
+    st.caption(localized_text("Verification of Methodological Integrity Prior to Legal Review", "Prüfung der methodischen Integrität vor Vorlage bei der Rechtsabteilung", "法務審査前の方法論的完全性の検証"))
 
     if dossier_stage < 3:
-        st.info("Awaiting completion of Tier 3B physical field attestation.")
+        st.info(localized_text("Awaiting completion of Tier 3B physical field attestation.", "Abschluss der Tier-3B-Feldbeglaubigung steht aus.", "第3B段階の現場認証完了を待機しています。"))
     else:
-        st.markdown(f"**{'Verifizierter Telemetrie-Hash' if is_german_court else 'Verified Telemetry Hash'}:** `{active_docket['field_telemetry_hash']}`")
-        st.markdown(f"**{'Beglaubigt durch' if is_german_court else 'Field Witness'}:** `{certifier_witness}`")
+        st.markdown(f"**{localized_text('Verified Telemetry Hash', 'Verifizierter Telemetrie-Hash', '検証済みテレメトリハッシュ')}：** `{active_docket['field_telemetry_hash']}`")
+        st.markdown(f"**{localized_text('Field Witness', 'Beglaubigt durch', '現場証人')}：** `{certifier_witness}`")
 
         c1, c2 = st.columns(2)
-        c1.checkbox("48-Stunden-Vorankündigung der Beweissicherung an Gegenpartei bestätigt" if is_german_court else "Confirm 48-Hour Prior Notice of Test was Served", value=True, disabled=True)
-        c2.checkbox("PTB-Kalibrierzertifikat des Messgeräts auf Gültigkeit geprüft" if is_german_court else "Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], value=True, disabled=True)
+        c1.checkbox(localized_text("Confirm 48-Hour Prior Notice of Test was Served", "48-Stunden-Vorankündigung der Beweissicherung an Gegenpartei bestätigt", "48時間前の試験通知が相手方に送達済みであることを確認"), value=True, disabled=True)
+        c2.checkbox(localized_text("Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], "PTB-Kalibrierzertifikat des Messgeräts auf Gültigkeit geprüft", "計測機器の校正証明書が国家標準にトレーサブルであることを確認"), value=True, disabled=True)
 
         if dossier_stage == 3:
             if st.button(
-                "Manifest gegenzeichnen und an Justiziar übermitteln" if is_german_court else "Countersign Manifest & Transmit to Legal Chambers",
+                localized_text("Countersign Manifest & Transmit to Legal Chambers", "Manifest gegenzeichnen und an Justiziar übermitteln", "マニフェストに副署し法務審査へ送信"),
                 type="primary",
                 use_container_width=True,
             ):
@@ -851,26 +860,25 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
                 navigate_to("Legal Chambers: Evidentiary Audit")
 
 elif nav_selection == "Legal Chambers: Evidentiary Audit":
-    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
-    st.title("Rechtsabteilung: Prozessuale Beweiswürdigung" if is_german_court else "Legal Chambers: Trial Admissibility Clearance")
-    st.caption("ZPO-Beweisbedarfsanalyse, Beweisvereitelungsschutz & Red-Team-Audit" if is_german_court else "FRE / ZPO Gap Analysis, Anti-Spoliation Directive & Red-Team Audit")
+    st.title(localized_text("Legal Chambers: Trial Admissibility Clearance", "Rechtsabteilung: Prozessuale Beweiswürdigung", "法務部門：証拠能力審査"))
+    st.caption(localized_text("FRE / ZPO Gap Analysis, Anti-Spoliation Directive & Red-Team Audit", "ZPO-Beweisbedarfsanalyse, Beweisvereitelungsschutz & Red-Team-Audit", "証拠能力ギャップ分析、証拠保全指令およびレッドチーム監査"))
 
     if dossier_stage < 4:
-        st.info("Awaiting Operations verification before initiating legal chambers review.")
+        st.info(localized_text("Awaiting Operations verification before initiating legal chambers review.", "Betriebsverifikation vor Beginn der Rechtsprüfung steht aus.", "法務審査の開始前に運用検証の完了を待機しています。"))
     else:
-        st.subheader("Analyse der Beweisadmissibilität" if is_german_court else "Admissibility Gap Analysis")
-        st.markdown(f"**{'Maßgebliche Rechtsnorm' if is_german_court else 'Governing Rule'}:** `{jurisdiction['statute_evidence']}`")
-        st.markdown(f"**{'Organhaftungsschutz' if is_german_court else 'Fiduciary Safe Harbor'}:** `{jurisdiction['fiduciary_shield']}`")
+        st.subheader(localized_text("Admissibility Gap Analysis", "Analyse der Beweisadmissibilität", "証拠能力ギャップ分析"))
+        st.markdown(f"**{localized_text('Governing Rule', 'Maßgebliche Rechtsnorm', '適用法令')}：** `{jurisdiction['statute_evidence']}`")
+        st.markdown(f"**{localized_text('Fiduciary Safe Harbor', 'Organhaftungsschutz', '取締役責任保護')}：** `{jurisdiction['fiduciary_shield']}`")
 
-        st.success(
-            "✓ Metrology chain of custody complete.\n\n"
-            "✓ Self-authenticating electronic record meets FRE 902(14) / ZPO § 371 requirements.\n\n"
-            "✓ Anti-spoliation litigation hold ready for simultaneous service."
-        )
+        st.success(localized_text(
+            "✓ Metrology chain of custody complete.\n\n✓ Self-authenticating electronic record meets governing requirements.\n\n✓ Anti-spoliation litigation hold ready for simultaneous service.",
+            "✓ Metrologische Beweiskette lückenlos nachgewiesen.\n\n✓ Selbstauthentifizierende elektronische Urkunde erfüllt die maßgeblichen Anforderungen.\n\n✓ Beweissicherungsanordnung zur Zustellung vorbereitet.",
+            "✓ 計量上の証拠保全記録が完結しています。\n\n✓ 自己認証型電磁的記録が適用要件を満たしています。\n\n✓ 証拠破棄防止命令を同時送達する準備が完了しています。",
+        ))
 
         if dossier_stage == 4:
             if st.button(
-                "Dossier freigeben & Notfall-Verfahren an Tier-4-Tresor übermitteln" if is_german_court else "Clear Dossier & Issue Litigation Hold to Tier 4 Vault",
+                localized_text("Clear Dossier & Issue Litigation Hold to Tier 4 Vault", "Dossier freigeben & Notfall-Verfahren an Tier-4-Tresor übermitteln", "証拠記録を承認し第4段階保管庫へ証拠保全命令を送信"),
                 type="primary",
                 use_container_width=True,
             ):
@@ -879,9 +887,9 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
                 advance_active_stage(5)
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
         else:
-            st.success(f"Cleared for trial filing by {active_docket['legal_cleared_by']}.")
+            st.success(localized_text(f"Cleared for trial filing by {active_docket['legal_cleared_by']}.", f"Zur gerichtlichen Einreichung freigegeben durch {active_docket['legal_cleared_by']}.", f"{active_docket['legal_cleared_by']} が裁判所提出を承認しました。"))
             if st.button(
-                "➔ Open Tier 4 Executive Vault",
+                localized_text("➔ Open Tier 4 Executive Vault", "➔ Tier-4-Exekutiv-Tresor öffnen", "➔ 第4段階：役員保管庫を開く"),
                 type="primary",
                 use_container_width=True,
             ):
