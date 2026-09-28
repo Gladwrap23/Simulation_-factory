@@ -592,6 +592,17 @@ else:
     active_stream_label = "International English Master [en-US]"
 
 if nav_selection == "Tier 1: Sovereign Executive Overview":
+    is_filed = dossier_stage == 5
+    if is_filed:
+        burn_delta_text = "FROZEN (Drawstop Active)"
+        burn_delta_color = "off"
+        status_banner = "LITIGATION INITIATED: Holding burn halted under court stay."
+    else:
+        sec_rate = profile["burn_rate_daily"] / 86_400
+        burn_delta_text = f"+{currency_symbol}{sec_rate:,.2f}/sec"
+        burn_delta_color = "inverse"
+        status_banner = None
+
     if is_court_native and profile["jurisdiction"] == "DE_BW":
         curr_sym = jurisdiction["currency_symbol"]
         burn_today = profile["burn_rate_daily"] / 24 * 4.2
@@ -603,7 +614,8 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
         col1.metric(
             "Auflaufender Verzugsschaden (Heute)",
             f"{curr_sym}{burn_today:,.2f}",
-            f"+{curr_sym}48,20/Sek.",
+            burn_delta_text,
+            delta_color=burn_delta_color,
         )
         col2.metric(
             "Gefährdetes Akkreditiv (Standby LC)",
@@ -611,6 +623,8 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
             f"Fristablauf: {jurisdiction['banking_cutoff']}",
         )
         col3.metric("Dossier-Lebenszyklusstatus", f"Stufe {active_docket['stage']} von 5")
+        if status_banner:
+            st.success(status_banner)
 
         st.markdown("---")
         st.subheader("Adversäres Red-Team-Präemptions-Briefing")
@@ -649,7 +663,8 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
         c1.metric(
             "本日の累積保留損失",
             f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.0f}",
-            f"+{currency_symbol}48.20/秒",
+            burn_delta_text,
+            delta_color=burn_delta_color,
         )
         c2.metric(
             "信用状リスク",
@@ -657,6 +672,8 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
             f"凍結期限：{jurisdiction['banking_cutoff'].split()[0]}",
         )
         c3.metric("証拠記録ライフサイクル", f"第{dossier_stage}段階 / 全5段階")
+        if status_banner:
+            st.success(status_banner)
 
         st.markdown("---")
         st.subheader("敵対的レッドチーム事前対策ブリーフィング")
@@ -693,7 +710,8 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
         c1.metric(
             f"Accrued Holding Burn ({currency_code})",
             f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.2f}",
-            f"+{currency_symbol}48.20/sec",
+            burn_delta_text,
+            delta_color=burn_delta_color,
         )
         c2.metric(
             f"Letter of Credit At Risk ({currency_code})",
@@ -701,6 +719,8 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
             f"Freeze Deadline: {jurisdiction['banking_cutoff'].split()[0]}",
         )
         c3.metric("Dossier Lifecycle Status", f"Stage {dossier_stage} of 5")
+        if status_banner:
+            st.success(status_banner)
 
         st.markdown("---")
         st.subheader("Adversarial Red Team Pre-Emption Briefing")
