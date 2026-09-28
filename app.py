@@ -1021,13 +1021,27 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
             "Versiegelten Messwert von 4,12 % auf 4,13 % ändern, ohne den SHA-256-Anker zu aktualisieren.",
             "SHA-256アンカーを更新せず、封印済み測定値を4.12%から4.13%へ変更します。",
         ))
-        if st.button(
-            localized_text("Tamper with Sealed Telemetry", "Versiegelte Telemetrie manipulieren", "封印済みテレメトリを改ざん"),
-            disabled="4.12%" not in raw_payload,
-            key=f"{active_docket_id}_tamper_telemetry",
-        ):
-            active_docket["field_telemetry_payload"] = raw_payload.replace("4.12%", "4.13%", 1)
-            st.rerun()
+
+        tamper_col, restore_col = st.columns(2)
+        with tamper_col:
+            if st.button(
+                localized_text("Tamper with Sealed Telemetry", "Versiegelte Telemetrie manipulieren", "封印済みテレメトリを改ざん"),
+                disabled="4.12%" not in raw_payload,
+                key=f"{active_docket_id}_tamper_telemetry",
+            ):
+                active_docket["field_telemetry_payload"] = raw_payload.replace("4.12%", "4.13%", 1)
+                active_docket["exhibit_b_status"] = "TAMPERED"
+                st.rerun()
+
+        with restore_col:
+            if st.button(
+                localized_text("Restore Baseline Telemetry", "Basis-Telemetrie wiederherstellen", "ベースラインテレメトリを復元"),
+                disabled="4.13%" not in raw_payload,
+                key=f"{active_docket_id}_restore_telemetry",
+            ):
+                active_docket["field_telemetry_payload"] = raw_payload.replace("4.13%", "4.12%", 1)
+                active_docket["exhibit_b_status"] = "SEALED"
+                st.rerun()
 
     chairman_widget_key = f"{active_docket_id}_dual_key_chairman"
     clo_widget_key = f"{active_docket_id}_dual_key_clo"
