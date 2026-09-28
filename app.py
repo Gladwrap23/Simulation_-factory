@@ -629,6 +629,50 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
             if st.button("5. Exekutiv-Tresor\n(Tier 4)", use_container_width=True):
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
+    elif is_court_native and profile["jurisdiction"] == "JP_TYO":
+        st.title("第1段階：主権執行指令センター")
+        st.caption("リアルタイム流動性リスク、損失軽減および訴訟準備")
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric(
+            "本日の累積保留損失",
+            f"{currency_symbol}{(profile['burn_rate_daily'] / 24 * 4.2):,.0f}",
+            f"+{currency_symbol}48.20/秒",
+        )
+        c2.metric(
+            "信用状リスク",
+            f"{currency_symbol}15,000,000",
+            f"凍結期限：{jurisdiction['banking_cutoff'].split()[0]}",
+        )
+        c3.metric("証拠記録ライフサイクル", f"第{dossier_stage}段階 / 全5段階")
+
+        st.markdown("---")
+        st.subheader("敵対的レッドチーム事前対策ブリーフィング")
+        st.info(
+            f"**対象相手方：** {profile['target_entity']}\n\n"
+            "**裁判所先例リスク：** 初日に回復不能なシステム損害および継続的な計測記録を立証できない場合、"
+            "金銭請求のみの申立ては棄却される可能性があります。第2段階（現場証明）では、テレメトリを"
+            f"**{jurisdiction['metrology']}** の校正標準に関連付ける必要があります。"
+        )
+
+        st.subheader("証拠保全プロセス管理")
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            if st.button("1. 運用指令\n(Tier 3A)", use_container_width=True):
+                navigate_to("Tier 3A: Operations Dispatch Command")
+        with c2:
+            if st.button("2. 現場証明\n(Tier 3B)", use_container_width=True):
+                navigate_to("Tier 3B: Work-Face Attestation Desk")
+        with c3:
+            if st.button("3. 運用検証\n(Tier 3A)", use_container_width=True):
+                navigate_to("Tier 3A: Operations Verification Desk")
+        with c4:
+            if st.button("4. 法務監査\n(Legal)", use_container_width=True):
+                navigate_to("Legal Chambers: Evidentiary Audit")
+        with c5:
+            if st.button("5. 役員保管庫\n(Tier 4)", use_container_width=True):
+                navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
+
     else:
         st.title("Tier 1: Sovereign Executive Command")
         st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
