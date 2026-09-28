@@ -53,19 +53,25 @@ st.markdown(
 
 CLIENT_PROFILES = {
     "🇺🇸 USA | Amazon Freight (I-45 Corridor)": {
-        "sector": "Autonomous Class 8 Haulage",
+        "sector": "Autonomous Class 8 Logistics",
         "docket_id": "US-FMCSA-AMZN-I45",
         "jurisdiction": "US_DE",
         "burn_rate_daily": 450_000.00,
-        "currency": "USD",
-        "target_entity": "NHTSA SGO / Commercial Van Carrier",
+        "standard": "FMCSA Part 396 / SAE J3016 Level 4",
+        "instrument": "Edge DSSAD Tap + NIST Dual-IMU Vector Logger",
+        "work_order": "WO-9912-AV-COLLISION",
+        "certifier_title": "Senior Systems Safety Engineer, PE",
+        "target_entity": "NHTSA SGO Desk / Commercial Van Carrier",
     },
     "🇩🇪 GER | TenneT / EnBW (North Sea Offshore)": {
         "sector": "Offshore HVDC Grid Transmission",
         "docket_id": "DE-BNetzA-TENNET-OW",
         "jurisdiction": "DE_BW",
         "burn_rate_daily": 454_000.00,
-        "currency": "EUR",
+        "standard": "VDE-AR-N 4130 / BNetzA EnWG § 17e",
+        "instrument": "Omicron CMC 356 + PTB Zero-Drift Calibration Check",
+        "work_order": "WO-4409-SUBSTATION",
+        "certifier_title": "Dr.-Ing. K. Meissner (Ingenieurkammer #88412)",
         "target_entity": "TenneT TSO B.V. & Offshore Wind Syndicate",
     },
     "🇬🇧 GBR | Zenobē / National Grid (Scotland BESS)": {
@@ -73,24 +79,33 @@ CLIENT_PROFILES = {
         "docket_id": "UK-TCC-ZENOBE-BESS",
         "jurisdiction": "UK_ENG",
         "burn_rate_daily": 320_000.00,
-        "currency": "GBP",
+        "standard": "Grid Code CC.6.3.7 / IEEE 2800 / CPR 35",
+        "instrument": "Yokogawa WT5000 + NPL Dynamic Frequency Timestamp",
+        "work_order": "WO-3301-DYNAMIC-FREQ",
+        "certifier_title": "Principal Electrical Engineer, CEng MIEE",
         "target_entity": "National Grid Electricity System Operator (ESO)",
     },
     "🇯🇵 JPN | Toyota / Japan Post (Tokyo Drone Hub)": {
-        "sector": "Autonomous Postal Drone / Last-Mile",
+        "sector": "Autonomous Last-Mile Logistics",
         "docket_id": "JP-MLIT-TOYOTA-BVLOS",
         "jurisdiction": "JP_TYO",
         "burn_rate_daily": 58_000_000.00,
-        "currency": "JPY",
+        "standard": "MLIT Civil Aviation Act Part 108 / ASTM F38",
+        "instrument": "RTK-GNSS Spoof Enclave + NMIJ Calibrated ESC Current Logger",
+        "work_order": "WO-5510-DRONE-DESYNC",
+        "certifier_title": "Director of Autonomous Flight Safety (Part 108)",
         "target_entity": "MLIT Civil Aviation Bureau & East Japan Railway",
     },
-    "🇨🇱 CHL | Enel Chile / SQM (Atacama BESS)": {
-        "sector": "High-Altitude Lithium BESS Microgrid",
-        "docket_id": "CL-SEC-ENEL-ATACAMA",
-        "jurisdiction": "CL_STGO",
-        "burn_rate_daily": 620_000.00,
-        "currency": "USD",
-        "target_entity": "Coordinador Eléctrico Nacional (CEN) & Interconnector",
+    "🇳🇿 NZL | Silver Fern Farms / Maersk (Chilled Export)": {
+        "sector": "Perishable Maritime Cold-Chain",
+        "docket_id": "NZ-ADMR-SFF-REEFER-01",
+        "jurisdiction": "NZ_ADMR",
+        "burn_rate_daily": 380_000.00,
+        "standard": "ISO 22000 / Codex Alimentarius / Hague-Visby Art. III/IV",
+        "instrument": "Cryo-PT100 Sensor Enclave (MSL Calibrated: NZ-17025-TEMP)",
+        "work_order": "WO-9942-REEFER-POWER-TRIP",
+        "certifier_title": "Lead Marine Cargo Surveyor (IIMS Board Certified)",
+        "target_entity": "Ocean Carrier Syndicate / Port Demurrage Desk",
     },
 }
 
@@ -103,41 +118,30 @@ CURRENT_USER = {
 JURISDICTION_REGISTRY = {
     "US_DE": {
         "country": "United States (Delaware / Federal)",
-        "court": "Delaware Court of Chancery / Federal District Court",
+        "court": "Delaware Court of Chancery / U.S. District Court",
         "currency_code": "USD",
         "currency_symbol": "$",
-        "language_name": "English (en-US)",
-        "statutory_schema": "Delaware Uniform Rules of Evidence / FRE 902(14)",
-        "metrology": "NIST (National Institute of Standards and Technology)",
+        "primary_language": "English (en-US)",
+        "language_statute": "Delaware URE / FRE 902(14)",
+        "available_languages": ["Official Court (English)", "Executive English Master"],
+        "metrology": "NIST (Gaithersburg, MD)",
         "statute_evidence": "FRE 902(14) / FRCP Rule 37(e) Litigation Hold",
         "fiduciary_shield": "DGCL § 141(e) Reliance Protection",
         "banking_cutoff": "14:00 EST (Fedwire / CHIPS)",
-        "oath_text": "I declare under penalty of perjury under the laws of the United States of America that the foregoing is true and correct.",
-    },
-    "US_CA": {
-        "country": "United States (California / 9th Cir.)",
-        "court": "California Superior Court / N.D. Cal",
-        "currency_code": "USD",
-        "currency_symbol": "$",
-        "language_name": "English (en-US)",
-        "statutory_schema": "California Evidence Code §§ 1552, 1553",
-        "metrology": "NIST Traceable / CAL FIRE Calibration Enclave",
-        "statute_evidence": "CEC § 1552 / CPUC Fire Safety Order Rule 20",
-        "fiduciary_shield": "Cal. Corp. Code § 309 Good Faith Reliance",
-        "banking_cutoff": "14:00 PST (Fedwire Escrow Desk)",
-        "oath_text": "I certify under penalty of perjury under the laws of the State of California that the foregoing is true and correct.",
+        "oath_text": "I declare under penalty of perjury under the laws of the United States that the foregoing is true and correct.",
     },
     "DE_BW": {
         "country": "Germany (Baden-Württemberg / Federal)",
         "court": "Landgericht Stuttgart (Commercial Chamber)",
         "currency_code": "EUR",
         "currency_symbol": "€",
-        "language_name": "German (de-DE / Amtssprache)",
-        "statutory_schema": "ZPO § 184 (Gerichtssprache Deutsch) / ZPO § 371",
+        "primary_language": "German (de-DE)",
+        "language_statute": "ZPO § 184 (Gerichtssprache Deutsch)",
+        "available_languages": ["Official Court (German)", "Executive English Master"],
         "metrology": "PTB (Physikalisch-Technische Bundesanstalt)",
         "statute_evidence": "ZPO §§ 371, 416a / ZPO § 485 Beweisverfahren",
         "fiduciary_shield": "AktG § 93 Business Judgment Rule",
-        "banking_cutoff": "14:00 CET (TARGET2 / Bundesbank)",
+        "banking_cutoff": "14:00 CET (TARGET2 / Deutsche Bundesbank)",
         "oath_text": "Ich versichere an Eides statt unter Bezugnahme auf StGB § 156, dass die vorstehenden Messungen unverändert sind.",
     },
     "UK_ENG": {
@@ -145,39 +149,42 @@ JURISDICTION_REGISTRY = {
         "court": "High Court of Justice (Technology & Construction Court)",
         "currency_code": "GBP",
         "currency_symbol": "£",
-        "language_name": "English (en-GB)",
-        "statutory_schema": "Civil Procedure Rules (CPR Part 22 & Part 35)",
-        "metrology": "NPL (National Physical Laboratory)",
-        "statute_evidence": "Civil Evidence Act 1995 (s. 8/9) / CPR Part 31",
+        "primary_language": "English (en-GB)",
+        "language_statute": "CPR Part 22 & Part 35 (Statement of Truth)",
+        "available_languages": ["Official Court (English)", "Executive English Master"],
+        "metrology": "NPL (National Physical Laboratory, Teddington)",
+        "statute_evidence": "Civil Evidence Act 1995 (ss. 8/9) / CPR Part 31",
         "fiduciary_shield": "Companies Act 2006 s. 172 Director Safe Harbor",
         "banking_cutoff": "16:00 GMT (CHAPS / Bank of England)",
-        "oath_text": "I believe that the facts stated in this witness statement are true. I understand that proceedings for contempt of court may be brought against anyone who makes a false statement.",
+        "oath_text": "I believe that the facts stated in this witness statement are true.",
     },
     "JP_TYO": {
-        "country": "Japan (Tokyo / National)",
-        "court": "Tokyo District Court",
+        "country": "Japan (Tokyo Metropolis)",
+        "court": "Tokyo District Court (Civil Division 29 - Tech Unit)",
         "currency_code": "JPY",
         "currency_symbol": "¥",
-        "language_name": "Japanese (ja-JP)",
-        "statutory_schema": "Code of Civil Procedure of Japan",
-        "metrology": "National Metrology Institute of Japan (NMIJ)",
-        "statute_evidence": "Code of Civil Procedure (documentary and expert evidence)",
-        "fiduciary_shield": "Companies Act of Japan (directors' duties)",
-        "banking_cutoff": "15:00 JST (BOJ-NET / Zengin)",
-        "oath_text": "I certify that this record accurately reflects the technical observations captured.",
+        "primary_language": "Japanese (ja-JP)",
+        "language_statute": "Minji Soshōhō Art. 74 (Court Language)",
+        "available_languages": ["Official Court (Japanese)", "Executive English Master"],
+        "metrology": "NMIJ / AIST (Tsukuba)",
+        "statute_evidence": "Minji Soshōhō Art. 228 (Presumption of Authenticity)",
+        "fiduciary_shield": "Companies Act Art. 355 Duty of Loyalty",
+        "banking_cutoff": "15:00 JST (BOJ-NET / Bank of Japan)",
+        "oath_text": "良心に従って真実を述べ、何事も隠さず、偽りのないことを誓います。",
     },
-    "CL_STGO": {
-        "country": "Chile (Santiago / National)",
-        "court": "Santiago Civil Courts",
-        "currency_code": "CLP",
-        "currency_symbol": "CLP $",
-        "language_name": "Spanish (es-CL)",
-        "statutory_schema": "Código de Procedimiento Civil de Chile",
-        "metrology": "Instituto Nacional de Normalización (INN)",
-        "statute_evidence": "Código de Procedimiento Civil (documentary and expert evidence)",
-        "fiduciary_shield": "Ley de Sociedades Anónimas (directors' duties)",
-        "banking_cutoff": "14:00 CLT (Sistema LBTR / Banco Central de Chile)",
-        "oath_text": "Certifico que este registro refleja fielmente las observaciones técnicas capturadas.",
+    "NZ_ADMR": {
+        "country": "New Zealand (Maritime / Admiralty Jurisdiction)",
+        "court": "High Court of New Zealand (Admiralty) / LMAA Arbitration",
+        "currency_code": "NZD",
+        "currency_symbol": "NZ$",
+        "primary_language": "English (en-NZ)",
+        "language_statute": "Senior Courts Act 2016 / Admiralty Act 1973",
+        "available_languages": ["Official Court (NZ Pleading)", "Executive English Master"],
+        "metrology": "MSL (Measurement Standards Laboratory, Lower Hutt)",
+        "statute_evidence": "NZ Evidence Act 2006 ss. 137, 148 / Maritime Transport Act 1994",
+        "fiduciary_shield": "Companies Act 1993 s. 138 Directors' Reliance",
+        "banking_cutoff": "15:00 NZDT (NZClear / RBNZ Escrow)",
+        "oath_text": "I solemnly declare and affirm that the biological telemetry logs represent true and unadulterated records traceable to MSL standards.",
     },
 }
 
@@ -349,7 +356,7 @@ CURRENCY_SYMBOLS = {
     "EUR": "€",
     "GBP": "£",
     "JPY": "¥",
-    "CLP": "CLP $",
+    "NZD": "NZ$",
 }
 
 authorized_client_name = next(
@@ -425,12 +432,8 @@ if (
 
 jurisdiction = JURISDICTION_REGISTRY[profile["jurisdiction"]]
 loc_data = EXHIBIT_LOCALIZATIONS.get(profile["jurisdiction"])
-profile.setdefault("standard", profile["sector"])
-profile.setdefault("instrument", "Configured sector telemetry instrumentation")
-profile.setdefault("work_order", f"WO-{profile['docket_id']}")
-profile.setdefault("certifier_title", f"{CURRENT_USER['name']} ({CURRENT_USER['role']})")
-currency_code = profile["currency"]
-currency_symbol = CURRENCY_SYMBOLS[currency_code]
+currency_code = jurisdiction["currency_code"]
+currency_symbol = jurisdiction["currency_symbol"]
 
 if "sector_dockets" not in st.session_state:
     st.session_state.sector_dockets = {}
@@ -439,16 +442,20 @@ active_docket_id = profile["docket_id"]
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
         "stage": 1,
-        "wo_scope": f"Statutory inspection and calibration for {profile['standard']}.",
-        "field_telemetry_hash": None,
-        "pe_signed_by": None,
+        "wo_scope": f"Statutory calibration and inspection under {profile['standard']}.",
+        "field_telemetry_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "pe_signed_by": profile["certifier_title"],
         "ops_countersigned_by": None,
         "legal_cleared_by": None,
         "dual_key_chairman": False,
         "dual_key_clo": False,
+        "executed": False,
     }
 
 active_docket = st.session_state.sector_dockets[active_docket_id]
+active_docket["pe_signed_by"] = profile["certifier_title"]
+active_docket.setdefault("executed", False)
+certifier_witness = profile["certifier_title"]
 dossier_stage = active_docket["stage"]
 
 
@@ -457,51 +464,37 @@ def advance_active_stage(target_stage: int) -> None:
         active_docket["stage"] = target_stage
 
 st.sidebar.markdown(f"## Docket: `{profile['docket_id']}`")
-if loc_data:
-    court_native_name = loc_data["court_lang_name"].split()[0]
-    language_options = [
-        f"Official Court ({court_native_name})",
-        "Executive English Master",
-    ]
-    language_widget_key = "global_language_toggle"
-    if st.session_state.get(language_widget_key) not in language_options:
-        st.session_state[language_widget_key] = language_options[0]
+language_options = jurisdiction["available_languages"]
+language_widget_key = "global_language_toggle"
+if st.session_state.get(language_widget_key) not in language_options:
+    st.session_state[language_widget_key] = language_options[0]
 
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🌐 Evidentiary Language Mode")
-    lang_mode = st.sidebar.radio(
-        "Select Operating Stream:",
-        options=language_options,
-        index=language_options.index(st.session_state[language_widget_key]),
-        key=language_widget_key,
-        label_visibility="collapsed",
-    )
-    is_court_native = "Official Court" in lang_mode
-    st.sidebar.caption(
-        "Active Filing Stream: **"
-        f"{loc_data['court_lang_name'] if is_court_native else 'Standardized English (en-US)'}**"
-    )
-    c_meta1, c_meta2 = st.sidebar.columns(2)
-    active_lang_display = (
-        loc_data["court_lang_name"]
-        if is_court_native
-        else "English (en-US Master)"
-    )
-    with c_meta1:
-        st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
-    with c_meta2:
-        st.markdown(f"**Active Mode:**\n\n`{active_lang_display.split()[0]}`")
-    st.sidebar.markdown("---")
-else:
-    is_court_native = False
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🌐 Evidentiary Language Mode")
+lang_mode = st.sidebar.radio(
+    "Select Operating Stream:",
+    options=language_options,
+    index=language_options.index(st.session_state[language_widget_key]),
+    key=language_widget_key,
+    label_visibility="collapsed",
+)
+is_court_native = "Official Court" in lang_mode
+active_lang_display = (
+    loc_data["court_lang_name"]
+    if is_court_native and loc_data
+    else jurisdiction["primary_language"]
+    if is_court_native
+    else "English (en-US Master)"
+)
+st.sidebar.caption(f"Active Filing Stream: **{active_lang_display}**")
+c_meta1, c_meta2 = st.sidebar.columns(2)
+with c_meta1:
+    st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
+with c_meta2:
+    st.markdown(f"**Active Mode:**\n\n`{active_lang_display.split()[0]}`")
+st.sidebar.markdown("---")
 
 st.sidebar.markdown(f"**Jurisdiction:** {jurisdiction['country']}")
-if not loc_data:
-    col_meta1, col_meta2 = st.sidebar.columns(2)
-    with col_meta1:
-        st.markdown(f"**Currency:**\n\n`{currency_code} ({currency_symbol})`")
-    with col_meta2:
-        st.markdown(f"**Court Lang:**\n\n`{jurisdiction['language_name']}`")
 st.sidebar.markdown(f"**Target Court:** {jurisdiction['court']}")
 st.sidebar.markdown(f"**Metrology Body:** {jurisdiction['metrology']}")
 st.sidebar.markdown(f"**Statutory Evidence:** `{jurisdiction['statute_evidence']}`")
@@ -545,7 +538,7 @@ nav_selection = st.sidebar.radio(
 st.markdown(f"### Active Dossier: `{profile['docket_id']}`")
 st.caption(
     f"🏛️ **Filing Venue:** {jurisdiction['court']} | "
-    f"**Procedural Authority:** {jurisdiction['statutory_schema']}"
+    f"**Procedural Authority:** {jurisdiction['language_statute']}"
 )
 
 if loc_data and is_court_native:
@@ -566,19 +559,6 @@ else:
         "exhibit_d_body": f"Reliance memo filed prior to {jurisdiction['banking_cutoff']}.",
     }
     active_stream_label = "International English Master [en-US]"
-
-with st.expander(f"📄 View Active Documents [{active_stream_label}]", expanded=True):
-    st.markdown(f"#### {doc_content['exhibit_a_title']}")
-    st.write(doc_content["exhibit_a_body"])
-    st.markdown("---")
-    st.markdown(f"#### {doc_content['exhibit_b_title']}")
-    st.write(doc_content["exhibit_b_body"])
-    st.markdown("---")
-    st.markdown(f"#### {doc_content['exhibit_c_title']}")
-    st.write(doc_content["exhibit_c_body"])
-    st.markdown("---")
-    st.markdown(f"#### {doc_content['exhibit_d_title']}")
-    st.write(doc_content["exhibit_d_body"])
 
 if nav_selection == "Tier 1: Sovereign Executive Overview":
     if is_court_native and profile["jurisdiction"] == "DE_BW":
@@ -676,22 +656,23 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
 elif nav_selection == "Tier 3A: Operations Dispatch Command":
-    st.title("Tier 3A: Engineering Operations Dispatch")
-    st.caption("Formal Issuance of Statutory Work Orders")
+    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
+    st.title("Tier 3A: Technische Einsatzdisposition" if is_german_court else "Tier 3A: Engineering Operations Dispatch")
+    st.caption("Prüfauftragserstellung & forensische Metrologie-Rückbindung" if is_german_court else "Formal Issuance of Statutory Work Orders")
 
-    st.markdown(f"**Work Order ID:** `{profile['work_order']}`")
-    st.markdown(f"**Governing Metric:** `{profile['standard']}`")
-    st.markdown(f"**Assigned Instrument:** `{profile['instrument']}`")
+    st.markdown(f"**{'Prüfauftrag' if is_german_court else 'Work Order ID'}:** `{profile['work_order']}`")
+    st.markdown(f"**{'Prüfstandard' if is_german_court else 'Governing Metric'}:** `{profile['standard']}`")
+    st.markdown(f"**{'Zugewiesenes Messgerät' if is_german_court else 'Assigned Instrument'}:** `{profile['instrument']}`")
 
     wo_text = st.text_area(
-        "Technical Scope & Statutory Directives",
+        "Gegenstand des Prüfauftrags:" if is_german_court else "Technical Scope & Statutory Directives",
         value=active_docket["wo_scope"],
         height=150,
     )
 
     if dossier_stage == 1:
         if st.button(
-            "Transmit Work Order to Site Desk (Tier 3B)",
+            "Einsatzauftrag an Prüfingenieur übermitteln" if is_german_court else "Transmit Work Order to Site Desk (Tier 3B)",
             type="primary",
             use_container_width=True,
         ):
@@ -708,16 +689,18 @@ elif nav_selection == "Tier 3A: Operations Dispatch Command":
             navigate_to("Tier 3B: Work-Face Attestation Desk")
 
 elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
-    st.title("Tier 3B: Work-Face Attestation Desk")
-    st.caption("Physical Calibration, Telemetry Ingestion & PE Statutory Seal")
+    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
+    st.title("Tier 3B: Beglaubigungsarbeitsplatz vor Ort" if is_german_court else "Tier 3B: Work-Face Attestation Desk")
+    st.caption("Eidesstattliche Erklärung & Versiegelung der Telemetriedaten" if is_german_court else "Physical Calibration, Telemetry Ingestion & PE Statutory Seal")
 
-    st.markdown(f"**Active Work Order:** `{profile['work_order']}`")
-    st.markdown(f"**Assigned Certifying Witness:** `{profile['certifier_title']}`")
+    st.markdown(f"**{'Aktiver Prüfauftrag' if is_german_court else 'Active Work Order'}:** `{profile['work_order']}`")
+    st.markdown(f"**{'Zertifizierter Prüfingenieur' if is_german_court else 'Assigned Certifying Witness'}:** `{certifier_witness}`")
+    st.markdown(f"**{'Rückführbare Kalibrierstelle' if is_german_court else 'Metrology Traceability'}:** `{jurisdiction['metrology']}`")
 
     st.markdown("#### Step 1: Physical Zero-Drift & Sensor Calibration")
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**Metrology Calibration Token (NIST Traceable)**")
+        st.markdown(f"**Metrology Calibration Token ({jurisdiction['metrology']} Traceable)**")
         st.code("NIST-CAL-99120-PASS", language="text")
     with c2:
         st.markdown("**Zero-Drift Variance (Pre-Test Audit)**")
@@ -735,7 +718,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
     st.json(sample_payload)
 
     st.markdown("#### Step 3: Statutory Witness Oath")
-    st.warning(f"**Statutory Oath:** {jurisdiction['oath_text']}")
+    st.warning(f"**{'Eidesstattliche Versicherung' if is_german_court else 'Statutory Oath'}:** {jurisdiction['oath_text']}")
 
     if dossier_stage < 2:
         st.error("Work Order pending dispatch from Tier 3A.")
@@ -748,7 +731,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             navigate_to("Tier 3B: Work-Face Attestation Desk")
     elif dossier_stage == 2:
         if st.button(
-            f"Affix Statutory Seal ({profile['certifier_title']})",
+            "Telemetrie versiegeln und eidesstattlich bestätigen" if is_german_court else f"Affix Statutory Seal ({certifier_witness})",
             type="primary",
             use_container_width=True,
         ):
@@ -768,22 +751,23 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             navigate_to("Tier 3A: Operations Verification Desk")
 
 elif nav_selection == "Tier 3A: Operations Verification Desk":
-    st.title("Tier 3A: Operations Verification & Audit")
-    st.caption("Verification of Methodological Integrity Prior to Legal Review")
+    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
+    st.title("Tier 3A: Betriebs- und Revisionsverifikation" if is_german_court else "Tier 3A: Operations Verification & Audit")
+    st.caption("Prüfung der methodischen Integrität vor Vorlage bei der Rechtsabteilung" if is_german_court else "Verification of Methodological Integrity Prior to Legal Review")
 
     if dossier_stage < 3:
         st.info("Awaiting completion of Tier 3B physical field attestation.")
     else:
-        st.markdown(f"**Verified Telemetry Hash:** `{active_docket['field_telemetry_hash']}`")
-        st.markdown(f"**Field Witness:** `{active_docket['pe_signed_by']}`")
+        st.markdown(f"**{'Verifizierter Telemetrie-Hash' if is_german_court else 'Verified Telemetry Hash'}:** `{active_docket['field_telemetry_hash']}`")
+        st.markdown(f"**{'Beglaubigt durch' if is_german_court else 'Field Witness'}:** `{certifier_witness}`")
 
         c1, c2 = st.columns(2)
-        c1.checkbox("Confirm 48-Hour Prior Notice of Test was Served", value=True, disabled=True)
-        c2.checkbox("Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], value=True, disabled=True)
+        c1.checkbox("48-Stunden-Vorankündigung der Beweissicherung an Gegenpartei bestätigt" if is_german_court else "Confirm 48-Hour Prior Notice of Test was Served", value=True, disabled=True)
+        c2.checkbox("PTB-Kalibrierzertifikat des Messgeräts auf Gültigkeit geprüft" if is_german_court else "Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], value=True, disabled=True)
 
         if dossier_stage == 3:
             if st.button(
-                "Countersign Manifest & Transmit to Legal Chambers",
+                "Manifest gegenzeichnen und an Justiziar übermitteln" if is_german_court else "Countersign Manifest & Transmit to Legal Chambers",
                 type="primary",
                 use_container_width=True,
             ):
@@ -800,15 +784,16 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
                 navigate_to("Legal Chambers: Evidentiary Audit")
 
 elif nav_selection == "Legal Chambers: Evidentiary Audit":
-    st.title("Legal Chambers: Trial Admissibility Clearance")
-    st.caption("FRE / ZPO Gap Analysis, Anti-Spoliation Directive & Red-Team Audit")
+    is_german_court = is_court_native and profile["jurisdiction"] == "DE_BW"
+    st.title("Rechtsabteilung: Prozessuale Beweiswürdigung" if is_german_court else "Legal Chambers: Trial Admissibility Clearance")
+    st.caption("ZPO-Beweisbedarfsanalyse, Beweisvereitelungsschutz & Red-Team-Audit" if is_german_court else "FRE / ZPO Gap Analysis, Anti-Spoliation Directive & Red-Team Audit")
 
     if dossier_stage < 4:
         st.info("Awaiting Operations verification before initiating legal chambers review.")
     else:
-        st.subheader("Admissibility Gap Analysis")
-        st.markdown(f"**Governing Rule:** `{jurisdiction['statute_evidence']}`")
-        st.markdown(f"**Fiduciary Safe Harbor:** `{jurisdiction['fiduciary_shield']}`")
+        st.subheader("Analyse der Beweisadmissibilität" if is_german_court else "Admissibility Gap Analysis")
+        st.markdown(f"**{'Maßgebliche Rechtsnorm' if is_german_court else 'Governing Rule'}:** `{jurisdiction['statute_evidence']}`")
+        st.markdown(f"**{'Organhaftungsschutz' if is_german_court else 'Fiduciary Safe Harbor'}:** `{jurisdiction['fiduciary_shield']}`")
 
         st.success(
             "✓ Metrology chain of custody complete.\n\n"
@@ -818,7 +803,7 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
 
         if dossier_stage == 4:
             if st.button(
-                "Clear Dossier & Issue Litigation Hold to Tier 4 Vault",
+                "Dossier freigeben & Notfall-Verfahren an Tier-4-Tresor übermitteln" if is_german_court else "Clear Dossier & Issue Litigation Hold to Tier 4 Vault",
                 type="primary",
                 use_container_width=True,
             ):
@@ -848,7 +833,6 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     e1.markdown(f"**{ui['ex_a']}**\n\n*{ui['ex_a_sub']}*")
     e1.success(ui["badge_ready"])
 
-    certifier_witness = active_docket.get("pe_signed_by") or profile["certifier_title"]
     e2.markdown(f"**{ui['ex_b']}**\n\n*{ui['ex_b_sub']}*")
     if active_docket.get("pe_signed_by"):
         e2.success(ui["badge_sealed"])
@@ -912,6 +896,20 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
             unsafe_allow_html=True,
         )
 
+    st.markdown("---")
+    with st.expander(f"📄 View Active Filing Exhibits [{active_stream_label}]", expanded=False):
+        st.markdown(f"#### {doc_content['exhibit_a_title']}")
+        st.write(doc_content["exhibit_a_body"])
+        st.markdown("---")
+        st.markdown(f"#### {doc_content['exhibit_b_title']}")
+        st.write(doc_content["exhibit_b_body"])
+        st.markdown("---")
+        st.markdown(f"#### {doc_content['exhibit_c_title']}")
+        st.write(doc_content["exhibit_c_body"])
+        st.markdown("---")
+        st.markdown(f"#### {doc_content['exhibit_d_title']}")
+        st.write(doc_content["exhibit_d_body"])
+
     active_jurisdiction = profile["jurisdiction"]
     st.markdown("---")
     st.subheader(ui["export_title"])
@@ -923,7 +921,7 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
         "document_type": "OFFICIAL_COURT_PLEADING",
         "jurisdiction": active_jurisdiction,
         "court_venue": jurisdiction["court"],
-        "language": loc_data["court_lang_name"] if loc_data else jurisdiction["language_name"],
+        "language": loc_data["court_lang_name"] if loc_data else jurisdiction["primary_language"],
         "exhibits": loc_data["court"] if loc_data else doc_content,
         "telemetry_sha256": active_docket["field_telemetry_hash"],
     }
