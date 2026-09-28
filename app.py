@@ -447,6 +447,10 @@ if active_docket_id not in st.session_state.sector_dockets:
         "pe_signed_by": profile["certifier_title"],
         "ops_countersigned_by": None,
         "legal_cleared_by": None,
+        "exhibit_a_status": "AWAITING",
+        "exhibit_b_status": "AWAITING",
+        "exhibit_c_status": "AWAITING",
+        "exhibit_d_status": "AWAITING",
         "dual_key_chairman": False,
         "dual_key_clo": False,
         "executed": False,
@@ -455,6 +459,12 @@ if active_docket_id not in st.session_state.sector_dockets:
 active_docket = st.session_state.sector_dockets[active_docket_id]
 active_docket["pe_signed_by"] = profile["certifier_title"]
 active_docket.setdefault("executed", False)
+active_docket.setdefault("exhibit_a_status", "READY" if active_docket["stage"] >= 2 else "AWAITING")
+active_docket.setdefault("exhibit_b_status", "SEALED" if active_docket["stage"] >= 3 else "AWAITING")
+active_docket.setdefault("exhibit_c_status", "READY" if active_docket["stage"] >= 4 else "AWAITING")
+active_docket.setdefault("exhibit_d_status", "READY" if active_docket["stage"] >= 5 else "AWAITING")
+for exhibit_name in ("a", "b", "c", "d"):
+    st.session_state[f"exhibit_{exhibit_name}_status"] = active_docket[f"exhibit_{exhibit_name}_status"]
 certifier_witness = profile["certifier_title"]
 dossier_stage = active_docket["stage"]
 
@@ -677,6 +687,7 @@ elif nav_selection == "Tier 3A: Operations Dispatch Command":
             use_container_width=True,
         ):
             active_docket["wo_scope"] = wo_text
+            active_docket["exhibit_a_status"] = "READY"
             advance_active_stage(2)
             navigate_to("Tier 3B: Work-Face Attestation Desk")
     else:
@@ -727,6 +738,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             type="primary",
             use_container_width=True,
         ):
+            active_docket["exhibit_a_status"] = "READY"
             advance_active_stage(2)
             navigate_to("Tier 3B: Work-Face Attestation Desk")
     elif dossier_stage == 2:
@@ -738,6 +750,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             raw_hash = hashlib.sha256(json.dumps(sample_payload).encode()).hexdigest()
             active_docket["field_telemetry_hash"] = raw_hash
             active_docket["pe_signed_by"] = profile["certifier_title"]
+            active_docket["exhibit_b_status"] = "SEALED"
             advance_active_stage(3)
             navigate_to("Tier 3A: Operations Verification Desk")
     else:
@@ -772,6 +785,7 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
                 use_container_width=True,
             ):
                 active_docket["ops_countersigned_by"] = "VP Operations / Sarah Jenkins"
+                active_docket["exhibit_c_status"] = "READY"
                 advance_active_stage(4)
                 navigate_to("Legal Chambers: Evidentiary Audit")
         else:
@@ -808,6 +822,7 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
                 use_container_width=True,
             ):
                 active_docket["legal_cleared_by"] = "Katherine Ross, Lead Trial Counsel"
+                active_docket["exhibit_d_status"] = "READY"
                 advance_active_stage(5)
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
         else:
@@ -831,23 +846,26 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.subheader(ui["status_title"])
     e1, e2, e3, e4 = st.columns(4)
     e1.markdown(f"**{ui['ex_a']}**\n\n*{ui['ex_a_sub']}*")
-    e1.success(ui["badge_ready"])
+    if st.session_state.get("exhibit_a_status") == "READY":
+        e1.success(ui["badge_ready"])
+    else:
+        e1.warning(ui["badge_awaiting"])
 
     e2.markdown(f"**{ui['ex_b']}**\n\n*{ui['ex_b_sub']}*")
-    if active_docket.get("pe_signed_by"):
+    if st.session_state.get("exhibit_b_status") == "SEALED":
         e2.success(ui["badge_sealed"])
     else:
         e2.warning(ui["badge_awaiting"])
     e2.caption(f"{ui['witness_prefix']}: {certifier_witness}")
 
     e3.markdown(f"**{ui['ex_c']}**\n\n*{ui['ex_c_sub']}*")
-    if active_docket.get("legal_cleared_by"):
+    if st.session_state.get("exhibit_c_status") in ["READY", "SEALED"]:
         e3.success(ui["badge_cert"])
     else:
         e3.warning(ui["badge_awaiting"])
 
     e4.markdown(f"**{ui['ex_d']}**\n\n*{ui['ex_d_sub']}*")
-    if dossier_stage == 5:
+    if st.session_state.get("exhibit_d_status") in ["READY", "SEALED"]:
         e4.success(ui["badge_comp"])
     else:
         e4.info(ui["badge_draft"])
@@ -856,24 +874,30 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.subheader(ui["dual_key_title"])
     st.markdown(f"**{ui['dual_key_bank']}:** :red[{jurisdiction['banking_cutoff']}]")
 
+    dossier_cleared = (
+        st.session_state.get("exhibit_a_status") == "READY"
+        and st.session_state.get("exhibit_b_status") == "SEALED"
+        and st.session_state.get("exhibit_c_status") in ["READY", "SEALED"]
+        and st.session_state.get("exhibit_d_status") in ["READY", "SEALED"]
+    )
     col_k1, col_k2 = st.columns(2)
     key_chairman = col_k1.checkbox(
         ui["key_1_label"],
         value=active_docket.get("dual_key_chairman", False),
-        disabled=(dossier_stage < 5),
+        disabled=not dossier_cleared,
         key=f"{active_docket_id}_dual_key_chairman",
     )
     key_clo = col_k2.checkbox(
         ui["key_2_label"],
         value=active_docket.get("dual_key_clo", False),
-        disabled=(dossier_stage < 5),
+        disabled=not dossier_cleared,
         key=f"{active_docket_id}_dual_key_clo",
     )
 
     active_docket["dual_key_chairman"] = key_chairman
     active_docket["dual_key_clo"] = key_clo
 
-    if dossier_stage < 5:
+    if not dossier_cleared:
         st.info(ui["keys_locked_msg"])
     else:
         if key_chairman and key_clo:
