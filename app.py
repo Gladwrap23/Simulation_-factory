@@ -370,6 +370,23 @@ PERMITTED_FINAL_STATES = {
 }
 
 
+def verify_telemetry_integrity(docket_id: str) -> tuple[bool, str]:
+    docket = st.session_state.get("sector_dockets", {}).get(docket_id)
+    if docket is None:
+        return False, "Data Error: Docket state is unavailable."
+
+    raw_telemetry = docket.get("field_telemetry_payload", "")
+    recorded_hash = docket.get("field_telemetry_hash", "")
+    if not raw_telemetry or not recorded_hash:
+        return False, "Data Error: Telemetry log or SHA-256 anchor missing."
+
+    computed_hash = hashlib.sha256(raw_telemetry.encode("utf-8")).hexdigest()
+    if computed_hash != recorded_hash:
+        return False, "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
+
+    return True, "Telemetry payload matches its SHA-256 anchor."
+
+
 def verify_dossier_integrity(docket_id: str) -> tuple[bool, str]:
     docket = st.session_state.get("sector_dockets", {}).get(docket_id)
     if docket is None:
@@ -385,14 +402,9 @@ def verify_dossier_integrity(docket_id: str) -> tuple[bool, str]:
         if status not in PERMITTED_FINAL_STATES:
             return False, f"Gating Error: {name} is uncertified or invalid ({status})."
 
-    raw_telemetry = docket.get("field_telemetry_payload", "")
-    recorded_hash = docket.get("field_telemetry_hash", "")
-    if not raw_telemetry or not recorded_hash:
-        return False, "Data Error: Telemetry log or SHA-256 anchor missing."
-
-    computed_hash = hashlib.sha256(raw_telemetry.encode("utf-8")).hexdigest()
-    if computed_hash != recorded_hash:
-        return False, "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
+    telemetry_intact, telemetry_message = verify_telemetry_integrity(docket_id)
+    if not telemetry_intact:
+        return False, telemetry_message
 
     return True, "Dossier intact. Ready for dual-key authorization."
 
@@ -892,31 +904,35 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
     if dossier_stage < 3:
         st.info(localized_text("Awaiting completion of Tier 3B physical field attestation.", "Abschluss der Tier-3B-Feldbeglaubigung steht aus.", "第3B段階の現場認証完了を待機しています。"))
     else:
+        telemetry_intact, telemetry_message = verify_telemetry_integrity(active_docket_id)
         st.markdown(f"**{localized_text('Verified Telemetry Hash', 'Verifizierter Telemetrie-Hash', '検証済みテレメトリハッシュ')}：** `{active_docket['field_telemetry_hash']}`")
         st.markdown(f"**{localized_text('Field Witness', 'Beglaubigt durch', '現場証人')}：** `{certifier_witness}`")
 
-        c1, c2 = st.columns(2)
-        c1.checkbox(localized_text("Confirm 48-Hour Prior Notice of Test was Served", "48-Stunden-Vorankündigung der Beweissicherung an Gegenpartei bestätigt", "48時間前の試験通知が相手方に送達済みであることを確認"), value=True, disabled=True)
-        c2.checkbox(localized_text("Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], "PTB-Kalibrierzertifikat des Messgeräts auf Gültigkeit geprüft", "計測機器の校正証明書が国家標準にトレーサブルであることを確認"), value=True, disabled=True)
-
-        if dossier_stage == 3:
-            if st.button(
-                localized_text("Countersign Manifest & Transmit to Legal Chambers", "Manifest gegenzeichnen und an Justiziar übermitteln", "マニフェストに副署し法務審査へ送信"),
-                type="primary",
-                use_container_width=True,
-            ):
-                active_docket["ops_countersigned_by"] = "VP Operations / Sarah Jenkins"
-                active_docket["exhibit_c_status"] = "READY"
-                advance_active_stage(4)
-                navigate_to("Legal Chambers: Evidentiary Audit")
+        if not telemetry_intact:
+            st.error(f"HASH MISMATCH / TAMPER DETECTED\n\n{telemetry_message}")
         else:
-            st.success(f"Countersigned by {active_docket['ops_countersigned_by']}.")
-            if st.button(
-                "➔ Proceed to Legal Chambers Audit",
-                type="primary",
-                use_container_width=True,
-            ):
-                navigate_to("Legal Chambers: Evidentiary Audit")
+            c1, c2 = st.columns(2)
+            c1.checkbox(localized_text("Confirm 48-Hour Prior Notice of Test was Served", "48-Stunden-Vorankündigung der Beweissicherung an Gegenpartei bestätigt", "48時間前の試験通知が相手方に送達済みであることを確認"), value=True, disabled=True)
+            c2.checkbox(localized_text("Confirm Calibration Certificate Traceable to " + jurisdiction["metrology"], "PTB-Kalibrierzertifikat des Messgeräts auf Gültigkeit geprüft", "計測機器の校正証明書が国家標準にトレーサブルであることを確認"), value=True, disabled=True)
+
+            if dossier_stage == 3:
+                if st.button(
+                    localized_text("Countersign Manifest & Transmit to Legal Chambers", "Manifest gegenzeichnen und an Justiziar übermitteln", "マニフェストに副署し法務審査へ送信"),
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    active_docket["ops_countersigned_by"] = "VP Operations / Sarah Jenkins"
+                    active_docket["exhibit_c_status"] = "READY"
+                    advance_active_stage(4)
+                    navigate_to("Legal Chambers: Evidentiary Audit")
+            else:
+                st.success(f"Countersigned by {active_docket['ops_countersigned_by']}.")
+                if st.button(
+                    "➔ Proceed to Legal Chambers Audit",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    navigate_to("Legal Chambers: Evidentiary Audit")
 
 elif nav_selection == "Legal Chambers: Evidentiary Audit":
     st.title(localized_text("Legal Chambers: Trial Admissibility Clearance", "Rechtsabteilung: Prozessuale Beweiswürdigung", "法務部門：証拠能力審査"))
@@ -962,6 +978,8 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     )
     st.title(ui["vault_title"])
     st.caption(ui["vault_caption"])
+    dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
+    telemetry_tampered = integrity_message == "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
 
     st.subheader(ui["status_title"])
     e1, e2, e3, e4 = st.columns(4)
@@ -972,7 +990,9 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
         e1.warning(ui["badge_awaiting"])
 
     e2.markdown(f"**{ui['ex_b']}**\n\n*{ui['ex_b_sub']}*")
-    if st.session_state.get("exhibit_b_status") == "SEALED":
+    if telemetry_tampered:
+        e2.error("TAMPERED")
+    elif st.session_state.get("exhibit_b_status") == "SEALED":
         e2.success(ui["badge_sealed"])
     else:
         e2.warning(ui["badge_awaiting"])
@@ -1009,7 +1029,6 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
             active_docket["field_telemetry_payload"] = raw_payload.replace("4.12%", "4.13%", 1)
             st.rerun()
 
-    dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
     chairman_widget_key = f"{active_docket_id}_dual_key_chairman"
     clo_widget_key = f"{active_docket_id}_dual_key_clo"
     if not dossier_cleared:
