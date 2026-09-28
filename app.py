@@ -392,6 +392,10 @@ def verify_dossier_integrity(docket_id: str) -> tuple[bool, str]:
     if docket is None:
         return False, "Gating Error: Docket state is unavailable."
 
+    telemetry_intact, telemetry_message = verify_telemetry_integrity(docket_id)
+    if not telemetry_intact:
+        return False, telemetry_message
+
     exhibits = {
         "Exhibit A": docket.get("exhibit_a_status"),
         "Exhibit B": docket.get("exhibit_b_status"),
@@ -401,10 +405,6 @@ def verify_dossier_integrity(docket_id: str) -> tuple[bool, str]:
     for name, status in exhibits.items():
         if status not in PERMITTED_FINAL_STATES:
             return False, f"Gating Error: {name} is uncertified or invalid ({status})."
-
-    telemetry_intact, telemetry_message = verify_telemetry_integrity(docket_id)
-    if not telemetry_intact:
-        return False, telemetry_message
 
     return True, "Dossier intact. Ready for dual-key authorization."
 
