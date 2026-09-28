@@ -994,6 +994,21 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.subheader(ui["dual_key_title"])
     st.markdown(f"**{ui['dual_key_bank']}:** :red[{jurisdiction['banking_cutoff']}]")
 
+    raw_payload = active_docket.get("field_telemetry_payload") or ""
+    with st.expander(localized_text("Red-Team Integrity Test", "Red-Team-Integritätstest", "レッドチーム完全性テスト")):
+        st.caption(localized_text(
+            "Alter the sealed metric from 4.12% to 4.13% without updating its SHA-256 anchor.",
+            "Versiegelten Messwert von 4,12 % auf 4,13 % ändern, ohne den SHA-256-Anker zu aktualisieren.",
+            "SHA-256アンカーを更新せず、封印済み測定値を4.12%から4.13%へ変更します。",
+        ))
+        if st.button(
+            localized_text("Tamper with Sealed Telemetry", "Versiegelte Telemetrie manipulieren", "封印済みテレメトリを改ざん"),
+            disabled="4.12%" not in raw_payload,
+            key=f"{active_docket_id}_tamper_telemetry",
+        ):
+            active_docket["field_telemetry_payload"] = raw_payload.replace("4.12%", "4.13%", 1)
+            st.rerun()
+
     dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
     chairman_widget_key = f"{active_docket_id}_dual_key_chairman"
     clo_widget_key = f"{active_docket_id}_dual_key_clo"
