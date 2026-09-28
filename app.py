@@ -358,6 +358,43 @@ CURRENCY_SYMBOLS = {
     "JPY": "¥",
     "NZD": "NZ$",
 }
+PERMITTED_FINAL_STATES = {
+    "READY",
+    "SEALED",
+    "CERTIFIED",
+    "COMPILED",
+    "準備完了",
+    "封印済み",
+    "認証済み",
+    "作成済み",
+}
+
+
+def verify_dossier_integrity(docket_id: str) -> tuple[bool, str]:
+    docket = st.session_state.get("sector_dockets", {}).get(docket_id)
+    if docket is None:
+        return False, "Gating Error: Docket state is unavailable."
+
+    exhibits = {
+        "Exhibit A": docket.get("exhibit_a_status"),
+        "Exhibit B": docket.get("exhibit_b_status"),
+        "Exhibit C": docket.get("exhibit_c_status"),
+        "Exhibit D": docket.get("exhibit_d_status"),
+    }
+    for name, status in exhibits.items():
+        if status not in PERMITTED_FINAL_STATES:
+            return False, f"Gating Error: {name} is uncertified or invalid ({status})."
+
+    raw_telemetry = docket.get("field_telemetry_payload", "")
+    recorded_hash = docket.get("field_telemetry_hash", "")
+    if not raw_telemetry or not recorded_hash:
+        return False, "Data Error: Telemetry log or SHA-256 anchor missing."
+
+    computed_hash = hashlib.sha256(raw_telemetry.encode("utf-8")).hexdigest()
+    if computed_hash != recorded_hash:
+        return False, "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
+
+    return True, "Dossier intact. Ready for dual-key authorization."
 
 authorized_client_name = next(
     iter(CLIENT_PROFILES)
@@ -452,6 +489,7 @@ if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
         "stage": 1,
         "wo_scope": f"Statutory calibration and inspection under {profile['standard']}.",
+        "field_telemetry_payload": None,
         "field_telemetry_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "pe_signed_by": profile["certifier_title"],
         "ops_countersigned_by": None,
@@ -830,8 +868,9 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             type="primary",
             use_container_width=True,
         ):
-            raw_hash = hashlib.sha256(json.dumps(sample_payload).encode()).hexdigest()
-            active_docket["field_telemetry_hash"] = raw_hash
+            raw_telemetry = json.dumps(sample_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            active_docket["field_telemetry_payload"] = raw_telemetry
+            active_docket["field_telemetry_hash"] = hashlib.sha256(raw_telemetry.encode("utf-8")).hexdigest()
             active_docket["pe_signed_by"] = profile["certifier_title"]
             active_docket["exhibit_b_status"] = "SEALED"
             advance_active_stage(3)
@@ -955,32 +994,36 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.subheader(ui["dual_key_title"])
     st.markdown(f"**{ui['dual_key_bank']}:** :red[{jurisdiction['banking_cutoff']}]")
 
-    dossier_cleared = (
-        st.session_state.get("exhibit_a_status") == "READY"
-        and st.session_state.get("exhibit_b_status") == "SEALED"
-        and st.session_state.get("exhibit_c_status") in ["READY", "SEALED"]
-        and st.session_state.get("exhibit_d_status") in ["READY", "SEALED"]
-    )
+    dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
+    chairman_widget_key = f"{active_docket_id}_dual_key_chairman"
+    clo_widget_key = f"{active_docket_id}_dual_key_clo"
+    if not dossier_cleared:
+        active_docket["dual_key_chairman"] = False
+        active_docket["dual_key_clo"] = False
+        st.session_state[chairman_widget_key] = False
+        st.session_state[clo_widget_key] = False
+
     col_k1, col_k2 = st.columns(2)
     key_chairman = col_k1.checkbox(
         ui["key_1_label"],
         value=active_docket.get("dual_key_chairman", False),
         disabled=not dossier_cleared,
-        key=f"{active_docket_id}_dual_key_chairman",
+        key=chairman_widget_key,
     )
     key_clo = col_k2.checkbox(
         ui["key_2_label"],
         value=active_docket.get("dual_key_clo", False),
         disabled=not dossier_cleared,
-        key=f"{active_docket_id}_dual_key_clo",
+        key=clo_widget_key,
     )
 
     active_docket["dual_key_chairman"] = key_chairman
     active_docket["dual_key_clo"] = key_clo
 
     if not dossier_cleared:
-        st.info(ui["keys_locked_msg"])
+        st.error(integrity_message)
     else:
+        st.success(integrity_message)
         if key_chairman and key_clo:
             st.success(ui["keys_verified_msg"])
             if st.button(ui["exec_btn"], type="primary", use_container_width=True):
