@@ -115,6 +115,241 @@ CURRENT_USER = {
     "authorized_dockets": ["ALL"],
 }
 
+
+def render_mock_docket_registry() -> None:
+    """Render the attached sovereign docket registry in a namespaced sidebar flow."""
+    if "mock_dockets" not in st.session_state:
+        st.session_state.mock_dockets = {
+            "AMZN-I45-882": {
+                "id": "US-FMCSA-AMZN-I45",
+                "client": "Amazon Freight (I-45 Corridor)",
+                "jurisdiction": "US_DE",
+                "court": "Delaware Court of Chancery / U.S. District Court",
+                "statute": "FRE 902(14) / FRCP Rule 37(e)",
+                "metrology_body": "NIST (Gaithersburg, MD)",
+                "cal_token": "NIST-CAL-99120-PASS",
+                "currency": "$",
+                "burn_rate": 450000,
+                "lc_risk": 15000000,
+                "banking_cutoff": "14:00 EST (Fedwire / CHIPS)",
+                "status": "CRITICAL",
+                "fault": "AUX_POWER_TRIP_0V",
+                "fault_desc": "Auxiliary 24V Bus Failure | Hard MRM Stop",
+                "stage": 4,
+                "exhibits": {"A": "CERTIFIED", "B": "CERTIFIED", "C": "CERTIFIED", "D": "COMPILED"},
+                "telemetry_hash": "7402131a18c9a12f441d83b7209f81db5fceb6b6cc2325aac4312f39504876b9",
+                "witness": "Senior Systems Safety Engineer, PE",
+                "key1": False,
+                "key2": False,
+                "executed": False,
+            },
+            "SFF-REEFER-01": {
+                "id": "NZ-ADMR-SFF-REEFER-01",
+                "client": "Silver Fern Farms / Maersk",
+                "jurisdiction": "NZ_ADMR",
+                "court": "High Court of New Zealand (Admiralty Jurisdiction)",
+                "statute": "Hague-Visby Art. III / NZ Evidence Act s. 137",
+                "metrology_body": "MSL (Lower Hutt, NZ)",
+                "cal_token": "MSL-CAL-44012-CRYO",
+                "currency": "NZ$",
+                "burn_rate": 380000,
+                "lc_risk": 380000,
+                "banking_cutoff": "15:00 NZDT (NZClear / SWIFT)",
+                "status": "WARNING",
+                "fault": "TEMP_DRIFT_+3.8C",
+                "fault_desc": "Arrhenius Kinetic Acceleration (2.42x) | RSL 11 Days",
+                "stage": 2,
+                "exhibits": {"A": "CERTIFIED", "B": "AWAITING", "C": "AWAITING", "D": "DRAFT"},
+                "telemetry_hash": None,
+                "witness": "Chief Marine Refrigeration Officer",
+                "key1": False,
+                "key2": False,
+                "executed": False,
+            },
+            "TENT-HVDC-04": {
+                "id": "DE-BW-TENT-HVDC-04",
+                "client": "TenneT TSO / EnBW Substation",
+                "jurisdiction": "DE_BW",
+                "court": "Landgericht Stuttgart / BNetzA Clearing Chamber",
+                "statute": "ZPO §§ 371, 485 / EnWG § 17e",
+                "metrology_body": "PTB (Braunschweig, GER)",
+                "cal_token": "PTB-CAL-88190-VDE",
+                "currency": "€",
+                "burn_rate": 454000,
+                "lc_risk": 8200000,
+                "banking_cutoff": "14:00 CET (TARGET2 / Bundesbank)",
+                "status": "NOMINAL",
+                "fault": None,
+                "fault_desc": "400kV Busbar THD 1.8% (Within Spec <3.0%)",
+                "stage": 1,
+                "exhibits": {"A": "AWAITING", "B": "AWAITING", "C": "AWAITING", "D": "AWAITING"},
+                "telemetry_hash": None,
+                "witness": "VDE Certified High-Voltage Inspector",
+                "key1": False,
+                "key2": False,
+                "executed": False,
+            },
+        }
+
+    if "mock_selected_docket_key" not in st.session_state:
+        st.session_state.mock_selected_docket_key = "AMZN-I45-882"
+
+    if "mock_drill_history" not in st.session_state:
+        st.session_state.mock_drill_history = [
+            {"timestamp": "2026-09-28 14:12 UTC", "docket": "US-FMCSA-AMZN-I45", "type": "Red-Team Hash Spoliation", "latency": "42s", "outcome": "TAMPER_DETECTED_LOCKED"},
+            {"timestamp": "2026-09-25 09:30 UTC", "docket": "NZ-ADMR-SFF-REEFER-01", "type": "Aux Power Trip to Port Diversion", "latency": "1m 18s", "outcome": "SUE_LABOUR_ISSUED"},
+        ]
+
+    with st.sidebar:
+        st.markdown("### 📋 Active Docket Roster")
+        st.caption("Auto-prioritized by risk threshold breach")
+
+        priority_order = {"CRITICAL": 0, "WARNING": 1, "NOMINAL": 2}
+        sorted_keys = sorted(
+            st.session_state.mock_dockets.keys(),
+            key=lambda key: priority_order.get(st.session_state.mock_dockets[key]["status"], 3),
+        )
+
+        for key in sorted_keys:
+            docket = st.session_state.mock_dockets[key]
+            status_colors = {"CRITICAL": "#ef4444", "WARNING": "#fbbf24", "NOMINAL": "#22c55e"}
+            border_color = status_colors.get(docket["status"], "#64748b")
+            is_selected = key == st.session_state.mock_selected_docket_key
+            bg_card = "#1e293b" if is_selected else "#0f172a"
+
+            col_btn, col_info = st.columns([1, 4])
+            with col_info:
+                st.markdown(
+                    f"""
+                    <div style="background-color: {bg_card}; border-left: 4px solid {border_color}; padding: 8px 10px; border-radius: 6px; margin-bottom: 4px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: {border_color}; font-size: 11px; font-weight: 800;">● {docket['status']}</span>
+                            <span style="color: #94a3b8; font-size: 10px;">{docket['currency']}{docket['burn_rate']:,}/day</span>
+                        </div>
+                        <div style="color: #ffffff; font-weight: 700; font-size: 13px;">{docket['id']}</div>
+                        <div style="color: #cbd5e1; font-size: 11px;">{docket['client']}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button(f"Load {key}", key=f"mock_btn_{key}", use_container_width=True):
+                    st.session_state.mock_selected_docket_key = key
+                    st.rerun()
+
+        st.markdown("---")
+        current_docket = st.session_state.mock_dockets[st.session_state.mock_selected_docket_key]
+        with st.expander(f"⚡ Testing Harness ({current_docket['id']})", expanded=False):
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("🚨 Trip Power", type="primary", use_container_width=True, key="mock_trip_power"):
+                    current_docket["status"] = "CRITICAL"
+                    current_docket["fault"] = "AUX_POWER_TRIP_0V"
+                    current_docket["fault_desc"] = "0V Auxiliary Bus Trip | Immediate Escalation"
+                    current_docket["stage"] = 4
+                    current_docket["exhibits"] = {"A": "CERTIFIED", "B": "CERTIFIED", "C": "CERTIFIED", "D": "COMPILED"}
+                    payload = f"{current_docket['id']}|2026-09-30T10:00:00Z|TRIP|{current_docket['cal_token']}"
+                    current_docket["telemetry_hash"] = hashlib.sha256(payload.encode()).hexdigest()
+                    st.rerun()
+            with c2:
+                if st.button("🔄 Reset", use_container_width=True, key="mock_reset_docket"):
+                    current_docket["status"] = "NOMINAL"
+                    current_docket["fault"] = None
+                    current_docket["fault_desc"] = "Nominal operating parameters."
+                    current_docket["stage"] = 1
+                    current_docket["key1"] = False
+                    current_docket["key2"] = False
+                    current_docket["executed"] = False
+                    st.rerun()
+
+        st.markdown("---")
+        st.markdown("### 🖥️ Workstation Navigation")
+        nav_options = [
+            "Tier 1: Sovereign Executive Overview",
+            "Tier 2: Kinetic Decay & Operational Reroute",
+            "Tier 3A: Operations Verification Desk",
+            "Tier 3B: Work-Face Attestation Desk",
+            "Legal Chambers: Evidentiary Audit",
+            "Tier 4: Executive Vault & Filing",
+        ]
+        if "mock_nav_view" not in st.session_state:
+            st.session_state.mock_nav_view = nav_options[0]
+        st.session_state.mock_nav_view = st.radio("Select View", nav_options, key="mock_nav_radio", label_visibility="collapsed")
+        st.toggle("📱 Emulate iPhone Pocket Terminal", value=False, key="mock_mobile_mode")
+
+    active = st.session_state.mock_dockets[st.session_state.mock_selected_docket_key]
+
+    if st.session_state.get("mock_nav_view") == "Tier 4: Executive Vault & Filing":
+        st.title("Tier 4: Sovereign Vault & Governance")
+        vault_tab, ledger_tab = st.tabs(["🔴 Active Sovereign Vault", "📋 Governance Drill & Underwriter Ledger"])
+
+        with vault_tab:
+            st.caption(f"Procedural Jurisdiction: {active['court']} | Authority: {active['statute']}")
+            col_a, col_b, col_c, col_d = st.columns(4)
+            for col, (ex_label, ex_name) in zip(
+                [col_a, col_b, col_c, col_d],
+                [("A", "Incident Brief"), ("B", "Telemetry Affidavit"), ("C", "Admissibility Cert"), ("D", "Fiduciary Memo")],
+            ):
+                status = active["exhibits"].get(ex_label, "AWAITING")
+                color = "#22c55e" if status in ["CERTIFIED", "COMPILED"] else "#eab308"
+                col.markdown(
+                    f"""
+                    <div style="background-color: #0f172a; border-top: 3px solid {color}; padding: 10px; border-radius: 4px; text-align: center;">
+                        <div style="font-size: 11px; color: #94a3b8;">Exhibit {ex_label}</div>
+                        <div style="font-size: 12px; font-weight: 700; color: #ffffff;">{ex_name}</div>
+                        <div style="color: {color}; font-weight: 800; font-size: 11px; margin-top: 4px;">{status}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("### Dual-Key Release Authorization")
+            st.caption(f"Target Issuing Clearing Agency: {active['banking_cutoff']}")
+            all_ready = all(value in ["CERTIFIED", "COMPILED"] for value in active["exhibits"].values())
+
+            if not all_ready:
+                st.error("Gating Error: Prerequisites pending. Telemetry and admissibility certificates must be certified.")
+            else:
+                st.success("Dossier integrity verified. Ready for fiduciary dual-key authorization.")
+
+            k1_col, k2_col = st.columns(2)
+            with k1_col:
+                active["key1"] = st.checkbox("Key 1: Executive Chairman Ratification", value=active["key1"], disabled=not all_ready)
+            with k2_col:
+                active["key2"] = st.checkbox("Key 2: Chief Legal Officer Clearance", value=active["key2"], disabled=not all_ready)
+
+            if active["key1"] and active["key2"] and st.button("⚡ EXECUTE STATUTORY FILING & DRAWSTOP", type="primary", use_container_width=True):
+                active["executed"] = True
+                st.balloons()
+
+            if active.get("executed", False):
+                st.success(f"✓ IRREVOCABLE FILING TRANSMITTED TO {active['court'].upper()} & BANKING CUTOFF ARMED")
+
+        with ledger_tab:
+            st.subheader("Fiduciary Drill & Underwriter Compliance History")
+            st.caption("Immutable record of simulated stress-tests for P&I Clubs and Corporate Governance audits")
+
+            for item in st.session_state.mock_drill_history:
+                st.markdown(
+                    f"""
+                    <div style="background-color: #0f172a; border-left: 4px solid #38bdf8; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-weight: 700; color: #ffffff;">{item['docket']} — {item['type']}</span>
+                            <span style="color: #94a3b8; font-size: 12px;">{item['timestamp']}</span>
+                        </div>
+                        <div style="color: #cbd5e1; font-size: 12px; margin-top: 4px;">
+                            Response Latency: <b>{item['latency']}</b> | Outcome: <span style="color: #4ade80;">{item['outcome']}</span>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            st.button("📥 Export Underwriter Compliance Certificate (PDF)")
+
+
+if st.session_state.get("show_mock_docket_registry", True):
+    render_mock_docket_registry()
+
+
 JURISDICTION_REGISTRY = {
     "US_DE": {
         "country": "United States (Delaware / Federal)",
