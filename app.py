@@ -517,6 +517,7 @@ for key in ("key1_signed", "key2_signed", "executed"):
     sim_state.setdefault(key, False)
 sim_state.setdefault("telemetry_before_trip", None)
 sim_state.setdefault("exhibits_before_trip", None)
+sim_state.setdefault("attestation_before_trip", None)
 
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
@@ -525,6 +526,9 @@ if active_docket_id not in st.session_state.sector_dockets:
         "field_telemetry_payload": None,
         "field_telemetry_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "pe_signed_by": profile["certifier_title"],
+        "cosigned_by": None,
+        "witness_signed": False,
+        "attestation_hash": None,
         "ops_countersigned_by": None,
         "legal_cleared_by": None,
         "exhibit_a_status": "AWAITING",
@@ -577,6 +581,11 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
                     name: active_docket[f"exhibit_{name}_status"]
                     for name in ("a", "b", "c", "d")
                 }
+                sim_state["attestation_before_trip"] = (
+                    active_docket.get("cosigned_by"),
+                    active_docket.get("witness_signed", False),
+                    active_docket.get("attestation_hash"),
+                )
             sim_state.update(
                 active=True,
                 fault_type="AUX_POWER_TRIP_0V",
@@ -592,6 +601,9 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             active_docket["field_telemetry_hash"] = hashlib.sha256(
                 mock_payload.encode("utf-8")
             ).hexdigest()
+            active_docket["cosigned_by"] = f"SIMULATED - {profile['certifier_title']} (unsigned)"
+            active_docket["witness_signed"] = False
+            active_docket["attestation_hash"] = None
             for name in ("a", "b", "c"):
                 active_docket[f"exhibit_{name}_status"] = "CERTIFIED"
             active_docket["exhibit_d_status"] = "COMPILED"
@@ -621,6 +633,13 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
                 for name, status in sim_state["exhibits_before_trip"].items():
                     active_docket[f"exhibit_{name}_status"] = status
                 sim_state["exhibits_before_trip"] = None
+            if sim_state["attestation_before_trip"] is not None:
+                (
+                    active_docket["cosigned_by"],
+                    active_docket["witness_signed"],
+                    active_docket["attestation_hash"],
+                ) = sim_state["attestation_before_trip"]
+                sim_state["attestation_before_trip"] = None
             sim_state.update(
                 active=False,
                 fault_type=None,
@@ -1177,11 +1196,19 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             active_docket["field_telemetry_payload"] = raw_telemetry
             active_docket["field_telemetry_hash"] = hashlib.sha256(raw_telemetry.encode("utf-8")).hexdigest()
             active_docket["pe_signed_by"] = profile["certifier_title"]
-            active_docket["exhibit_b_status"] = "SEALED"
+            active_docket["cosigned_by"] = profile["certifier_title"]
+            active_docket["witness_signed"] = True
+            active_docket["attestation_hash"] = hashlib.sha256(
+                f"{raw_telemetry}|{profile['certifier_title']}".encode("utf-8")
+            ).hexdigest()
+            active_docket["exhibit_b_status"] = "CERTIFIED"
             advance_active_stage(3)
             navigate_to("Tier 3A: Operations Verification Desk")
     else:
-        st.success(localized_text(f"Attestation completed by {active_docket['pe_signed_by']}.", f"Beglaubigung abgeschlossen durch {active_docket['pe_signed_by']}.", f"{active_docket['pe_signed_by']} による証拠認証が完了しました。"))
+        if active_docket.get("witness_signed"):
+            st.success(localized_text(f"Attestation completed by {active_docket['pe_signed_by']}.", f"Beglaubigung abgeschlossen durch {active_docket['pe_signed_by']}.", f"{active_docket['pe_signed_by']} による証拠認証が完了しました。"))
+        else:
+            st.info("Simulated telemetry only. No witness has signed this attestation.")
         st.code(f"Hash: {active_docket['field_telemetry_hash']}")
         if st.button(
             localized_text("➔ Proceed to Tier 3A: Operations Verification", "➔ Weiter zu Tier 3A: Betriebsverifikation", "➔ 第3A段階：運用検証へ進む"),
@@ -1199,7 +1226,7 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
     else:
         telemetry_intact, telemetry_message = verify_telemetry_integrity(active_docket_id)
         st.markdown(f"**{localized_text('Verified Telemetry Hash', 'Verifizierter Telemetrie-Hash', '検証済みテレメトリハッシュ')}：** `{active_docket['field_telemetry_hash']}`")
-        st.markdown(f"**{localized_text('Field Witness', 'Beglaubigt durch', '現場証人')}：** `{certifier_witness}`")
+        st.markdown(f"**{localized_text('Witness Cosigner', 'Beglaubigt durch', '現場証人')}：** `{active_docket.get('cosigned_by') or 'Awaiting witness attestation'}`")
 
         if not telemetry_intact:
             st.error(f"HASH MISMATCH / TAMPER DETECTED\n\n{telemetry_message}")
@@ -1219,7 +1246,10 @@ elif nav_selection == "Tier 3A: Operations Verification Desk":
                     advance_active_stage(4)
                     navigate_to("Legal Chambers: Evidentiary Audit")
             else:
-                st.success(f"Countersigned by {active_docket['ops_countersigned_by']}.")
+                if active_docket["ops_countersigned_by"]:
+                    st.success(f"Countersigned by {active_docket['ops_countersigned_by']}.")
+                else:
+                    st.info("Operations countersignature pending (simulated trip).")
                 if st.button(
                     "➔ Proceed to Legal Chambers Audit",
                     type="primary",
@@ -1336,7 +1366,7 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
                 key=f"{active_docket_id}_restore_telemetry",
             ):
                 active_docket["field_telemetry_payload"] = raw_payload.replace("4.13%", "4.12%", 1)
-                active_docket["exhibit_b_status"] = "SEALED"
+                active_docket["exhibit_b_status"] = "CERTIFIED" if active_docket.get("witness_signed") else "SEALED"
                 st.rerun()
 
     chairman_widget_key = f"{active_docket_id}_dual_key_chairman"
