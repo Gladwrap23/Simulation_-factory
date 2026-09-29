@@ -506,8 +506,13 @@ if active_docket_id not in st.session_state.simulated_breaches:
         "ratchet_level": 0,
         "kinetic_value": "NOMINAL",
         "timestamp_utc": None,
+        "key1_signed": False,
+        "key2_signed": False,
+        "executed": False,
     }
 sim_state = st.session_state.simulated_breaches[active_docket_id]
+for key in ("key1_signed", "key2_signed", "executed"):
+    sim_state.setdefault(key, False)
 
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
@@ -546,7 +551,7 @@ def advance_active_stage(target_stage: int) -> None:
 
 
 with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
-    st.caption("Inject a simulated power fault into the active docket.")
+    st.caption(f"Target: `{active_docket_id}`")
     trip_col, reset_col = st.columns(2)
     with trip_col:
         if st.button(
@@ -558,28 +563,24 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             timestamp_utc = datetime.datetime.now(datetime.timezone.utc).strftime(
                 "%Y-%m-%d %H:%M:%S UTC"
             )
-            for client_profile in CLIENT_PROFILES.values():
-                client_docket_id = client_profile["docket_id"]
-                client_sim_state = st.session_state.simulated_breaches.setdefault(
-                    client_docket_id,
-                    {
-                        "active": False,
-                        "fault_type": None,
-                        "ratchet_level": 0,
-                        "kinetic_value": "NOMINAL",
-                        "timestamp_utc": None,
-                    },
-                )
-                client_sim_state.update(
-                    active=True,
-                    fault_type="AUX_POWER_TRIP_0V",
-                    ratchet_level=2,
-                    kinetic_value="POWER_TRIP",
-                    timestamp_utc=timestamp_utc,
-                )
-                if client_docket_id in st.session_state.sector_dockets:
-                    st.session_state.sector_dockets[client_docket_id]["stage"] = 4
+            sim_state.update(
+                active=True,
+                fault_type="AUX_POWER_TRIP_0V",
+                ratchet_level=2,
+                kinetic_value="POWER_TRIP",
+                timestamp_utc=timestamp_utc,
+                key1_signed=False,
+                key2_signed=False,
+                executed=False,
+            )
             active_docket["stage"] = 4
+            active_docket["executed"] = False
+            active_docket["dual_key_chairman"] = False
+            active_docket["dual_key_clo"] = False
+            st.session_state.pop(f"{active_docket_id}_pocket_key1", None)
+            st.session_state.pop(f"{active_docket_id}_pocket_key2", None)
+            st.session_state.pop(f"{active_docket_id}_dual_key_chairman", None)
+            st.session_state.pop(f"{active_docket_id}_dual_key_clo", None)
             st.rerun()
     with reset_col:
         if st.button(
@@ -587,21 +588,24 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             use_container_width=True,
             key=f"{active_docket_id}_reset_dock",
         ):
-            for client_profile in CLIENT_PROFILES.values():
-                client_docket_id = client_profile["docket_id"]
-                client_sim_state = st.session_state.simulated_breaches.get(
-                    client_docket_id
-                )
-                if client_sim_state is not None:
-                    client_sim_state.update(
-                        active=False,
-                        fault_type=None,
-                        ratchet_level=0,
-                        kinetic_value="NOMINAL",
-                        timestamp_utc=None,
-                    )
-                if client_docket_id in st.session_state.sector_dockets:
-                    st.session_state.sector_dockets[client_docket_id]["stage"] = 1
+            sim_state.update(
+                active=False,
+                fault_type=None,
+                ratchet_level=0,
+                kinetic_value="NOMINAL",
+                timestamp_utc=None,
+                key1_signed=False,
+                key2_signed=False,
+                executed=False,
+            )
+            active_docket["stage"] = 1
+            active_docket["executed"] = False
+            active_docket["dual_key_chairman"] = False
+            active_docket["dual_key_clo"] = False
+            st.session_state.pop(f"{active_docket_id}_pocket_key1", None)
+            st.session_state.pop(f"{active_docket_id}_pocket_key2", None)
+            st.session_state.pop(f"{active_docket_id}_dual_key_chairman", None)
+            st.session_state.pop(f"{active_docket_id}_dual_key_clo", None)
             st.rerun()
 
 
@@ -662,6 +666,7 @@ def render_legal_ratchet() -> None:
     )
     st.markdown(f"**{kinetic_title}:** {kinetic_metric}")
     st.caption(kinetic_detail)
+    st.caption(f"Target: {profile['target_entity']}")
     level_1_col, level_2_col, level_3_col = st.columns(3)
     level_1_col.success(f"Level 1 · Preservation\n\n{level_1}")
     level_2_col.warning(f"Level 2 · Mitigation / Reroute\n\n{level_2}")
@@ -752,11 +757,114 @@ nav_selection = st.sidebar.radio(
     key="nav_radio",
 )
 
+st.sidebar.markdown("---")
+mobile_mode = st.sidebar.toggle("📱 Emulate iPhone Pocket Terminal", value=False)
+if mobile_mode:
+    st.subheader("📱 Pocket Edition: Executive Terminal")
+    st.markdown(
+        """
+        <style>
+        .iphone-frame {
+            max-width: 412px;
+            margin: 0 auto 16px;
+            background: #05070a;
+            border: 4px solid #2d3748;
+            border-radius: 48px;
+            padding: 20px 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            color: #fff;
+        }
+        .dynamic-island {
+            width: 120px;
+            height: 28px;
+            background: #000;
+            border-radius: 20px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ios-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="iphone-frame">
+            <div class="dynamic-island">
+                <span style="color: {'#ef4444' if sim_state['active'] else '#22c55e'}; font-size: 10px; font-weight: bold;">
+                    {'● FAULT ACTIVE' if sim_state['active'] else '● STANDBY NOMINAL'}
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; font-size: 11px;">
+                <b>SIMULATED POCKET VAULT</b>
+                <span>{jurisdiction['banking_cutoff'].split()[0]} Cutoff</span>
+            </div>
+            <div class="ios-card" style="border-left: 4px solid {'#ef4444' if sim_state['active'] else '#38bdf8'}; overflow-wrap: anywhere;">
+                <div style="font-size: 11px; color: #94a3b8;">ACTIVE DOCKET</div>
+                <div style="font-size: 14px; font-weight: 700;">{active_docket_id}</div>
+                <div style="font-size: 12px; color: #cbd5e1;">Target: {profile['target_entity']}</div>
+            </div>
+            <div class="ios-card" style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div>
+                    <div style="font-size: 10px; color: #94a3b8;">DAILY CAPITAL EXPOSURE</div>
+                    <b style="font-size: 18px; color: #f87171;">{currency_symbol}{profile['burn_rate_daily']:,.0f}</b>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: #94a3b8;">BANKING DEADLINE</div>
+                    <b style="font-size: 14px; color: #fbbf24;">{jurisdiction['banking_cutoff']}</b>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    pocket_cleared, pocket_message = verify_dossier_integrity(active_docket_id)
+    pocket_enabled = sim_state["active"] and pocket_cleared and not sim_state["executed"]
+    pocket_col1, pocket_col2 = st.columns(2)
+    sim_state["key1_signed"] = pocket_col1.checkbox(
+        "Simulate Key 1 (CLO Legal)",
+        value=sim_state["key1_signed"],
+        disabled=not pocket_enabled,
+        key=f"{active_docket_id}_pocket_key1",
+    )
+    sim_state["key2_signed"] = pocket_col2.checkbox(
+        "Simulate Key 2 (CFO Fiscal)",
+        value=sim_state["key2_signed"],
+        disabled=not pocket_enabled,
+        key=f"{active_docket_id}_pocket_key2",
+    )
+    if not pocket_cleared:
+        st.warning(pocket_message)
+    elif not sim_state["active"]:
+        st.info("Trip power to start the pocket filing simulation.")
+    elif sim_state["key1_signed"] and sim_state["key2_signed"] and not sim_state["executed"]:
+        st.success("Both simulated authorization keys confirmed.")
+        if st.button(
+            "Execute simulated filing & drawstop",
+            type="primary",
+            use_container_width=True,
+            key=f"{active_docket_id}_pocket_execute",
+        ):
+            sim_state["executed"] = True
+            active_docket["executed"] = True
+            st.rerun()
+    if sim_state["executed"]:
+        st.success(f"Simulation complete for {profile['target_entity']}: filing and drawstop recorded in this session.")
+
 st.markdown(f"### Active Dossier: `{profile['docket_id']}`")
 st.caption(
     f"🏛️ **Filing Venue:** {jurisdiction['court']} | "
     f"**Procedural Authority:** {jurisdiction['language_statute']}"
 )
+render_legal_ratchet()
 
 if loc_data and is_court_native:
     doc_content = loc_data["court"]
@@ -795,7 +903,6 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
 
         st.title("Tier 1: Hoheitliche Exekutivbefehlsstelle")
         st.caption("Echtzeit-Liquiditätsrisiko, Schadensminderung & Prozessvorbereitung")
-        render_legal_ratchet()
 
         col1, col2, col3 = st.columns(3)
         col1.metric(
@@ -845,7 +952,6 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     elif is_court_native and profile["jurisdiction"] == "JP_TYO":
         st.title("第1段階：主権執行指令センター")
         st.caption("リアルタイム流動性リスク、損失軽減および訴訟準備")
-        render_legal_ratchet()
 
         c1, c2, c3 = st.columns(3)
         c1.metric(
@@ -893,7 +999,6 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     else:
         st.title("Tier 1: Sovereign Executive Command")
         st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
-        render_legal_ratchet()
 
         c1, c2, c3 = st.columns(3)
         c1.metric(
@@ -1117,7 +1222,6 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     )
     st.title(ui["vault_title"])
     st.caption(ui["vault_caption"])
-    render_legal_ratchet()
     dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
     telemetry_tampered = integrity_message == "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
 
