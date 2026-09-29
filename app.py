@@ -497,9 +497,21 @@ if "sector_dockets" not in st.session_state:
     st.session_state.sector_dockets = {}
 
 active_docket_id = profile["docket_id"]
+if "simulated_breaches" not in st.session_state:
+    st.session_state.simulated_breaches = {}
+if active_docket_id not in st.session_state.simulated_breaches:
+    st.session_state.simulated_breaches[active_docket_id] = {
+        "active": False,
+        "fault_type": None,
+        "ratchet_level": 0,
+        "kinetic_value": "NOMINAL",
+        "timestamp_utc": None,
+    }
+sim_state = st.session_state.simulated_breaches[active_docket_id]
+
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
-        "stage": 1,
+        "stage": 4 if sim_state["active"] else 1,
         "wo_scope": f"Statutory calibration and inspection under {profile['standard']}.",
         "field_telemetry_payload": None,
         "field_telemetry_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -531,6 +543,130 @@ dossier_stage = active_docket["stage"]
 def advance_active_stage(target_stage: int) -> None:
     if target_stage > active_docket["stage"]:
         active_docket["stage"] = target_stage
+
+
+with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
+    st.caption("Inject a simulated power fault into the active docket.")
+    trip_col, reset_col = st.columns(2)
+    with trip_col:
+        if st.button(
+            "🚨 Trip Power",
+            type="primary",
+            use_container_width=True,
+            key=f"{active_docket_id}_trip_power",
+        ):
+            timestamp_utc = datetime.datetime.now(datetime.timezone.utc).strftime(
+                "%Y-%m-%d %H:%M:%S UTC"
+            )
+            for client_profile in CLIENT_PROFILES.values():
+                client_docket_id = client_profile["docket_id"]
+                client_sim_state = st.session_state.simulated_breaches.setdefault(
+                    client_docket_id,
+                    {
+                        "active": False,
+                        "fault_type": None,
+                        "ratchet_level": 0,
+                        "kinetic_value": "NOMINAL",
+                        "timestamp_utc": None,
+                    },
+                )
+                client_sim_state.update(
+                    active=True,
+                    fault_type="AUX_POWER_TRIP_0V",
+                    ratchet_level=2,
+                    kinetic_value="POWER_TRIP",
+                    timestamp_utc=timestamp_utc,
+                )
+                if client_docket_id in st.session_state.sector_dockets:
+                    st.session_state.sector_dockets[client_docket_id]["stage"] = 4
+            active_docket["stage"] = 4
+            st.rerun()
+    with reset_col:
+        if st.button(
+            "🔄 Reset Dock",
+            use_container_width=True,
+            key=f"{active_docket_id}_reset_dock",
+        ):
+            for client_profile in CLIENT_PROFILES.values():
+                client_docket_id = client_profile["docket_id"]
+                client_sim_state = st.session_state.simulated_breaches.get(
+                    client_docket_id
+                )
+                if client_sim_state is not None:
+                    client_sim_state.update(
+                        active=False,
+                        fault_type=None,
+                        ratchet_level=0,
+                        kinetic_value="NOMINAL",
+                        timestamp_utc=None,
+                    )
+                if client_docket_id in st.session_state.sector_dockets:
+                    st.session_state.sector_dockets[client_docket_id]["stage"] = 1
+            st.rerun()
+
+
+def render_legal_ratchet() -> None:
+    if not sim_state["active"]:
+        return
+
+    jurisdiction_ratchets = {
+        "NZ_ADMR": (
+            "Biological Spoilage Velocity (Arrhenius Model)",
+            "2.42x Acceleration",
+            "Core Temp: +3.8°C | RSL: 11 Days Remaining (Contract Spec: 21 Days)",
+            "Hague-Visby Art. III(2) Notice of Marine Exception Served",
+            "Marine Insurance Act s. 78 Sue & Labour Port Diversion Issued",
+            "Admiralty Arrest Petition & Standby LC Drawstop Armed",
+        ),
+        "DE_BW": (
+            "Grid Frequency & Voltage Harmonics (VDE-AR-N 4130)",
+            "THD 4.82% (+1.82% Excursion)",
+            "Omicron CMC 356 Log: 400kV Busbar Trip | PTB Traceable",
+            "ZPO § 371 Self-Authenticating Electronic Hold Filed",
+            "ZPO § 485 Independent Evidence Procedure Cleared",
+            "AktG § 93 TARGET2 Bundesbank Wire Freeze Armed",
+        ),
+        "UK_ENG": (
+            "Dynamic Frequency Response Loss (Grid Code CC.6.3.7)",
+            "RoCoF 1.18 Hz/s Breach",
+            "Yokogawa WT5000 Log: Inverter DC Bus Trip | NPL Traceable",
+            "CPR Part 31 Statutory Spoliation Warning Transmitted",
+            "Section 78 Commercial Loss Mitigation Mandate Issued",
+            "High Court TCC Injunction & CHAPS Freeze Armed",
+        ),
+        "US_DE": (
+            "Kinetic Braking & System Disengagement (SAE J3016)",
+            "Auxiliary 24V Bus Failure",
+            "Edge DSSAD Enclave: Hard MRM Shoulder Stop | NIST Traceable",
+            "FRCP Rule 37(e) Formal Anti-Spoliation Directive Served",
+            "FMCSA Part 396 Admissibility Affidavit Executed",
+            "Delaware Chancery TRO & Fedwire Drawstop Armed",
+        ),
+        "JP_TYO": (
+            "Autonomous Actuator Synchronization (ASTM F38)",
+            "ESC Power Rail Dropout",
+            "RTK Enclave: Desync Event Logged | NMIJ/AIST Traceable",
+            "MLIT Civil Aviation Bureau Part 108 Notice Filed",
+            "Minji Soshōhō Art. 228 Forensic Authentication Complete",
+            "Tokyo District Court Provisional Attachment & BOJ-NET Freeze",
+        ),
+    }
+    kinetic_title, kinetic_metric, kinetic_detail, level_1, level_2, level_3 = (
+        jurisdiction_ratchets[profile["jurisdiction"]]
+    )
+
+    st.error(f"🚨 CRITICAL FAULT DETECTED: {sim_state['fault_type']}")
+    st.caption(
+        f"Injected at {sim_state['timestamp_utc']} · "
+        f"Statutory ratchet: Level {sim_state['ratchet_level']} escalation"
+    )
+    st.markdown(f"**{kinetic_title}:** {kinetic_metric}")
+    st.caption(kinetic_detail)
+    level_1_col, level_2_col, level_3_col = st.columns(3)
+    level_1_col.success(f"Level 1 · Preservation\n\n{level_1}")
+    level_2_col.warning(f"Level 2 · Mitigation / Reroute\n\n{level_2}")
+    level_3_col.error(f"Level 3 · Emergency Drawstop\n\n{level_3}")
+
 
 st.sidebar.markdown(f"## Docket: `{profile['docket_id']}`")
 language_options = jurisdiction["available_languages"]
@@ -659,6 +795,7 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
 
         st.title("Tier 1: Hoheitliche Exekutivbefehlsstelle")
         st.caption("Echtzeit-Liquiditätsrisiko, Schadensminderung & Prozessvorbereitung")
+        render_legal_ratchet()
 
         col1, col2, col3 = st.columns(3)
         col1.metric(
@@ -708,6 +845,7 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     elif is_court_native and profile["jurisdiction"] == "JP_TYO":
         st.title("第1段階：主権執行指令センター")
         st.caption("リアルタイム流動性リスク、損失軽減および訴訟準備")
+        render_legal_ratchet()
 
         c1, c2, c3 = st.columns(3)
         c1.metric(
@@ -755,6 +893,7 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
     else:
         st.title("Tier 1: Sovereign Executive Command")
         st.caption("Real-Time Liquidity Exposure, Burn Mitigation & Litigation Readiness")
+        render_legal_ratchet()
 
         c1, c2, c3 = st.columns(3)
         c1.metric(
@@ -978,6 +1117,7 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     )
     st.title(ui["vault_title"])
     st.caption(ui["vault_caption"])
+    render_legal_ratchet()
     dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
     telemetry_tampered = integrity_message == "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
 
