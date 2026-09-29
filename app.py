@@ -513,6 +513,7 @@ if active_docket_id not in st.session_state.simulated_breaches:
 sim_state = st.session_state.simulated_breaches[active_docket_id]
 for key in ("key1_signed", "key2_signed", "executed"):
     sim_state.setdefault(key, False)
+sim_state.setdefault("telemetry_before_trip", None)
 
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
@@ -550,6 +551,7 @@ def advance_active_stage(target_stage: int) -> None:
         active_docket["stage"] = target_stage
 
 
+mobile_mode = st.sidebar.toggle("📱 Emulate iPhone Pocket Terminal", key="pocket_mode")
 with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
     st.caption(f"Target: `{active_docket_id}`")
     trip_col, reset_col = st.columns(2)
@@ -563,6 +565,11 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             timestamp_utc = datetime.datetime.now(datetime.timezone.utc).strftime(
                 "%Y-%m-%d %H:%M:%S UTC"
             )
+            if not sim_state["active"]:
+                sim_state["telemetry_before_trip"] = (
+                    active_docket["field_telemetry_payload"],
+                    active_docket["field_telemetry_hash"],
+                )
             sim_state.update(
                 active=True,
                 fault_type="AUX_POWER_TRIP_0V",
@@ -573,6 +580,11 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
                 key2_signed=False,
                 executed=False,
             )
+            mock_payload = f"SIMULATED|{active_docket_id}|{timestamp_utc}|AUX_POWER_TRIP_0V|0.0V"
+            active_docket["field_telemetry_payload"] = mock_payload
+            active_docket["field_telemetry_hash"] = hashlib.sha256(
+                mock_payload.encode("utf-8")
+            ).hexdigest()
             active_docket["stage"] = 4
             active_docket["executed"] = False
             active_docket["dual_key_chairman"] = False
@@ -588,6 +600,12 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             use_container_width=True,
             key=f"{active_docket_id}_reset_dock",
         ):
+            if sim_state["telemetry_before_trip"] is not None:
+                (
+                    active_docket["field_telemetry_payload"],
+                    active_docket["field_telemetry_hash"],
+                ) = sim_state["telemetry_before_trip"]
+                sim_state["telemetry_before_trip"] = None
             sim_state.update(
                 active=False,
                 fault_type=None,
@@ -757,15 +775,15 @@ nav_selection = st.sidebar.radio(
     key="nav_radio",
 )
 
-st.sidebar.markdown("---")
-mobile_mode = st.sidebar.toggle("📱 Emulate iPhone Pocket Terminal", value=False)
 if mobile_mode:
     st.subheader("📱 Pocket Edition: Executive Terminal")
+    st.caption("Simulated biometric relay and drawstop")
     st.markdown(
         """
         <style>
-        .iphone-frame {
-            max-width: 412px;
+        .st-key-pocket_terminal {
+            width: min(100%, 412px);
+            box-sizing: border-box;
             margin: 0 auto 16px;
             background: #05070a;
             border: 4px solid #2d3748;
@@ -773,6 +791,9 @@ if mobile_mode:
             padding: 20px 16px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
             color: #fff;
+        }
+        .st-key-pocket_terminal [data-testid="stMarkdownContainer"] p {
+            color: #e2e8f0;
         }
         .dynamic-island {
             width: 120px;
@@ -795,9 +816,9 @@ if mobile_mode:
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(
-        f"""
-        <div class="iphone-frame">
+    with st.container(key="pocket_terminal"):
+        st.markdown(
+            f"""
             <div class="dynamic-island">
                 <span style="color: {'#ef4444' if sim_state['active'] else '#22c55e'}; font-size: 10px; font-weight: bold;">
                     {'● FAULT ACTIVE' if sim_state['active'] else '● STANDBY NOMINAL'}
@@ -822,42 +843,47 @@ if mobile_mode:
                     <b style="font-size: 14px; color: #fbbf24;">{jurisdiction['banking_cutoff']}</b>
                 </div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    pocket_cleared, pocket_message = verify_dossier_integrity(active_docket_id)
-    pocket_enabled = sim_state["active"] and pocket_cleared and not sim_state["executed"]
-    pocket_col1, pocket_col2 = st.columns(2)
-    sim_state["key1_signed"] = pocket_col1.checkbox(
-        "Simulate Key 1 (CLO Legal)",
-        value=sim_state["key1_signed"],
-        disabled=not pocket_enabled,
-        key=f"{active_docket_id}_pocket_key1",
-    )
-    sim_state["key2_signed"] = pocket_col2.checkbox(
-        "Simulate Key 2 (CFO Fiscal)",
-        value=sim_state["key2_signed"],
-        disabled=not pocket_enabled,
-        key=f"{active_docket_id}_pocket_key2",
-    )
-    if not pocket_cleared:
-        st.warning(pocket_message)
-    elif not sim_state["active"]:
-        st.info("Trip power to start the pocket filing simulation.")
-    elif sim_state["key1_signed"] and sim_state["key2_signed"] and not sim_state["executed"]:
-        st.success("Both simulated authorization keys confirmed.")
-        if st.button(
-            "Execute simulated filing & drawstop",
-            type="primary",
-            use_container_width=True,
-            key=f"{active_docket_id}_pocket_execute",
-        ):
-            sim_state["executed"] = True
-            active_docket["executed"] = True
-            st.rerun()
-    if sim_state["executed"]:
-        st.success(f"Simulation complete for {profile['target_entity']}: filing and drawstop recorded in this session.")
+            """,
+            unsafe_allow_html=True,
+        )
+        telemetry_intact, telemetry_message = verify_telemetry_integrity(active_docket_id)
+        pocket_enabled = sim_state["active"] and telemetry_intact and not sim_state["executed"]
+        pocket_col1, pocket_col2 = st.columns(2)
+        with pocket_col1:
+            if st.button(
+                "🔐 Simulate Face ID: CLO",
+                use_container_width=True,
+                disabled=not pocket_enabled or sim_state["key1_signed"],
+                key=f"{active_docket_id}_pocket_key1",
+            ):
+                sim_state["key1_signed"] = True
+                st.rerun()
+        with pocket_col2:
+            if st.button(
+                "🔐 Simulate Face ID: CFO",
+                use_container_width=True,
+                disabled=not pocket_enabled or sim_state["key2_signed"],
+                key=f"{active_docket_id}_pocket_key2",
+            ):
+                sim_state["key2_signed"] = True
+                st.rerun()
+        if not sim_state["active"]:
+            st.info("Trip power to start the pocket simulation.")
+        elif not telemetry_intact:
+            st.warning(telemetry_message)
+        elif sim_state["executed"]:
+            st.success(f"Simulated drawstop recorded for {profile['target_entity']} in this session.")
+        elif sim_state["key1_signed"] and sim_state["key2_signed"]:
+            if st.button(
+                "⚡ EXECUTE SIMULATED DRAWSTOP",
+                type="primary",
+                use_container_width=True,
+                key=f"{active_docket_id}_pocket_execute",
+            ):
+                sim_state["executed"] = True
+                st.rerun()
+        else:
+            st.caption("CLO and CFO simulation keys required.")
 
 st.markdown(f"### Active Dossier: `{profile['docket_id']}`")
 st.caption(
