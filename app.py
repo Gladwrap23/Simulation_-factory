@@ -712,6 +712,13 @@ language_widget_key = "evidentiary_language"
 if st.session_state.get(language_widget_key) not in language_options:
     st.session_state[language_widget_key] = language_options[0]
 
+
+def route_to_executive_overview() -> None:
+    if st.session_state[language_widget_key] == "Executive English Master":
+        st.session_state["nav_radio"] = "Tier 1: Sovereign Executive Overview"
+        st.session_state.pop("target_page", None)
+
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🌐 Evidentiary Language Mode")
 lang_mode = st.sidebar.radio(
@@ -719,6 +726,7 @@ lang_mode = st.sidebar.radio(
     options=language_options,
     index=language_options.index(st.session_state[language_widget_key]),
     key=language_widget_key,
+    on_change=route_to_executive_overview,
     label_visibility="collapsed",
 )
 is_court_native = "Official Court" in lang_mode
