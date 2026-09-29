@@ -406,6 +406,8 @@ def verify_dossier_integrity(docket_id: str) -> tuple[bool, str]:
         if status not in PERMITTED_FINAL_STATES:
             return False, f"Gating Error: {name} is uncertified or invalid ({status})."
 
+    if docket.get("field_telemetry_payload", "").startswith("SIMULATED|"):
+        return True, "Simulated dossier integrity verified. Ready for simulated dual-key authorization."
     return True, "Dossier intact. Ready for dual-key authorization."
 
 authorized_client_name = next(
@@ -514,6 +516,7 @@ sim_state = st.session_state.simulated_breaches[active_docket_id]
 for key in ("key1_signed", "key2_signed", "executed"):
     sim_state.setdefault(key, False)
 sim_state.setdefault("telemetry_before_trip", None)
+sim_state.setdefault("exhibits_before_trip", None)
 
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
@@ -570,6 +573,10 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
                     active_docket["field_telemetry_payload"],
                     active_docket["field_telemetry_hash"],
                 )
+                sim_state["exhibits_before_trip"] = {
+                    name: active_docket[f"exhibit_{name}_status"]
+                    for name in ("a", "b", "c", "d")
+                }
             sim_state.update(
                 active=True,
                 fault_type="AUX_POWER_TRIP_0V",
@@ -585,10 +592,14 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             active_docket["field_telemetry_hash"] = hashlib.sha256(
                 mock_payload.encode("utf-8")
             ).hexdigest()
+            for name in ("a", "b", "c"):
+                active_docket[f"exhibit_{name}_status"] = "CERTIFIED"
+            active_docket["exhibit_d_status"] = "COMPILED"
             active_docket["stage"] = 4
             active_docket["executed"] = False
             active_docket["dual_key_chairman"] = False
             active_docket["dual_key_clo"] = False
+            st.session_state.target_page = "Tier 4: Executive Vault & Filing (Always Active)"
             st.session_state.pop(f"{active_docket_id}_pocket_key1", None)
             st.session_state.pop(f"{active_docket_id}_pocket_key2", None)
             st.session_state.pop(f"{active_docket_id}_dual_key_chairman", None)
@@ -606,6 +617,10 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
                     active_docket["field_telemetry_hash"],
                 ) = sim_state["telemetry_before_trip"]
                 sim_state["telemetry_before_trip"] = None
+            if sim_state["exhibits_before_trip"] is not None:
+                for name, status in sim_state["exhibits_before_trip"].items():
+                    active_docket[f"exhibit_{name}_status"] = status
+                sim_state["exhibits_before_trip"] = None
             sim_state.update(
                 active=False,
                 fault_type=None,
@@ -1250,33 +1265,36 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.caption(ui["vault_caption"])
     dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
     telemetry_tampered = integrity_message == "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
+    simulated_dossier = (active_docket.get("field_telemetry_payload") or "").startswith("SIMULATED|")
+    if simulated_dossier:
+        st.info("Simulation only: generated exhibits are not independently certified; no filing or bank instruction is sent.")
 
     st.subheader(ui["status_title"])
     e1, e2, e3, e4 = st.columns(4)
     e1.markdown(f"**{ui['ex_a']}**\n\n*{ui['ex_a_sub']}*")
-    if st.session_state.get("exhibit_a_status") == "READY":
-        e1.success(ui["badge_ready"])
+    if st.session_state.get("exhibit_a_status") in ("READY", "CERTIFIED"):
+        e1.success("SIMULATED" if simulated_dossier else ui["badge_ready"])
     else:
         e1.warning(ui["badge_awaiting"])
 
     e2.markdown(f"**{ui['ex_b']}**\n\n*{ui['ex_b_sub']}*")
     if telemetry_tampered:
         e2.error("TAMPERED")
-    elif st.session_state.get("exhibit_b_status") == "SEALED":
-        e2.success(ui["badge_sealed"])
+    elif st.session_state.get("exhibit_b_status") in ("SEALED", "CERTIFIED"):
+        e2.success("SIMULATED" if simulated_dossier else ui["badge_sealed"])
     else:
         e2.warning(ui["badge_awaiting"])
     e2.caption(f"{ui['witness_prefix']}: {certifier_witness}")
 
     e3.markdown(f"**{ui['ex_c']}**\n\n*{ui['ex_c_sub']}*")
-    if st.session_state.get("exhibit_c_status") in ["READY", "SEALED"]:
-        e3.success(ui["badge_cert"])
+    if st.session_state.get("exhibit_c_status") in ["READY", "SEALED", "CERTIFIED"]:
+        e3.success("SIMULATED" if simulated_dossier else ui["badge_cert"])
     else:
         e3.warning(ui["badge_awaiting"])
 
     e4.markdown(f"**{ui['ex_d']}**\n\n*{ui['ex_d_sub']}*")
-    if st.session_state.get("exhibit_d_status") in ["READY", "SEALED"]:
-        e4.success(ui["badge_comp"])
+    if st.session_state.get("exhibit_d_status") in ["READY", "SEALED", "COMPILED"]:
+        e4.success("SIMULATED" if simulated_dossier else ui["badge_comp"])
     else:
         e4.info(ui["badge_draft"])
 
@@ -1344,23 +1362,30 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
         st.success(integrity_message)
         if key_chairman and key_clo:
             st.success(ui["keys_verified_msg"])
-            if st.button(ui["exec_btn"], type="primary", use_container_width=True):
+            if st.button(
+                "Execute simulated filing & drawstop" if simulated_dossier else ui["exec_btn"],
+                type="primary",
+                use_container_width=True,
+            ):
                 active_docket["executed"] = True
                 st.balloons()
         else:
             st.info(ui["keys_locked_msg"])
 
     if active_docket.get("executed", False):
-        st.markdown(
-            f"""
+        if simulated_dossier:
+            st.success("Simulated filing and drawstop recorded in this session. No external action was taken.")
+        else:
+            st.markdown(
+                f"""
             <div style="background-color: #1e3a24; border: 1px solid #2e7d32; padding: 14px; border-radius: 6px; margin-top: 15px;">
                 <h4 style="color: #4caf50; margin: 0 0 8px 0;">{ui['filed_banner']}</h4>
                 <p style="margin: 0; color: #c8e6c9;">{ui['claim_served']} <b>{profile['target_entity']}</b></p>
                 <p style="margin: 4px 0 0 0; color: #a5d6a7;">{ui['lc_drawstop']}</p>
             </div>
             """,
-            unsafe_allow_html=True,
-        )
+                unsafe_allow_html=True,
+            )
 
     st.markdown("---")
     with st.expander(f"📄 View Active Filing Exhibits [{active_stream_label}]", expanded=False):
@@ -1384,7 +1409,8 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
 
     court_native_payload = {
         "docket_id": profile["docket_id"],
-        "document_type": "OFFICIAL_COURT_PLEADING",
+        "document_type": "SIMULATED_COURT_PLEADING" if simulated_dossier else "OFFICIAL_COURT_PLEADING",
+        "simulation_only": simulated_dossier,
         "jurisdiction": active_jurisdiction,
         "court_venue": jurisdiction["court"],
         "language": loc_data["court_lang_name"] if loc_data else jurisdiction["primary_language"],
@@ -1396,7 +1422,7 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
         st.download_button(
             label=ui["court_btn"],
             data=json.dumps(court_native_payload, indent=2, ensure_ascii=False),
-            file_name=f"{profile['docket_id']}_COURT_OFFICIAL.json",
+            file_name=f"{profile['docket_id']}_{'COURT_SIMULATED' if simulated_dossier else 'COURT_OFFICIAL'}.json",
             mime="application/json",
             use_container_width=True,
         )
@@ -1404,7 +1430,8 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
 
     exec_master_payload = {
         "docket_id": profile["docket_id"],
-        "document_type": "EXECUTIVE_MASTER_DOSSIER",
+        "document_type": "SIMULATED_EXECUTIVE_MASTER_DOSSIER" if simulated_dossier else "EXECUTIVE_MASTER_DOSSIER",
+        "simulation_only": simulated_dossier,
         "jurisdiction": active_jurisdiction,
         "governing_standard": profile["standard"],
         "language": "en-US (International Master)",
@@ -1416,7 +1443,7 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
         st.download_button(
             label=ui["master_btn"],
             data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
-            file_name=f"{profile['docket_id']}_EXECUTIVE_MASTER_EN.json",
+            file_name=f"{profile['docket_id']}_{'SIMULATED_' if simulated_dossier else ''}EXECUTIVE_MASTER_EN.json",
             mime="application/json",
             use_container_width=True,
         )
