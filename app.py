@@ -1,6 +1,8 @@
 import datetime
 import hashlib
 import json
+import math
+import re
 
 import streamlit as st
 
@@ -114,6 +116,56 @@ CURRENT_USER = {
     "role": "Field PE",
     "authorized_dockets": ["ALL"],
 }
+
+
+FAILURE_CODES = {
+    "conflict": "ERR_GOV_CONFLICT_OF_INTEREST",
+    "evidence": "ERR_EVID_INTEGRITY_TAMPERED",
+    "drift": "ERR_MATH_NO_OBSERVED_DRIFT",
+    "deadline": "ERR_TIME_DEADLINE_LAPSED",
+    "statutory": "ERR_STATUTORY_GATE_BLOCKED",
+}
+
+
+def validate_observation_series(
+    observations: list[dict], expected_state: float, noise_band_epsilon: float
+) -> str | None:
+    if (
+        not math.isfinite(expected_state)
+        or not math.isfinite(noise_band_epsilon)
+        or noise_band_epsilon < 0
+    ):
+        return f"{FAILURE_CODES['drift']}: baseline and non-negative noise band must be finite."
+    if len(observations) < 3:
+        return f"{FAILURE_CODES['drift']}: at least three observations are required."
+
+    timestamps = []
+    observed_values = []
+    for observation in observations:
+        try:
+            timestamp = datetime.datetime.fromisoformat(
+                observation["interval_timestamp"].replace("Z", "+00:00")
+            )
+            observed_value = float(observation["observed_value"])
+        except (KeyError, TypeError, ValueError):
+            return f"{FAILURE_CODES['drift']}: observations contain invalid timestamps or values."
+
+        if timestamp.tzinfo is None or not math.isfinite(observed_value):
+            return f"{FAILURE_CODES['drift']}: timestamps must include a timezone and values must be finite."
+        timestamps.append(timestamp)
+        observed_values.append(observed_value)
+
+    if any(later <= earlier for earlier, later in zip(timestamps, timestamps[1:])):
+        return f"{FAILURE_CODES['drift']}: observation timestamps must be strictly chronological."
+    if len(set(observed_values)) == 1 or not any(
+        abs(value - expected_state) > noise_band_epsilon for value in observed_values
+    ):
+        return f"{FAILURE_CODES['drift']}: observations do not demonstrate material drift."
+    return None
+
+
+def valid_email_address(value: str) -> bool:
+    return bool(re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value.strip()))
 
 
 def render_mock_docket_registry() -> None:
@@ -304,12 +356,18 @@ def render_mock_docket_registry() -> None:
 
             st.markdown("### Dual-Key Release Authorization")
             st.caption(f"Target Issuing Clearing Agency: {active['banking_cutoff']}")
-            all_ready = all(value in ["CERTIFIED", "COMPILED"] for value in active["exhibits"].values())
+            all_ready = (
+                all(value in ["CERTIFIED", "COMPILED"] for value in active["exhibits"].values())
+                and bool(active.get("statutory_gate_verified"))
+            )
 
             if not all_ready:
-                st.error("Gating Error: Prerequisites pending. Telemetry and admissibility certificates must be certified.")
+                st.error(
+                    f"{FAILURE_CODES['statutory']}: this mock docket has no independent-assessor "
+                    "certification workflow; filing and drawstop remain blocked."
+                )
             else:
-                st.success("Dossier integrity verified. Ready for fiduciary dual-key authorization.")
+                st.success("Dossier and independent statutory gate verified. Ready for fiduciary dual-key authorization.")
 
             k1_col, k2_col = st.columns(2)
             with k1_col:
@@ -680,8 +738,10 @@ if st.session_state.get("selected_client") not in CLIENT_PROFILES:
 
 
 def on_docket_change() -> None:
-    st.session_state["nav_radio"] = "Tier 1: Sovereign Executive Overview"
+    st.session_state["active_stage"] = NAV_STAGES[0]
+    st.session_state["sidebar_nav"] = NAV_STAGES[0]
     st.session_state.pop("target_page", None)
+    st.session_state.pop("target_stage", None)
     for exhibit_name in ("a", "b", "c", "d"):
         st.session_state.pop(f"exhibit_{exhibit_name}_status", None)
 
@@ -757,6 +817,10 @@ sim_state.setdefault("attestation_before_trip", None)
 if active_docket_id not in st.session_state.sector_dockets:
     st.session_state.sector_dockets[active_docket_id] = {
         "stage": 4 if sim_state["active"] else 1,
+        "decision_deadline": (
+            datetime.datetime.now(datetime.timezone.utc)
+            + datetime.timedelta(hours=24)
+        ).isoformat(),
         "wo_scope": f"Statutory calibration and inspection under {profile['standard']}.",
         "field_telemetry_payload": None,
         "field_telemetry_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -776,6 +840,13 @@ if active_docket_id not in st.session_state.sector_dockets:
     }
 
 active_docket = st.session_state.sector_dockets[active_docket_id]
+active_docket.setdefault(
+    "decision_deadline",
+    (
+        datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(hours=24)
+    ).isoformat(),
+)
 active_docket["pe_signed_by"] = profile["certifier_title"]
 active_docket.setdefault("executed", False)
 active_docket.setdefault("exhibit_a_status", "READY" if active_docket["stage"] >= 2 else "AWAITING")
@@ -846,7 +917,7 @@ with st.sidebar.expander("⚡ Adversarial Testing Harness", expanded=True):
             active_docket["executed"] = False
             active_docket["dual_key_chairman"] = False
             active_docket["dual_key_clo"] = False
-            st.session_state.target_page = "Tier 4: Executive Vault & Filing (Always Active)"
+            st.session_state.target_stage = "Tier 4: Executive Vault & Filing"
             st.session_state.pop(f"{active_docket_id}_pocket_key1", None)
             st.session_state.pop(f"{active_docket_id}_pocket_key2", None)
             st.session_state.pop(f"{active_docket_id}_dual_key_chairman", None)
@@ -969,8 +1040,10 @@ if st.session_state.get(language_widget_key) not in language_options:
 
 def route_to_executive_overview() -> None:
     if st.session_state[language_widget_key] == "Executive English Master":
-        st.session_state["nav_radio"] = "Tier 1: Sovereign Executive Overview"
+        st.session_state["active_stage"] = NAV_STAGES[0]
+        st.session_state["sidebar_nav"] = NAV_STAGES[0]
         st.session_state.pop("target_page", None)
+        st.session_state.pop("target_stage", None)
 
 
 st.sidebar.markdown("---")
@@ -1020,37 +1093,54 @@ st.sidebar.markdown(
     f"**Daily Burn Rate:** :red[{currency_symbol}{profile['burn_rate_daily']:,.2f} / day]"
 )
 
-PAGES = [
+NAV_STAGES = [
     "Tier 1: Sovereign Executive Overview",
-    "Tier 3A: Operations Dispatch Command",
-    "Tier 3B: Work-Face Attestation Desk",
+    "Tier 2: Kinetic Decay & Operational Reroute",
     "Tier 3A: Operations Verification Desk",
+    "Tier 3B: Work-Face Attestation Desk",
     "Legal Chambers: Evidentiary Audit",
-    "Tier 4: Executive Vault & Filing (Always Active)",
+    "Tier 4: Executive Vault & Filing",
 ]
 
-target_page = st.session_state.get("target_page")
-if target_page in PAGES:
-    st.session_state.nav_radio = target_page
-    st.session_state.target_page = None
-elif "target_page" in st.session_state:
-    st.session_state.target_page = None
+if "active_stage" not in st.session_state:
+    st.session_state.active_stage = NAV_STAGES[0]
 
-if st.session_state.get("nav_radio") not in PAGES:
-    st.session_state.nav_radio = PAGES[0]
+def on_nav_change():
+    st.session_state.active_stage = st.session_state.sidebar_nav
 
 
-def navigate_to(page_name: str) -> None:
-    if page_name not in PAGES:
-        raise ValueError(f"Unknown workstation page: {page_name}")
-    st.session_state.target_page = page_name
+target_stage = st.session_state.pop("target_stage", None)
+if target_stage in NAV_STAGES:
+    st.session_state.sidebar_nav = target_stage
+    st.session_state.active_stage = target_stage
+elif st.session_state.get("active_stage") not in NAV_STAGES:
+    st.session_state.active_stage = NAV_STAGES[0]
+if st.session_state.get("sidebar_nav") not in NAV_STAGES:
+    st.session_state.sidebar_nav = st.session_state.active_stage
+
+current_index = NAV_STAGES.index(st.session_state.active_stage)
+
+
+def navigate_to(stage_name: str) -> None:
+    stage_aliases = {
+        "Tier 3A: Operations Dispatch Command": NAV_STAGES[2],
+        "Tier 4: Executive Vault & Filing (Always Active)": NAV_STAGES[5],
+    }
+    stage_name = stage_aliases.get(stage_name, stage_name)
+    if stage_name not in NAV_STAGES:
+        raise ValueError(f"Unknown workstation stage: {stage_name}")
+    st.session_state.active_stage = stage_name
+    st.session_state.target_stage = stage_name
     st.rerun()
 
-nav_selection = st.sidebar.radio(
+selected_stage = st.sidebar.radio(
     "Workstation Navigation",
-    PAGES,
-    key="nav_radio",
+    options=NAV_STAGES,
+    index=current_index,
+    key="sidebar_nav",
+    on_change=on_nav_change,
 )
+nav_selection = selected_stage
 
 if mobile_mode:
     st.subheader("📱 Pocket Edition: Executive Terminal")
@@ -1124,7 +1214,13 @@ if mobile_mode:
             unsafe_allow_html=True,
         )
         telemetry_intact, telemetry_message = verify_telemetry_integrity(active_docket_id)
-        pocket_enabled = sim_state["active"] and telemetry_intact and not sim_state["executed"]
+        pocket_gate_error = validate_board_gate(active_docket)
+        pocket_enabled = (
+            sim_state["active"]
+            and telemetry_intact
+            and not pocket_gate_error
+            and not sim_state["executed"]
+        )
         pocket_col1, pocket_col2 = st.columns(2)
         with pocket_col1:
             if st.button(
@@ -1148,6 +1244,8 @@ if mobile_mode:
             st.info("Trip power to start the pocket simulation.")
         elif not telemetry_intact:
             st.warning(telemetry_message)
+        elif pocket_gate_error:
+            st.warning(pocket_gate_error)
         elif sim_state["executed"]:
             st.success(f"Simulated drawstop recorded for {profile['target_entity']} in this session.")
         elif sim_state["key1_signed"] and sim_state["key2_signed"]:
@@ -1347,7 +1445,17 @@ if nav_selection == "Tier 1: Sovereign Executive Overview":
             if st.button("5. Executive Vault\n(Tier 4)", use_container_width=True):
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
-elif nav_selection == "Tier 3A: Operations Dispatch Command":
+elif nav_selection == NAV_STAGES[1]:
+    st.title("Tier 2: Kinetic Decay & Operational Reroute")
+    st.caption("Fault escalation, mitigation posture, and operational rerouting")
+    if sim_state["active"]:
+        st.info("Review the active fault and statutory ratchet summary above before rerouting.")
+    else:
+        st.info("No kinetic fault is active. Use the sidebar testing harness to inject a simulated fault.")
+    if st.button("Proceed to Tier 3A: Operations Verification Desk", type="primary"):
+        navigate_to(NAV_STAGES[2])
+
+elif nav_selection == NAV_STAGES[2] and dossier_stage < 3:
     st.title(localized_text("Tier 3A: Engineering Operations Dispatch", "Tier 3A: Technische Einsatzdisposition", "第3A段階：技術運用指令"))
     st.caption(localized_text("Formal Issuance of Statutory Work Orders", "Prüfauftragserstellung & forensische Metrologie-Rückbindung", "法定作業指示書の発行および法科学的計量トレーサビリティ"))
 
@@ -1407,6 +1515,40 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
     st.json(sample_payload)
+    st.caption(
+        "Enter three sourced telemetry observations. Use timezone-qualified ISO 8601 timestamps; "
+        "the app will reject unordered, duplicate, static, or immaterial series."
+    )
+    observation_prefix = f"{active_docket_id}_observation"
+    expected_state_text = st.text_input(
+        "Expected metric baseline",
+        key=f"{active_docket_id}_expected_state",
+        placeholder="For example: 3.0",
+    )
+    epsilon_text = st.text_input(
+        "Allowable noise band (epsilon)",
+        key=f"{active_docket_id}_noise_band_epsilon",
+        placeholder="For example: 0.01",
+    )
+    observations = []
+    for index in range(3):
+        timestamp_col, value_col = st.columns(2)
+        timestamp_value = timestamp_col.text_input(
+            f"Observation {index + 1} timestamp (ISO 8601)",
+            key=f"{observation_prefix}_{index}_timestamp",
+            placeholder="2026-10-02T09:00:00Z",
+        )
+        observed_value = value_col.text_input(
+            f"Observation {index + 1} observed value",
+            key=f"{observation_prefix}_{index}_value",
+            placeholder="Enter measured value",
+        )
+        observations.append(
+            {
+                "interval_timestamp": timestamp_value,
+                "observed_value": observed_value,
+            }
+        )
 
     st.markdown(localized_text("#### Step 3: Statutory Witness Oath", "#### Schritt 3: Eidesstattliche Versicherung", "#### 手順3：法定証人宣誓"))
     st.warning(f"**{localized_text('Statutory Oath', 'Eidesstattliche Versicherung', '法定宣誓')}：** {jurisdiction['oath_text']}")
@@ -1427,18 +1569,47 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
             type="primary",
             use_container_width=True,
         ):
-            raw_telemetry = json.dumps(sample_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-            active_docket["field_telemetry_payload"] = raw_telemetry
-            active_docket["field_telemetry_hash"] = hashlib.sha256(raw_telemetry.encode("utf-8")).hexdigest()
-            active_docket["pe_signed_by"] = profile["certifier_title"]
-            active_docket["cosigned_by"] = profile["certifier_title"]
-            active_docket["witness_signed"] = True
-            active_docket["attestation_hash"] = hashlib.sha256(
-                f"{raw_telemetry}|{profile['certifier_title']}".encode("utf-8")
-            ).hexdigest()
-            active_docket["exhibit_b_status"] = "CERTIFIED"
-            advance_active_stage(3)
-            navigate_to("Tier 3A: Operations Verification Desk")
+            try:
+                expected_state = float(expected_state_text)
+                noise_band_epsilon = float(epsilon_text)
+                for observation in observations:
+                    observation["observed_value"] = float(observation["observed_value"])
+            except ValueError:
+                st.error(
+                    f"{FAILURE_CODES['drift']}: enter numeric baseline, noise band, and all three observed values."
+                )
+            else:
+                series_error = validate_observation_series(
+                    observations, expected_state, noise_band_epsilon
+                )
+                if noise_band_epsilon < 0 or series_error:
+                    st.error(
+                        series_error
+                        or f"{FAILURE_CODES['drift']}: noise band cannot be negative."
+                    )
+                else:
+                    sample_payload["expected_state"] = expected_state
+                    sample_payload["noise_band_epsilon"] = noise_band_epsilon
+                    sample_payload["time_series_observations"] = observations
+                    raw_telemetry = json.dumps(
+                        sample_payload,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        ensure_ascii=False,
+                    )
+                    active_docket["field_telemetry_payload"] = raw_telemetry
+                    active_docket["field_telemetry_hash"] = hashlib.sha256(
+                        raw_telemetry.encode("utf-8")
+                    ).hexdigest()
+                    active_docket["pe_signed_by"] = profile["certifier_title"]
+                    active_docket["cosigned_by"] = profile["certifier_title"]
+                    active_docket["witness_signed"] = True
+                    active_docket["attestation_hash"] = hashlib.sha256(
+                        f"{raw_telemetry}|{profile['certifier_title']}".encode("utf-8")
+                    ).hexdigest()
+                    active_docket["exhibit_b_status"] = "CERTIFIED"
+                    advance_active_stage(3)
+                    navigate_to("Tier 3A: Operations Verification Desk")
     else:
         if active_docket.get("witness_signed"):
             st.success(localized_text(f"Attestation completed by {active_docket['pe_signed_by']}.", f"Beglaubigung abgeschlossen durch {active_docket['pe_signed_by']}.", f"{active_docket['pe_signed_by']} による証拠認証が完了しました。"))
@@ -1452,7 +1623,7 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
         ):
             navigate_to("Tier 3A: Operations Verification Desk")
 
-elif nav_selection == "Tier 3A: Operations Verification Desk":
+elif nav_selection == NAV_STAGES[2] and dossier_stage >= 3:
     st.title(localized_text("Tier 3A: Operations Verification & Audit", "Tier 3A: Betriebs- und Revisionsverifikation", "第3A段階：運用検証および監査"))
     st.caption(localized_text("Verification of Methodological Integrity Prior to Legal Review", "Prüfung der methodischen Integrität vor Vorlage bei der Rechtsabteilung", "法務審査前の方法論的完全性の検証"))
 
@@ -1503,24 +1674,103 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
         st.markdown(f"**{localized_text('Governing Rule', 'Maßgebliche Rechtsnorm', '適用法令')}：** `{jurisdiction['statute_evidence']}`")
         st.markdown(f"**{localized_text('Fiduciary Safe Harbor', 'Organhaftungsschutz', '取締役責任保護')}：** `{jurisdiction['fiduciary_shield']}`")
 
-        st.success(localized_text(
-            "✓ Metrology chain of custody complete.\n\n✓ Self-authenticating electronic record meets governing requirements.\n\n✓ Anti-spoliation litigation hold ready for simultaneous service.",
-            "✓ Metrologische Beweiskette lückenlos nachgewiesen.\n\n✓ Selbstauthentifizierende elektronische Urkunde erfüllt die maßgeblichen Anforderungen.\n\n✓ Beweissicherungsanordnung zur Zustellung vorbereitet.",
-            "✓ 計量上の証拠保全記録が完結しています。\n\n✓ 自己認証型電磁的記録が適用要件を満たしています。\n\n✓ 証拠破棄防止命令を同時送達する準備が完了しています。",
-        ))
+        st.subheader("Independent Statutory Gate")
+        st.caption(
+            "This docket stores a session-local sealed telemetry snapshot; it does not verify external repository URIs. "
+            "Identity fields and attestations are demonstration inputs and are not authenticated."
+        )
+        gate_prefix = f"{active_docket_id}_board_gate"
+        gate_widget_values = {
+            "executive_email": active_docket.get("accountable_executive_email", ""),
+            "assessor_name": active_docket.get("independent_assessor_name", ""),
+            "assessor_email": active_docket.get("independent_assessor_email", ""),
+            "assessor_independence": active_docket.get("assessor_independence_attested", False),
+            "assessor_sign_off": active_docket.get("assessor_sign_off", False),
+            "statutory_clearance": active_docket.get("statutory_clearance_granted", False),
+        }
+        for field, value in gate_widget_values.items():
+            st.session_state.setdefault(f"{gate_prefix}_{field}", value)
+
+        st.caption(f"Decision deadline (UTC): `{active_docket['decision_deadline']}`")
+        gate_inputs_locked = dossier_stage != 4
+        st.text_input(
+            "Accountable executive email",
+            key=f"{gate_prefix}_executive_email",
+            disabled=gate_inputs_locked,
+        )
+        st.text_input(
+            "Independent assessor name",
+            key=f"{gate_prefix}_assessor_name",
+            disabled=gate_inputs_locked,
+        )
+        st.text_input(
+            "Independent assessor email",
+            key=f"{gate_prefix}_assessor_email",
+            disabled=gate_inputs_locked,
+        )
+        st.checkbox(
+            "Assessor attests they have no operational interest in this docket",
+            key=f"{gate_prefix}_assessor_independence",
+            disabled=gate_inputs_locked,
+        )
+        st.checkbox(
+            "Independent human assessor certifies evidence chain-of-custody integrity",
+            key=f"{gate_prefix}_assessor_sign_off",
+            disabled=gate_inputs_locked,
+        )
+        st.checkbox(
+            "Independent human assessor certifies proposed actions meet statutory boundaries",
+            key=f"{gate_prefix}_statutory_clearance",
+            disabled=gate_inputs_locked,
+
+        )
 
         if dossier_stage == 4:
             if st.button(
-                localized_text("Clear Dossier & Issue Litigation Hold to Tier 4 Vault", "Dossier freigeben & Notfall-Verfahren an Tier-4-Tresor übermitteln", "証拠記録を承認し第4段階保管庫へ証拠保全命令を送信"),
+                localized_text("Certify Gate & Clear Dossier to Tier 4 Vault", "Dossier freigeben & Notfall-Verfahren an Tier-4-Tresor übermitteln", "証拠記録を承認し第4段階保管庫へ証拠保全命令を送信"),
                 type="primary",
                 use_container_width=True,
             ):
-                active_docket["legal_cleared_by"] = "Katherine Ross, Lead Trial Counsel"
-                active_docket["exhibit_d_status"] = "READY"
-                advance_active_stage(5)
-                navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
+                active_docket["accountable_executive_email"] = st.session_state[
+                    f"{gate_prefix}_executive_email"
+                ]
+                active_docket["independent_assessor_name"] = st.session_state[
+                    f"{gate_prefix}_assessor_name"
+                ]
+                active_docket["independent_assessor_email"] = st.session_state[
+                    f"{gate_prefix}_assessor_email"
+                ]
+                active_docket["assessor_independence_attested"] = st.session_state[
+                    f"{gate_prefix}_assessor_independence"
+                ]
+                active_docket["assessor_sign_off"] = st.session_state[
+                    f"{gate_prefix}_assessor_sign_off"
+                ]
+                active_docket["statutory_clearance_granted"] = st.session_state[
+                    f"{gate_prefix}_statutory_clearance"
+                ]
+                gate_error = validate_board_gate(active_docket)
+                if gate_error:
+                    st.error(gate_error)
+                else:
+                    active_docket["assessor_certified_at"] = (
+                        datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    )
+                    active_docket["legal_cleared_by"] = active_docket[
+                        "independent_assessor_name"
+                    ]
+                    active_docket["exhibit_d_status"] = "READY"
+                    advance_active_stage(5)
+                    navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
         else:
-            st.success(localized_text(f"Cleared for trial filing by {active_docket['legal_cleared_by']}.", f"Zur gerichtlichen Einreichung freigegeben durch {active_docket['legal_cleared_by']}.", f"{active_docket['legal_cleared_by']} が裁判所提出を承認しました。"))
+            gate_error = validate_board_gate(active_docket)
+            if gate_error:
+                st.error(gate_error)
+            else:
+                st.success(
+                    f"Independent statutory gate certified at "
+                    f"{active_docket.get('assessor_certified_at', 'unknown time')}."
+                )
             if st.button(
                 localized_text("➔ Open Tier 4 Executive Vault", "➔ Tier-4-Exekutiv-Tresor öffnen", "➔ 第4段階：役員保管庫を開く"),
                 type="primary",
@@ -1528,7 +1778,7 @@ elif nav_selection == "Legal Chambers: Evidentiary Audit":
             ):
                 navigate_to("Tier 4: Executive Vault & Filing (Always Active)")
 
-elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
+elif nav_selection == NAV_STAGES[5]:
     ui = (
         UI_STRINGS.get(profile["jurisdiction"], UI_STRINGS["DEFAULT"])
         if is_court_native
@@ -1537,10 +1787,20 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     st.title(ui["vault_title"])
     st.caption(ui["vault_caption"])
     dossier_cleared, integrity_message = verify_dossier_integrity(active_docket_id)
+    board_gate_error = validate_board_gate(active_docket)
+    decision_gate_ready = (
+        board_gate_error is None and active_docket.get("stage", 0) >= 5
+    )
+    if board_gate_error is None and not decision_gate_ready:
+        board_gate_error = (
+            f"{FAILURE_CODES['statutory']}: the independent clearance transition has not completed."
+        )
+    dossier_cleared = dossier_cleared and decision_gate_ready
     telemetry_tampered = integrity_message == "Security Alert: Telemetry payload tamper detected. SHA-256 mismatch."
     simulated_dossier = (active_docket.get("field_telemetry_payload") or "").startswith("SIMULATED|")
     if simulated_dossier:
         st.info("Simulation only: generated exhibits are not independently certified; no filing or bank instruction is sent.")
+    st.caption(f"Decision deadline (UTC): `{active_docket['decision_deadline']}`")
 
     st.subheader(ui["status_title"])
     e1, e2, e3, e4 = st.columns(4)
@@ -1630,7 +1890,7 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
     active_docket["dual_key_clo"] = key_clo
 
     if not dossier_cleared:
-        st.error(integrity_message)
+        st.error(board_gate_error or integrity_message)
     else:
         st.success(integrity_message)
         if key_chairman and key_clo:
@@ -1640,8 +1900,12 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
                 type="primary",
                 use_container_width=True,
             ):
-                active_docket["executed"] = True
-                st.balloons()
+                current_gate_error = validate_board_gate(active_docket)
+                if current_gate_error:
+                    st.error(current_gate_error)
+                else:
+                    active_docket["executed"] = True
+                    st.balloons()
         else:
             st.info(ui["keys_locked_msg"])
 
@@ -1701,23 +1965,45 @@ elif nav_selection == "Tier 4: Executive Vault & Filing (Always Active)":
         )
         st.caption(ui["court_btn_sub"])
 
-    exec_master_payload = {
-        "docket_id": profile["docket_id"],
-        "document_type": "SIMULATED_EXECUTIVE_MASTER_DOSSIER" if simulated_dossier else "EXECUTIVE_MASTER_DOSSIER",
-        "simulation_only": simulated_dossier,
-        "jurisdiction": active_jurisdiction,
-        "governing_standard": profile["standard"],
-        "language": "en-US (International Master)",
-        "exhibits": loc_data["english"] if loc_data else doc_content,
-        "telemetry_sha256": active_docket["field_telemetry_hash"],
-    }
-
     with file_col2:
-        st.download_button(
-            label=ui["master_btn"],
-            data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
-            file_name=f"{profile['docket_id']}_{'SIMULATED_' if simulated_dossier else ''}EXECUTIVE_MASTER_EN.json",
-            mime="application/json",
-            use_container_width=True,
+        if decision_gate_ready:
+            exec_master_payload = {
+                "docket_id": profile["docket_id"],
+                "document_type": (
+                    "SIMULATED_EXECUTIVE_MASTER_DOSSIER"
+                    if simulated_dossier
+                    else "EXECUTIVE_MASTER_DOSSIER"
+                ),
+                "simulation_only": simulated_dossier,
+                "jurisdiction": active_jurisdiction,
+                "governing_standard": profile["standard"],
+                "language": "en-US (International Master)",
+                "exhibits": loc_data["english"] if loc_data else doc_content,
+                "telemetry_sha256": active_docket["field_telemetry_hash"],
+                "statutory_gate": {
+                    "assessor_name": active_docket.get("independent_assessor_name"),
+                    "assessor_email": active_docket.get("independent_assessor_email"),
+                    "certified_at": active_docket.get("assessor_certified_at"),
+                    "evidence_chain_verified": active_docket.get(
+                        "assessor_sign_off", False
+                    ),
+                    "statutory_clearance_granted": active_docket.get(
+                        "statutory_clearance_granted", False
+                    ),
+                    "decision_deadline": active_docket["decision_deadline"],
+                },
+            }
+            st.download_button(
+                label=ui["master_btn"],
+                data=json.dumps(exec_master_payload, indent=2, ensure_ascii=False),
+                file_name=f"{profile['docket_id']}_{'SIMULATED_' if simulated_dossier else ''}EXECUTIVE_MASTER_EN.json",
+                mime="application/json",
+                use_container_width=True,
+            )
+        else:
+            st.button(ui["master_btn"], disabled=True, use_container_width=True)
+        st.caption(
+            ui["master_btn_sub"]
+            if decision_gate_ready
+            else f"{FAILURE_CODES['statutory']}: executive brief remains locked until independent clearance."
         )
-        st.caption(ui["master_btn_sub"])
