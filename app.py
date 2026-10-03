@@ -1574,12 +1574,17 @@ elif nav_selection == "Tier 3B: Work-Face Attestation Desk":
         placeholder="For example: 0.01",
     )
     observations = []
+    timestamp_placeholders = (
+        "2026-10-03T09:00:00Z",
+        "2026-10-03T10:00:00Z",
+        "2026-10-03T11:00:00Z",
+    )
     for index in range(3):
         timestamp_col, value_col = st.columns(2)
         timestamp_value = timestamp_col.text_input(
             f"Observation {index + 1} timestamp (ISO 8601)",
             key=f"{observation_prefix}_{index}_timestamp",
-            placeholder="2026-10-02T09:00:00Z",
+            placeholder=timestamp_placeholders[index],
         )
         observed_value = value_col.text_input(
             f"Observation {index + 1} observed value",
