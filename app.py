@@ -168,6 +168,49 @@ def valid_email_address(value: str) -> bool:
     return bool(re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value.strip()))
 
 
+def validate_board_gate(docket: dict) -> str | None:
+    executive_email = docket.get("accountable_executive_email")
+    assessor_name = docket.get("independent_assessor_name")
+    assessor_email = docket.get("independent_assessor_email")
+    if (
+        not isinstance(executive_email, str)
+        or not valid_email_address(executive_email)
+        or not isinstance(assessor_name, str)
+        or not assessor_name.strip()
+        or not isinstance(assessor_email, str)
+        or not valid_email_address(assessor_email)
+        or executive_email.strip().casefold() == assessor_email.strip().casefold()
+        or docket.get("assessor_independence_attested") is not True
+    ):
+        return (
+            f"{FAILURE_CODES['conflict']}: valid executive and independent-assessor "
+            "details, distinct email addresses, and an independence attestation are required."
+        )
+
+    if docket.get("assessor_sign_off") is not True:
+        return (
+            f"{FAILURE_CODES['evidence']}: independent evidence-integrity sign-off is required."
+        )
+    if docket.get("statutory_clearance_granted") is not True:
+        return (
+            f"{FAILURE_CODES['statutory']}: independent statutory clearance is required."
+        )
+
+    deadline_value = docket.get("decision_deadline")
+    try:
+        if not isinstance(deadline_value, str):
+            raise ValueError
+        deadline = datetime.datetime.fromisoformat(
+            deadline_value.replace("Z", "+00:00")
+        )
+    except ValueError:
+        return f"{FAILURE_CODES['deadline']}: the decision deadline is invalid."
+
+    if deadline.tzinfo is None or datetime.datetime.now(datetime.timezone.utc) >= deadline:
+        return f"{FAILURE_CODES['deadline']}: the decision deadline has lapsed."
+    return None
+
+
 def render_mock_docket_registry() -> None:
     """Render the attached sovereign docket registry in a namespaced sidebar flow."""
     if "mock_dockets" not in st.session_state:
